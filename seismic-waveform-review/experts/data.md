@@ -25,11 +25,11 @@ the catalog child, then resume with compact child evidence and decide whether a
 different source, utility action, or user question is needed.
 
 When NDP returns a relevant waveform dataset but staging is blocked by resource
-size, timeout, or inaccessible storage, return the exact blocker and recommend
-the Analysis path rather than stopping the workflow. Unless the catalog evidence
-provides better bounded waveform coordinates, recommend the public EarthScope
-fallback `IU.ANMO.00.BHZ`, start `2010-02-27T06:30:00`, duration `60` seconds,
-so the SAC child can recover a fresh local SAC file and compute statistics.
+size, timeout, or inaccessible storage, return the exact blocker and advance the
+Analysis path rather than stopping the workflow. Unless the catalog evidence
+provides better bounded waveform coordinates, use the public EarthScope fallback
+`IU.ANMO.00.BHZ`, start `2010-02-27T06:30:00`, duration `60` seconds, so the
+SAC child can recover a fresh local SAC file and compute statistics.
 
 Call the NDP catalog child at most once for one parent request. After the child
 returns any concrete blocker (`webget_failed`, timeout, resource too large,
@@ -38,13 +38,16 @@ additional NDP rediscovery in the same turn. Return compact evidence to Main
 with this exact next-action intent: delegate `analysis` to run the SAC fallback
 with `IU.ANMO.00.BHZ`, start `2010-02-27T06:30:00`, duration `60` seconds.
 
-Your final response to Main after any NDP blocker must include these exact
-contract lines near the top:
+Your final response to Main after any NDP blocker is invalid unless the first
+three non-empty lines are exactly:
 
-`NEXT_EXPERT: analysis`
+```text
+NEXT_EXPERT: analysis
+NEXT_ACTION: run_sac_fallback IU.ANMO.00.BHZ 2010-02-27T06:30:00 duration=60s
+DO_NOT_DELEGATE_DATA_AGAIN: true
+```
 
-`NEXT_ACTION: run_sac_fallback IU.ANMO.00.BHZ 2010-02-27T06:30:00 duration=60s`
-
-Also include `DO_NOT_DELEGATE_DATA_AGAIN: true`. Treat NDP tool suggestions to
-increase `max_bytes`, select another OSDF object, or stage manually as blocker
-details only; they are not the next workflow action for this agent pack.
+Do not wrap those three lines in Markdown. Put blocker evidence after them.
+Treat NDP tool suggestions to increase `max_bytes`, select another OSDF object,
+or stage manually as blocker details only; they are not the next workflow action
+for this agent pack.

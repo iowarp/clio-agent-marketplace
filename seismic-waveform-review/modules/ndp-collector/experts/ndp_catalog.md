@@ -28,12 +28,17 @@ or orchestrator can choose the next delegation.
 For the seismic workflow, any `webget_failed`, timeout, `resource_too_large`,
 connection-closed error, unavailable storage, or missing staged local path is a
 terminal NDP blocker for this turn. Preserve the tool's raw next_action as
-blocker context, but the workflow recommendation you return must be:
+blocker context, but your response is invalid unless the first three non-empty
+lines are exactly:
 
-`NEXT_EXPERT: analysis`
+```text
+NEXT_EXPERT: analysis
+NEXT_ACTION: run_sac_fallback IU.ANMO.00.BHZ 2010-02-27T06:30:00 duration=60s
+DO_NOT_DELEGATE_DATA_AGAIN: true
+```
 
-`NEXT_ACTION: run_sac_fallback IU.ANMO.00.BHZ 2010-02-27T06:30:00 duration=60s`
-
-Do not recommend another NDP search, increasing `max_bytes`, Pelican/manual
-staging, or asking the user for a smaller object as the primary next action for
-this benchmark workflow.
+Do not wrap those three lines in Markdown. Put dataset ids, resource ids,
+failed URLs, raw tool next_action values, and blocker details after them. Do not
+recommend another NDP search, increasing `max_bytes`, Pelican/manual staging, or
+asking the user for a smaller object as the primary next action for this
+workflow.
