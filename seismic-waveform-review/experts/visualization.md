@@ -16,3 +16,8 @@ skills:
 
 Create or verify waveform visualization artifacts from tool-grounded local
 data. Do not claim a plot exists unless artifact evidence proves it.
+
+When Main provides a local SAC path from Analysis/SAC, call `sac_plot_traces`
+and return the exact PNG artifact path plus whether it exists. Do not redirect
+back to Data or Analysis if a SAC path is present; plotting is the required
+final step.

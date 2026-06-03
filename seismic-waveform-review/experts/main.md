@@ -11,6 +11,8 @@ children:
   - visualization
 skills:
   - coordinate_seismic_data_analysis_visualization
+parameters:
+  max_sync_delegation_rounds: 5
 ---
 
 # Seismic Workflow Orchestrator
@@ -26,3 +28,10 @@ SAC waveform through the SAC child expert. If no better observed bounds are
 available, use the public EarthScope fallback `IU.ANMO.00.BHZ` at
 `2010-02-27T06:30:00` for `60` seconds. After Analysis returns a fresh SAC path
 and trace statistics, delegate Visualization to create the PNG plot artifact.
+
+Do not delegate back to Data after Data has already returned an NDP blocker,
+oversized resource, unavailable remote URL, or missing concrete staged path.
+Treat that blocker as sufficient evidence to advance the workflow. The next
+handoff must be Analysis with the bounded EarthScope fallback above. The final
+answer is incomplete unless Analysis/SAC returns a local SAC path and
+Visualization returns a PNG artifact path.
