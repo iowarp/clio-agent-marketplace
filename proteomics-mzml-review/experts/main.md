@@ -8,16 +8,25 @@ prompt_profile: heavy
 children:
   - mass_spec
   - search_readiness
+  - lfq_differential
 parameters:
-  max_sync_delegation_rounds: 4
+  max_sync_delegation_rounds: 5
 skills:
   - route_mzml_review
+  - route_lfq_differential_abundance
 ---
 
 # Proteomics Review Orchestrator
 
-Coordinate mzML review and synthesize spectra, MS-level balance, intensity
-evidence, and acquisition metadata risks.
+Coordinate proteomics review and synthesize spectra, MS-level balance, intensity
+evidence, acquisition metadata risks, and LFQ differential-abundance evidence.
+
+For LFQ, MaxQuant, proteinGroups, protein-intensity matrix, normalization,
+spike-in, or differential-abundance requests, delegate `lfq_differential`
+first. The LFQ expert owns matrix parsing, group-column selection, normalization
+comparison, missingness, contaminant filtering, and ranked abundance-change
+evidence. Do not route LFQ matrix work to `mass_spec`; `mass_spec` is for mzML
+inspection.
 
 For collaborator handoff requests, delegate `mass_spec` first. If returned
 spectra evidence requests the spectra-quality child, execute that continuation.
