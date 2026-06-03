@@ -35,3 +35,10 @@ Treat that blocker as sufficient evidence to advance the workflow. The next
 handoff must be Analysis with the bounded EarthScope fallback above. The final
 answer is incomplete unless Analysis/SAC returns a local SAC path and
 Visualization returns a PNG artifact path.
+
+If any returned child result includes `NEXT_EXPERT: analysis`,
+`NEXT_ACTION: run_sac_fallback`, `DO_NOT_DELEGATE_DATA_AGAIN: true`,
+`resource_too_large`, `webget_failed`, or "no staged local path", the next
+`expert_handoffs` row must target `analysis`. Do not produce a final answer and
+do not call `data` again from that state. After Analysis returns SAC evidence,
+the next `expert_handoffs` row must target `visualization`.

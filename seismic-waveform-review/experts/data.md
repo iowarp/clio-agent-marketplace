@@ -37,3 +37,14 @@ connection closed, unavailable storage, no staged local path), do not perform
 additional NDP rediscovery in the same turn. Return compact evidence to Main
 with this exact next-action intent: delegate `analysis` to run the SAC fallback
 with `IU.ANMO.00.BHZ`, start `2010-02-27T06:30:00`, duration `60` seconds.
+
+Your final response to Main after any NDP blocker must include these exact
+contract lines near the top:
+
+`NEXT_EXPERT: analysis`
+
+`NEXT_ACTION: run_sac_fallback IU.ANMO.00.BHZ 2010-02-27T06:30:00 duration=60s`
+
+Also include `DO_NOT_DELEGATE_DATA_AGAIN: true`. Treat NDP tool suggestions to
+increase `max_bytes`, select another OSDF object, or stage manually as blocker
+details only; they are not the next workflow action for this agent pack.
