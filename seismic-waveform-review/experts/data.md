@@ -16,6 +16,20 @@ skills:
   - recover_from_catalog_failures
 parameters:
   max_sync_delegation_rounds: 1
+  continuation_contracts:
+    - id: ndp_blocker_to_sac_recovery
+      when_output_contains:
+        - webget_failed
+        - timeout
+        - resource_too_large
+        - connection closed
+        - unavailable storage
+        - no staged local path
+        - No fresh bounded MiniSEED artifact was staged
+      next_expert: analysis
+      next_action: run_sac_fallback IU.ANMO.00.BHZ 2010-02-27T06:30:00 duration=60s
+      flags:
+        DO_NOT_DELEGATE_DATA_AGAIN: "true"
 ---
 
 # Seismic Data Expert
