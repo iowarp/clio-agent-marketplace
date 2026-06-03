@@ -8,7 +8,6 @@ prompt_profile: heavy
 specialization: terrain_derivation
 tools:
   - terrain_dem_terrain
-  - terrain_pointcloud_read
 children:
   - gridding
 skills:
@@ -17,6 +16,16 @@ skills:
   - delivery_form_branching
 parameters:
   max_sync_delegation_rounds: 2
+  continuation_contracts:
+    - id: terrain_derivation_to_suitability
+      when_output_contains:
+        - slope
+        - elevation
+        - grid
+        - DEM
+      match: any
+      next_expert: suitability
+      next_action: apply_site_suitability_constraints_from_terrain_evidence
 ---
 
 # Terrain Derivation Expert
@@ -26,6 +35,10 @@ is a ready DEM, use `terrain_dem_terrain` directly. If the delivery form is a
 raw point cloud, delegate bounded gridding to `gridding` first, then analyze the
 generated DEM with `terrain_dem_terrain`.
 
+Raw point-cloud files must not be read directly by this expert. The `gridding`
+child owns `terrain_pointcloud_read` and must return the generated DEM path
+before this expert computes terrain statistics.
+
 Return compact evidence to the parent: input path, delivery form, generated DEM
 path if any, grid shape, elevation range, slope statistics, nodata or empty-cell
 counts, suitability criteria used if provided, and caveats for missing optional
@@ -33,3 +46,10 @@ GeoTIFF/LAS readers.
 
 Do not skip the point-cloud path just because a ready DEM was not delivered.
 The benchmark specifically tests whether raw point clouds trigger gridding.
+
+After terrain statistics or a generated DEM path are available, end with:
+
+```text
+NEXT_EXPERT: suitability
+NEXT_ACTION: apply_site_suitability_constraints_from_terrain_evidence
+```

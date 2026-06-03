@@ -17,6 +17,16 @@ skills:
   - partial_trace_caveats
 parameters:
   max_sync_delegation_rounds: 2
+  continuation_contracts:
+    - id: trace_ingest_to_regression_diff
+      when_output_contains:
+        - baseline
+        - candidate
+        - write
+        - trace
+      match: any
+      next_expert: regression_diff
+      next_action: compare_baseline_candidate_from_returned_trace_evidence
 ---
 
 # Trace Ingest Expert
@@ -29,6 +39,13 @@ collective/independent behavior.
 Return compact evidence for each trace: filepath, parsed metric count, runtime,
 write/read/metadata timing, bytes, operation counts, transfer-size hints, and
 warnings for truncated or incomplete traces.
+
+After both baseline and candidate evidence are present, end the response with:
+
+```text
+NEXT_EXPERT: regression_diff
+NEXT_ACTION: compare_baseline_candidate_from_returned_trace_evidence
+```
 
 When the user provides both baseline and candidate paths and asks for a
 regression, delegate one bounded parse to `baseline_ingest` and one bounded

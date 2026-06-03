@@ -18,7 +18,9 @@ parameters:
   continuation_contracts:
     - id: crystal_to_symmetry_quality
       when_output_contains:
+        - formula
         - space
+        - atom
         - occupancy
       match: any
       next_expert: symmetry_quality
@@ -38,3 +40,7 @@ readiness. End successful CIF evidence with:
 NEXT_EXPERT: symmetry_quality
 NEXT_ACTION: review_symmetry_occupancy_from_returned_cif_evidence
 ```
+
+This continuation is required even when occupancy and symmetry appear clean.
+Do not delegate directly to `simulation_readiness`; that is the root parent's
+job after this expert has resumed from `symmetry_quality`.

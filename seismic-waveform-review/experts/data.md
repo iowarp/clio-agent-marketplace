@@ -26,6 +26,8 @@ parameters:
         - unavailable storage
         - no staged local path
         - No fresh bounded MiniSEED artifact was staged
+        - staging limit
+        - exceeds the allowed staging limit
       next_expert: analysis
       next_action: run_sac_fallback IU.ANMO.00.BHZ 2010-02-27T06:30:00 duration=60s
       flags:

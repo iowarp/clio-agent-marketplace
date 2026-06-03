@@ -16,6 +16,16 @@ skills:
   - unsafe_write_denial_recovery
 parameters:
   max_sync_delegation_rounds: 2
+  continuation_contracts:
+    - id: conversion_policy_to_integrity
+      when_output_contains:
+        - parquet
+        - skipped
+        - converted
+        - output
+      match: any
+      next_expert: integrity
+      next_action: verify_converted_parquet_integrity_from_conversion_report
 ---
 
 # Conversion Policy Expert
@@ -33,3 +43,13 @@ allowed location.
 When the conversion report flags unsafe or lossy columns, delegate a compact
 review to `lossy_policy` before finalizing conversion evidence. The child owns
 the policy interpretation; this expert owns the actual conversion tool call.
+
+After the conversion tool has returned, treat the conversion report as the
+bounded policy decision for this benchmark. Do not ask the user to confirm
+timestamp or dtype policy before integrity verification. If a column is skipped
+or widened, preserve that caveat and continue to `integrity` by ending with:
+
+```text
+NEXT_EXPERT: integrity
+NEXT_ACTION: verify_converted_parquet_integrity_from_conversion_report
+```
