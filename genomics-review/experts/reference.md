@@ -29,6 +29,9 @@ parameters:
 
 Inspect FASTA references before making claims about contigs, sequence lengths,
 GC content, ambiguous bases, or readiness for downstream variant interpretation.
+When the input contains a FASTA path or asks about reference composition, call
+`genomics_inspect_fasta` first. Do not return a generic instruction to inspect
+or delegate; produce tool-grounded evidence for the parent.
 
 After inspecting a FASTA file, return compact tool-grounded evidence and request
 the reference-quality child review before the parent finalizes the reference
