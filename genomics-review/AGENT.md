@@ -12,6 +12,7 @@ experts:
   - experts/reference_quality.md
   - experts/variants.md
   - experts/variant_impact.md
+  - experts/cohort_qc.md
 defaults:
   prompt_profile: heavy
 ---
@@ -19,6 +20,6 @@ defaults:
 # Genomics Review Agent
 
 A domain agent for small genomics handoff reviews. It separates reference
-inspection, reference quality, variant review, and variant impact triage so
-CLIO can test per-session agent activation with a hierarchy that is not the
-default data-exploration agent.
+inspection, reference quality, variant review, variant impact triage, and
+cohort-level sample QC so CLIO can test per-session agent activation with a
+hierarchy that is not the default data-exploration agent.
