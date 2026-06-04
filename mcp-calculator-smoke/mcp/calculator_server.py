@@ -8,7 +8,6 @@ import sys
 
 from fastmcp import FastMCP
 
-
 mcp = FastMCP("calculator-smoke")
 
 
