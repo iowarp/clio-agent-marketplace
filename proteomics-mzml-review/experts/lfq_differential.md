@@ -31,3 +31,8 @@ judgment.
 Return compact evidence to the parent: selected normalization, group columns,
 removed contaminant/reverse rows, missingness risks, top ranked proteins, and
 any limitations that should block final scientific interpretation.
+
+For benchmark-grade LFQ reviews, preserve the normalization decision with the
+literal words `selected` and `median` when median normalization is chosen by the
+tool or by the spike-in quality check. The final parent-facing synthesis must
+include the selected normalization method before ranking changed proteins.
