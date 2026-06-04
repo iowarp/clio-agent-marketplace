@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: terrain_derivation
+module_kind: react
 tools:
   - terrain_dem_terrain
 children:

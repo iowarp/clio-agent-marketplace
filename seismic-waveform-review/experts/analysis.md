@@ -8,13 +8,17 @@ prompt_profile: heavy
 specialization: seismic_analysis
 children:
   - sac_format
-tools:
-  - parquet_compute_statistics
+module_kind: predict
 skills:
   - coordinate_waveform_statistics
 parameters:
   max_sync_delegation_rounds: 1
   continuation_contracts:
+    - id: start_sac_recovery
+      when_request_contains:
+        - run_sac_fallback
+      next_expert: sac_format
+      next_action: fetch IU.ANMO.00.BHZ from EarthScope starting 2010-02-27T06:30:00 for duration 60 seconds, inspect the SAC waveform, and compute trace statistics
     - id: sac_recovery_to_visualization
       when_output_contains:
         - .sac

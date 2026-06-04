@@ -6,6 +6,7 @@ parent_id: cohort_qc
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: genomics_per_sample_metrics
+module_kind: react
 tools:
   - genomics_vcf_cohort_qc
 skills:

@@ -8,15 +8,20 @@ prompt_profile: heavy
 specialization: seismic_data_access
 children:
   - ndp_catalog
-tools:
-  - hdf5_list_datasets
-  - adios_inspect_file
+module_kind: predict
 skills:
   - evaluate_waveform_data_sources
   - recover_from_catalog_failures
 parameters:
   max_sync_delegation_rounds: 1
   continuation_contracts:
+    - id: start_ndp_catalog_discovery
+      when_request_contains:
+        - bounded seismic waveform
+        - NDP
+      match: all
+      next_expert: ndp_catalog
+      next_action: search NDP with terms "seismic waveform Salton Sea"; choose the best waveform resource, attempt bounded staging, and return concrete dataset/resource ids plus any staging blocker; do not ask the user for station/time selectors
     - id: ndp_blocker_to_sac_recovery
       when_output_contains:
         - webget_failed

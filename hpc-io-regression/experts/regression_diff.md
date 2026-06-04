@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: hpc_regression_diff
+module_kind: react
 tools:
   - hpc_compare_darshan_traces
 skills:

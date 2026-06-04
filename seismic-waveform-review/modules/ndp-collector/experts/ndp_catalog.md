@@ -6,6 +6,7 @@ parent_id: data
 prompt_id: clio.expert.data
 prompt_profile: heavy
 specialization: ndp_catalog
+module_kind: react
 tools:
   - ndp_list_organizations
   - ndp_search_datasets
@@ -41,6 +42,13 @@ ids, staged paths, failed URLs, blockers, and recommended next action. If NDP
 staging fails, do not switch to EarthScope, SAC, shell, or unrelated recovery
 inside this child expert; return structured failure evidence so the Data Expert
 or orchestrator can choose the next delegation.
+
+If the parent request does not provide station/time selectors, do not ask the
+user for them. Use the bounded default discovery query `seismic waveform Salton
+Sea`, inspect the best matching waveform resource, and attempt staging once.
+For OSDF/Pelican, size, timeout, or unavailable-storage failures, return the
+blocker and SAC fallback contract below rather than asking for another search
+criterion.
 
 For the seismic workflow, any `webget_failed`, timeout, `resource_too_large`,
 connection-closed error, unavailable storage, or missing staged local path is a

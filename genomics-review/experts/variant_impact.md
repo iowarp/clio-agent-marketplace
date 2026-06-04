@@ -6,6 +6,7 @@ parent_id: variants
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: genomics_variant_impact
+module_kind: react
 tools:
   - genomics_summarize_vcf
 skills:

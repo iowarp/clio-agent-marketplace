@@ -5,6 +5,7 @@ tier: 2
 parent: main
 prompt_id: clio.expert.visualization
 prompt_profile: default
+module_kind: react
 tools:
   - plot_summary
 skills:

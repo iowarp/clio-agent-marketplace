@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: mass_spectrometry
+module_kind: react
 tools:
   - mass_spec_inspect_mzml
 children:

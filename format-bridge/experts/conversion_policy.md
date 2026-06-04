@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: scientific_format_conversion_policy
+module_kind: react
 tools:
   - format_convert_hdf5_to_parquet
 children:

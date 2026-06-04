@@ -5,6 +5,7 @@ tier: 2
 parent: main
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
+module_kind: react
 tools:
   - parquet_compute_statistics
 skills:

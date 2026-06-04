@@ -6,6 +6,7 @@ parent_id: reference
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: genomics_reference_quality
+module_kind: react
 tools:
   - genomics_inspect_fasta
 skills:

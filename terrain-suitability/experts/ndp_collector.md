@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.data
 prompt_profile: heavy
 specialization: terrain_ndp_collection
+module_kind: react
 tools:
   - ndp_list_organizations
   - ndp_search_datasets

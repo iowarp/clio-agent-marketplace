@@ -6,6 +6,7 @@ parent_id: analysis
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: sac_waveform_format
+module_kind: react
 tools:
   - sac_fetch_earthscope_waveform
   - sac_inspect_archive
@@ -42,7 +43,13 @@ response with these exact continuation contract lines, filling in the observed
 path:
 
 ```text
+LOCAL_SAC_PATH: <observed local SAC path from sac_fetch_earthscope_waveform or sac_compute_trace_statistics filepath>
 NEXT_EXPERT: visualization
 NEXT_ACTION: plot_sac_traces <observed local SAC path>
 DO_NOT_FINALIZE_BEFORE_VISUALIZATION: true
 ```
+
+The response is invalid if it says trace statistics were computed but omits
+`LOCAL_SAC_PATH`. Never invent `/workspace/data/raw_waveform.sac`; use the
+exact path returned by the SAC tool call, such as the `filepath` used for
+`sac_compute_trace_statistics`.

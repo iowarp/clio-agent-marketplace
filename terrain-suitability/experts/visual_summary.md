@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.visualization
 prompt_profile: light
 specialization: terrain_visual_summary
+module_kind: react
 tools:
   - plot_bar_chart
   - plot_summary

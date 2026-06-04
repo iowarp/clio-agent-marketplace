@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.data
 prompt_profile: heavy
 specialization: hpc_trace_ingest
+module_kind: react
 tools:
   - hpc_parse_darshan_text
 children:

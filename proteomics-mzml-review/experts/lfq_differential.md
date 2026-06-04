@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: proteomics_lfq_differential_abundance
+module_kind: react
 tools:
   - mass_spec_lfq_differential_abundance
 skills:

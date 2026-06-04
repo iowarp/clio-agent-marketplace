@@ -5,6 +5,7 @@ tier: 2
 parent: main
 prompt_id: clio.expert.data
 prompt_profile: heavy
+module_kind: react
 tools:
   - hdf5_list_datasets
   - hdf5_analyze_dataset

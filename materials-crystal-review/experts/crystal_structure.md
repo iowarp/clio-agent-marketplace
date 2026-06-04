@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: materials_crystallography
+module_kind: react
 tools:
   - materials_inspect_cif
 children:

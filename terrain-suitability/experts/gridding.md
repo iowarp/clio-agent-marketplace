@@ -6,6 +6,7 @@ parent_id: terrain_derivation
 prompt_id: clio.expert.data
 prompt_profile: light
 specialization: terrain_pointcloud_gridding
+module_kind: react
 tools:
   - terrain_pointcloud_read
 skills:

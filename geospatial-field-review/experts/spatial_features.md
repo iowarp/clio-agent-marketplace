@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: geospatial_features
+module_kind: react
 tools:
   - geospatial_inspect_geojson
 skills:

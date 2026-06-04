@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.visualization
 prompt_profile: heavy
 specialization: scientific_conversion_visual_confirmation
+module_kind: react
 tools:
   - plot_summary
   - plot_histogram

@@ -13,6 +13,34 @@ skills:
   - coordinate_seismic_data_analysis_visualization
 parameters:
   max_sync_delegation_rounds: 5
+  continuation_contracts:
+    - id: start_bounded_waveform_review
+      when_request_contains:
+        - bounded seismic waveform
+        - NDP
+        - SAC
+        - PNG
+      match: all
+      next_expert: data
+      next_action: search NDP for bounded seismic waveform datasets using default terms "seismic waveform Salton Sea"; attempt bounded staging of the best waveform resource; if staging is blocked, return the concrete Dataset ID, Resource URL, blocker, and SAC fallback intent without asking the user for selectors
+    - id: ndp_blocker_to_analysis
+      when_output_contains:
+        - Pelican client
+        - OSDF
+        - SAC fallback
+        - cannot be staged
+        - staging failed
+      match: any
+      next_expert: analysis
+      next_action: run_sac_fallback IU.ANMO.00.BHZ 2010-02-27T06:30:00 duration=60s using the NDP blocker evidence; do not ask the user to choose a recovery path
+    - id: sac_evidence_to_visualization
+      when_output_contains:
+        - .sac
+        - Trace statistics
+        - "NEXT_EXPERT: visualization"
+      match: any
+      next_expert: visualization
+      next_action: plot_sac_traces using the exact local SAC path returned by Analysis/SAC and return a verified PNG artifact path
 ---
 
 # Seismic Workflow Orchestrator

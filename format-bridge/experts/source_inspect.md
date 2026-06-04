@@ -6,6 +6,7 @@ parent_id: main
 prompt_id: clio.expert.data
 prompt_profile: heavy
 specialization: scientific_source_format_inspection
+module_kind: react
 tools:
   - hdf5_list_datasets
   - hdf5_analyze_file

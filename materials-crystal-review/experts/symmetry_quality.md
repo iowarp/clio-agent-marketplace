@@ -6,6 +6,7 @@ parent_id: crystal_structure
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: materials_symmetry_quality
+module_kind: react
 tools:
   - materials_inspect_cif
 skills:

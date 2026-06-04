@@ -6,6 +6,7 @@ parent_id: mass_spec
 prompt_id: clio.expert.analysis
 prompt_profile: heavy
 specialization: proteomics_spectra_quality
+module_kind: react
 tools:
   - mass_spec_inspect_mzml
 skills:

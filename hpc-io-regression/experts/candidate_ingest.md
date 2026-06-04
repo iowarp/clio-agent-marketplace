@@ -6,6 +6,7 @@ parent_id: trace_ingest
 prompt_id: clio.expert.data
 prompt_profile: light
 specialization: hpc_candidate_trace_ingest
+module_kind: react
 tools:
   - hpc_parse_darshan_text
 skills:
