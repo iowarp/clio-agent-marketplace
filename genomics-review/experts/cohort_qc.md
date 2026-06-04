@@ -18,6 +18,21 @@ skills:
   - reconcile_manifest_metadata
 parameters:
   max_sync_delegation_rounds: 4
+  continuation_contracts:
+    - id: cohort_metrics_to_outliers
+      when_output_contains:
+        - call rate
+        - heterozygosity
+      match: all
+      next_expert: cohort_outliers
+      next_action: interpret_cohort_outliers_from_per_sample_metrics
+    - id: cohort_outliers_to_manifest
+      when_output_contains:
+        - drop
+        - sample
+      match: all
+      next_expert: manifest_reconciliation
+      next_action: reconcile_manifest_or_return_missing_manifest_caveat
 ---
 
 # Cohort QC Expert
@@ -49,6 +64,11 @@ After `manifest_reconciliation` returns, the workflow is complete. Synthesize
 the final answer from the three returned child results. Do not delegate again to
 `per_sample_metrics`, `cohort_outliers`, or `manifest_reconciliation` unless a
 child explicitly returned `status=failed`.
+
+Do not finalize with "the next step is..." after per-sample metrics or outlier
+analysis. If manifest evidence has not returned, continue to the declared
+`manifest_reconciliation` child. The final answer must mention `sample_A`, call
+rate, heterozygosity, and the manifest caveat or manifest reconciliation result.
 
 Return a compact drop/keep advisory grounded in child output. For each flagged
 sample, include the sample id, metric values, and reason. If the VCF has no
