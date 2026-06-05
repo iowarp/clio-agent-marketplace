@@ -60,6 +60,11 @@ parameters:
             - metadata_only
             - blocked
             - missing
+        acquisition.analysis_ready: false
+        profile.status:
+          exists: false
+        visualization.status:
+          exists: false
       match: all
       next_expert: synthesis
       next_action: synthesize the grounded discovery/acquisition blocker without inventing analysis or artifacts
