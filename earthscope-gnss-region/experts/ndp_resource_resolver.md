@@ -20,6 +20,7 @@ structured_outputs:
   artifacts: true
   errors: true
 tools:
+  - ndp_search_datasets
   - ndp_get_dataset_details
   - ndp_stage_resource
 ---
@@ -39,10 +40,15 @@ station time-series CSV resource, with expected columns such as `time`, `east`,
 `north`, and `up`, can become `analysis_ready=true`.
 
 Stage the selected dataset/resource from the provided catalog evidence. If the
-selected evidence is only metadata or an index CSV, do not invent a
-station-specific resource; return a metadata-only blocker instead. Do not
-provide `output_dir` unless the user explicitly requested one; CLIO will default
-staging under the active workspace artifact root.
+selected evidence is only station metadata or an index CSV, first call
+`ndp_search_datasets` with the station's returned `resource_discovery.search_terms`
+or `suggested_search_terms` to find live station-specific resources. Stage only
+resources returned by `ndp_search_datasets`, `ndp_get_dataset_details`, or
+another tool result. Do not construct raw CSV URLs from station IDs or channel
+suffix guesses. If live search still yields only metadata or no usable CSV,
+return a metadata-only or blocked acquisition state instead. Do not provide
+`output_dir` unless the user explicitly requested one; CLIO will default staging
+under the active workspace artifact root.
 
 Return:
 

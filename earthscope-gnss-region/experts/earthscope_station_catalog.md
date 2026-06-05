@@ -68,4 +68,6 @@ geography's live metadata.
 Do not promote a station ID from metadata into a resource URL or local CSV path.
 If the only evidence is a station index or `earthscope_converted_data.csv`, set
 `station_catalog.status` to `ranked_metadata_only` and leave downstream
-acquisition unresolved.
+acquisition unresolved. Do not construct raw CSV URLs from station names or
+channel suffix guesses. A nearby station becomes analysis-ready only after the
+resource resolver finds and stages a live NDP/ds2 resource returned by a tool.

@@ -67,3 +67,7 @@ only a place name, choose a conservative regional-analysis radius and report the
 default as a warning.
 
 Do not query NDP or EarthScope directly from this expert.
+Do not make data availability claims. Your output may warn about ambiguous or
+low-confidence geography, but it must not say that EarthScope/GNSS station or
+time-series data exists or does not exist. Data availability belongs to the data
+and catalog experts after they call tools.
