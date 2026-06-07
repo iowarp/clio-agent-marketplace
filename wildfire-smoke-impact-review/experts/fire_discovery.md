@@ -27,18 +27,18 @@ Method:
 1. Search the NDP catalog for current interagency fire perimeters (the WFIGS
    current perimeters dataset, org `nifc`). Read its details to get the live
    ArcGIS FeatureServer URL.
-2. Query that feature service for active wildfires. Restrict to actual
-   wildfires (incident type category `WF`) with a real perimeter, and request
+2. Query that feature service for active wildfires with `returnGeometry=true`.
+   Restrict to actual wildfires (incident type category `WF`) and request
    incident name, acres, percent contained, cause, county/state, location.
-3. **Select ONE leading fire** to investigate (a large, low-containment fire is
-   a good candidate — but not a fully contained one).
+3. **If the request names a region or gives a bounding box, scope the query to
+   it** — pass `min_lon`, `min_lat`, `max_lon`, `max_lat` (the actual numbers
+   from the request) so only fires in that area are returned. If no region is
+   given, query nationally.
 
-CRITICAL — region scope: the downstream region is the bbox of whatever you save
-to `fire_perimeter.geojson`. You MUST save **only the selected fire's**
-perimeter, not all fires nationally (saving all of them yields a country-sized
-bbox and breaks region scoping). Do a SECOND query filtered to the selected
-fire (e.g. `where` on its incident name / IRWIN id) with
-`output_path="fire_perimeter.geojson"`. The tool returns the saved path.
+The runtime grounds `workflow_state.region` (the leading active fire's padded
+bbox) and `workflow_state.fire.selected` directly from this query result — you
+do NOT need a second query or a manual bbox. Just return the active fires you
+found; the leading one (most actively burning) defines the region.
 
 Return typed `workflow_state`:
 
