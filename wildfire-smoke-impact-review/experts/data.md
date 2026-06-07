@@ -14,15 +14,25 @@ structured_outputs:
   delegation: true
 children:
   - fire_discovery
+  - geography
   - smoke_forecast
   - air_quality
 parameters:
   enforce_child_contract_order: true
-  max_sync_delegation_rounds: 6
+  max_sync_delegation_rounds: 8
   continuation_contracts:
     - id: start_with_fire_discovery
       next_expert: fire_discovery
-      next_action: find active wildfires and save their perimeters; the runtime grounds workflow_state.region (the leading fire's bbox) from the query result
+      next_action: discover active wildfires, reason about which one is likely impacting people downwind, and save that fire's perimeter
+    - id: fire_to_geography
+      when_state:
+        acquisition.fire_path:
+          exists: true
+        region:
+          exists: false
+      match: all
+      next_expert: geography
+      next_action: call the bounding-box tool on the selected fire's perimeter to establish the analysis region
     - id: region_to_smoke
       when_state:
         region:
@@ -52,11 +62,12 @@ sub-expert receives the prior evidence (fire candidates, then the region).
 
 Required child order:
 
-1. `fire_discovery` — active fire perimeters (saved). The runtime grounds
-   `workflow_state.region` (the leading fire's padded bbox) from this query, so
-   the region is available to the next children without a manual bbox step.
-2. `smoke_forecast` — smoke polygons over that region (saved).
-3. `air_quality` — AirNow monitors over that region (saved).
+1. `fire_discovery` — discover active fires, reason about which one is impacting
+   people downwind, and save that fire's perimeter.
+2. `geography` — bound the selected fire's perimeter into the analysis region
+   (calls the bounding-box tool; the runtime records its result as `region`).
+3. `smoke_forecast` — smoke polygons over that region (saved).
+4. `air_quality` — AirNow monitors over that region (saved).
 
 After the children complete, return the merged acquisition state:
 

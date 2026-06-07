@@ -41,17 +41,25 @@ Method:
    it** — pass `min_lon`, `min_lat`, `max_lon`, `max_lat` (the actual numbers
    from the request). If no region is given, query nationally.
 
-The runtime grounds `workflow_state.region` (the leading active fire's padded
-bbox) and `workflow_state.fire.selected` directly from this query result — you
-do NOT need a second query or a manual bbox. Just return the active fires you
-found; the leading one (most actively burning) defines the region.
+4. **YOU choose the candidate fire to investigate — reason about it, don't just
+   take the biggest.** A fire matters for downwind smoke impact when it is
+   actively burning (low containment), large enough to produce real smoke, and
+   near populated areas. A huge but ~100%-contained fire is usually NOT the one.
+   Weigh acres, percent contained, and location together and pick the most
+   likely-impactful candidate. State your reasoning.
 
-Return typed `workflow_state`:
+5. **Save only that chosen fire's perimeter** to `fire_perimeter.geojson` — do a
+   focused query filtered to it (e.g. `where attr_IncidentName = '<name>'`,
+   `returnGeometry=true`, `output_path="fire_perimeter.geojson"`). Geography will
+   bound this exact file into the region, so it must contain only your pick.
+
+Return typed `workflow_state.fire` with your decision and reasoning:
 
 ```json
 {"workflow_state": {"fire": {
   "selected": {"name": "...", "acres": 12345, "percent_contained": 20,
-               "county": "...", "state": "..."},
+               "county": "...", "state": "...",
+               "reason": "actively burning near population"},
   "perimeter_path": "fire_perimeter.geojson"}}}
 ```
 

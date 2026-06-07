@@ -10,6 +10,7 @@ experts:
   - experts/main.md
   - experts/data.md
   - experts/fire_discovery.md
+  - experts/geography.md
   - experts/smoke_forecast.md
   - experts/air_quality.md
   - experts/analysis.md
