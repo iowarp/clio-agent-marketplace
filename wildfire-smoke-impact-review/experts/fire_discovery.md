@@ -12,9 +12,8 @@ tools:
   - ndp_get_dataset_details
   - ndp_query_arcgis_features
 structured_outputs:
-  fire_candidates: List of active wildfires with name, acres, percent contained, cause, lat/lon, county, state.
-  perimeter_geojson: GeoJSON perimeter geometry for the leading candidate fire(s).
-  source: NDP dataset id and the feature-service URL queried.
+  workflow_state: true
+  evidence: true
 ---
 
 # Active Fire Discovery Expert
@@ -30,17 +29,25 @@ Method:
    ArcGIS FeatureServer URL.
 2. Query that feature service for active wildfires. Restrict to actual
    wildfires (incident type category `WF`) with a real perimeter, and request
-   the fields that matter for impact reasoning: incident name, acres, percent
-   contained, cause, point-of-origin county/state, and location.
-3. Return a compact candidate list. Do not pre-judge by acreage — a large but
-   fully contained fire is usually *not* the impactful one. Include perimeter
-   geometry for the leading candidates so geography can derive a region.
+   incident name, acres, percent contained, cause, county/state, location.
+3. **Select ONE leading fire** to investigate (a large, low-containment fire is
+   a good candidate — but not a fully contained one).
 
-When you query the perimeter feature service, pass
-`output_path="fire_perimeter.geojson"` so the full perimeter FeatureCollection
-is saved to the artifact directory for the map step. The tool returns the real
-saved path — record it.
+CRITICAL — region scope: the downstream region is the bbox of whatever you save
+to `fire_perimeter.geojson`. You MUST save **only the selected fire's**
+perimeter, not all fires nationally (saving all of them yields a country-sized
+bbox and breaks region scoping). Do a SECOND query filtered to the selected
+fire (e.g. `where` on its incident name / IRWIN id) with
+`output_path="fire_perimeter.geojson"`. The tool returns the saved path.
 
-Report typed `structured_outputs`. If the service returns no active wildfires,
-say so plainly — that is a valid live finding. Keep results compact; do not dump
-every attribute of every fire.
+Return typed `workflow_state`:
+
+```json
+{"workflow_state": {"fire": {
+  "selected": {"name": "...", "acres": 12345, "percent_contained": 20,
+               "county": "...", "state": "..."},
+  "perimeter_path": "fire_perimeter.geojson"}}}
+```
+
+If the service returns no active wildfires, say so plainly — a valid live
+finding. Keep results compact; do not dump every fire's attributes.
