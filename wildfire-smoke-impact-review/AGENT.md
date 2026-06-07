@@ -9,10 +9,6 @@ blueprint:
 experts:
   - experts/main.md
   - experts/data.md
-  - experts/fire_discovery.md
-  - experts/smoke_forecast.md
-  - experts/air_quality.md
-  - experts/geography.md
   - experts/analysis.md
   - experts/downwind_impact.md
   - experts/visualization.md
