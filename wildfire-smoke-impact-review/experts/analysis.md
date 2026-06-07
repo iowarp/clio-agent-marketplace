@@ -15,6 +15,13 @@ structured_outputs:
   evidence: true
   errors: true
   delegation: true
+parameters:
+  enforce_child_contract_order: true
+  max_sync_delegation_rounds: 3
+  continuation_contracts:
+    - id: start_with_downwind_impact
+      next_expert: downwind_impact
+      next_action: compute the smoke-monitor spatial overlap with geospatial_points_in_polygons before judging impact
 ---
 
 # Impact Analysis Expert
