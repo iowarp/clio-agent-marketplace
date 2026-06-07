@@ -30,6 +30,13 @@ You MUST always return `workflow_state.impact.present` as an explicit boolean
 (true or false) — never omit it, even when uncertain (default to false with a
 reason). The orchestrator routes on this field; omitting it dead-ends the run.
 
+The acquisition step already ran and saved the layers: check the acquisition
+evidence in `workflow_state` (fire candidates/count, region, `smoke_present`,
+`monitors_found`) before judging. Do NOT report "missing fire geometry" or
+"no data" when the acquisition reported fires/smoke/monitors — that is a false
+negative. Base `impact.present` on the actual smoke∩monitor overlap within the
+region, and when true, set `impact.selected_fire`.
+
 Principles:
 
 - **Impact, not size.** Select the fire whose smoke footprint overlaps

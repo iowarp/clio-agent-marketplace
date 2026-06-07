@@ -10,8 +10,8 @@ module:
 tools:
   - geospatial_inspect_geojson
 structured_outputs:
-  region: Bounding box [min_lon, min_lat, max_lon, max_lat] for downwind analysis.
-  region_provenance: How the region was derived (which fire, what padding, why).
+  workflow_state: true
+  evidence: true
 ---
 
 # Geography Expert
@@ -32,6 +32,12 @@ Method:
 - Emit the region as a typed bounding box with provenance (which fire, how much
   padding, and why). Downstream smoke and air-quality experts will query that
   exact box.
+
+Emit the region as typed state so the smoke/air queries can scope to it:
+
+```json
+{"workflow_state": {"region": [min_lon, min_lat, max_lon, max_lat]}}
+```
 
 Do not resolve places by memorized coordinates. The region is derived from live
 fire evidence; record where every number came from.

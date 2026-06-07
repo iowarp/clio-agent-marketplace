@@ -27,13 +27,14 @@ Method:
 1. Discover the AirNow current air-quality dataset through the NDP catalog (the
    AirNow Air Quality Monitoring Data (Current), org `cal-oes`). Read its
    details for the live FeatureServer URL.
-2. Query that service for monitors within the region's bounding box. Keep the
-   AQI value and category label fields and the monitor coordinates.
+2. Query that service for monitors over the region. You MUST pass the region
+   bounding box as `min_lon`, `min_lat`, `max_lon`, `max_lat` (from
+   `workflow_state.region`) so results are scoped to the impacted region — NOT a
+   national `where=1=1` query. Keep the AQI value, category label, and coords.
 3. Return compact monitor points for the region with their AQI readings.
 
-When you query the AirNow feature service, pass
-`output_path="air_quality.geojson"` so the full monitor FeatureCollection is
-saved to the artifact directory for the map step. Record the returned path.
+Pass `output_path="air_quality.geojson"` so the full monitor FeatureCollection
+is saved to the artifact directory for the map step. Record the returned path.
 
 Report typed `structured_outputs`. These monitors are the population-impact
 ground truth: smoke forecast says where smoke *should* be, monitors say what

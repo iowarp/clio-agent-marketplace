@@ -27,16 +27,16 @@ Method:
 1. Discover the NWS smoke-forecast dataset through the NDP catalog (the NWS 48
    hour Smoke Forecast, a national NDGD gridded product, org `cal-oes`). Read
    its details for the live FeatureServer URL.
-2. Query that service for smoke-forecast polygons that intersect the region's
-   bounding box. Keep the concentration class field (e.g. `smoke_classdesc`,
-   micrograms per cubic metre bands) so downstream coloring and ranking can use
-   it.
-3. Return compact smoke polygons clipped to the region plus a clear
-   `smoke_present` flag.
+2. Query that service for smoke-forecast polygons over the region. You MUST
+   pass the region bounding box as `min_lon`, `min_lat`, `max_lon`, `max_lat`
+   (from `workflow_state.region`, e.g. `[min_lon, min_lat, max_lon, max_lat]`)
+   so results are scoped to the impacted region — NOT a national `where=1=1`
+   query. Keep the concentration class field (e.g. `smoke_classdesc`).
+3. Return compact smoke polygons for the region plus a clear `smoke_present`
+   flag.
 
-When you query the smoke feature service, pass
-`output_path="smoke_forecast.geojson"` so the full smoke FeatureCollection is
-saved to the artifact directory for the map step. Record the returned path.
+Pass `output_path="smoke_forecast.geojson"` so the full smoke FeatureCollection
+is saved to the artifact directory for the map step. Record the returned path.
 
 Report typed `structured_outputs`. Zero smoke polygons over the region is a real
 and important result (it usually means no active downwind impact from this fire)
