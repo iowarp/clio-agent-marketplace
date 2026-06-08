@@ -16,16 +16,20 @@ structured_outputs:
 
 # Geography Expert
 
-Turn the chosen fire into the analysis region by calling the bounding-box tool
-on its perimeter — geometry is a computation, so use the tool rather than
-guessing coordinates.
+Turn the chosen fire into the analysis region. Geometry is a computation, so use
+the tool — but YOU report the result as typed state.
 
-Call `geospatial_bounding_box` once with `geojson="fire_perimeter.geojson"` (the
-fire the discovery step selected and saved) and `pad_km` ~100 so the downwind
-area where smoke and people are is included. The tool returns the bounding box;
-the runtime records it as `workflow_state.region` from that tool result.
+1. Call `geospatial_bounding_box` once with `geojson="fire_perimeter.geojson"`
+   (the fire the discovery step selected and saved) and `pad_km` ~100 so the
+   downwind area where smoke and people are is included.
+2. Read the `bbox` array `[min_lon, min_lat, max_lon, max_lat]` from the tool
+   result and return it verbatim as your typed state:
 
-Your job is the decision of *what* to bound (the selected fire's perimeter) and
-calling the tool — not inventing numbers. If `fire_perimeter.geojson` is missing
-or empty, report a typed blocker instead of fabricating a region; do not loop or
-re-call the tool once you have a box.
+```json
+{"workflow_state": {"region": [min_lon, min_lat, max_lon, max_lat]}}
+```
+
+Use the tool's four numbers exactly — do not invent or round them, and do not
+emit placeholder/template text. If `fire_perimeter.geojson` is missing or empty,
+return a typed blocker instead of fabricating a region. Do not loop once you have
+a box.

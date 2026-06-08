@@ -29,6 +29,43 @@ parameters:
 Own the judgement at the heart of this case: of the active fires acquired,
 which one is actually affecting people downwind, and who is worst off.
 
+## RULE 0 (most important): you MUST emit typed `workflow_state.impact`
+
+Your single required deliverable is a typed `workflow_state.impact` object with
+an explicit boolean `impact.present`. The orchestrator routes on this field and
+synthesis briefs from it; if you omit it, the run dead-ends. Emit it as JSON in
+your answer, derived from the computed overlap and the upstream fire selection.
+
+Decide `present` from the computed overlap, then COPY the fire from upstream:
+`impact.selected_fire` is a verbatim copy of `workflow_state.fire.selected`
+(the fire `fire_discovery` already chose) — do NOT invent a new fire name, and do
+NOT pick a different fire than the one already selected upstream.
+
+Worked example — IMPACT PRESENT (overlap `monitors_under_smoke = 7`):
+
+```json
+{"workflow_state": {"impact": {
+  "present": true,
+  "selected_fire": {"name": "Sawtooth", "reason": "smoke over 7 monitored communities with degraded AQI"},
+  "affected_communities": [{"name": "Quincy", "aqi": 168}]
+}}}
+```
+
+Worked example — HONEST NULL (overlap `monitors_under_smoke = 0`, monitors were
+evaluated):
+
+```json
+{"workflow_state": {"impact": {
+  "present": false,
+  "selected_fire": {"name": "Gun Range", "reason": "active fire, but no monitored population under its smoke footprint"},
+  "reason": "0 of N monitors fell under the smoke forecast"
+}}}
+```
+
+Even on the null path, COPY `selected_fire` from `workflow_state.fire.selected`
+so the brief can name the fire that was evaluated. Always include the boolean
+`present`. Never emit an `impact` object without `present`.
+
 **Delegate `downwind_impact` to COMPUTE the smoke∩monitor overlap** (it calls a
 real spatial-join tool), then judge from its result. Reason over the evidence —
 but **do not contradict the computed overlap.** In this case, "downwind impact"

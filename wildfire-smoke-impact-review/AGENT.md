@@ -6,6 +6,9 @@ description: Finds an active wildfire impacting people downwind by fusing live f
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
+mcp_servers:
+  ndp: uv --directory ${CLIO_KIT_PATH:-../clio-kit} run clio-kit mcp-server ndp
+  geo: uv --directory ${CLIO_KIT_PATH:-../clio-kit} run clio-kit mcp-server geo
 experts:
   - experts/main.md
   - experts/data.md

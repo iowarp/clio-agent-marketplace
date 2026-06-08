@@ -12,6 +12,7 @@ tools:
   - ndp_get_dataset_details
   - ndp_query_arcgis_features
 structured_outputs:
+  workflow_state: true
   monitors_found: Count of air-quality monitors over the region.
   monitors_geojson: GeoJSON monitor points over the region, with AQI and label.
   source: NDP dataset id and feature-service URL queried.
@@ -35,6 +36,21 @@ Method:
 
 Pass `output_path="air_quality.geojson"` so the full monitor FeatureCollection
 is saved to the artifact directory for the map step. Record the returned path.
+
+After the query returns, YOU emit the path it saved as typed workflow_state so
+the data orchestrator knows monitors were acquired. Copy the saved path verbatim
+into `acquisition.monitors_path` (use the bare `"air_quality.geojson"` you passed
+as `output_path`) and record the count returned:
+
+```json
+{"workflow_state": {"acquisition": {"monitors_path": "air_quality.geojson",
+                                    "monitors_found": 0}}}
+```
+
+Set `monitors_found` to the exact number of monitor features the query returned.
+ALWAYS emit `acquisition.monitors_path` once the query has run (even with zero
+monitors — the file is still saved), so the overlap step downstream has its
+points layer.
 
 Report typed `structured_outputs`. These monitors are the population-impact
 ground truth: smoke forecast says where smoke *should* be, monitors say what

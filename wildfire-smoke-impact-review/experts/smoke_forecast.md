@@ -12,6 +12,7 @@ tools:
   - ndp_get_dataset_details
   - ndp_query_arcgis_features
 structured_outputs:
+  workflow_state: true
   smoke_present: Whether smoke-forecast polygons intersect the region.
   smoke_geojson: GeoJSON smoke-forecast polygons over the region, with concentration class.
   source: NDP dataset id and feature-service URL queried.
@@ -37,6 +38,22 @@ Method:
 
 Pass `output_path="smoke_forecast.geojson"` so the full smoke FeatureCollection
 is saved to the artifact directory for the map step. Record the returned path.
+
+After the query returns, YOU emit the path it saved as typed workflow_state so
+the data orchestrator can advance to air-quality. Copy the saved path verbatim
+into `acquisition.smoke_path` (use the bare `"smoke_forecast.geojson"` you passed
+as `output_path` — that is the conventional layer filename the map step reads):
+
+```json
+{"workflow_state": {"acquisition": {"smoke_path": "smoke_forecast.geojson",
+                                    "smoke_present": false,
+                                    "smoke_polygons": 0}}}
+```
+
+Set `smoke_present` to true only if the query actually returned polygons over the
+region; otherwise false. Set `smoke_polygons` to the feature count returned.
+ALWAYS emit `acquisition.smoke_path` once the query has run (even with zero
+polygons — the file is still saved), so the next step is not blocked.
 
 Report typed `structured_outputs`. Zero smoke polygons over the region is a real
 and important result (it usually means no active downwind impact from this fire)
