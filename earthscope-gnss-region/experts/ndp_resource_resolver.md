@@ -93,10 +93,40 @@ did not copy from a tool result in this run, stop — that is a fabrication.
 (The same field may also appear as `path`; if so, copy whichever the tool
 returned, verbatim.)
 
+## RULE 1 — NO in-region candidates means NO staging (honest no-coverage)
+
+Before any tool call, check the station candidate set. If
+`station_catalog.status == "no_candidates"`, OR `station_catalog.station_ids` is
+empty, OR `resource_discovery.station_resource_queries` is empty, then the
+requested region has NO EarthScope GNSS coverage. Do NOT call `ndp_search_datasets`,
+do NOT call `ndp_stage_resource`, and do NOT invent or stage the globally-nearest
+out-of-region station. Make ZERO tool calls and return the honest no-coverage
+state immediately:
+
+```json
+{
+  "workflow_state": {
+    "resource_candidate": { "status": "blocked", "station_id": null, "geographically_grounded": false },
+    "acquisition": {
+      "status": "missing",
+      "analysis_ready": false,
+      "local_path": null,
+      "blocker": "no EarthScope GNSS station within the requested region"
+    }
+  }
+}
+```
+
+You only ever stage a station drawn from the in-region ranked
+`station_catalog.station_ids` / `resource_discovery.station_resource_queries`. A
+station that is not in that in-region set (e.g. the filter tool's far-away
+`nearest_station`) is NOT coverage and must never be searched or staged.
+
 ## The procedure — four ordered steps, none skippable
 
-Do these in order. Your FIRST tool call MUST be `ndp_search_datasets` for a
-station id — never `ndp_stage_resource` on the metadata dataset.
+Do these in order, but only when there ARE in-region candidates (see RULE 1).
+Your FIRST tool call MUST be `ndp_search_datasets` for a station id — never
+`ndp_stage_resource` on the metadata dataset.
 
 **Step 1 — per-station search.** For the top-ranked station id, call
 `ndp_search_datasets` with the station id in `resource_name`:
@@ -142,14 +172,42 @@ station) while `acquisition.local_path` points at `P475`'s CSV. The station in
 `resource_candidate.station_id`, the station in `acquisition.local_path`'s
 filename, and the station whose CSV you searched/staged must all be identical.
 
-**Commit early — do not over-search.** As soon as ONE station yields a concrete
-station CSV in Step 2, go straight to Step 3 and stage it, then Step 4. Do not
-search additional stations, do not re-run `ndp_search_datasets` for a station you
-already found a CSV for, and do not keep exploring for a "better" station. You
-have a limited number of tool calls; spend them staging the first good station,
-not browsing. Only if Step 1/2 finds NO station CSV for the current station do you
-move to the next ranked station and repeat Steps 1–3. Return a blocker only after
-every ranked station has been covered by a `resource_name` per-station search.
+## Bounded next-nearest fallback — one flaky station must not fail the run
+
+You are given several in-region ranked stations precisely so that a single flaky
+download does not sink the whole workflow. Walk the in-region ranked list in order
+(the top few — at least the top 3 when that many exist) as a bounded retry loop:
+
+1. **Commit the instant a CSV actually stages.** As soon as `ndp_stage_resource`
+   returns `staged=true` (or `ok=true`) with a real `local_path` and non-trivial
+   `size_bytes` for an in-region station, that station IS your deliverable. STOP
+   immediately: emit Step 4's `acquisition.status=staged`,
+   `analysis_ready=true`, with that station's verbatim `local_path`. Do NOT search
+   or consider any further station after a successful stage — not for a "closer",
+   "better", or "less blocked" one. The first station whose CSV stages wins.
+
+2. **On failure, fall back — do not abandon the run.** If a station's per-station
+   search finds no CSV, or its `ndp_stage_resource` call fails (returns an
+   `error`/blocker, a download/HTTP/network failure, `staged` not true, or a
+   metadata-status flag), that station is unusable: move to the NEXT in-region
+   ranked station and retry Steps 1–3. Repeat across the top in-region candidates.
+
+3. **Never report a failed later station while a working one staged.** If you
+   already staged station A successfully, you are DONE — A is the answer. Do not
+   keep going to station B, find B blocked, and then report B's block as the final
+   `acquisition.status`. A run where any in-region station CSV staged on disk MUST
+   end with `acquisition.status=staged` for that station, never `metadata_only`,
+   `blocked`, or `missing`. Reporting a downstream station's failure while a real
+   staged CSV exists drops a grounded deliverable and is a reliability bug.
+
+4. **Only block after the bounded set is exhausted.** Return
+   `acquisition.status=blocked`/`metadata_only` ONLY after the top in-region ranked
+   stations have each been tried (per-station `resource_name` search + a stage
+   attempt) and none produced a staged CSV. State which stations you tried and the
+   failure (e.g. download error, no CSV resource).
+
+Spend your tool budget staging the first good in-region station and, on failure,
+the next one — not browsing for a "better" station once one has already staged.
 
 ## Worked example (follow this shape exactly)
 

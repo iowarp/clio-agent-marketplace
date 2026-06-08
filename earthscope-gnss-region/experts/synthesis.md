@@ -92,6 +92,29 @@ the PNG, write the complete `acquisition.local_path` / `artifact.path` string
 `P475.CI.LY_.20.csv`. A bare filename is read as an unverifiable/invented path.
 Only the absolute paths present verbatim in upstream state are acceptable.
 
+COPY each path as a SINGLE clean string — NEVER build it by joining a directory
+and a filename. The upstream value (`acquisition.local_path`,
+`visualization.plot_path`, `artifact.path`) is ALREADY a complete absolute path;
+take it whole, character for character. Do NOT prepend the staging directory to
+it, do NOT concatenate the directory prefix with the absolute path, and do NOT
+repeat any segment.
+
+These corrupted forms are ALL fabricated paths that do not exist on disk — just
+as wrong as inventing a `/tmp/...` path — and you MUST NOT emit any of them:
+
+- `/home/.../ndp-staging//home/.../ndp-staging/P473.PW.LY_.00_plot.png`
+  (the absolute path glued onto a copy of its own directory — note the `//`)
+- `/home/.../ndp-/home/.../ndp-staging/P472.CI.LY_.20.csv`
+  (the `.../ndp-staging/` prefix doubled or tripled, `ndp-` glued to a second root)
+- any path containing `//` (other than after a URL scheme), or the substring
+  `ndp-staging` more than once, or the home-root prefix more than once.
+
+Before you emit ANY csv/png path, re-read it left to right and verify: it starts
+with the root ONCE, contains `ndp-staging/` exactly ONCE, has no `//`, and is
+byte-for-byte equal to the single upstream value. Write that identical string in
+every place you cite it (the table, the artifacts list, the prose) — never two
+spellings of the same file.
+
 The PNG path is COPIED, never DERIVED from the CSV name. Take the PNG string
 character for character from `workflow_state.artifact.path` (or
 `visualization.plot_path` / `visualization.staged_plot_png`). The real plot the
@@ -179,6 +202,24 @@ claims NO station, NO csv path, NO png path, and NO displacement statistics.
 Recommend the concrete next step needed to unblock acquisition. A truthful
 "the pipeline did not stage an analysis-ready station, so no figure was produced"
 is correct; a fabricated station/figure is a failure.
+
+### No-coverage region (honest negative)
+
+When `station_catalog.status=no_candidates` or `acquisition.status=missing` with
+the blocker "no EarthScope GNSS station within the requested region", the correct
+answer is that the requested region has NO EarthScope GNSS coverage. State this
+plainly: the geography resolved, the station catalog was searched within the
+resolved radius, and zero EarthScope GNSS stations fall inside that region, so no
+station time-series could be staged, profiled, or plotted. Set
+`grounded_provenance.data_blocked=true` and leave `station_id`,
+`staged_csv_path`, `plot_png_path`, and `source_url` null. You MAY note, as
+context only, the distance to the globally-nearest station IF upstream evidence
+reported it (e.g. `nearest_outside_region_km`), but you MUST NOT name that
+distant station, cite any CSV/PNG path for it, present it as the region's data, or
+imply it answers the request. No station id, no csv path, no png path, no
+displacement statistics. A distant station dressed up as coverage is a
+fabrication; the honest answer is "no EarthScope GNSS station within the requested
+region".
 
 If any child evidence or tool evidence reports a failed NDP/catalog/filter/
 staging/profile/plot call, include a short recovered-failure note in the final

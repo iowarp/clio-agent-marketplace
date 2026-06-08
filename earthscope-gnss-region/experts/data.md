@@ -53,6 +53,19 @@ parameters:
       match: all
       next_expert: earthscope_station_catalog
       next_action: rank nearby GNSS stations using the exact staged acquisition.metadata_path and preserve selected station/resource evidence
+    - id: station_catalog_no_coverage
+      when_child_completed: earthscope_station_catalog
+      when_state:
+        station_catalog.status: no_candidates
+      match: all
+      next_expert: ndp_resource_resolver
+      next_action: >-
+        The station catalog found NO EarthScope GNSS station within the resolved
+        region (station_catalog.status=no_candidates, empty station_ids). Do NOT
+        search or stage any station. Emit an honest no-coverage acquisition state:
+        acquisition.status=missing, acquisition.analysis_ready=false, and
+        acquisition.blocker="no EarthScope GNSS station within the requested
+        region". Do not name, stage, or cite any station, CSV, or PNG.
     - id: station_catalog_to_resource
       when_child_completed: earthscope_station_catalog
       when_state:
@@ -214,6 +227,35 @@ If any stage blocks, preserve the blocker in typed state and do not invent a
 dataset, station, URL, or local path. A station code from metadata is not enough
 to construct a URL such as `<station>.csv` and is not enough to continue to
 analysis.
+
+## HONEST NO-COVERAGE: when the region has no EarthScope GNSS station
+
+Many regions have NO EarthScope GNSS coverage (e.g. inland metros far from the
+plate-boundary networks). When `earthscope_station_catalog` returns
+`station_catalog.status=no_candidates` (zero stations within the resolved
+region radius, empty `station_ids`), that is a CORRECT outcome — not a failure to
+paper over. Forward it as an honest data-blocked state and STOP the data branch:
+
+```json
+{
+  "workflow_state": {
+    "station_catalog": { "status": "no_candidates", "candidate_count": 0, "station_ids": [] },
+    "acquisition": {
+      "status": "missing",
+      "analysis_ready": false,
+      "blocker": "no EarthScope GNSS station within the requested region"
+    }
+  }
+}
+```
+
+In a no-coverage run you must NOT name a station, must NOT emit a
+`resource_candidate.station_id`, must NOT cite any CSV or PNG path, and must NOT
+record an `acquisition.local_path`. The globally-nearest station the filter tool
+mentioned is OUTSIDE the region and is not coverage — never stage it, never claim
+it. A distant station presented as if it answered the regional request is a
+fabrication. The honest no-coverage answer is "there is no EarthScope GNSS
+station within the requested region" with `acquisition.analysis_ready=false`.
 
 If `earthscope_station_catalog` fails or does not return
 `station_catalog.status=ranked` or `ranked_metadata_only`, do not preserve any

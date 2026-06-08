@@ -46,15 +46,31 @@ Profile the staged EarthScope GNSS station CSV with `ndp_profile_csv_resource`.
 
 ## Use `acquisition.local_path` exactly — never invent a filename
 
-The `filepath` you pass to `ndp_profile_csv_resource` MUST be the exact
-`acquisition.local_path` string from the workflow state the data expert returned,
+Your VERY FIRST action is to find `acquisition.local_path` in the upstream
+workflow state and call `ndp_profile_csv_resource` with that exact string as
+`filepath`. Do not reason about, rename, or "tidy" the path first — locate it and
+pass it through verbatim. It looks like
+`/home/.../.clio/artifacts/ndp-staging/P475.CI.LY_.20.csv` (a station id like
+`P475`/`P473`, a network suffix, `.csv`, under `ndp-staging/`).
+
+The `filepath` you pass MUST be the exact `acquisition.local_path` string,
 copied character for character. That value came from a real `ndp_stage_resource`
-call and exists on disk. Do NOT invent, guess, abbreviate, or reconstruct a CSV
-filename (e.g. do NOT make up names like `P065_timeseries.csv`, `SAN_2023_1Hz.csv`,
-`<station>_timeseries.csv`, or `<city>.csv`). If you profile any path other than
-the exact staged `acquisition.local_path`, your result is invalid. If the state
-has no staged `acquisition.local_path`, do not profile a stale or guessed file —
-return the blocker below.
+call and exists on disk.
+
+ABSOLUTELY FORBIDDEN: composing a filepath from the city name, the date range, or
+your own naming scheme. Do NOT invent, guess, abbreviate, or reconstruct a CSV
+filename. Every one of these is a fabrication that does NOT exist on disk and will
+fail the profiler:
+
+- `/tmp/SAND_timeseries_2024-05-08_to_2024-06-07.csv` (city-name + date-range)
+- `/tmp/<CITY>_timeseries_<date>.csv`, `SAN_2023_1Hz.csv`, `P065_timeseries.csv`,
+  `<station>_timeseries.csv`, `<city>.csv`, any `/tmp/...` path.
+
+The staged CSV is NEVER under `/tmp/` and NEVER named after the city or a date
+range — it is the exact `acquisition.local_path` under `ndp-staging/`. If you
+profile any path other than the exact staged `acquisition.local_path`, your
+result is invalid. If the state has no staged `acquisition.local_path`, do not
+profile a stale or guessed file — return the blocker below.
 
 Only use a filepath that appeared in successful `ndp_stage_resource` evidence.
 If no staged path is present, return:
