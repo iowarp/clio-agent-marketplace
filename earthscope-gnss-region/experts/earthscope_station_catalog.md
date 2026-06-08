@@ -14,6 +14,24 @@ signature:
     answer:
       description: Ranked nearby station candidates with network/status/distance evidence.
       type: string
+    workflow_state:
+      description: >-
+        Typed station-ranking state. Set station_catalog.status to ranked when at
+        least one nearby station was returned by ndp_filter_earthscope_station_catalog,
+        ranked_metadata_only when only a station index/metadata file was available,
+        or no_candidates when no station fell within the radius. Put each ranked
+        station id from the tool's stations array into station_catalog.station_ids.
+      type: object
+      fields:
+        station_catalog:
+          type: object
+          fields:
+            status:
+              type: 'literal["ranked","ranked_metadata_only","no_candidates","metadata_missing"]'
+            candidate_count:
+              type: int
+            station_ids:
+              type: list[str]
 structured_outputs:
   workflow_state: true
   evidence: true
@@ -23,6 +41,26 @@ tools:
 ---
 
 # EarthScope Station Catalog Expert
+
+## Your single required output: `station_catalog.status=ranked` + `resource_discovery.station_resource_queries`
+
+The parent `data` orchestrator advances to `ndp_resource_resolver` ONLY when your
+final `workflow_state` contains `station_catalog.status=ranked` (or
+`ranked_metadata_only`). Emit that exact dotted key. Map the
+`ndp_filter_earthscope_station_catalog` tool result into typed state like this:
+
+- the tool's `stations` array -> `station_catalog.stations` (keep each station's
+  `id`/`station`, `distance_km`, `network`, `status`)
+- `len(stations)` -> `station_catalog.candidate_count` (set status `ranked` when
+  at least one station is within radius)
+- the tool's `resource_discovery.station_resource_queries` ->
+  `resource_discovery.station_resource_queries` forwarded VERBATIM (the resolver
+  needs these exact `preferred_calls`)
+- the tool's `center`/`radius_km` -> echo into `station_catalog.region_name` or
+  notes as available
+
+Do not invent station ids, distances, or a `selected_station`. You only rank; the
+resolver selects and stages. Do not emit `acquisition.status=staged`.
 
 Identify nearby GNSS station candidates from NDP/EarthScope metadata. Use the
 region object from `geospatial`; do not parse the user's city name internally.

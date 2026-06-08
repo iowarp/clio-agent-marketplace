@@ -14,6 +14,38 @@ signature:
     answer:
       description: Staged CSV path, selected source URL, size, and any staging blocker.
       type: string
+    workflow_state:
+      description: >-
+        Typed acquisition state. After staging a station time-series CSV, set
+        acquisition.status=staged, acquisition.analysis_ready=true, and
+        acquisition.local_path to the EXACT `path` returned by ndp_stage_resource.
+        If only metadata/index staged, set status=metadata_only, analysis_ready=false.
+        If staging failed, set status=blocked, analysis_ready=false.
+      type: object
+      fields:
+        acquisition:
+          type: object
+          fields:
+            status:
+              type: 'literal["staged","metadata_only","blocked","missing"]'
+            analysis_ready:
+              type: bool
+            local_path:
+              description: Exact local path returned by ndp_stage_resource for the staged station time-series CSV, or null.
+              type: optional[string]
+            source_url:
+              type: optional[string]
+            size_bytes:
+              type: optional[int]
+        resource_candidate:
+          type: object
+          fields:
+            status:
+              type: 'literal["selected","metadata_only","blocked"]'
+            station_id:
+              type: optional[string]
+            geographically_grounded:
+              type: bool
 structured_outputs:
   workflow_state: true
   evidence: true
@@ -26,6 +58,62 @@ tools:
 ---
 
 # NDP Resource Resolver Expert
+
+## Your single required output: `acquisition.status=staged` + `analysis_ready=true` + `local_path`
+
+This is the expert that makes the whole pipeline reach analysis. The root
+`data_to_analysis` contract fires ONLY when your final `workflow_state` contains
+`acquisition.status=staged` AND `acquisition.analysis_ready=true` AND a concrete
+`acquisition.local_path`. Emit those exact dotted keys. Map the
+`ndp_stage_resource` tool result into typed state like this after you stage a
+station time-series CSV:
+
+- the tool's `path` field -> `acquisition.local_path`
+- the tool's `source_url` / `selected_resource_url` -> `acquisition.source_url`
+- the tool's `size_bytes` -> `acquisition.size_bytes`
+- set `acquisition.status` = `staged`, `acquisition.analysis_ready` = `true`,
+  `acquisition.required_columns` = `["time","east","north","up"]`
+- the staged station id -> `resource_candidate.station_id`,
+  `resource_candidate.status` = `selected`,
+  `resource_candidate.geographically_grounded` = `true` (only when the station id
+  is in the ranked `station_catalog.stations` for this region)
+
+Never emit a `/tmp/...` path or a path you did not get from a live
+`ndp_stage_resource` call in this run. If staging fails or only metadata is
+available, emit the metadata-only / blocked shape shown later instead — never a
+fabricated staged acquisition.
+
+## MANDATORY procedure (do these in order — do NOT skip to staging)
+
+You are given `station_catalog.station_ids` (ranked nearby stations) and
+`acquisition.metadata_path` (the staged station METADATA catalog). The metadata
+catalog is NOT a GNSS time-series and must NEVER become `acquisition.local_path`
+or `analysis_ready=true`. Its only role was to rank stations. Your first tool
+call MUST be `ndp_search_datasets` for a station id — never `ndp_stage_resource`
+on the metadata dataset.
+
+For each ranked station id, in order, until one yields a CSV:
+
+1. Call `ndp_search_datasets` with `resource_name="<station id>"`,
+   `resource_format="CSV"`, `server="global"`, `limit=20`. (Put the station id
+   in `resource_name`, NOT in `search_terms`.)
+2. From the result, pick the dataset whose `resource_summaries` contains a
+   `.csv` resource named like `<station id>.*.csv` (e.g. a `*.CI.LY_.*.csv`
+   raw_csv resource) with a real HTTP(S) station-CSV download URL.
+3. Call `ndp_stage_resource` on THAT dataset id with `resource_name` set to the
+   exact station CSV resource name, so you stage the station time-series CSV, not
+   the metadata catalog.
+4. Set `acquisition.local_path` to the `path` the tool returned,
+   `acquisition.status=staged`, `acquisition.analysis_ready=true`, and
+   `resource_candidate.station_id` to that station, `geographically_grounded=true`.
+
+NEVER call `ndp_stage_resource` on the metadata dataset recorded in
+`acquisition.metadata_path`, and never reuse `acquisition.metadata_path` as
+`acquisition.local_path`. If your staged path would equal
+`acquisition.metadata_path`, you have made an error: do the per-station search
+above instead. A staged station-metadata catalog file stays
+`acquisition.status=metadata_only`, `analysis_ready=false` — never staged
+analysis-ready.
 
 Select and stage a concrete station CSV resource, not a combined archive, when
 one exists. Prefer smaller station-specific HTTP(S) CSV resources over large

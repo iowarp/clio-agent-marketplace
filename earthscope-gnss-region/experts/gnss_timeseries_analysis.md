@@ -14,6 +14,23 @@ signature:
     answer:
       description: CSV profile, required columns, displacement ranges, uncertainty ranges, and caveats.
       type: string
+    workflow_state:
+      description: >-
+        Typed profiling state. After ndp_profile_csv_resource succeeds on the
+        staged station CSV, set profile.status=complete and copy the staged path
+        into profile.path. If no staged CSV path was available, set
+        profile.status=blocked.
+      type: object
+      fields:
+        profile:
+          type: object
+          fields:
+            status:
+              type: 'literal["complete","blocked","missing"]'
+            path:
+              type: optional[string]
+            scan_limited:
+              type: bool
 structured_outputs:
   workflow_state: true
   evidence: true
