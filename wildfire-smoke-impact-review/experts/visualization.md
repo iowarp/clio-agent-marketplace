@@ -19,22 +19,32 @@ structured_outputs:
 # Visualization Expert
 
 Render the situational map — this case's headline deliverable. The acquisition
-step already saved each layer to a conventional GeoJSON file in the artifact
-directory. Your job is a SINGLE `geo_render_feature_map` call.
+step already saved each layer to a GeoJSON file in the shared geo artifact
+directory `/tmp/clio-kit-geo-artifacts/`. Your job is a SINGLE
+`geo_render_feature_map` call.
 
-Call `geo_render_feature_map` with exactly these three layers, in this
-order (the renderer resolves these bare filenames in the artifact directory):
+CRITICAL — absolute layer paths: `geo_render_feature_map` resolves each layer's
+`geojson` path relative to its own working directory, NOT the artifact directory,
+so a BARE filename like `smoke_forecast.geojson` is NOT FOUND and that layer is
+dropped (the whole render then errors with "Missing required GeoJSON layers").
+You MUST pass the ABSOLUTE path under `/tmp/clio-kit-geo-artifacts/` for every
+layer — the exact absolute paths the acquisition steps recorded in
+`workflow_state.acquisition` (`smoke_path`, `monitors_path`) and
+`workflow_state.fire.perimeter_path`. Prefer those recorded absolute paths; if a
+path is bare, prefix it with `/tmp/clio-kit-geo-artifacts/`.
 
-1. `{"name": "Smoke forecast", "geojson": "smoke_forecast.geojson",
+Call `geo_render_feature_map` with exactly these three layers, in this order:
+
+1. `{"name": "Smoke forecast", "geojson": "/tmp/clio-kit-geo-artifacts/smoke_forecast.geojson",
     "style": {"color_by": "<smoke concentration field>", "alpha": 0.35, "legend": false}}`
-2. `{"name": "Fire perimeter", "geojson": "fire_perimeter.geojson",
+2. `{"name": "Fire perimeter", "geojson": "/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson",
     "style": {"facecolor": "red", "edgecolor": "darkred", "alpha": 0.55, "zorder": 5}}`
-3. `{"name": "Air quality", "geojson": "air_quality.geojson",
+3. `{"name": "Air quality", "geojson": "/tmp/clio-kit-geo-artifacts/air_quality.geojson",
     "style": {"color_by": "<AQI field>", "scale": "epa_aqi", "markersize": 55, "zorder": 6}}`
 
-Pass `output_path="wildfire_impact_map.png"`, a `title` naming the selected fire,
-and `bbox` = the region from `workflow_state`. Do not invent other filenames and
-do not pass inline GeoJSON blobs.
+Pass `output_path="/tmp/clio-kit-geo-artifacts/wildfire_impact_map.png"`, a
+`title` naming the selected fire, and `bbox` = the region from `workflow_state`.
+Do not invent other filenames and do not pass inline GeoJSON blobs.
 
 Your turn is NOT complete until you have actually called
 `geo_render_feature_map` and it returned `status=success` with a non-empty

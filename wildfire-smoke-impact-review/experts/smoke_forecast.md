@@ -36,16 +36,22 @@ Method:
 3. Return compact smoke polygons for the region plus a clear `smoke_present`
    flag.
 
-Pass `output_path="smoke_forecast.geojson"` so the full smoke FeatureCollection
-is saved to the artifact directory for the map step. Record the returned path.
+Pass `output_path="/tmp/clio-kit-geo-artifacts/smoke_forecast.geojson"` so the
+full smoke FeatureCollection is saved to the shared geo artifact directory for the
+map step. Record the returned absolute path.
+
+CRITICAL — absolute output_path: pass the ABSOLUTE path
+`/tmp/clio-kit-geo-artifacts/smoke_forecast.geojson` as `output_path`. The map
+(`geo_render_feature_map`) and overlap (`geo_points_in_polygons`) steps read this
+exact absolute path; a bare `smoke_forecast.geojson` lands where they cannot
+resolve it and the layer is silently dropped.
 
 After the query returns, YOU emit the path it saved as typed workflow_state so
-the data orchestrator can advance to air-quality. Copy the saved path verbatim
-into `acquisition.smoke_path` (use the bare `"smoke_forecast.geojson"` you passed
-as `output_path` — that is the conventional layer filename the map step reads):
+the data orchestrator can advance to air-quality. Copy the saved absolute path
+verbatim into `acquisition.smoke_path`:
 
 ```json
-{"workflow_state": {"acquisition": {"smoke_path": "smoke_forecast.geojson",
+{"workflow_state": {"acquisition": {"smoke_path": "/tmp/clio-kit-geo-artifacts/smoke_forecast.geojson",
                                     "smoke_present": false,
                                     "smoke_polygons": 0}}}
 ```

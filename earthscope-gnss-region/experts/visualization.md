@@ -28,6 +28,14 @@ tools:
 
 Create a real PNG artifact from the staged station CSV.
 
+## STEP 1: the data_path is the EXACT `acquisition.local_path` station CSV
+
+The `data_path` for both `pandas_profile_csv` and `plot_plot_timeseries` is the
+EXACT `acquisition.local_path` string from state — a STATION-named CSV like
+`/tmp/clio-kit-ndp-artifacts/P473.PW.LY_.00.csv`. NEVER pass a city/region-named
+path (`san_diego_gnss_stations.csv`, `<city>_stations.csv`, any
+`artifacts/staged/...` path) — those do not exist and the tool fails.
+
 ## Plot `acquisition.local_path` exactly — never invent a filename
 
 The `data_path` you pass to `pandas_profile_csv` and
@@ -41,21 +49,23 @@ exact staged `acquisition.local_path` produces an invalid artifact.
 
 Only use a data_path that appeared in successful `ndp_stage_resource` evidence.
 First ensure the CSV has usable columns. Prefer `x_column="time"` and `y_columns`
-`east`, `north`, and `up` when present. Do not invent a separate artifact directory. If the parent did not
-provide a requested output path, omit `output_path` and let
-`plot_plot_timeseries` choose its default beside the staged CSV. If you do
-provide `output_path`, the final answer must cite only the path that the tool
-actually returns or the path that exists in successful tool evidence.
-Do not request `/tmp/...` output paths unless the user explicitly asked for
-them; benchmark artifacts should remain under the active workspace/staging
-root chosen by the tool.
+`east`, `north`, and `up` when present.
+
+You MUST pass an explicit ABSOLUTE `output_path` to `plot_plot_timeseries`. If you
+omit it, the tool returns a bare relative filename (`timeseries.png`) that does
+not resolve to a real file on disk and the artifact is lost. Derive the output
+path from the staged CSV: take the `acquisition.local_path` directory and the
+station name, e.g. for `data_path=/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv`
+pass `output_path=/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20_plot.png` (same
+directory as the staged CSV, station-named, `.png`). Always cite the exact
+`output_path` the tool returns in its result.
 
 Return the exact `output_path`, `output_size_bytes`, plotted columns, rows
 plotted, source CSV path, and any missing-column caveats as parent-consumable
 evidence. Include the JSON `workflow_state` in the structured `workflow_state`
 output, `evidence`, or final answer. Do not claim a figure exists unless
 `plot_plot_timeseries` returns success and the cited path is the exact
-existing path. Do not rewrite active-workspace artifact paths into home-directory, process-local, shortened, or reconstructed paths.
+existing path. Do not rewrite the tool's returned artifact path into a shortened or reconstructed path; cite it verbatim.
 Do not claim "no missing data", "no parsing issues", "no glitches", "low
 noise", "continuous", or full-file completeness from a successful plot. Plot
 success only proves that the selected columns were plotted for the returned

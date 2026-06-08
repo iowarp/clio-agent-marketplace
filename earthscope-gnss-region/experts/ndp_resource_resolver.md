@@ -67,6 +67,17 @@ and `acquisition.metadata_path` (the staged station METADATA catalog, e.g.
 `earthscope_converted_data.csv`). The metadata catalog is NOT a time-series and
 must NEVER be the analysis target — its only role was to rank stations.
 
+## Tool mechanics you MUST obey (clio-kit `ndp` tools)
+
+`ndp_stage_resource` stages a resource BY ITS DOWNLOAD URL. Its arguments are
+`url` (the exact `.csv` resource download URL string from a search result) and
+`max_bytes`. It does NOT take a `dataset_id` + `resource_name`; do not call it
+that way. Station time-series CSVs are LARGE (~50 MB each), and the default
+staging limit is only ~2 MB, so you MUST pass `max_bytes` high enough — use
+`"max_bytes": 60000000` (60 MB) on every station stage call. If you omit
+`max_bytes`, staging fails with "exceeding the staging limit". The tool returns
+`{ "ok": true, "local_path": "<path>", "size_bytes": <int>, "url": "<url>" }`.
+
 ## RULE 0 (most important): emit the tool's `local_path` byte-for-byte
 
 The root `data_to_analysis` contract fires ONLY when your final `workflow_state`
@@ -75,17 +86,15 @@ has `acquisition.status=staged`, `acquisition.analysis_ready=true`, AND an
 is really there. If you alter the path in any way, the file will not be found and
 the whole workflow stalls right here.
 
-So: `ndp_stage_resource` returns a tool result containing a `local_path` field
-(a string under the workspace artifact root, by convention
-`<workspace>/.clio/artifacts/ndp-staging/<STATION>.<NET>.LY_.<NN>.csv`).
-Copy that string into `acquisition.local_path` **verbatim, character for
-character**, including whatever real workspace-root prefix it carries. Do NOT:
+So: `ndp_stage_resource` returns a tool result containing a `local_path` field.
+clio-kit stages under a `/tmp/clio-kit-ndp-artifacts/<STATION>.<NET>.LY_.<NN>.csv`
+root, so a `/tmp/clio-kit-ndp-artifacts/...` path the tool returns IS the real
+staged path — copy it **verbatim, character for character**. Do NOT:
 
 - shorten it, prettify it, or normalize it;
-- drop, add, or rename ANY directory segment (e.g. do NOT collapse a
-  `.../clio-agent/.clio/...` prefix into `.../.clio/...`);
+- drop, add, or rename ANY directory segment;
 - reconstruct it from the station id, the resource name, or the source URL;
-- substitute a `/tmp/...` path or a path you remember from another run.
+- substitute a path you remember from another run.
 
 The only valid source for `acquisition.local_path` is the `local_path` string in
 THIS run's `ndp_stage_resource` result. If you find yourself typing a path you
@@ -129,27 +138,36 @@ Your FIRST tool call MUST be `ndp_search_datasets` for a station id — never
 `ndp_stage_resource` on the metadata dataset.
 
 **Step 1 — per-station search.** For the top-ranked station id, call
-`ndp_search_datasets` with the station id in `resource_name`:
+`ndp_search_datasets` with the station id in `dataset_title`:
 
 ```json
-{ "resource_name": "<station id>", "resource_format": "CSV", "server": "global", "limit": 20 }
+{ "dataset_title": "<station id>", "limit": 20 }
 ```
 
-Put the station id in `resource_name`, NOT in `search_terms`. Calls like
-`{"search_terms": ["VDCY"], ...}` or grouped lists like `["LEE2","LEEP"]` do NOT
-count as per-station coverage; if you make one, immediately redo the station with
-`resource_name="<station id>"` before staging.
+Use `dataset_title` for the station id (e.g. `dataset_title="P475"`); that returns
+the per-station datasets like `p475-ci-ly-20` (title `P475.CI.LY_.20`) and
+`p475-pw-ly-00`. IMPORTANT: do NOT use `resource_name` for the station id — the
+NDP backend's `resource_name` filter is unreliable and frequently returns a 502
+proxy error. `dataset_title="<station id>"` is the reliable per-station search.
+One station per call: do not group ids like `["LEE2","LEEP"]`.
 
-**Step 2 — pick the station CSV resource.** From the result, choose the dataset
-whose `resource_summaries` contains a `.csv` resource named like
-`<station id>.*.csv` (e.g. `P475.CI.LY_.20.csv`, a raw_csv station resource) with
-a real HTTP(S) download URL. This is a station time-series CSV, not the metadata
-catalog.
+**Step 2 — pick the station CSV resource URL.** From the result, choose the
+dataset whose `resources` contains a `.csv` resource named like `<station id>.*.csv`
+(e.g. `P475.CI.LY_.20.csv`, a raw_csv station resource). Read that resource's
+`url` field — a real HTTP(S) download URL like
+`https://ds2.datacollaboratory.org/Earthscope_api_dec2024/raw_csv/P475.CI.LY_.20.csv`.
+This is a station time-series CSV, not the metadata catalog.
 
-**Step 3 — stage that exact resource.** Call `ndp_stage_resource` on THAT dataset
-id with `resource_name` set to the exact station CSV resource name, so you stage
-the station time-series CSV (not the metadata catalog). Do NOT pass `output_dir`
-unless the user explicitly requested one; let CLIO default the staging directory.
+**Step 3 — stage that exact resource BY URL.** Call `ndp_stage_resource` with
+`url` set to that resource's exact `.csv` download URL and `max_bytes` set to
+`60000000`:
+
+```json
+{ "tool": "ndp_stage_resource", "arguments": { "url": "<the station .csv resource url>", "max_bytes": 60000000 } }
+```
+
+Do NOT pass a dataset id or `resource_name`; stage by URL. Do NOT omit
+`max_bytes` — a 50 MB station CSV exceeds the default limit and staging will fail.
 
 **Step 4 — emit typed state.** From the `ndp_stage_resource` tool result:
 
@@ -202,7 +220,7 @@ download does not sink the whole workflow. Walk the in-region ranked list in ord
 
 4. **Only block after the bounded set is exhausted.** Return
    `acquisition.status=blocked`/`metadata_only` ONLY after the top in-region ranked
-   stations have each been tried (per-station `resource_name` search + a stage
+   stations have each been tried (per-station `dataset_title` search + a stage
    attempt) and none produced a staged CSV. State which stations you tried and the
    failure (e.g. download error, no CSV resource).
 
@@ -212,25 +230,21 @@ the next one — not browsing for a "better" station once one has already staged
 ## Worked example (follow this shape exactly)
 
 `ndp_stage_resource` returns a tool result whose `local_path` lives under the
-workspace artifact root — by convention
-`<workspace>/.clio/artifacts/ndp-staging/<station>.<NET>.LY_.<NN>.csv`. The
-example below uses `<workspace>` as a placeholder for the real workspace-root
-prefix the tool returned; do NOT type a literal home path. Use the EXACT
-`local_path` string the tool returned in THIS run, copied character for
-character — including whatever real `<workspace>` prefix it contains.
+clio-kit staging root `/tmp/clio-kit-ndp-artifacts/<station>.<NET>.LY_.<NN>.csv`.
+Use the EXACT `local_path` string the tool returned in THIS run, copied character
+for character.
 
 ```json
 {
   "ok": true,
-  "local_path": "<workspace>/.clio/artifacts/ndp-staging/P475.CI.LY_.20.csv",
+  "local_path": "/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv",
   "size_bytes": 50500000,
-  "url": "https://ds2.datacollaboratory.org/Earthscope_api_dec2024/raw_csv/P475.CI.LY_.20.csv",
-  "method": "http"
+  "url": "https://ds2.datacollaboratory.org/Earthscope_api_dec2024/raw_csv/P475.CI.LY_.20.csv"
 }
 ```
 
 You then emit (note `local_path` is the EXACT `local_path` the tool returned,
-copied verbatim with its real workspace-root prefix — never reconstructed):
+copied verbatim — never reconstructed):
 
 ```json
 {
@@ -246,7 +260,7 @@ copied verbatim with its real workspace-root prefix — never reconstructed):
     "acquisition": {
       "status": "staged",
       "analysis_ready": true,
-      "local_path": "<workspace>/.clio/artifacts/ndp-staging/P475.CI.LY_.20.csv",
+      "local_path": "/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv",
       "source_url": "https://ds2.datacollaboratory.org/Earthscope_api_dec2024/raw_csv/P475.CI.LY_.20.csv",
       "size_bytes": 50500000,
       "required_columns": ["time", "east", "north", "up"]
@@ -304,7 +318,7 @@ instead. This reuse rule never permits path invention.
 ## Status discipline and return shape
 
 Only return `resource_discovery.status=search_required` if no per-station
-`resource_name` search has been attempted yet; only `search_exhausted` after the
+`dataset_title` search has been attempted yet; only `search_exhausted` after the
 ranked station set has been covered by per-station searches.
 
 Return: selected dataset id/name/title; selected station id; resource name;

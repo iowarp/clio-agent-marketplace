@@ -29,12 +29,30 @@ parameters:
 Own the judgement at the heart of this case: of the active fires acquired,
 which one is actually affecting people downwind, and who is worst off.
 
-## RULE 0 (most important): you MUST emit typed `workflow_state.impact`
+## RULE 0 (most important): you MUST emit typed `workflow_state.impact` — WRAPPED
 
-Your single required deliverable is a typed `workflow_state.impact` object with
-an explicit boolean `impact.present`. The orchestrator routes on this field and
-synthesis briefs from it; if you omit it, the run dead-ends. Emit it as JSON in
-your answer, derived from the computed overlap and the upstream fire selection.
+Your single required deliverable is a typed `impact` object with an explicit
+boolean `impact.present`, emitted INSIDE the `workflow_state` wrapper. The
+orchestrator and the run's typed-state extractor ONLY pick up keys nested under
+`{"workflow_state": { ... }}`. A bare `{"present": false, ...}` object with NO
+`workflow_state` wrapper is INVISIBLE to the contract — the run then reads
+`impact = null` and dead-ends even though you "answered". This is the #1 observed
+failure of this expert.
+
+So your impact JSON MUST look EXACTLY like this — the outer `workflow_state` and
+`impact` keys are MANDATORY, never emit the inner object alone:
+
+```json
+{"workflow_state": {"impact": {
+  "present": false,
+  "selected_fire": {"name": "<fire from workflow_state.fire.selected>", "reason": "..."},
+  "reason": "0 of N monitors fell under the smoke forecast"
+}}}
+```
+
+Derive `present` from the computed overlap and copy `selected_fire` from the
+upstream `workflow_state.fire.selected`. Emit this wrapped block in your final
+answer; do NOT return only the inner `{"present": ...}` fragment.
 
 Decide `present` from the computed overlap, then COPY the fire from upstream:
 `impact.selected_fire` is a verbatim copy of `workflow_state.fire.selected`

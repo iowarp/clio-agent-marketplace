@@ -42,26 +42,68 @@ Method:
    from the request). If no region is given, query nationally.
 
 4. **YOU choose the candidate fire to investigate — reason about it, don't just
-   take the biggest.** A fire matters for downwind smoke impact when it is
-   actively burning (low containment), large enough to produce real smoke, and
-   near populated areas. A huge but ~100%-contained fire is usually NOT the one.
-   Weigh acres, percent contained, and location together and pick the most
-   likely-impactful candidate. State your reasoning.
+   take the biggest.** The downstream pipeline needs the fire's region to contain
+   real air-quality MONITORS (so the smoke∩monitor overlap can be computed), and
+   ideally to be actively burning so smoke is real. Weigh THREE factors, in this
+   priority order:
 
-5. **Save only that chosen fire's perimeter** to `fire_perimeter.geojson` — do a
-   focused query filtered to it (e.g. `where attr_IncidentName = '<name>'`,
-   `output_path="fire_perimeter.geojson"`). Geography will bound this exact file
-   into the region, so it must contain only your pick.
+   1. **Proximity to monitored population (MOST IMPORTANT).** The fire's region
+      must overlap populated areas that have AirNow air-quality monitors —
+      otherwise the impact analysis has zero monitors to evaluate and the run is
+      wasted. STRONGLY prefer fires in or near populated counties / metro-adjacent
+      areas and populous states (e.g. CA, FL, GA, TX, WA, OR-valley, CO Front
+      Range). AVOID fires whose only location is a remote, sparsely-populated
+      desert/range county (e.g. interior NV/UT/WY/NM/SD/NE rangeland), because
+      those regions typically have NO air-quality monitors at all.
+   2. **Active burning (lower containment).** Prefer the least-contained fire
+      available — a still-burning fire emits real smoke. (Note: on a calm day the
+      entire national set may be highly contained; if so, still pick the
+      least-contained fire that is near monitored population rather than forcing a
+      remote one.)
+   3. **Size.** Among fires that satisfy (1) and (2), prefer larger acreage.
 
-Return typed `workflow_state.fire` with your decision and reasoning:
+   Concretely: rank candidates by monitored-population proximity FIRST, then by
+   (lower) containment, then by acres. Pick the top of that ranking. Do NOT pick a
+   large fire in an unmonitored remote county over a smaller fire near a monitored
+   population — the populated one yields a gradeable result, the remote one yields
+   monitors_total = 0. State your reasoning, naming why the region likely has
+   monitors.
+
+5. **Save only that chosen fire's perimeter** to
+   `/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson` — do a focused query
+   filtered to it (e.g. `where attr_IncidentName = '<name>'`,
+   `output_path="/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson"`). Geography
+   will bound this exact file into the region, so it must contain only your pick.
+
+   CRITICAL — absolute output_path: pass the ABSOLUTE path
+   `/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson` as `output_path` (that is
+   the shared geo artifact directory every later geo tool reads from). Downstream
+   experts (`geography`, `visualization`) read this exact absolute path; a bare
+   `fire_perimeter.geojson` lands in a place they cannot resolve. Record the
+   absolute `output_path` the tool returns and report it verbatim.
+
+## REQUIRED final output — do not stop until you emit `fire.selected`
+
+Your run is INCOMPLETE until your final message contains a WRAPPED
+`workflow_state.fire.selected` object with a non-null `name`. The whole
+downstream pipeline (geography -> smoke -> air -> impact) is gated on
+`fire.selected` existing; if you finish without it, the run dead-ends with no
+region and no map. After the focused perimeter-save query (step 5) returns, your
+VERY NEXT action is to emit this exact wrapped block — never end your turn with
+only prose or only tool results:
 
 ```json
 {"workflow_state": {"fire": {
-  "selected": {"name": "...", "acres": 12345, "percent_contained": 20,
+  "selected": {"name": "<the IncidentName you chose>", "acres": 12345, "percent_contained": 20,
                "county": "...", "state": "...",
                "reason": "actively burning near population"},
-  "perimeter_path": "fire_perimeter.geojson"}}}
+  "perimeter_path": "/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson"}}}
 ```
 
-If the service returns no active wildfires, say so plainly — a valid live
-finding. Keep results compact; do not dump every fire's attributes.
+`fire.selected.name` MUST be the exact `attr_IncidentName` of the fire you saved
+the perimeter for — copy it from the query result, do not leave it null. Do not
+hand control back to the parent without this block.
+
+If the service returns no active wildfires at all, say so plainly with
+`{"workflow_state": {"fire": {"selected": null, "reason": "no active WF perimeters returned"}}}` —
+a valid live finding. Keep results compact; do not dump every fire's attributes.

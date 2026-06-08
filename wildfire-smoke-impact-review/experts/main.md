@@ -42,22 +42,8 @@ parameters:
       next_action: select the impactful fire (smoke over monitored population, not acreage) and rank affected communities; return typed workflow_state.impact evidence
     - id: analysis_to_visualization
       when_child_completed: analysis
-      when_state:
-        impact.present: true
-      match: all
       next_expert: visualization
-      next_action: render the situational map (fire perimeter + smoke + AQI monitors) to a PNG artifact
-    - id: analysis_noimpact_to_synthesis
-      when_child_completed: analysis
-      when_state:
-        impact.present: false
-      match: all
-      next_expert: synthesis
-      next_action: report the honest no-significant-impact finding without forcing a map
-    - id: analysis_to_visualization_fallback
-      when_child_completed: analysis
-      next_expert: visualization
-      next_action: render the situational map from the acquired layers over the region
+      next_action: render the situational map (fire perimeter + smoke + AQI monitors) to a PNG artifact over the region — the user asked for a map, so ALWAYS render it, whether or not significant downwind impact was found
     - id: visualization_to_synthesis
       when_child_completed: visualization
       next_expert: synthesis
@@ -86,15 +72,19 @@ child's prose. Each child returns compact typed evidence (a JSON
 2. `analysis`: choose the fire that is actually putting smoke over monitored
    population (impact, not acreage) and rank affected communities. Returns
    `workflow_state.impact` with `impact.present`.
-3. `visualization`: render the map PNG (only when impact is present).
+3. `visualization`: render the situational map PNG (ALWAYS — the user explicitly
+   asked for "a map I can look at", so render the acquired fire/smoke/monitor
+   layers over the region whether or not significant downwind impact was found).
 4. `synthesis`: write the final brief.
 
 If `analysis` reports `impact.present=false` (no smoke over monitored
-population, or all active fires contained), that is a correct outcome: go
-straight to `synthesis` and report the null-impact finding honestly — do not
-force a map of nothing. If a child returns a typed blocker (a feature service
-unreachable, an empty live result), treat it as evidence to advance with, not a
-reason to stall or to ask the user for a hint.
+population, or all active fires contained), that is a correct outcome: still go
+through `visualization` to produce the situational map (the user asked for one),
+then `synthesis` reports the null-impact finding honestly over that map. Do not
+fabricate impact to force a "positive" map — render the real layers and brief the
+honest result. If a child returns a typed blocker (a feature service unreachable,
+an empty live result), treat it as evidence to advance with, not a reason to
+stall or to ask the user for a hint.
 
 Do not invent fire names, station/monitor ids, coordinates, or artifact paths
 from prior runs. Every run derives its fire, region, smoke footprint, monitors,

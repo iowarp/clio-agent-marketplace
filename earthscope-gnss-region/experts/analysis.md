@@ -39,7 +39,13 @@ parameters:
           exists: false
       match: all
       next_expert: gnss_timeseries_analysis
-      next_action: profile the exact staged CSV path returned by the data expert
+      next_action: >-
+        Call pandas_profile_csv with data_path set to the EXACT
+        acquisition.local_path string from workflow state (a station-named CSV like
+        /tmp/clio-kit-ndp-artifacts/P473.PW.LY_.00.csv). Copy that string verbatim.
+        Do NOT invent a city/region/date-named path such as
+        san_diego_gnss_stations.csv or ndp_SAND_2026-06-08.csv — only the staged
+        acquisition.local_path exists on disk.
     - id: profile_to_station_network
       when_child_completed: gnss_timeseries_analysis
       when_state:

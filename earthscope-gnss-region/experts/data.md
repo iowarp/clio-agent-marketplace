@@ -30,7 +30,14 @@ parameters:
   continuation_contracts:
     - id: start_with_ndp_discovery
       next_expert: ndp_dataset_discovery
-      next_action: search NDP for EarthScope GNSS station metadata and station-specific raw CSV resources near the resolved region
+      next_action: >-
+        Stage the EarthScope station metadata catalog. Call ndp_search_datasets
+        with search_terms=["earthscope","converted"] (a LIST, not search_term; no
+        resource_format/filter_list/server), stage the returned
+        earthscope_converted_data.csv by its url, then normalize it with shell_bash
+        `cut -d, -f1-3 '<raw>' > /tmp/es_clean.csv` and return /tmp/es_clean.csv as
+        acquisition.metadata_path. Do NOT search "EarthScope GNSS" or any
+        city/station term.
     - id: discovery_metadata_requires_staging
       when_child_completed: ndp_dataset_discovery
       when_state:
@@ -43,7 +50,11 @@ parameters:
           exists: false
       match: all
       next_expert: ndp_dataset_discovery
-      next_action: stage the EarthScope station metadata CSV with ndp_stage_resource and return workflow_state.acquisition.metadata_path before station ranking
+      next_action: >-
+        Stage the earthscope_converted_data.csv catalog by url
+        (search_terms=["earthscope","converted"]), normalize it with shell_bash
+        `cut -d, -f1-3 '<raw>' > /tmp/es_clean.csv`, and return /tmp/es_clean.csv as
+        workflow_state.acquisition.metadata_path before station ranking.
       allow_repeat: true
     - id: discovery_to_station_catalog
       when_child_completed: ndp_dataset_discovery
@@ -52,7 +63,12 @@ parameters:
           exists: true
       match: all
       next_expert: earthscope_station_catalog
-      next_action: rank nearby GNSS stations using the exact staged acquisition.metadata_path and preserve selected station/resource evidence
+      next_action: >-
+        Call geo_filter_points_by_radius on the cleaned catalog at
+        acquisition.metadata_path (it is the normalized /tmp/es_clean.csv with
+        columns Site,Latitude,(deg)) using lat_column=Latitude, lon_column="(deg)",
+        id_column=Site and the resolved center+radius to rank nearby GNSS stations.
+        Do not re-cut the file in place.
     - id: station_catalog_no_coverage
       when_child_completed: earthscope_station_catalog
       when_state:
@@ -77,10 +93,10 @@ parameters:
       next_expert: ndp_resource_resolver
       next_action: >-
         For each station id in station_catalog.station_ids, in ranked order, call
-        ndp_search_datasets with resource_name set to that station id,
-        resource_format=CSV, server=global. Stage the returned station-specific
-        time-series CSV resource with ndp_stage_resource (passing the exact
-        station CSV resource_name), then set acquisition.status=staged,
+        ndp_search_datasets with dataset_title set to that station id (NOT
+        resource_name — the resource_name filter 502s). Read the returned .csv
+        resource url and stage it with ndp_stage_resource(url=<that url>,
+        max_bytes=60000000). Then set acquisition.status=staged,
         acquisition.analysis_ready=true, and acquisition.local_path to the staged
         path. Never re-stage or reuse the discovery metadata catalog recorded in
         acquisition.metadata_path; that catalog is station metadata, not a

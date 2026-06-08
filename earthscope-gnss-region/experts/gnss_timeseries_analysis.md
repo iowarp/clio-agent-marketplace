@@ -44,14 +44,29 @@ tools:
 
 Profile the staged EarthScope GNSS station CSV with `pandas_profile_csv`.
 
+## STEP 1 (do this literally): copy `acquisition.local_path` and profile it
+
+Find the string at `acquisition.local_path` in the workflow state you were given.
+It is a STATION-named CSV under the clio-kit staging root, e.g.
+`/tmp/clio-kit-ndp-artifacts/P473.PW.LY_.00.csv`. Call `pandas_profile_csv` with
+`data_path` set to THAT EXACT string. Nothing else — do not transform it.
+
+NEVER invent a city/region-named path. The single most common failure here is
+calling `pandas_profile_csv` on a made-up name like `san_diego_gnss_stations.csv`,
+`<city>_gnss_stations.csv`, `los_angeles_stations.csv`, or any
+`artifacts/staged/...` path. NONE of those exist on disk; only the staged
+`acquisition.local_path` (a `<STATION>.<NET>.LY_.<NN>.csv` filename) exists. If
+the filename you are about to pass is not the exact `acquisition.local_path`
+string from state — STOP and use that string instead.
+
 ## Use `acquisition.local_path` exactly — never invent a filename
 
 Your VERY FIRST action is to find `acquisition.local_path` in the upstream
 workflow state and call `pandas_profile_csv` with that exact string as
 `data_path`. Do not reason about, rename, or "tidy" the path first — locate it and
 pass it through verbatim. It looks like
-`/home/.../.clio/artifacts/ndp-staging/P475.CI.LY_.20.csv` (a station id like
-`P475`/`P473`, a network suffix, `.csv`, under `ndp-staging/`).
+`/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv` (a station id like `P475`/`P473`,
+a network suffix, `.csv`, under the clio-kit staging root).
 
 The `data_path` you pass MUST be the exact `acquisition.local_path` string,
 copied character for character. That value came from a real `ndp_stage_resource`
@@ -64,13 +79,17 @@ fail the profiler:
 
 - `/tmp/SAND_timeseries_2024-05-08_to_2024-06-07.csv` (city-name + date-range)
 - `/tmp/<CITY>_timeseries_<date>.csv`, `SAN_2023_1Hz.csv`, `P065_timeseries.csv`,
-  `<station>_timeseries.csv`, `<city>.csv`, any `/tmp/...` path.
+  `<station>_timeseries.csv`, `<city>.csv`.
 
-The staged CSV is NEVER under `/tmp/` and NEVER named after the city or a date
-range — it is the exact `acquisition.local_path` under `ndp-staging/`. If you
-profile any path other than the exact staged `acquisition.local_path`, your
-result is invalid. If the state has no staged `acquisition.local_path`, do not
-profile a stale or guessed file — return the blocker below.
+The valid staged CSV is named after the STATION (e.g. `P475.CI.LY_.20.csv`), not
+the city or a date range — it is the exact `acquisition.local_path` the resolver
+recorded under the clio-kit `/tmp/clio-kit-ndp-artifacts/` staging root. A
+station-named path under that staging root IS the real file; do not reject it for
+being under `/tmp/`. What is forbidden is a CITY/date-named invention, not the
+tool's real staged path. If you profile any path other than the exact staged
+`acquisition.local_path`, your result is invalid. If the state has no staged
+`acquisition.local_path`, do not profile a stale or guessed file — return the
+blocker below.
 
 Only use a filepath that appeared in successful `ndp_stage_resource` evidence.
 If no staged path is present, return:
