@@ -96,7 +96,9 @@ parameters:
         ndp_search_datasets with dataset_title set to that station id (NOT
         resource_name — the resource_name filter 502s). Read the returned .csv
         resource url and stage it with ndp_stage_resource(url=<that url>,
-        max_bytes=60000000). Then set acquisition.status=staged,
+        max_bytes=60000000, output_dir=<the Active workspace root from context>) so
+        the station CSV lands in the workspace, not /tmp. Then set
+        acquisition.status=staged,
         acquisition.analysis_ready=true, and acquisition.local_path to the staged
         path. Never re-stage or reuse the discovery metadata catalog recorded in
         acquisition.metadata_path; that catalog is station metadata, not a

@@ -70,13 +70,22 @@ must NEVER be the analysis target — its only role was to rank stations.
 ## Tool mechanics you MUST obey (clio-kit `ndp` tools)
 
 `ndp_stage_resource` stages a resource BY ITS DOWNLOAD URL. Its arguments are
-`url` (the exact `.csv` resource download URL string from a search result) and
-`max_bytes`. It does NOT take a `dataset_id` + `resource_name`; do not call it
-that way. Station time-series CSVs are LARGE (~50 MB each), and the default
-staging limit is only ~2 MB, so you MUST pass `max_bytes` high enough — use
-`"max_bytes": 60000000` (60 MB) on every station stage call. If you omit
+`url` (the exact `.csv` resource download URL string from a search result),
+`max_bytes`, and `output_dir`. It does NOT take a `dataset_id` + `resource_name`;
+do not call it that way. Station time-series CSVs are LARGE (~50 MB each), and the
+default staging limit is only ~2 MB, so you MUST pass `max_bytes` high enough —
+use `"max_bytes": 60000000` (60 MB) on every station stage call. If you omit
 `max_bytes`, staging fails with "exceeding the staging limit". The tool returns
 `{ "ok": true, "local_path": "<path>", "size_bytes": <int>, "url": "<url>" }`.
+
+**Stage all deliverables under the Active workspace root using absolute paths;
+do not write deliverables to /tmp.** You were given an `Active workspace root:
+<root>` line in your context. Pass that root verbatim as `output_dir` on every
+`ndp_stage_resource` call, e.g. `"output_dir": "<Active workspace root>"`. The
+tool then stages the station CSV under the workspace and returns a `local_path`
+inside it — that workspace path is the one you copy forward (RULE 0). If, and
+only if, no Active workspace root was provided, omit `output_dir` and use the
+path the tool returns as-is.
 
 ## RULE 0 (most important): emit the tool's `local_path` byte-for-byte
 
@@ -87,9 +96,12 @@ is really there. If you alter the path in any way, the file will not be found an
 the whole workflow stalls right here.
 
 So: `ndp_stage_resource` returns a tool result containing a `local_path` field.
-clio-kit stages under a `/tmp/clio-kit-ndp-artifacts/<STATION>.<NET>.LY_.<NN>.csv`
-root, so a `/tmp/clio-kit-ndp-artifacts/...` path the tool returns IS the real
-staged path — copy it **verbatim, character for character**. Do NOT:
+With `output_dir` set to the Active workspace root, clio-kit stages under
+`<Active workspace root>/<STATION>.<NET>.LY_.<NN>.csv`, so the workspace path the
+tool returns IS the real staged path — copy it **verbatim, character for
+character**. (If no workspace root was given and you omitted `output_dir`, the
+tool falls back to its own staging root and that returned path is equally real —
+still copy it verbatim.) Do NOT:
 
 - shorten it, prettify it, or normalize it;
 - drop, add, or rename ANY directory segment;
@@ -159,15 +171,17 @@ dataset whose `resources` contains a `.csv` resource named like `<station id>.*.
 This is a station time-series CSV, not the metadata catalog.
 
 **Step 3 — stage that exact resource BY URL.** Call `ndp_stage_resource` with
-`url` set to that resource's exact `.csv` download URL and `max_bytes` set to
-`60000000`:
+`url` set to that resource's exact `.csv` download URL, `max_bytes` set to
+`60000000`, and `output_dir` set to the Active workspace root from your context:
 
 ```json
-{ "tool": "ndp_stage_resource", "arguments": { "url": "<the station .csv resource url>", "max_bytes": 60000000 } }
+{ "tool": "ndp_stage_resource", "arguments": { "url": "<the station .csv resource url>", "max_bytes": 60000000, "output_dir": "<Active workspace root>" } }
 ```
 
 Do NOT pass a dataset id or `resource_name`; stage by URL. Do NOT omit
 `max_bytes` — a 50 MB station CSV exceeds the default limit and staging will fail.
+Stage the deliverable under the Active workspace root via `output_dir`; do not
+write deliverables to /tmp.
 
 **Step 4 — emit typed state.** From the `ndp_stage_resource` tool result:
 
@@ -230,14 +244,14 @@ the next one — not browsing for a "better" station once one has already staged
 ## Worked example (follow this shape exactly)
 
 `ndp_stage_resource` returns a tool result whose `local_path` lives under the
-clio-kit staging root `/tmp/clio-kit-ndp-artifacts/<station>.<NET>.LY_.<NN>.csv`.
-Use the EXACT `local_path` string the tool returned in THIS run, copied character
-for character.
+`output_dir` you passed — the Active workspace root,
+`<Active workspace root>/<station>.<NET>.LY_.<NN>.csv`. Use the EXACT `local_path`
+string the tool returned in THIS run, copied character for character.
 
 ```json
 {
   "ok": true,
-  "local_path": "/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv",
+  "local_path": "<Active workspace root>/P475.CI.LY_.20.csv",
   "size_bytes": 50500000,
   "url": "https://ds2.datacollaboratory.org/Earthscope_api_dec2024/raw_csv/P475.CI.LY_.20.csv"
 }
@@ -260,7 +274,7 @@ copied verbatim — never reconstructed):
     "acquisition": {
       "status": "staged",
       "analysis_ready": true,
-      "local_path": "/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv",
+      "local_path": "<Active workspace root>/P475.CI.LY_.20.csv",
       "source_url": "https://ds2.datacollaboratory.org/Earthscope_api_dec2024/raw_csv/P475.CI.LY_.20.csv",
       "size_bytes": 50500000,
       "required_columns": ["time", "east", "north", "up"]

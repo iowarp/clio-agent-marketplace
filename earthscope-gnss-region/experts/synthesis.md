@@ -39,7 +39,7 @@ signature:
         or remembered. THE SINGLE SOURCE OF TRUTH for the station is the filename
         of the staged CSV in workflow_state.acquisition.local_path: its leading
         token before the first "." IS the analyzed station id (e.g.
-        "/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv" -> station "P475"). Set
+        "<Active workspace root>/P475.CI.LY_.20.csv" -> station "P475"). Set
         station_id to that exact token; it MUST equal
         workflow_state.resource_candidate.station_id. staged_csv_path is exactly
         workflow_state.acquisition.local_path; plot_png_path is exactly
@@ -276,7 +276,7 @@ put in `grounded_provenance` and nothing else.
 
 Always cite FULL paths, never bare filenames. When you mention the staged CSV or
 the PNG, write the complete `acquisition.local_path` / `artifact.path` string
-(e.g. `/home/.../ndp-staging/P475.CI.LY_.20.csv`), not just the basename
+(e.g. `<Active workspace root>/P475.CI.LY_.20.csv`), not just the basename
 `P475.CI.LY_.20.csv`. A bare filename is read as an unverifiable/invented path.
 Only the absolute paths present verbatim in upstream state are acceptable.
 
@@ -290,26 +290,26 @@ repeat any segment.
 These corrupted forms are ALL fabricated paths that do not exist on disk — just
 as wrong as inventing a `/tmp/...` path — and you MUST NOT emit any of them:
 
-- `/home/.../ndp-staging//home/.../ndp-staging/P473.PW.LY_.00_plot.png`
+- `<workspace>/<workspace>/P473.PW.LY_.00_plot.png`
   (the absolute path glued onto a copy of its own directory — note the `//`)
-- `/home/.../ndp-/home/.../ndp-staging/P472.CI.LY_.20.csv`
-  (the `.../ndp-staging/` prefix doubled or tripled, `ndp-` glued to a second root)
-- any path containing `//` (other than after a URL scheme), or the substring
-  `ndp-staging` more than once, or the home-root prefix more than once.
+- `<workspace-prefix><workspace>/P472.CI.LY_.20.csv`
+  (the workspace directory prefix doubled or tripled, or glued to a second root)
+- any path containing `//` (other than after a URL scheme), or the workspace
+  directory prefix repeated more than once.
 
 Before you emit ANY csv/png path, re-read it left to right and verify: it starts
-with the root ONCE, contains `ndp-staging/` exactly ONCE, has no `//`, and is
-byte-for-byte equal to the single upstream value. Write that identical string in
-every place you cite it (the table, the artifacts list, the prose) — never two
-spellings of the same file.
+with the workspace root ONCE, contains that root prefix exactly ONCE, has no `//`,
+and is byte-for-byte equal to the single upstream value. Write that identical
+string in every place you cite it (the table, the artifacts list, the prose) —
+never two spellings of the same file.
 
 The PNG path is COPIED, never DERIVED from the CSV name. Take the PNG string
 character for character from `workflow_state.artifact.path` (or
 `visualization.plot_path` / `visualization.staged_plot_png`). The real plot the
-tool wrote sits in the SAME directory as the staged CSV (the `ndp-staging`
-folder) and its filename is the CSV filename with a `_plot.png` suffix — e.g.
-the plot for `.../ndp-staging/P475.CI.LY_.20.csv` is
-`.../ndp-staging/P475.CI.LY_.20_plot.png`. Do NOT construct any other PNG path.
+tool wrote sits in the SAME directory as the staged CSV (the Active workspace
+root) and its filename is the CSV filename with a `_plot.png` suffix — e.g.
+the plot for `<Active workspace root>/P475.CI.LY_.20.csv` is
+`<Active workspace root>/P475.CI.LY_.20_plot.png`. Do NOT construct any other PNG path.
 Specifically NEVER:
 
 - swap the CSV extension for `.png` (e.g. `P475.CI.LY_.20.png` — WRONG, the real
@@ -488,8 +488,8 @@ Path discipline is mandatory. Quote artifact and CSV paths exactly as returned
 by the data and visualization experts. Do not shorten, relocate, normalize, or
 rewrite workspace paths. In particular, never change an active-workspace artifact path into a home-directory or process-local path. If child
 evidence contains multiple candidate plot paths, cite only the one explicitly
-reported as existing with nonzero size. Copy ASCII path characters exactly:
-write `ndp-staging`, not `ndp‑staging` or any other Unicode hyphen variant.
+reported as existing with nonzero size. Copy ASCII path characters exactly: use
+plain ASCII hyphens, never a Unicode hyphen variant, when copying any path.
 The only csv path you may cite is the verbatim `acquisition.local_path`; the only
 png path you may cite is the verbatim `artifact.path` (or `visualization.path`).
 Never cite a `/tmp/...` csv/png, a `staged/<station>.csv`, a
@@ -518,9 +518,9 @@ truth for the station id; never the friendly code in a `selected_station` block.
 ## Worked example — the EXACT shape of a correct `answer` (copy this style)
 
 Upstream staged `P475` (`acquisition.local_path =
-/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv`, `source_url =
+<Active workspace root>/P475.CI.LY_.20.csv`, `source_url =
 https://ds2.datacollaboratory.org/Earthscope_api_dec2024/raw_csv/P475.CI.LY_.20.csv`),
-profiled it, and plotted `/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20_plot.png`.
+profiled it, and plotted `<Active workspace root>/P475.CI.LY_.20_plot.png`.
 
 CORRECT `answer` (prose, no JSON, station named only as the catalog code P475):
 
@@ -534,7 +534,7 @@ Station **P475** — the only EarthScope GNSS station staged and analyzed for th
 region (9.5 km from the center).
 
 ## Data resource
-- Staged CSV: `/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv`
+- Staged CSV: `<Active workspace root>/P475.CI.LY_.20.csv`
 - Source URL: https://ds2.datacollaboratory.org/Earthscope_api_dec2024/raw_csv/P475.CI.LY_.20.csv
 
 ## Profile evidence
@@ -542,7 +542,7 @@ Columns time, east, north, up plus 1-sigma uncertainty columns; <N> rows scanned
 <M> rows profiled (scan-limited; full-file cadence/duration not verified).
 
 ## Visualization
-- PNG: `/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20_plot.png` — east/north/up
+- PNG: `<Active workspace root>/P475.CI.LY_.20_plot.png` — east/north/up
   displacement components over the plotted rows.
 
 ## Freshness, coverage & provenance limitations

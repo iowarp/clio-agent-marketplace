@@ -20,21 +20,21 @@ Compute the spatial overlap that defines impact: which air-quality monitors lie
 within the forecast smoke footprint. Do not eyeball it — call the tool.
 
 Call `geo_points_in_polygons` with:
-- `points_geojson = "/tmp/clio-kit-geo-artifacts/air_quality.geojson"` (the saved
+- `points_geojson = "<Active workspace root>/air_quality.geojson"` (the saved
   AirNow monitors — use the absolute `acquisition.monitors_path` from
   workflow_state),
-- `polygons_geojson = "/tmp/clio-kit-geo-artifacts/smoke_forecast.geojson"` (the
+- `polygons_geojson = "<Active workspace root>/smoke_forecast.geojson"` (the
   saved smoke polygons — use the absolute `acquisition.smoke_path` from
   workflow_state),
 - a small `buffer_km` (e.g. 10) so just-downwind monitors count,
 - `point_label_fields` naming the AQI and label fields.
 
-CRITICAL — absolute paths: `geo_points_in_polygons` resolves these GeoJSON paths
-relative to its own working directory, NOT the artifact directory. A bare
-`air_quality.geojson` / `smoke_forecast.geojson` is NOT FOUND and the join returns
-zero / errors. ALWAYS pass the ABSOLUTE paths under `/tmp/clio-kit-geo-artifacts/`
-(the exact `acquisition.monitors_path` and `acquisition.smoke_path` the data step
-recorded).
+CRITICAL — absolute paths under the workspace: `geo_points_in_polygons` resolves
+these GeoJSON paths relative to its own working directory, NOT the artifact
+directory. A bare `air_quality.geojson` / `smoke_forecast.geojson` is NOT FOUND
+and the join returns zero / errors. ALWAYS pass the ABSOLUTE paths under the
+Active workspace root (the exact `acquisition.monitors_path` and
+`acquisition.smoke_path` the data step recorded).
 
 ## Emit the overlap as typed state — copy the tool's numbers VERBATIM
 

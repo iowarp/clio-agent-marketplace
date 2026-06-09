@@ -31,10 +31,11 @@ Create a real PNG artifact from the staged station CSV.
 ## STEP 1: the data_path is the EXACT `acquisition.local_path` station CSV
 
 The `data_path` for both `pandas_profile_csv` and `plot_plot_timeseries` is the
-EXACT `acquisition.local_path` string from state — a STATION-named CSV like
-`/tmp/clio-kit-ndp-artifacts/P473.PW.LY_.00.csv`. NEVER pass a city/region-named
-path (`san_diego_gnss_stations.csv`, `<city>_stations.csv`, any
-`artifacts/staged/...` path) — those do not exist and the tool fails.
+EXACT `acquisition.local_path` string from state — a STATION-named CSV staged
+under the Active workspace root, e.g. `<Active workspace root>/P473.PW.LY_.00.csv`.
+NEVER pass a city/region-named path (`san_diego_gnss_stations.csv`,
+`<city>_stations.csv`, any `artifacts/staged/...` path) — those do not exist and
+the tool fails.
 
 ## Plot `acquisition.local_path` exactly — never invent a filename
 
@@ -51,14 +52,18 @@ Only use a data_path that appeared in successful `ndp_stage_resource` evidence.
 First ensure the CSV has usable columns. Prefer `x_column="time"` and `y_columns`
 `east`, `north`, and `up` when present.
 
-You MUST pass an explicit ABSOLUTE `output_path` to `plot_plot_timeseries`. If you
-omit it, the tool returns a bare relative filename (`timeseries.png`) that does
-not resolve to a real file on disk and the artifact is lost. Derive the output
-path from the staged CSV: take the `acquisition.local_path` directory and the
-station name, e.g. for `data_path=/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv`
-pass `output_path=/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20_plot.png` (same
-directory as the staged CSV, station-named, `.png`). Always cite the exact
-`output_path` the tool returns in its result.
+You MUST pass an explicit ABSOLUTE `output_path` to `plot_plot_timeseries`, and it
+MUST land under the Active workspace root (the same directory as the staged CSV).
+Write all deliverables under the Active workspace root using absolute paths; do
+not write deliverables to /tmp. If you omit `output_path`, the tool returns a bare
+relative filename (`timeseries.png`) that does not resolve to a real file on disk
+and the artifact is lost. Derive the output path from the staged CSV: take the
+`acquisition.local_path` directory (which is the Active workspace root) and the
+station name, e.g. for
+`data_path=<Active workspace root>/P475.CI.LY_.20.csv` pass
+`output_path=<Active workspace root>/P475.CI.LY_.20_plot.png` (same directory as
+the staged CSV, station-named, `.png`). Always cite the exact `output_path` the
+tool returns in its result.
 
 Return the exact `output_path`, `output_size_bytes`, plotted columns, rows
 plotted, source CSV path, and any missing-column caveats as parent-consumable

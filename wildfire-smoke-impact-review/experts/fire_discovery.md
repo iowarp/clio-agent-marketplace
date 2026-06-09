@@ -70,17 +70,19 @@ Method:
    monitors.
 
 5. **Save only that chosen fire's perimeter** to
-   `/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson` — do a focused query
+   `<Active workspace root>/fire_perimeter.geojson` — do a focused query
    filtered to it (e.g. `where attr_IncidentName = '<name>'`,
-   `output_path="/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson"`). Geography
+   `output_path="<Active workspace root>/fire_perimeter.geojson"`). Geography
    will bound this exact file into the region, so it must contain only your pick.
 
-   CRITICAL — absolute output_path: pass the ABSOLUTE path
-   `/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson` as `output_path` (that is
-   the shared geo artifact directory every later geo tool reads from). Downstream
-   experts (`geography`, `visualization`) read this exact absolute path; a bare
-   `fire_perimeter.geojson` lands in a place they cannot resolve. Record the
-   absolute `output_path` the tool returns and report it verbatim.
+   CRITICAL — absolute output_path under the workspace: pass the ABSOLUTE path
+   `<Active workspace root>/fire_perimeter.geojson` as `output_path`, using the
+   Active workspace root from your context (the shared geo artifact directory
+   every later geo tool reads from). Write all deliverables under the Active
+   workspace root using absolute paths; do not write deliverables to /tmp.
+   Downstream experts (`geography`, `visualization`) read this exact absolute
+   path; a bare `fire_perimeter.geojson` lands in a place they cannot resolve.
+   Record the absolute `output_path` the tool returns and report it verbatim.
 
 ## REQUIRED final output — do not stop until you emit `fire.selected`
 
@@ -97,7 +99,7 @@ only prose or only tool results:
   "selected": {"name": "<the IncidentName you chose>", "acres": 12345, "percent_contained": 20,
                "county": "...", "state": "...",
                "reason": "actively burning near population"},
-  "perimeter_path": "/tmp/clio-kit-geo-artifacts/fire_perimeter.geojson"}}}
+  "perimeter_path": "<Active workspace root>/fire_perimeter.geojson"}}}
 ```
 
 `fire.selected.name` MUST be the exact `attr_IncidentName` of the fire you saved

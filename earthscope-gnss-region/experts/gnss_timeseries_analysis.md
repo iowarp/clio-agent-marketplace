@@ -47,8 +47,8 @@ Profile the staged EarthScope GNSS station CSV with `pandas_profile_csv`.
 ## STEP 1 (do this literally): copy `acquisition.local_path` and profile it
 
 Find the string at `acquisition.local_path` in the workflow state you were given.
-It is a STATION-named CSV under the clio-kit staging root, e.g.
-`/tmp/clio-kit-ndp-artifacts/P473.PW.LY_.00.csv`. Call `pandas_profile_csv` with
+It is a STATION-named CSV staged under the Active workspace root, e.g.
+`<Active workspace root>/P473.PW.LY_.00.csv`. Call `pandas_profile_csv` with
 `data_path` set to THAT EXACT string. Nothing else — do not transform it.
 
 NEVER invent a city/region-named path. The single most common failure here is
@@ -65,8 +65,8 @@ Your VERY FIRST action is to find `acquisition.local_path` in the upstream
 workflow state and call `pandas_profile_csv` with that exact string as
 `data_path`. Do not reason about, rename, or "tidy" the path first — locate it and
 pass it through verbatim. It looks like
-`/tmp/clio-kit-ndp-artifacts/P475.CI.LY_.20.csv` (a station id like `P475`/`P473`,
-a network suffix, `.csv`, under the clio-kit staging root).
+`<Active workspace root>/P475.CI.LY_.20.csv` (a station id like `P475`/`P473`,
+a network suffix, `.csv`, under the Active workspace root).
 
 The `data_path` you pass MUST be the exact `acquisition.local_path` string,
 copied character for character. That value came from a real `ndp_stage_resource`
@@ -83,10 +83,10 @@ fail the profiler:
 
 The valid staged CSV is named after the STATION (e.g. `P475.CI.LY_.20.csv`), not
 the city or a date range — it is the exact `acquisition.local_path` the resolver
-recorded under the clio-kit `/tmp/clio-kit-ndp-artifacts/` staging root. A
-station-named path under that staging root IS the real file; do not reject it for
-being under `/tmp/`. What is forbidden is a CITY/date-named invention, not the
-tool's real staged path. If you profile any path other than the exact staged
+recorded under the Active workspace root. A station-named path under that workspace
+root IS the real file; do not reject it. What is forbidden is a CITY/date-named
+invention, not the tool's real staged path. If you profile any path other than the
+exact staged
 `acquisition.local_path`, your result is invalid. If the state has no staged
 `acquisition.local_path`, do not profile a stale or guessed file — return the
 blocker below.

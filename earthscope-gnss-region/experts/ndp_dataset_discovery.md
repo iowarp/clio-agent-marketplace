@@ -71,14 +71,17 @@ entry named `earthscope_converted_data.csv` with a `url` like
 `https://nationaldataplatform.org/catalog/dataset/.../download/earthscope_converted_data.csv`.
 
 STEP 2 — stage that catalog BY URL (copy the `url` from step 1's result). Pass
-ONLY `url` (no `output_name`):
+`url` plus `output_dir` set to the Active workspace root from your context (no
+`output_name`). Stage all deliverables under the Active workspace root using
+absolute paths; do not write deliverables to /tmp:
 
 ```json
-{ "tool": "ndp_stage_resource", "arguments": { "url": "<earthscope_converted_data.csv url from step 1>" } }
+{ "tool": "ndp_stage_resource", "arguments": { "url": "<earthscope_converted_data.csv url from step 1>", "output_dir": "<Active workspace root>" } }
 ```
 
-The result's `local_path` is the RAW catalog (call it `<RAW>`, named
-`earthscope_converted_data.csv`).
+The result's `local_path` is the RAW catalog under the workspace (call it
+`<RAW>`, named `earthscope_converted_data.csv`). If no Active workspace root was
+provided, omit `output_dir` and use the path the tool returns as-is.
 
 STEP 3 — normalize it with the `shell_bash` TOOL (NOT another
 `ndp_stage_resource`). Keep just the first three columns (Site, Latitude, and the
@@ -204,10 +207,12 @@ verbatim into `acquisition.metadata_path`):
 
 The literal path shown above is only a format example. Use the EXACT `local_path`
 value the live `ndp_stage_resource` tool returned in THIS run — never invent or
-reuse a path, and never substitute a station-code filename. Note: clio-kit
-`ndp_stage_resource` legitimately stages under a `/tmp/clio-kit-ndp-artifacts/`
-root, so a `/tmp/...clio-kit-ndp-artifacts/...` path returned by the tool is the
-REAL staged path and must be copied verbatim — do not reject it or rewrite it.
+reuse a path, and never substitute a station-code filename. Note: with
+`output_dir` set to the Active workspace root, `ndp_stage_resource` stages the
+catalog under the Active workspace root, so the workspace path the tool returns is
+the REAL staged path and must be copied verbatim — do not reject it or rewrite it.
+(If `output_dir` was omitted, the tool falls back to its own staging root and that
+returned path is equally real — still copy it verbatim.)
 
 If no usable station CSV resource is found, set `catalog.status` to
 `metadata_found` when station metadata exists; only set `catalog.status` to

@@ -36,12 +36,14 @@ Method:
 3. Return compact smoke polygons for the region plus a clear `smoke_present`
    flag.
 
-Pass `output_path="/tmp/clio-kit-geo-artifacts/smoke_forecast.geojson"` so the
-full smoke FeatureCollection is saved to the shared geo artifact directory for the
-map step. Record the returned absolute path.
+Pass `output_path="<Active workspace root>/smoke_forecast.geojson"` (using the
+Active workspace root from your context) so the full smoke FeatureCollection is
+saved under the workspace for the map step. Record the returned absolute path.
+Write all deliverables under the Active workspace root using absolute paths; do
+not write deliverables to /tmp.
 
-CRITICAL — absolute output_path: pass the ABSOLUTE path
-`/tmp/clio-kit-geo-artifacts/smoke_forecast.geojson` as `output_path`. The map
+CRITICAL — absolute output_path under the workspace: pass the ABSOLUTE path
+`<Active workspace root>/smoke_forecast.geojson` as `output_path`. The map
 (`geo_render_feature_map`) and overlap (`geo_points_in_polygons`) steps read this
 exact absolute path; a bare `smoke_forecast.geojson` lands where they cannot
 resolve it and the layer is silently dropped.
@@ -51,7 +53,7 @@ the data orchestrator can advance to air-quality. Copy the saved absolute path
 verbatim into `acquisition.smoke_path`:
 
 ```json
-{"workflow_state": {"acquisition": {"smoke_path": "/tmp/clio-kit-geo-artifacts/smoke_forecast.geojson",
+{"workflow_state": {"acquisition": {"smoke_path": "<Active workspace root>/smoke_forecast.geojson",
                                     "smoke_present": false,
                                     "smoke_polygons": 0}}}
 ```

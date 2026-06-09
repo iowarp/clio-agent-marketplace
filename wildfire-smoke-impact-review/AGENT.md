@@ -7,8 +7,8 @@ root_expert: main
 blueprint:
   format: agent-blueprint-v1
 mcp_servers:
-  ndp: uvx clio-kit@2.2.1 mcp-server ndp
-  geo: uvx clio-kit@2.2.1 mcp-server geo
+  ndp: uvx clio-kit@2.2.2 mcp-server ndp
+  geo: uvx clio-kit@2.2.2 mcp-server geo
 experts:
   - experts/main.md
   - experts/data.md

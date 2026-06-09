@@ -42,7 +42,7 @@ parameters:
       next_action: >-
         Call pandas_profile_csv with data_path set to the EXACT
         acquisition.local_path string from workflow state (a station-named CSV like
-        /tmp/clio-kit-ndp-artifacts/P473.PW.LY_.00.csv). Copy that string verbatim.
+        <Active workspace root>/P473.PW.LY_.00.csv). Copy that string verbatim.
         Do NOT invent a city/region/date-named path such as
         san_diego_gnss_stations.csv or ndp_SAND_2026-06-08.csv — only the staged
         acquisition.local_path exists on disk.

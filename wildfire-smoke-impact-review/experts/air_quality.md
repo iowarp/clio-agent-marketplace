@@ -34,12 +34,14 @@ Method:
    national `where=1=1` query. Keep the AQI value, category label, and coords.
 3. Return compact monitor points for the region with their AQI readings.
 
-Pass `output_path="/tmp/clio-kit-geo-artifacts/air_quality.geojson"` so the full
-monitor FeatureCollection is saved to the shared geo artifact directory for the
-map step. Record the returned absolute path.
+Pass `output_path="<Active workspace root>/air_quality.geojson"` (using the
+Active workspace root from your context) so the full monitor FeatureCollection is
+saved under the workspace for the map step. Record the returned absolute path.
+Write all deliverables under the Active workspace root using absolute paths; do
+not write deliverables to /tmp.
 
-CRITICAL — absolute output_path: pass the ABSOLUTE path
-`/tmp/clio-kit-geo-artifacts/air_quality.geojson` as `output_path`. The overlap
+CRITICAL — absolute output_path under the workspace: pass the ABSOLUTE path
+`<Active workspace root>/air_quality.geojson` as `output_path`. The overlap
 (`geo_points_in_polygons`) and map (`geo_render_feature_map`) steps read this
 exact absolute path; a bare `air_quality.geojson` lands where they cannot resolve
 it and the monitors layer is silently dropped.
@@ -49,7 +51,7 @@ the data orchestrator knows monitors were acquired. Copy the saved absolute path
 verbatim into `acquisition.monitors_path` and record the count returned:
 
 ```json
-{"workflow_state": {"acquisition": {"monitors_path": "/tmp/clio-kit-geo-artifacts/air_quality.geojson",
+{"workflow_state": {"acquisition": {"monitors_path": "<Active workspace root>/air_quality.geojson",
                                     "monitors_found": 0}}}
 ```
 

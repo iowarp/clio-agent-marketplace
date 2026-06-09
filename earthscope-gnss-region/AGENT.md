@@ -7,10 +7,10 @@ root_expert: main
 blueprint:
   format: agent-blueprint-v1
 mcp_servers:
-  ndp: uvx clio-kit@2.2.1 mcp-server ndp
-  geo: uvx clio-kit@2.2.1 mcp-server geo
-  pandas: uvx clio-kit@2.2.1 mcp-server pandas
-  plot: uvx clio-kit@2.2.1 mcp-server plot
+  ndp: uvx clio-kit@2.2.2 mcp-server ndp
+  geo: uvx clio-kit@2.2.2 mcp-server geo
+  pandas: uvx clio-kit@2.2.2 mcp-server pandas
+  plot: uvx clio-kit@2.2.2 mcp-server plot
 experts:
   - experts/main.md
   - experts/geospatial.md
