@@ -32,7 +32,13 @@ signature:
           type: object
           fields:
             status:
-              type: 'literal["metadata_only","candidate_found","blocked","missing"]'
+              # Free-form at the DISCOVERY stage: no continuation contract routes on
+              # acquisition.status here (the discovery->catalog transitions key on
+              # catalog.status + acquisition.metadata_path). A strict literal only
+              # hard-aborted the whole pipeline when a small model emitted a near-miss
+              # value (e.g. the sibling catalog.status value 'metadata_found'). The
+              # resolver declares its OWN typed acquisition.status where it IS routed.
+              type: string
             metadata_path:
               description: Exact local path returned by ndp_stage_resource for the station metadata CSV, or null if not staged.
               type: optional[string]
@@ -40,6 +46,7 @@ signature:
               type: optional[string]
             analysis_ready:
               type: bool
+              default: false
 structured_outputs:
   workflow_state: true
   evidence: true

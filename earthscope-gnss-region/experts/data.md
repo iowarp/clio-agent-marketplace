@@ -92,16 +92,19 @@ parameters:
       match: all
       next_expert: ndp_resource_resolver
       next_action: >-
-        For each station id in station_catalog.station_ids, in ranked order, call
-        ndp_search_datasets with dataset_title set to that station id (NOT
-        resource_name — the resource_name filter 502s). Read the returned .csv
-        resource url and stage it with ndp_stage_resource(url=<that url>,
-        max_bytes=60000000) — do NOT pass output_dir; the tool already stages into
-        the workspace automatically. Then set
-        acquisition.status=staged,
-        acquisition.analysis_ready=true, and acquisition.local_path to the staged
-        path. Never re-stage or reuse the discovery metadata catalog recorded in
-        acquisition.metadata_path; that catalog is station metadata, not a
+        Stage ONE analysis-ready CSV -- the FIRST good station wins; do NOT walk
+        the whole station list. Take the TOP-ranked station id in
+        station_catalog.station_ids; call ndp_search_datasets with dataset_title
+        set to that station id (NOT resource_name -- the resource_name filter
+        502s); read the returned .csv resource url and stage it with
+        ndp_stage_resource(url=<that url>, max_bytes=60000000) -- do NOT pass
+        output_dir; the tool already stages into the workspace automatically. The
+        MOMENT one station's CSV stages successfully, set acquisition.status=staged,
+        acquisition.analysis_ready=true, acquisition.local_path to the staged path,
+        and STOP -- return immediately, do not search or stage any further station.
+        Advance to the next ranked station ONLY when the current one yields no
+        usable CSV. Never re-stage or reuse the discovery metadata catalog recorded
+        in acquisition.metadata_path; that catalog is station metadata, not a
         time-series, and must never become the analysis-ready local_path.
 ---
 
