@@ -1,6 +1,7 @@
 ---
 id: synthesis
 title: EarthScope GNSS Synthesis Expert
+description: "Writes the final user-facing answer from the assembled grounded evidence (region, staged source, profile, artifact, limitations). Run LAST."
 tier: 2
 parent: main
 module:

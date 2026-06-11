@@ -1,6 +1,7 @@
 ---
 id: earthscope_station_catalog
 title: EarthScope Station Catalog Expert
+description: "Spatially filters the staged metadata catalog to the resolved region (geo_filter tool) and ranks nearby stations. Produces station_catalog ranking (or no_candidates). Needs acquisition.metadata_path from discovery."
 tier: 2
 parent: data
 module:

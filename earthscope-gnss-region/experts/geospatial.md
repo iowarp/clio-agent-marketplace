@@ -1,6 +1,7 @@
 ---
 id: geospatial
 title: Geospatial Resolution Expert
+description: "Resolves the requested place into GROUNDED geographic evidence (center lat/lon, bounding box, search radius) via geocoding tools. Produces workflow_state.geospatial. Run this FIRST — the region is its output, not something the orchestrator already knows."
 tier: 2
 parent: main
 module:

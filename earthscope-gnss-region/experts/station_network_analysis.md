@@ -1,6 +1,7 @@
 ---
 id: station_network_analysis
 title: Station Network Analysis Expert
+description: "Assesses station/network suitability from the staged evidence via tools."
 tier: 2
 parent: analysis
 module:

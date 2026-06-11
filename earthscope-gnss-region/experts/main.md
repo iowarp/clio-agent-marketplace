@@ -30,67 +30,7 @@ fanout:
   enabled: true
   max_workers: 4
 parameters:
-  enforce_child_contract_order: true
-  max_sync_delegation_rounds: 8
-  continuation_contracts:
-    - id: start_with_geospatial
-      when_state:
-        geospatial.status:
-          exists: false
-      match: all
-      next_expert: geospatial
-      next_action: resolve the requested geography into typed workflow_state.geospatial evidence
-    - id: geospatial_to_data
-      when_child_completed: geospatial
-      match: all
-      next_expert: data
-      next_action: discover NDP EarthScope GNSS station resources for the resolved geography, rank candidates, and stage a selected station CSV with typed workflow_state evidence
-    - id: data_to_analysis
-      when_child_completed: data
-      when_state:
-        acquisition.status: staged
-        acquisition.analysis_ready: true
-      match: all
-      next_expert: analysis
-      next_action: analyze the staged station CSV and station/network suitability; request optional event context only if the user explicitly asked for event evidence
-    - id: data_blocked_to_synthesis
-      when_child_completed: data
-      when_state:
-        acquisition.status:
-          in:
-            - metadata_only
-            - blocked
-            - missing
-        acquisition.analysis_ready: false
-        profile.status:
-          exists: false
-        visualization.status:
-          exists: false
-      match: all
-      next_expert: synthesis
-      next_action: synthesize the grounded discovery/acquisition blocker without inventing analysis or artifacts
-    - id: profile_to_visualization
-      when_child_completed: analysis
-      when_state:
-        profile.status: complete
-      match: all
-      next_expert: visualization
-      next_action: plot the exact staged CSV path with x_column=time and y_columns east,north,up
-    - id: analysis_blocked_to_synthesis
-      when_child_completed: analysis
-      when_state:
-        profile.status:
-          in:
-            - blocked
-            - missing
-      match: all
-      next_expert: synthesis
-      next_action: synthesize the analysis blocker and preserved acquisition evidence without claiming a PNG artifact
-    - id: artifact_to_synthesis
-      when_child_completed: visualization
-      match: all
-      next_expert: synthesis
-      next_action: synthesize region, NDP source URL, staged CSV profile, station suitability, any requested event-context evidence, and PNG artifact
+  max_sync_delegation_rounds: 14
 ---
 
 # EarthScope GNSS Region Orchestrator

@@ -1,6 +1,7 @@
 ---
 id: gnss_timeseries_analysis
 title: GNSS Time-Series Analysis Expert
+description: "Profiles the staged GNSS CSV time series (columns, ranges, uncertainty) via tools. Produces profile evidence."
 tier: 2
 parent: analysis
 module:

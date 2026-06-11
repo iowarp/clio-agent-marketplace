@@ -1,6 +1,7 @@
 ---
 id: data
 title: EarthScope Data Acquisition Expert
+description: "Discovers EarthScope/NDP GNSS station resources for the RESOLVED region and stages a real station time-series CSV via NDP tools (it orchestrates discovery -> spatial ranking -> staging). Produces workflow_state.acquisition (a staged CSV path) OR an honest no-coverage blocker. Needs the resolved region from geospatial."
 tier: 2
 parent: main
 module:
@@ -25,87 +26,7 @@ children:
   - earthscope_station_catalog
   - ndp_resource_resolver
 parameters:
-  enforce_child_contract_order: true
-  max_sync_delegation_rounds: 6
-  continuation_contracts:
-    - id: start_with_ndp_discovery
-      next_expert: ndp_dataset_discovery
-      next_action: >-
-        Stage the EarthScope station metadata catalog. Call ndp_search_datasets
-        with search_terms=["earthscope","converted"] (a LIST, not search_term; no
-        resource_format/filter_list/server), stage the returned
-        earthscope_converted_data.csv by its url, then normalize it with shell_bash
-        `cut -d, -f1-3 '<raw>' > /tmp/es_clean.csv` and return /tmp/es_clean.csv as
-        acquisition.metadata_path. Do NOT search "EarthScope GNSS" or any
-        city/station term.
-    - id: discovery_metadata_requires_staging
-      when_child_completed: ndp_dataset_discovery
-      when_state:
-        catalog.status:
-          in:
-            - candidates_found
-            - metadata_found
-            - partial
-        acquisition.metadata_path:
-          exists: false
-      match: all
-      next_expert: ndp_dataset_discovery
-      next_action: >-
-        Stage the earthscope_converted_data.csv catalog by url
-        (search_terms=["earthscope","converted"]), normalize it with shell_bash
-        `cut -d, -f1-3 '<raw>' > /tmp/es_clean.csv`, and return /tmp/es_clean.csv as
-        workflow_state.acquisition.metadata_path before station ranking.
-      allow_repeat: true
-    - id: discovery_to_station_catalog
-      when_child_completed: ndp_dataset_discovery
-      when_state:
-        acquisition.metadata_path:
-          exists: true
-      match: all
-      next_expert: earthscope_station_catalog
-      next_action: >-
-        Call geo_filter_points_by_radius on the cleaned catalog at
-        acquisition.metadata_path (it is the normalized /tmp/es_clean.csv with
-        columns Site,Latitude,(deg)) using lat_column=Latitude, lon_column="(deg)",
-        id_column=Site and the resolved center+radius to rank nearby GNSS stations.
-        Do not re-cut the file in place.
-    - id: station_catalog_no_coverage
-      when_child_completed: earthscope_station_catalog
-      when_state:
-        station_catalog.status: no_candidates
-      match: all
-      next_expert: ndp_resource_resolver
-      next_action: >-
-        The station catalog found NO EarthScope GNSS station within the resolved
-        region (station_catalog.status=no_candidates, empty station_ids). Do NOT
-        search or stage any station. Emit an honest no-coverage acquisition state:
-        acquisition.status=missing, acquisition.analysis_ready=false, and
-        acquisition.blocker="no EarthScope GNSS station within the requested
-        region". Do not name, stage, or cite any station, CSV, or PNG.
-    - id: station_catalog_to_resource
-      when_child_completed: earthscope_station_catalog
-      when_state:
-        station_catalog.status:
-          in:
-            - ranked
-            - ranked_metadata_only
-      match: all
-      next_expert: ndp_resource_resolver
-      next_action: >-
-        Stage ONE analysis-ready CSV -- the FIRST good station wins; do NOT walk
-        the whole station list. Take the TOP-ranked station id in
-        station_catalog.station_ids; call ndp_search_datasets with dataset_title
-        set to that station id (NOT resource_name -- the resource_name filter
-        502s); read the returned .csv resource url and stage it with
-        ndp_stage_resource(url=<that url>, max_bytes=60000000) -- do NOT pass
-        output_dir; the tool already stages into the workspace automatically. The
-        MOMENT one station's CSV stages successfully, set acquisition.status=staged,
-        acquisition.analysis_ready=true, acquisition.local_path to the staged path,
-        and STOP -- return immediately, do not search or stage any further station.
-        Advance to the next ranked station ONLY when the current one yields no
-        usable CSV. Never re-stage or reuse the discovery metadata catalog recorded
-        in acquisition.metadata_path; that catalog is station metadata, not a
-        time-series, and must never become the analysis-ready local_path.
+  max_sync_delegation_rounds: 14
 ---
 
 # EarthScope Data Acquisition Expert

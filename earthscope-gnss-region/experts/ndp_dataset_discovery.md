@@ -1,6 +1,7 @@
 ---
 id: ndp_dataset_discovery
 title: NDP EarthScope Dataset Discovery Expert
+description: "Searches NDP and stages the EarthScope station-metadata catalog CSV via tools. Produces acquisition.metadata_path. Run FIRST in the data branch."
 tier: 2
 parent: data
 module:

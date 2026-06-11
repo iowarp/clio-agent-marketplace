@@ -1,6 +1,7 @@
 ---
 id: visualization
 title: GNSS Visualization Expert
+description: "Renders a PNG plot from the staged CSV via a plotting tool. Produces the artifact (PNG) path. Needs a staged CSV + profile."
 tier: 2
 parent: main
 module:

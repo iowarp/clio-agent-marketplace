@@ -1,6 +1,7 @@
 ---
 id: seismic_event_catalog
 title: Seismic Event Context Expert
+description: "Looks up earthquake/event catalog context via tools — only when the user explicitly asks for events."
 tier: 2
 parent: analysis
 module:

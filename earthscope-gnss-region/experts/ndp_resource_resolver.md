@@ -1,6 +1,7 @@
 ---
 id: ndp_resource_resolver
 title: NDP Resource Resolver Expert
+description: "Stages the selected station's time-series CSV via NDP tools. Produces acquisition.status=staged + local_path. Needs a ranked station from the catalog."
 tier: 2
 parent: data
 module:

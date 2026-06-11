@@ -1,6 +1,7 @@
 ---
 id: analysis
 title: EarthScope Scientific Analysis Expert
+description: "Profiles the STAGED GNSS time-series CSV and assesses station/network suitability via analysis tools. Produces workflow_state.profile. Needs a staged CSV from data."
 tier: 2
 parent: main
 module:
@@ -28,31 +29,7 @@ fanout:
   enabled: true
   max_workers: 3
 parameters:
-  enforce_child_contract_order: true
-  max_sync_delegation_rounds: 5
-  continuation_contracts:
-    - id: start_with_gnss_profile
-      when_state:
-        acquisition.status: staged
-        acquisition.analysis_ready: true
-        profile.status:
-          exists: false
-      match: all
-      next_expert: gnss_timeseries_analysis
-      next_action: >-
-        Call pandas_profile_csv with data_path set to the EXACT
-        acquisition.local_path string from workflow state (a station-named CSV like
-        <Active workspace root>/P473.PW.LY_.00.csv). Copy that string verbatim.
-        Do NOT invent a city/region/date-named path such as
-        san_diego_gnss_stations.csv or ndp_SAND_2026-06-08.csv — only the staged
-        acquisition.local_path exists on disk.
-    - id: profile_to_station_network
-      when_child_completed: gnss_timeseries_analysis
-      when_state:
-        profile.status: complete
-      match: all
-      next_expert: station_network_analysis
-      next_action: assess station coverage and suitability using the resolved region, selected station, and GNSS profile
+  max_sync_delegation_rounds: 14
 ---
 
 # EarthScope Scientific Analysis Expert
