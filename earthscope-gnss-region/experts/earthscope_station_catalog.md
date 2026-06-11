@@ -53,12 +53,12 @@ resolved, using `geo_filter_points_by_radius` with the resolved `geospatial.cent
 
 Real scientific catalogs sometimes have unreliable headers — mislabeled, misaligned,
 or duplicated column names — so don't assume a column called `Longitude` actually
-holds longitude. Sanity-check before you trust it: glance at a few rows and confirm
-the columns you treat as latitude/longitude really hold coordinate values that fit the
-resolved region (latitude in [-90,90], longitude in [-180,180], near the resolved
-center). If the headers are clean and unambiguous, let the tool auto-detect the
-columns; if they don't fit, pass the `lat_column`/`lon_column`/`id_column` you verified
-actually hold those values.
+holds longitude, and don't rely on the tool guessing the columns from those headers.
+Confirm from the DATA: glance at a few rows, find which column holds latitude values
+(in [-90,90], near the resolved center) and which holds longitude (in [-180,180], near
+the center), and pass THOSE as `lat_column`/`lon_column`/`id_column`. Picking the
+columns by their values rather than their names is what makes this robust to a messy
+catalog.
 
 The tool computes the great-circle distance from the center to every row and returns
 the within-radius rows sorted ascending by `distance_km`. You then REASON over those
