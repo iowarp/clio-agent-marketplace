@@ -146,8 +146,10 @@ final `workflow_state` contains `station_catalog.status=ranked` (or
 when `within_radius_count >= 1`. Emit that exact dotted key. Map the
 `geo_filter_points_by_radius` tool result into typed state like this:
 
-- the tool's `points` array -> `station_catalog.stations` (keep each row's
-  station id column, `distance_km`, and any `network`/`status` columns present)
+- the tool's `points` array -> `station_catalog.station_ids`: a FLAT JSON list of
+  the station id STRINGS only (each row's id/first column), e.g.
+  `["P475","SIO5","P473"]`. NOT a list of row objects, and NOT a key named
+  `stations` — `station_ids` is the one schema field the resolver consumes.
 - `within_radius_count` (or `len(points)`) -> `station_catalog.candidate_count`
   (set status `ranked` when at least one station is within radius)
 - build `resource_discovery.station_resource_queries` yourself from the ranked
@@ -194,10 +196,8 @@ Return parent-consumable JSON evidence:
     "station_catalog": {
       "status": "ranked",
       "region_name": "<resolved label>",
-      "candidate_count": 0,
-      "stations": [],
-      "metadata_only": false,
-      "analysis_ready_resource_count": 0
+      "candidate_count": 9,
+      "station_ids": ["<station id 1>", "<station id 2>", "<...>"]
     },
     "resource_discovery": {
       "status": "search_required",
