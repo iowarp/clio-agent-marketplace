@@ -76,6 +76,18 @@ short no-coverage note, and finish.
 
 ## When there ARE candidates — stage the top station's CSV (these tool calls, in order)
 
+You HAVE the tools — actually CALL them. Do NOT emit a plan, a `preferred_calls`
+list, or `status="search_required"` describing the calls you *would* make; that is
+not doing your job. While `station_catalog.status="ranked"` (candidates exist),
+`acquisition.status="metadata_only"`/`"missing"` and `resource_candidate.status=
+"metadata_only"` are NOT valid final results — they mean you stopped before
+staging. You must keep executing `ndp_search_datasets` + `ndp_stage_resource`
+across the ranked `station_ids` until one stages a real time-series CSV. Only a
+genuine `acquisition.status="staged"` (positive) — or a `blocked` state after you
+have actually TRIED the ranked stations and every one failed to stage — is a valid
+end. (If the catalog returned NO candidates at all, the no-coverage section above
+applies and you stage nothing.)
+
 1. **Search** the top-ranked station id's datasets: `ndp_search_datasets` with the id
    in `dataset_title` (NOT `resource_name`, which 502s):
    `{ "dataset_title": "<top station id>", "limit": 20 }` — one station per call.

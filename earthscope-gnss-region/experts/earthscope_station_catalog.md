@@ -17,11 +17,17 @@ signature:
       type: string
     workflow_state:
       description: >-
-        Typed station-ranking state. Set station_catalog.status to ranked when at
-        least one nearby station was returned by geo_filter_points_by_radius,
-        ranked_metadata_only when only a station index/metadata file was available,
-        or no_candidates when no station fell within the radius. Put each ranked
-        station id from the tool's points array into station_catalog.station_ids.
+        Typed station-ranking state. DECISION RULE on the geo_filter_points_by_radius
+        result: if within_radius_count >= 1 (the tool's `points` array is non-empty),
+        you MUST set station_catalog.status="ranked" AND copy EVERY returned point's
+        station id into station_catalog.station_ids (the id is each row's first/id
+        column, e.g. P475, SIO5, P473). The file you filtered is itself a station
+        metadata catalog -- that does NOT make this ranked_metadata_only; concrete
+        within-radius points ARE ranked stations. Use ranked_metadata_only ONLY when
+        the tool could not compute within-radius points at all (no usable coordinates,
+        only a bare index). Use no_candidates only when within_radius_count == 0.
+        station_ids MUST NOT be empty when status="ranked" -- an empty station_ids
+        with status ranked is invalid and strands the resolver with nothing to stage.
       type: object
       fields:
         station_catalog:
@@ -56,18 +62,28 @@ or duplicated column names — so don't assume a column called `Longitude` actua
 holds longitude, and don't rely on the tool guessing the columns from those headers.
 Confirm from the DATA: glance at a few rows, find which column holds latitude values
 (in [-90,90], near the resolved center) and which holds longitude (in [-180,180], near
-the center), and pass THOSE as `lat_column`/`lon_column`/`id_column`. Picking the
-columns by their values rather than their names is what makes this robust to a messy
-catalog.
+the center), and pass THOSE as `lat_column`/`lon_column`. Picking the columns by their
+values rather than their names is what makes this robust to a messy catalog.
+
+You MUST ALSO pass `id_column` = the station-id column (the FIRST column, holding
+values like `P475`, `SIO5`, `P473`). This is NOT optional and is easy to forget:
+WITHOUT `id_column`, every returned point comes back with NO station identity, so you
+cannot tell which station each point is, the ranking is unusable, and the staged
+station cannot be verified as in-region. ALWAYS call `geo_filter_points_by_radius`
+with all THREE arguments together: `lat_column`, `lon_column`, AND `id_column`.
 
 The tool computes the great-circle distance from the center to every row and returns
 the within-radius rows sorted ascending by `distance_km`. You then REASON over those
 ranked points to pick station candidates; the tool does not pick for you. The station
 id is the first column (e.g. `P475`, `SIO5`, `P473`). A correct result echoes
-`skipped_invalid: 0` with within-radius stations. If `skipped_invalid` is large
-(hundreds) or the count is 0, you likely mapped lat/lon to the wrong columns — re-read
-the rows, swap your lat/lon column choice, and filter ONCE more at the SAME radius
-(never a larger one).
+`skipped_invalid: 0` with within-radius stations. A LARGE `skipped_invalid` (tens or
+hundreds) means the tool could NOT parse coordinates from the columns you passed —
+your `lat_column`/`lon_column` were WRONG. When `skipped_invalid` is large (whether
+the count is 0 or not), you MUST re-read a few rows, pick the columns whose VALUES are
+latitudes ([-90,90]) and longitudes ([-180,180]) near the resolved center — NOT by
+header name — and filter ONCE more at the SAME radius (never a larger one). Do NOT
+conclude "no coverage" from a high-`skipped_invalid` result; that is a column error,
+not an empty region.
 
 ### The resolved radius is fixed — never widen it
 
@@ -81,11 +97,22 @@ honest, correct answer (`station_catalog.status=no_candidates`), NOT a problem t
 solve by enlarging the circle. Enlarging the radius turns "Chicago" into "the western
 US" and invents stations 2000+ km from the user's region.
 
-Once a filter returns `within_radius_count == 0` at the resolved radius, you are
-DONE: emit the `no_candidates` no-coverage state below and return. (The single
-exception: a genuine tool ERROR — wrong filepath, non-numeric geometry — you may
-re-call ONCE with the SAME radius after fixing that argument. Never re-call to
-enlarge the search area.)
+Emitting `no_candidates` no-coverage requires POSITIVE PROOF the filter actually
+ran on the data: `within_radius_count == 0` **AND** `skipped_invalid` ~0 **AND** the
+call SUCCEEDED with the columns resolved (it scanned the rows and none fell in
+radius). Only then are you DONE: emit the `no_candidates` state below and return.
+
+A `within_radius_count == 0` from a TOOL ERROR or a COLUMN auto-detection failure —
+geo_filter reporting it could not detect/resolve the lat/lon columns, an
+error/empty result with `skipped_invalid` ~0 because NOTHING was parsed, or any
+geo_filter ToolError — is **NOT** no-coverage. The tool did not get usable columns.
+Remember the malformed `(deg)` header IS the longitude column: re-read a few rows,
+pass EXPLICIT `lat_column`/`lon_column`/`id_column` whose VALUES are the coordinates,
+and re-filter ONCE. A `within_radius_count == 0` with a LARGE `skipped_invalid` is
+the same wrong-columns case. NEVER emit `no_candidates` or `metadata_missing` off a
+tool error, a column-detection failure, or a high `skipped_invalid`. (Re-call ONCE
+with the SAME radius after fixing columns or a genuine tool ERROR — wrong filepath,
+non-numeric geometry. NEVER re-call to enlarge the search area.)
 
 ## RULE 2: respect the tool's in-region verdict — honest no-coverage is a valid answer
 
@@ -226,8 +253,14 @@ triggers. If the geography changes, rank the stations supported by that
 geography's live metadata.
 
 Do not promote a station ID from metadata into a resource URL or local CSV path.
-If the only evidence is a station index or `earthscope_converted_data.csv`, set
-`station_catalog.status` to `ranked_metadata_only` and leave downstream
-acquisition unresolved. Do not construct raw CSV URLs from station names or
-channel suffix guesses. A nearby station becomes analysis-ready only after the
-resource resolver finds and stages a live NDP/ds2 resource returned by a tool.
+Filtering the station metadata catalog (e.g. `earthscope_converted_data.csv` or
+its cleaned form) is the EXPECTED input here: when `geo_filter` returns
+within-radius points from it, that is `status="ranked"` with those ids in
+`station_ids` -- NOT `ranked_metadata_only`. Reserve `ranked_metadata_only` for the
+degenerate case where the tool could only see a bare station index with no usable
+coordinates to compute distances. Do not construct raw CSV URLs from station names
+or channel suffix guesses. A nearby station becomes analysis-ready only after the
+resource resolver finds and stages a live NDP/ds2 resource returned by a tool --
+ranking it here (`status=ranked` with `station_ids` filled) is exactly what HANDS
+those ids to the resolver to stage; leaving `station_ids` empty strands the
+resolver with nothing to do.

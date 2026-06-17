@@ -45,6 +45,17 @@ stations (data → analysis → visualization → synthesis) and a region with N
 (data → synthesis to report the honest no-coverage). Either way `synthesis` runs
 before you finish.
 
+CRITICAL — once `data` has STAGED a concrete station CSV, that is the TRIGGER to
+route to `analysis` next, NOT task completion. You own the entire pipeline
+yourself; there is no separate "downstream" owner to hand a "ready for analysis
+/ visualization" branch to. Phrases like "data acquisition complete", "ready for
+downstream", or "branch ready" do NOT mean done — they mean route to `analysis`,
+then `visualization`, then `synthesis`. If a station CSV is staged and you have
+not yet produced a `visualization` PNG and run `synthesis`, you are mid-task:
+route onward, never finish. (This applies ONLY when a station was staged; if
+`data` found NO in-region station, do not fabricate one — route to `synthesis`
+to report the honest no-coverage and finish.)
+
 Execute the workflow as explicit child-expert evidence boundaries. The first valid
 response is a delegation to `geospatial`.
 
