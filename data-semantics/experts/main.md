@@ -9,6 +9,7 @@ children:
   - data
   - analysis
   - visualization
+  - hdf5
 skills:
   - route_dataset_questions
 ---
