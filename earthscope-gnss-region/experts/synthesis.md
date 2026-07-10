@@ -101,6 +101,7 @@ structured_outputs:
   evidence: true
   artifacts: true
   errors: true
+  final_responder: true
 ---
 
 # EarthScope GNSS Synthesis Expert

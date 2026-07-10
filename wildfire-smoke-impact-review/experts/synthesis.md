@@ -11,6 +11,7 @@ module:
 structured_outputs:
   brief: The downwind-impact brief for the user.
   caveats: Data-currency and coverage caveats.
+  final_responder: true
 ---
 
 # Synthesis Expert
