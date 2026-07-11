@@ -13,7 +13,7 @@ signature:
       type: string
   outputs:
     answer:
-      description: Region object with center, radius or bbox, confidence, provenance, and warnings.
+      description: One or two sentences of prose stating the resolution — the place resolved, center coordinates, radius or bbox, confidence, and provenance. The region OBJECT rides workflow_state.geospatial (the typed carrier); do NOT repeat it as JSON in the answer.
       type: string
 structured_outputs:
   workflow_state: true
@@ -29,6 +29,13 @@ Resolve the requested geography into a compact, grounded region object: a center
 (`center_lat`, `center_lon`), a `radius_km` (or a `bbox`), and how you got it
 (`provenance`). One region, then stop — you do NOT query NDP/EarthScope or make any
 data-availability claim.
+
+## Your parent-bound answer is PROSE
+
+State the resolution in one or two sentences (place, center, radius/bbox, confidence,
+provenance). The full region object lives ONLY in `workflow_state.geospatial` — the typed
+carrier the parent and downstream experts consume. Do not print the region as a JSON block
+in your answer; it would duplicate the typed state in a prose field.
 
 ## Where the center comes from — two cases
 

@@ -7,11 +7,15 @@ description: Resolves a requested geography, discovers NDP EarthScope GNSS resou
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
+# clio-kit is provisioned once via `uv tool install clio-kit==2.2.3` (see clio-agent install/doctor).
+# Installed-tool launchers replace `uvx clio-kit@...`: concurrent uvx spawns raced on a cold
+# uv cache (truncated pyvenv.cfg -> dead transport -> _UnsupportedSessionAgent), and
+# `uv cache prune/clean` deletes ephemeral envs under RUNNING servers (astral-sh/uv#11694).
 mcp_servers:
-  ndp: uvx clio-kit@2.2.3 mcp-server ndp
-  geo: uvx clio-kit@2.2.3 mcp-server geo
-  pandas: uvx clio-kit@2.2.3 mcp-server pandas
-  plot: uvx clio-kit@2.2.3 mcp-server plot
+  ndp: clio-kit mcp-server ndp
+  geo: clio-kit mcp-server geo
+  pandas: clio-kit mcp-server pandas
+  plot: clio-kit mcp-server plot
 experts:
   - experts/main.md
   - experts/geospatial.md
