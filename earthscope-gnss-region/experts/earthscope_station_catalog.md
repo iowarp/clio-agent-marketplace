@@ -34,11 +34,31 @@ signature:
           type: object
           fields:
             status:
-              type: 'literal["ranked","ranked_metadata_only","no_candidates","metadata_missing"]'
+              # filter_failed = the geo filter errored, never ran, or returned a
+              # large skipped_invalid (wrong columns) -- a RETRYABLE tool failure,
+              # NOT a data verdict. no_candidates is reserved for a STRUCTURALLY
+              # SUCCESSFUL filter that scanned the rows and found none in radius.
+              type: 'literal["ranked","ranked_metadata_only","no_candidates","filter_failed","metadata_missing"]'
             candidate_count:
               type: int
             station_ids:
               type: list[str]
+            filter_ok:
+              description: True only when geo_filter_points_by_radius returned ok=true (no ToolError, columns resolved).
+              type: bool
+              default: false
+            input_rows:
+              description: total_points the filter scanned (the tool's total_points); 0 or absent means the filter did not read the catalog.
+              type: int
+              default: 0
+            skipped_invalid:
+              description: the tool's skipped_invalid; a large value means the lat/lon columns were wrong (filter did not truly run over coordinates).
+              type: int
+              default: 0
+            within_radius_count:
+              description: the tool's within_radius_count over the resolved radius.
+              type: int
+              default: 0
 structured_outputs:
   workflow_state: true
   evidence: true
@@ -52,25 +72,31 @@ tools:
 
 ## RULE 1 (most important): use the resolved region radius — NEVER inflate it
 
-The discovery expert staged the catalog at `acquisition.metadata_path` (in the
-workspace). Rank stations ONLY within the geography the root `geospatial` expert
-resolved, using `geo_filter_points_by_radius` with the resolved `geospatial.center_lat`,
-`geospatial.center_lon`, and `geospatial.radius_km`.
+The discovery expert staged the CLEANED catalog at `acquisition.metadata_path`
+(`earthscope_stations_clean.csv` in the workspace — UTF-8, no BOM, produced by
+`pandas_filter_data`). Rank stations ONLY within the geography the root `geospatial`
+expert resolved, using `geo_filter_points_by_radius` with the resolved
+`geospatial.center_lat`, `geospatial.center_lon`, and `geospatial.radius_km`.
 
-Real scientific catalogs sometimes have unreliable headers — mislabeled, misaligned,
-or duplicated column names — so don't assume a column called `Longitude` actually
-holds longitude, and don't rely on the tool guessing the columns from those headers.
-Confirm from the DATA: glance at a few rows, find which column holds latitude values
-(in [-90,90], near the resolved center) and which holds longitude (in [-180,180], near
-the center), and pass THOSE as `lat_column`/`lon_column`. Picking the columns by their
-values rather than their names is what makes this robust to a messy catalog.
+Discovery already verified the column identities and forwarded them in
+`acquisition.metadata_columns`: `{"id": "Site", "lat": "Latitude", "lon": "(deg)"}`.
+Pass THOSE as your `id_column`/`lat_column`/`lon_column` — do NOT re-guess from the
+header. This catalog's header is misaligned: the REAL longitude values sit under the
+column literally named `(deg)`, while the column named `Longitude` actually holds
+ELEVATION and is a TRAP — filtering on `Longitude` yields ~712 skipped rows and 0
+in-radius, which is a WRONG-COLUMN failure, never "no coverage". So the correct call
+is `lat_column="Latitude"`, `lon_column="(deg)"`, `id_column="Site"`. If
+`acquisition.metadata_columns` is somehow absent, fall back to confirming from the
+DATA: glance at a few rows, find which column holds latitude values (in [-90,90],
+near the resolved center) and which holds longitude (in [-180,180], near the center)
+— NEVER trust the header name `Longitude` — and pass those.
 
-You MUST ALSO pass `id_column` = the station-id column (the FIRST column, holding
-values like `P475`, `SIO5`, `P473`). This is NOT optional and is easy to forget:
-WITHOUT `id_column`, every returned point comes back with NO station identity, so you
-cannot tell which station each point is, the ranking is unusable, and the staged
-station cannot be verified as in-region. ALWAYS call `geo_filter_points_by_radius`
-with all THREE arguments together: `lat_column`, `lon_column`, AND `id_column`.
+You MUST ALSO pass `id_column` = the station-id column (`Site`, holding values like
+`P475`, `SIO5`, `P473`). This is NOT optional and is easy to forget: WITHOUT
+`id_column`, every returned point comes back with NO station identity, so you cannot
+tell which station each point is, the ranking is unusable, and the staged station
+cannot be verified as in-region. ALWAYS call `geo_filter_points_by_radius` with all
+THREE arguments together: `lat_column`, `lon_column`, AND `id_column`.
 
 The tool computes the great-circle distance from the center to every row and returns
 the within-radius rows sorted ascending by `distance_km`. You then REASON over those
@@ -97,22 +123,52 @@ honest, correct answer (`station_catalog.status=no_candidates`), NOT a problem t
 solve by enlarging the circle. Enlarging the radius turns "Chicago" into "the western
 US" and invents stations 2000+ km from the user's region.
 
-Emitting `no_candidates` no-coverage requires POSITIVE PROOF the filter actually
-ran on the data: `within_radius_count == 0` **AND** `skipped_invalid` ~0 **AND** the
-call SUCCEEDED with the columns resolved (it scanned the rows and none fell in
-radius). Only then are you DONE: emit the `no_candidates` state below and return.
+### The no-coverage terminal is GATED on structural filter success
 
-A `within_radius_count == 0` from a TOOL ERROR or a COLUMN auto-detection failure —
-geo_filter reporting it could not detect/resolve the lat/lon columns, an
-error/empty result with `skipped_invalid` ~0 because NOTHING was parsed, or any
-geo_filter ToolError — is **NOT** no-coverage. The tool did not get usable columns.
-Remember the malformed `(deg)` header IS the longitude column: re-read a few rows,
-pass EXPLICIT `lat_column`/`lon_column`/`id_column` whose VALUES are the coordinates,
-and re-filter ONCE. A `within_radius_count == 0` with a LARGE `skipped_invalid` is
-the same wrong-columns case. NEVER emit `no_candidates` or `metadata_missing` off a
-tool error, a column-detection failure, or a high `skipped_invalid`. (Re-call ONCE
-with the SAME radius after fixing columns or a genuine tool ERROR — wrong filepath,
-non-numeric geometry. NEVER re-call to enlarge the search area.)
+`no_candidates` (candidate_count=0, "no coverage") is a DATA verdict, and it is only
+reachable when the filter STRUCTURALLY SUCCEEDED over the staged catalog. Emitting it
+requires ALL of this POSITIVE PROOF, which you record in the typed fields:
+
+- `filter_ok == true` — the call returned `ok=true` (no `ToolError`, columns resolved);
+- `input_rows > 0` — the tool's `total_points` shows it actually read the catalog
+  (~1101 rows for the LA-region catalog);
+- `skipped_invalid` ~0 — the coordinates parsed, so the columns were right;
+- `within_radius_count == 0` — it scanned the rows and none fell in radius.
+
+ONLY when all four hold are you DONE: set those typed fields, emit the
+`no_candidates` state below, and return.
+
+If ANY of those fail — a `ToolError`, a column-detection failure, `input_rows`==0
+(the filter never read the file), or a LARGE `skipped_invalid` (tens or hundreds —
+wrong columns, so the filter did not truly run over coordinates) — that is a
+RETRYABLE TOOL FAILURE, **NOT** no-coverage. The tool did not get a real answer over
+the data. Do the bounded repair: pass EXPLICIT `lat_column="Latitude"`,
+`lon_column="(deg)"`, `id_column="Site"` (the forwarded `metadata_columns`; remember
+`Longitude` is the elevation TRAP) and re-filter ONCE at the SAME radius. If it still
+does not structurally succeed, emit `station_catalog.status="filter_failed"` with the
+typed evidence (`filter_ok`, `input_rows`, `skipped_invalid`) and a blocker naming
+the tool error — a state the parent can retry. NEVER emit `no_candidates` or
+`metadata_missing` off a tool error, a column-detection failure, `input_rows`==0, or
+a high `skipped_invalid`. (Re-call ONCE with the SAME radius after fixing columns or
+a genuine tool ERROR — wrong filepath, non-numeric geometry. NEVER re-call to enlarge
+the search area.)
+
+```json
+{
+  "workflow_state": {
+    "station_catalog": {
+      "status": "filter_failed",
+      "candidate_count": 0,
+      "station_ids": [],
+      "filter_ok": false,
+      "input_rows": 0,
+      "skipped_invalid": 712,
+      "within_radius_count": 0,
+      "blocker": "geo_filter_points_by_radius did not structurally succeed over the staged catalog (tool error / wrong columns / catalog not read) — spatial coverage is UNKNOWN, not zero; retry with the forwarded metadata_columns"
+    }
+  }
+}
+```
 
 ## RULE 2: respect the tool's in-region verdict — honest no-coverage is a valid answer
 
@@ -140,6 +196,10 @@ station id to the resolver:
       "status": "no_candidates",
       "candidate_count": 0,
       "station_ids": [],
+      "filter_ok": true,
+      "input_rows": 1101,
+      "skipped_invalid": 0,
+      "within_radius_count": 0,
       "region_name": "<resolved label>",
       "radius_km": <resolved radius>,
       "blocker": "no EarthScope GNSS station within the requested region"
@@ -151,6 +211,10 @@ station id to the resolver:
     }
   }
 }
+
+(This is valid ONLY with `filter_ok=true`, `input_rows>0`, and `skipped_invalid`~0 —
+the filter demonstrably read the catalog and found none in radius. Without that proof
+you have a `filter_failed`, not no-coverage.)
 ```
 
 Only stations actually returned in the tool's `points` array (the within-radius
@@ -228,7 +292,11 @@ Return parent-consumable JSON evidence:
       "status": "ranked",
       "region_name": "<resolved label>",
       "candidate_count": 9,
-      "station_ids": ["<station id 1>", "<station id 2>", "<...>"]
+      "station_ids": ["<station id 1>", "<station id 2>", "<...>"],
+      "filter_ok": true,
+      "input_rows": 1101,
+      "skipped_invalid": 0,
+      "within_radius_count": 9
     },
     "resource_discovery": {
       "status": "search_required",
