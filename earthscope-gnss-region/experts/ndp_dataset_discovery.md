@@ -57,6 +57,8 @@ tools:
   - ndp_search_datasets
   - ndp_get_dataset_details
   - ndp_stage_resource
+  - pandas_load_data
+  - pandas_save_data
   - shell_bash
 ---
 
@@ -91,22 +93,23 @@ The result's `local_path` is the RAW catalog under the workspace (call it
 `<RAW>`, named `earthscope_converted_data.csv`). If no Active workspace root was
 provided, omit `output_dir` and use the path the tool returns as-is.
 
-STEP 3 — normalize it with the `shell_bash` TOOL (NOT another
+STEP 3 — normalize it with the PANDAS tools (NOT shell, NOT another
 `ndp_stage_resource`). The raw catalog has many columns AND a misaligned header that
 repeats the name `(deg)`, which makes column-by-name lookups ambiguous. Keep just
 the first three columns (the station id and its two coordinate columns) and write
 the result INTO THE ACTIVE WORKSPACE ROOT from your context (an absolute path — NOT
-`/tmp`). Run this single command, substituting `<RAW>` and `<WORKSPACE>`:
+`/tmp`). Two calls, substituting `<RAW>` and `<WORKSPACE>`:
 
-```json
-{ "tool": "shell_bash", "arguments": { "command": "cut -d, -f1-3 '<RAW>' > '<WORKSPACE>/earthscope_stations_clean.csv'" } }
-```
+1. `pandas_load_data` with `file_path="<RAW>"` — read the header it reports, then
+   re-load with `columns` set to the FIRST THREE column names it listed (select by
+   the reported names positionally; do not guess names).
+2. `pandas_save_data` writing the loaded frame to
+   `<WORKSPACE>/earthscope_stations_clean.csv`.
 
-`cut -d, -f1-3` keeps columns 1-3 (the station id and the two coordinate columns)
-and removes the duplicate-name ambiguity. Do NOT trust the coordinate column NAMES —
+This is portable (no POSIX tools, no shell differences, NEVER `wsl` — do not shell
+out for tabular work on any platform). Do NOT trust the coordinate column NAMES —
 the header is misaligned, so the downstream catalog expert will VERIFY which column
-is latitude vs longitude by reading the actual values. Do NOT append `&&`, `;`,
-`head`, `wc`, or a second command (chaining forces an approval prompt that hangs).
+is latitude vs longitude by reading the actual values.
 Then set `workflow_state.acquisition.metadata_path` to that CLEANED workspace path
 (NOT the raw catalog, NOT `/tmp`) and FINISH.
 
