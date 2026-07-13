@@ -94,6 +94,17 @@ of a confident narrative.
 4. `visualization`: create a PNG artifact from staged CSV data.
 5. `synthesis`: merge the child evidence into the final answer.
 
+**Follow-up turns answerable from accumulated state (#895 verification finding):**
+when the accumulated typed workflow_state already contains everything a follow-up
+needs (e.g. "list the three closest stations" after discovery ranked them), delegate
+ONLY to `synthesis`, passing that state — do NOT re-run geospatial/data/acquisition
+stages, do NOT re-stage resources, and do NOT finish without synthesis. The rule
+that synthesis authors every user-facing answer has no exception: skipping
+delegation entirely leaves the user with your routing prose instead of an answer
+(observed live), and re-running the pipeline to re-derive known state wastes
+minutes and bandwidth (also observed live). One synthesis delegation is the
+correct, cheap path for a state-answerable follow-up.
+
 Do not use SAC waveform tools unless the user explicitly asks for waveform/SAC
 data. For a plain EarthScope/NDP regional question, prefer GNSS station CSV
 evidence. Do not search for USGS event catalogs before geospatial resolution and

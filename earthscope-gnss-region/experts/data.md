@@ -203,12 +203,31 @@ Many regions have NO EarthScope GNSS coverage (e.g. inland metros far from the
 plate-boundary networks). When `earthscope_station_catalog` returns
 `station_catalog.status=no_candidates` (zero stations within the resolved
 region radius, empty `station_ids`), that is a CORRECT outcome — not a failure to
-paper over. Forward it as an honest data-blocked state and STOP the data branch:
+paper over. Forward it as an honest data-blocked state and STOP the data branch.
+
+BUT no-coverage is ONLY honest when the child PROVED the spatial filter structurally
+ran: the `no_candidates` state must carry `station_catalog.filter_ok=true`,
+`input_rows>0`, and `skipped_invalid`~0. If instead the child returns
+`station_catalog.status=filter_failed`, OR a `no_candidates`/zero result WITHOUT that
+structural proof (a geo_filter ToolError, `input_rows`==0, or a large
+`skipped_invalid` — the filter errored, never read the catalog, or used the wrong
+columns), the spatial coverage is UNKNOWN, not zero. Do NOT forward that as
+no-coverage and do NOT finish. Route BACK to `earthscope_station_catalog` (a new
+task) to re-run the filter over `acquisition.metadata_path` using the forwarded
+`acquisition.metadata_columns` (`id=Site`, `lat=Latitude`, `lon=(deg)`; the
+`Longitude` column is elevation, a trap). Only after a STRUCTURALLY SUCCESSFUL filter
+still yields zero in-radius stations may you forward honest no-coverage. A
+tool-failure reported as no-coverage is a MISREPORT of a real defect as a data truth.
+
+The honest no-coverage state (valid only with the structural proof above):
 
 ```json
 {
   "workflow_state": {
-    "station_catalog": { "status": "no_candidates", "candidate_count": 0, "station_ids": [] },
+    "station_catalog": {
+      "status": "no_candidates", "candidate_count": 0, "station_ids": [],
+      "filter_ok": true, "input_rows": 1101, "skipped_invalid": 0, "within_radius_count": 0
+    },
     "acquisition": {
       "status": "missing",
       "analysis_ready": false,

@@ -41,10 +41,17 @@ signature:
               # resolver declares its OWN typed acquisition.status where it IS routed.
               type: string
             metadata_path:
-              description: Exact local path returned by ndp_stage_resource for the station metadata CSV, or null if not staged.
+              description: Exact local path of the CLEANED catalog written by pandas_filter_data (earthscope_stations_clean.csv), or null if not produced.
               type: optional[string]
             metadata_source_url:
               type: optional[string]
+            metadata_columns:
+              description: >-
+                Verified column identities in the cleaned catalog, forwarded to
+                ground the ranker against the misaligned header:
+                {"id":"Site","lat":"Latitude","lon":"(deg)"}. The real longitude is
+                "(deg)"; the column named "Longitude" is elevation, not longitude.
+              type: optional[object]
             analysis_ready:
               type: bool
               default: false
@@ -57,7 +64,8 @@ tools:
   - ndp_search_datasets
   - ndp_get_dataset_details
   - ndp_stage_resource
-  - shell_bash
+  - pandas_load_data
+  - pandas_filter_data
 ---
 
 # NDP EarthScope Dataset Discovery Expert
@@ -91,32 +99,60 @@ The result's `local_path` is the RAW catalog under the workspace (call it
 `<RAW>`, named `earthscope_converted_data.csv`). If no Active workspace root was
 provided, omit `output_dir` and use the path the tool returns as-is.
 
-STEP 3 — normalize it with the `shell_bash` TOOL (NOT another
-`ndp_stage_resource`). The raw catalog has many columns AND a misaligned header that
-repeats the name `(deg)`, which makes column-by-name lookups ambiguous. Keep just
-the first three columns (the station id and its two coordinate columns) and write
-the result INTO THE ACTIVE WORKSPACE ROOT from your context (an absolute path — NOT
-`/tmp`). Run this single command, substituting `<RAW>` and `<WORKSPACE>`:
+STEP 3 — normalize the raw catalog with `pandas_filter_data` (a single, file→file
+PANDAS call — NOT shell, NOT `pandas_save_data`, NOT another `ndp_stage_resource`).
+This is the step that makes the catalog usable downstream, and it fixes TWO real
+defects in the raw file at once:
+
+- ENCODING. The downstream `geo_filter_points_by_radius` tool reads its input
+  strictly as UTF-8. `pandas_filter_data` reads the raw and rewrites the output with
+  pandas, which emits plain UTF-8 with NO byte-order mark. NEVER produce the clean
+  file with a shell redirect or `Set-Content` — on this platform the shell is
+  PowerShell, whose `>` writes UTF-16 and whose `utf8` writes a BOM, and BOTH make
+  the geo filter fail (`'utf-8' codec can't decode byte 0xff` or a phantom
+  `﻿Site` column). That is exactly why `shell_bash` is NOT in your toolset.
+- MISALIGNED / DUPLICATED HEADER. The raw header is
+  `Site,Latitude,(deg),Longitude,(deg),EllipElev,(m),X,...`: it is shifted, so the
+  real LONGITUDE values sit under the column literally named `(deg)` (the 3rd
+  column), while the column named `Longitude` actually holds ELEVATION — a trap. The
+  name `(deg)` also appears twice. When pandas re-reads and rewrites the file it
+  de-duplicates the repeated header, so the FIRST `(deg)` (longitude) stays `(deg)`
+  and the second becomes `(deg).1`; the longitude column is then addressable by a
+  unique name. `geo_filter_points_by_radius` uses a plain CSV reader that would
+  otherwise collapse the two `(deg)` columns onto the wrong one.
+
+Make EXACTLY this call, substituting `<RAW>` (the staged catalog from STEP 2) and
+`<WORKSPACE>` (the Active workspace root from your context, an absolute path — NOT
+`/tmp`). The `between` filter keeps every row whose `Latitude` is a real coordinate
+(all genuine stations) and drops any non-coordinate junk row:
 
 ```json
-{ "tool": "shell_bash", "arguments": { "command": "cut -d, -f1-3 '<RAW>' > '<WORKSPACE>/earthscope_stations_clean.csv'" } }
+{ "tool": "pandas_filter_data", "arguments": { "file_path": "<RAW>", "filter_conditions": {"Latitude": {"operator": "between", "value": [-90, 90]}}, "output_file": "<WORKSPACE>/earthscope_stations_clean.csv" } }
 ```
 
-`cut -d, -f1-3` keeps columns 1-3 (the station id and the two coordinate columns)
-and removes the duplicate-name ambiguity. Do NOT trust the coordinate column NAMES —
-the header is misaligned, so the downstream catalog expert will VERIFY which column
-is latitude vs longitude by reading the actual values. Do NOT append `&&`, `;`,
-`head`, `wc`, or a second command (chaining forces an approval prompt that hangs).
-Then set `workflow_state.acquisition.metadata_path` to that CLEANED workspace path
-(NOT the raw catalog, NOT `/tmp`) and FINISH.
+The result reports `original_shape -> final_shape` (for the LA-region catalog this
+is 1101 -> 1101 rows) and writes `earthscope_stations_clean.csv`. Set
+`workflow_state.acquisition.metadata_path` to THAT cleaned workspace path (NOT the
+raw catalog, NOT `/tmp`).
 
-## REQUIRED: your run is INCOMPLETE until the `shell_bash` clean has run
+To ground the downstream ranker, ALSO forward the verified column identities in
+`workflow_state.acquisition.metadata_columns` so it does not have to guess against
+the misaligned header:
+`{"id": "Site", "lat": "Latitude", "lon": "(deg)"}` — where `(deg)` is the real
+longitude and the column named `Longitude` is elevation, NOT longitude. Then FINISH.
+
+## REQUIRED: your run is INCOMPLETE until the `pandas_filter_data` clean has run
 
 The downstream ranker needs the CLEANED workspace file from STEP 3 — re-staging the
-catalog does NOT clean it. Do NOT finish after just search+stage, and do NOT call
-`ndp_stage_resource` a second time. Your final state MUST set
-`acquisition.metadata_path` to that cleaned workspace path AND you MUST have run the
-STEP-3 `shell_bash` clean. Three calls — search, stage, clean — nothing else.
+catalog does NOT clean it, and `pandas_load_data`/`pandas_save_data` cannot be used
+to produce it (that tool pair round-trips through the model and truncates the
+catalog to the first 100 rows, silently dropping ~1000 stations). Do NOT finish
+after just search+stage, and do NOT call `ndp_stage_resource` a second time. Your
+final state MUST set `acquisition.metadata_path` to that cleaned workspace path AND
+you MUST have run the STEP-3 `pandas_filter_data` clean. Three calls — search,
+stage, clean — nothing else. (`pandas_load_data` is available only to PEEK at the
+raw header/rows if you want to confirm the column layout before cleaning; it is not
+required and never produces the clean file.)
 
 Do NOT call `ndp_search_datasets` with `search_term` (singular), with
 `filter_list`, with `resource_format:CSV`, with `GNSS`/`GPS`/`UNAVCO`/`CSV` free
@@ -127,21 +163,24 @@ context and crash you. Three calls — catalog search, catalog stage, clean — 
 
 The ONLY way the parent `data` orchestrator can advance past you is if your
 final `workflow_state` output contains `acquisition.metadata_path` set to the
-EXACT local file path that `ndp_stage_resource` returned in its `path` field for
-the EarthScope station metadata CSV. If you do not emit that key, the entire
-workflow stalls and the parent will fabricate a fake station. Treat emitting
+EXACT local file path of the CLEANED catalog that `pandas_filter_data` wrote to
+`output_file` (`earthscope_stations_clean.csv`). If you do not emit that key, the
+entire workflow stalls and the parent will fabricate a fake station. Treat emitting
 `acquisition.metadata_path` (under that exact dotted name) as your primary job,
 not an afterthought. Do NOT emit ad-hoc keys such as `staged_resource`,
 `csv_path`, `next_step`, or `selected_dataset.local_path` in place of it — those
 keys are invisible to the parent contract and cause the workflow to stall.
 
-Concrete tool-result-to-state mapping you MUST follow after a successful
-`ndp_stage_resource` call. Copy paths byte-for-byte; never shorten, rename, or
-drop a directory segment, and never reconstruct a path from the dataset/resource
-name — the runtime verifies the file exists on disk:
+Concrete tool-result-to-state mapping you MUST follow. Copy paths byte-for-byte;
+never shorten, rename, or drop a directory segment, and never reconstruct a path
+from the dataset/resource name — the runtime verifies the file exists on disk:
 
-- the `local_path` string returned by `ndp_stage_resource` (the field may also be
-  named `path`) -> `acquisition.metadata_path`, copied verbatim
+- the `output_file` path returned by `pandas_filter_data` (the CLEANED
+  `earthscope_stations_clean.csv`) -> `acquisition.metadata_path`, copied verbatim.
+  Do NOT point `metadata_path` at the RAW `earthscope_converted_data.csv` that
+  `ndp_stage_resource` returned — the raw is UTF-16/misaligned and breaks the geo
+  filter; the ranker must read the cleaned file.
+- `{"id": "Site", "lat": "Latitude", "lon": "(deg)"}` -> `acquisition.metadata_columns`
 - the `url` / `source_url` / `selected_resource_url` returned by
   `ndp_stage_resource` -> `acquisition.metadata_source_url`
 - the dataset id you searched -> `resource_candidate.dataset_id`
@@ -200,8 +239,9 @@ your final `workflow_state` value MUST look like this (copy the tool's returned
   },
   "acquisition": {
     "status": "metadata_only",
-    "metadata_path": "/home/.../.clio/artifacts/ndp-staging/earthscope_converted_data.csv",
+    "metadata_path": "<WORKSPACE>/earthscope_stations_clean.csv",
     "metadata_source_url": "https://nationaldataplatform.org/.../earthscope_converted_data.csv",
+    "metadata_columns": {"id": "Site", "lat": "Latitude", "lon": "(deg)"},
     "analysis_ready": false
   },
   "resource_candidate": {
