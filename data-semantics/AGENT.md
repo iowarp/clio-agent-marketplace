@@ -4,6 +4,13 @@ title: Data Semantics Agent
 version: 0.1.0
 description: Interprets scientific datasets by combining metadata inspection, semantic analysis, and visualization planning.
 default_expert: main
+# clio-kit is provisioned once via `uv tool install clio-kit` (see clio-agent
+# install/doctor). Declaration is the enablement for these tool namespaces.
+mcp_servers:
+  hdf5: clio-kit mcp-server hdf5
+  parquet: clio-kit mcp-server parquet
+  pandas: clio-kit mcp-server pandas
+  plot: clio-kit mcp-server plot
 experts:
   - experts/main.md
   - experts/data.md

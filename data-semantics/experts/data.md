@@ -7,10 +7,10 @@ prompt_id: clio.expert.data
 prompt_profile: heavy
 module_kind: react
 tools:
-  - hdf5_list_datasets
-  - hdf5_analyze_dataset
-  - parquet_analyze_schema
-  - csv_read_table
+  - hdf5_list_available_hdf5_files
+  - hdf5_analyze_dataset_structure
+  - parquet_summarize_tool
+  - pandas_profile_csv
 skills:
   - inspect_dataset_structure
 ---

@@ -7,7 +7,8 @@ prompt_id: clio.expert.visualization
 prompt_profile: default
 module_kind: react
 tools:
-  - plot_summary
+  - plot_histogram_plot
+  - plot_line_plot
 skills:
   - recommend_visual_checks
 ---
