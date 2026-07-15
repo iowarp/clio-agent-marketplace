@@ -7,7 +7,8 @@ prompt_id: clio.expert.analysis
 prompt_profile: heavy
 module_kind: react
 tools:
-  - parquet_compute_statistics
+  - pandas_statistical_summary
+  - parquet_aggregate_column_tool
 skills:
   - compare_variables
   - reason_about_quality
