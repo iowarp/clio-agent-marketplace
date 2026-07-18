@@ -6,7 +6,7 @@ parent_id: main
 prompt_profile: heavy
 specialization: hazard_data_acquisition
 module:
-  kind: chain_of_thought
+  kind: react
 structured_outputs:
   workflow_state: true
   evidence: true
@@ -17,18 +17,21 @@ children:
   - geography
   - smoke_forecast
   - air_quality
-parameters:
-  max_sync_delegation_rounds: 8
 ---
 
 # Hazard Data Acquisition Expert
 
 Own the data branch. Do not judge impact or query feature services yourself —
-orchestrate your sub-experts and return one merged `workflow_state.acquisition`.
-The runtime forwards the accumulated `workflow_state` to each child, so each
-sub-expert receives the prior evidence (fire candidates, then the region).
+SPAWN your sub-experts and write one merged `workflow_state.acquisition` answer
+yourself. Run each child with `spawn_agent_task(agent, task)` and collect it with
+`wait_agent_tasks([task_id], timeout_s=...)`; use `check_agent_tasks()` to poll.
+You do not route by naming a next expert, and there is no separate final-responder
+— when all four children have returned, stop spawning and write the merged
+acquisition answer.
+Fold the accumulated `workflow_state` into each child's task so each sub-expert
+receives the prior evidence (fire candidates, then the region).
 
-Required child order:
+Spawn your children in this required order (each one's evidence feeds the next):
 
 1. `fire_discovery` — discover active fires, reason about which one is impacting
    people downwind, and save that fire's perimeter.
