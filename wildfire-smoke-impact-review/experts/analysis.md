@@ -16,12 +16,7 @@ structured_outputs:
   errors: true
   delegation: true
 parameters:
-  enforce_child_contract_order: true
   max_sync_delegation_rounds: 3
-  continuation_contracts:
-    - id: start_with_downwind_impact
-      next_expert: downwind_impact
-      next_action: compute the smoke-monitor spatial overlap with geo_points_in_polygons before judging impact
 ---
 
 # Impact Analysis Expert
@@ -125,8 +120,8 @@ Principles:
   fire is contained — report `impact_present: false` honestly. That is a correct
   outcome, not a failure.
 
-Return typed `workflow_state.impact` so the orchestrator can route (a map only
-when impact exists) and synthesis can brief accurately:
+Return typed `workflow_state.impact` so the orchestrator has the evidence it
+needs (whether to render/annotate the map, and the facts to brief accurately):
 
 ```json
 {"workflow_state": {"impact": {

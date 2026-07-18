@@ -24,7 +24,6 @@ experts:
   - experts/analysis.md
   - experts/downwind_impact.md
   - experts/visualization.md
-  - experts/synthesis.md
 defaults:
   prompt_profile: heavy
 ---
@@ -37,9 +36,9 @@ NDP feature services — interagency fire perimeters, the NWS smoke forecast, an
 AirNow air-quality monitors — and rendering one situational map.
 
 The agent uses the **domain-grouped** topology proven on the EarthScope case:
-the orchestrator delegates to domain experts (data acquisition, geography,
-impact analysis, visualization, synthesis), and the data domain delegates to
-independent acquisition sub-experts. Routing is by typed workflow state and
-explicit child completion, never by free-text string matching. The interesting
-fire is selected by **downwind impact**, not by perimeter size, and a
-"no significant impact right now" result is a correct, reachable answer.
+the orchestrator spawns domain experts (data acquisition, impact analysis,
+visualization) and then writes the final brief itself, while the data domain
+delegates to independent acquisition sub-experts. Routing is by typed workflow
+state, never by free-text string matching. The interesting fire is selected by
+**downwind impact**, not by perimeter size, and a "no significant impact right
+now" result is a correct, reachable answer.
