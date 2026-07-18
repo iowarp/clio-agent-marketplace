@@ -28,7 +28,6 @@ experts:
   - experts/gnss_timeseries_analysis.md
   - experts/station_network_analysis.md
   - experts/visualization.md
-  - experts/synthesis.md
 defaults:
   prompt_profile: heavy
 workflow_state:

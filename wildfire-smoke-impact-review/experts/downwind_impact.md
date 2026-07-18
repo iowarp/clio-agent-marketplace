@@ -47,8 +47,9 @@ The tool returns a JSON object like:
 ```
 
 YOU must report this as typed `workflow_state.impact_overlap`, copying the tool's
-numbers verbatim with these EXACT key names (downstream contracts and the
-synthesis brief read these exact keys — do not rename them or invent numbers):
+numbers verbatim with these EXACT key names (downstream consumers and the
+orchestrator's final brief read these exact keys — do not rename them or invent
+numbers):
 
 - `monitors_total`  = the tool's `points_total` (how many monitors were evaluated)
 - `monitors_under_smoke` = the tool's `matched_count` (how many fell under smoke)
@@ -81,9 +82,9 @@ typed blocker rather than inventing a count.
 ## ALSO emit the typed `impact` judgement in the SAME workflow_state
 
 After you have `impact_overlap`, you MUST also emit a typed `impact` object in the
-SAME wrapped `workflow_state` (the downstream visualization/synthesis contracts
-route on `impact.present`; without it the run dead-ends even though the overlap was
-computed). Derive it directly from the overlap you just produced:
+SAME wrapped `workflow_state` (downstream visualization and the orchestrator's
+final brief read `impact.present`; without it the run dead-ends even though the
+overlap was computed). Derive it directly from the overlap you just produced:
 
 - `impact.present` = `true` when `monitors_under_smoke > 0`, else `false`.
 - `impact.selected_fire` = a VERBATIM copy of `workflow_state.fire.selected` (the

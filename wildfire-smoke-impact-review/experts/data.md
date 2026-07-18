@@ -6,7 +6,7 @@ parent_id: main
 prompt_profile: heavy
 specialization: hazard_data_acquisition
 module:
-  kind: chain_of_thought
+  kind: react
 structured_outputs:
   workflow_state: true
   evidence: true
@@ -17,50 +17,21 @@ children:
   - geography
   - smoke_forecast
   - air_quality
-parameters:
-  enforce_child_contract_order: true
-  max_sync_delegation_rounds: 8
-  continuation_contracts:
-    - id: start_with_fire_discovery
-      next_expert: fire_discovery
-      next_action: discover active wildfires, reason about which one is likely impacting people downwind, and save that fire's perimeter
-    - id: fire_to_geography
-      when_state:
-        fire.selected:
-          exists: true
-        region:
-          exists: false
-      match: all
-      next_expert: geography
-      next_action: call the bounding-box tool on the selected fire's perimeter (absolute path <Active workspace root>/fire_perimeter.geojson, using the Active workspace root from context) and emit workflow_state.region = its bbox
-    - id: region_to_smoke
-      when_state:
-        region:
-          exists: true
-        acquisition.smoke_path:
-          exists: false
-      match: all
-      next_expert: smoke_forecast
-      next_action: query the NWS smoke forecast over the region bbox in prior workflow_state.region (use the actual numbers), save it to the absolute path <Active workspace root>/smoke_forecast.geojson (using the Active workspace root from context; do not write to /tmp), and emit workflow_state.acquisition.smoke_path with that absolute path
-    - id: smoke_to_air
-      when_state:
-        acquisition.smoke_path:
-          exists: true
-        acquisition.monitors_path:
-          exists: false
-      match: all
-      next_expert: air_quality
-      next_action: query AirNow monitors over the same region bbox in prior workflow_state.region (use the actual numbers), save it to the absolute path <Active workspace root>/air_quality.geojson (using the Active workspace root from context; do not write to /tmp), and emit workflow_state.acquisition.monitors_path with that absolute path
 ---
 
 # Hazard Data Acquisition Expert
 
 Own the data branch. Do not judge impact or query feature services yourself —
-orchestrate your sub-experts and return one merged `workflow_state.acquisition`.
-The runtime forwards the accumulated `workflow_state` to each child, so each
-sub-expert receives the prior evidence (fire candidates, then the region).
+SPAWN your sub-experts and write one merged `workflow_state.acquisition` answer
+yourself. Run each child with `spawn_agent_task(agent, task)` and collect it with
+`wait_agent_tasks([task_id], timeout_s=...)`; use `check_agent_tasks()` to poll.
+You do not route by naming a next expert, and there is no separate final-responder
+— when all four children have returned, stop spawning and write the merged
+acquisition answer.
+Fold the accumulated `workflow_state` into each child's task so each sub-expert
+receives the prior evidence (fire candidates, then the region).
 
-Required child order:
+Spawn your children in this required order (each one's evidence feeds the next):
 
 1. `fire_discovery` — discover active fires, reason about which one is impacting
    people downwind, and save that fire's perimeter.
