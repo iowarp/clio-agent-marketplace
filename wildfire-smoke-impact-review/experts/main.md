@@ -24,6 +24,29 @@ children:
   - data
   - analysis
   - visualization
+workflow:
+  # Declared deterministic pathway (#948 S5): the retired continuation-contract
+  # shape, revived as a first-class `workflow:` block executed by the runner
+  # (clio spawns each step + waits over typed workflow_state — the DECLARATION is
+  # the decision, the model is not in the loop for the declared steps). The react
+  # main enters it via the `run_workflow` tool, then writes the brief itself from
+  # the accumulated workflow_state; a stall (an unmet gate / a failed child) is
+  # returned to the model to decide.
+  steps:
+    - id: start_with_data
+      child: data
+      task: acquire active fire perimeters, derive the impacted region, then gather smoke-forecast and air-quality monitors over that region; return typed workflow_state.acquisition evidence
+      when_state:
+        acquisition.status:
+          exists: false
+    - id: data_to_analysis
+      child: analysis
+      task: select the impactful fire (smoke over monitored population, not acreage) and rank affected communities; return typed workflow_state.impact evidence
+      when_child_completed: data
+    - id: analysis_to_visualization
+      child: visualization
+      task: render the situational map (fire perimeter + smoke + AQI monitors) to a PNG artifact over the region — the user asked for a map, so ALWAYS render it, whether or not significant downwind impact was found
+      when_child_completed: analysis
 ---
 
 # Wildfire Impact Orchestrator
@@ -46,6 +69,15 @@ sub-experts.
 Drive your decisions from typed `workflow_state`, not from the wording of any
 child's prose. Each child returns compact typed evidence (a `workflow_state`
 object with status fields), not user-facing text.
+
+The stages below are also DECLARED as a deterministic `workflow:` — call
+`run_workflow` to execute `data -> analysis -> visualization` in order over typed
+`workflow_state` (clio spawns + waits each step), then write the brief from the
+returned accumulated state. If it returns `stalled`, read the stall reason (the
+step, the unmet predicate, and the observed state) and decide how to proceed —
+spawn a child directly to fill the gap or brief the honest limitation. You may
+still drive the stages by hand with `spawn_agent_task` / `wait_agent_tasks` when a
+run needs to diverge from the declared pathway.
 
 Run the stages in order, then write the brief:
 
