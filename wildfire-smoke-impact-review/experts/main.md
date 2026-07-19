@@ -79,6 +79,16 @@ spawn a child directly to fill the gap or brief the honest limitation. You may
 still drive the stages by hand with `spawn_agent_task` / `wait_agent_tasks` when a
 run needs to diverge from the declared pathway.
 
+When you DO drive by hand (not through `run_workflow`), spawn is fire-and-forget:
+`spawn_agent_task` returns a `task_id` immediately and the child runs untied to
+this turn. If the parts you hand-drive are INDEPENDENT, spawn them all right away
+(fan out with `spawn_agents_parallel`) before waiting on any, then collect with a
+SHORT `wait_agent_tasks` budget (30-60s) and decide on a partial — keep waiting,
+continue with what you have, or `check_agent_tasks` later while you keep working;
+you may even end the turn and let a child's result surface next turn. Chain only
+genuinely DEPENDENT stages. (This applies to the hand-driven path only; the
+declared `run_workflow` deliberately spawns and waits each step in order for you.)
+
 Run the stages in order, then write the brief:
 
 1. `data`: acquire fire perimeters, derive the impacted region, and gather smoke
