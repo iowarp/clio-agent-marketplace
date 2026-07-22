@@ -177,9 +177,11 @@ first ".") of `acquisition.local_path`'s filename (e.g. `P475` from
 `P475.CI.LY_.20.csv`), equal to `resource_candidate.station_id`. NEVER a
 city/airport/region code (SAN, SDM, LAZ, SEA, "San Diego Main") and never paired
 with one. The id in prose, in the CSV filename, and in the PNG filename must all
-be the SAME station. Paths are copied whole as single absolute strings — CSV =
-exactly `acquisition.local_path`, PNG = exactly `artifact.path` (never doubled,
-never rebuilt by joining a directory + filename).
+be the SAME station. The staged CSV and the plot PNG are **designated artifacts** —
+the harness registers each (hash-pinned) when the staging/plot tool writes it, and
+clio grounds any deliverable path your answer cites against those registered
+artifacts. Reference the artifact the child/tool produced; do not hand-compose,
+join, or rebuild a deliverable path string yourself.
 
 Disclose failures: if typed state or child evidence contains
 `delegation.status=failed`, `resource_discovery.status=child_failed`,

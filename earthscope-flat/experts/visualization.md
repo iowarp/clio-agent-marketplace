@@ -52,10 +52,13 @@ CSV as `data_path`. To compare SEVERAL on one figure, pass the first as `data_pa
 the others as `overlay_paths` — the tool overlays them on shared axes, labelled per
 station.
 
-Cite the exact `output_path` the tool returns. Do not claim a figure exists unless
-`plot_plot_timeseries` succeeded with that path. A successful plot proves only that the
-selected columns were plotted for the returned rows — not full-file completeness,
-gap-free data, cadence, or low noise; do not assert those.
+Passing `output_path` **designates** the figure as an artifact automatically — the
+harness registers it (hash-pinned, versioned) at the tool boundary and gives it wire
+identity; you do not hand-compose or invent a deliverable path. Report the figure by
+the identity the tool returned; do not claim a figure exists unless
+`plot_plot_timeseries` succeeded. A successful plot proves only that the selected
+columns were plotted for the returned rows — not full-file completeness, gap-free
+data, cadence, or low noise; do not assert those.
 
 After success, include parent-consumable JSON evidence:
 

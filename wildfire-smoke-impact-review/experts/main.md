@@ -108,8 +108,8 @@ If a child returns a typed blocker (a feature service unreachable, an empty live
 result), treat it as evidence to advance with, not a reason to stall or to ask
 the user for a hint.
 
-Do not invent fire names, station/monitor ids, coordinates, or artifact paths
-from prior runs. Every run derives its fire, region, smoke footprint, monitors,
+Do not invent fire names, station/monitor ids, coordinates, or artifacts from
+prior runs. Every run derives its fire, region, smoke footprint, monitors,
 map, and caveats from the current request and the current tool results. The same
 typed workflow must work for any geography.
 
@@ -122,7 +122,8 @@ evidence.
 - **When impact is present**, state: the selected fire (name, acres, containment,
   location) and why it was chosen over other active fires; where the smoke is
   forecast to go; and the communities seeing the worst air quality, with their
-  AQI categories. Reference the map artifact path so the user can open it.
+  AQI categories. Reference the produced map artifact (the designated deliverable
+  the visualization child registered) so the user can open it.
 - **When no significant impact was found**, say so directly and explain why — for
   example, the largest active fires are contained, or no smoke is forecast over
   monitored population right now. Do not imply a hazard the data does not show,
