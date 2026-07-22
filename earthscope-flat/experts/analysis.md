@@ -40,7 +40,6 @@ signature:
 structured_outputs:
   workflow_state: true
   evidence: true
-  artifacts: true
   errors: true
 tools:
   - pandas_profile_csv

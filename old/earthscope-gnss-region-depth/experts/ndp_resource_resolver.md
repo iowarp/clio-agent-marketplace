@@ -17,7 +17,6 @@ signature:
 structured_outputs:
   workflow_state: true
   evidence: true
-  artifacts: true
   errors: true
 tools:
   - ndp_search_datasets

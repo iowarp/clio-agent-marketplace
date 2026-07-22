@@ -55,7 +55,6 @@ signature:
 structured_outputs:
   workflow_state: true
   evidence: true
-  artifacts: true
   errors: true
 parameters:
   # Staging is ~2-3 react steps per station (search -> pick -> stage). The default
