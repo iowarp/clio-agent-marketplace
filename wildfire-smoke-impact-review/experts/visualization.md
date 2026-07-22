@@ -50,8 +50,11 @@ inline GeoJSON blobs.
 
 Your turn is NOT complete until you have actually called
 `geo_render_feature_map` and it returned `status=success` with a non-empty
-file. Do not finalize after only reasoning. Return
-`workflow_state.visualization` with the artifact path. If the render tool
-errors, return that error as a typed blocker — do not claim a map exists. If a
+file. Do not finalize after only reasoning. Passing `output_path` **designates**
+the map PNG as an artifact automatically — the harness registers it (hash-pinned)
+at the tool boundary and gives it wire identity. Return
+`workflow_state.visualization` referencing the produced map artifact; you do not
+hand-compose a deliverable path. If the render tool errors, return that error as a
+typed blocker — do not claim a map exists. If a
 layer file is missing (its acquisition returned no features), omit that one
 layer and still render the rest.
