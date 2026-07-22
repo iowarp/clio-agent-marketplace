@@ -12,7 +12,6 @@ tools:
   - geo_render_feature_map
 structured_outputs:
   workflow_state: true
-  artifacts: true
   errors: true
 ---
 

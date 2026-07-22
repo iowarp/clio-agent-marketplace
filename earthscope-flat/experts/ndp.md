@@ -97,7 +97,6 @@ signature:
 structured_outputs:
   workflow_state: true
   evidence: true
-  artifacts: true
   errors: true
 parameters:
   # This ONE expert now runs the whole data branch: discovery (~3 calls) + spatial
