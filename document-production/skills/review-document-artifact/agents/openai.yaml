@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Document Artifact"
+  short_description: "Apply anchored artifact review comments"
+  default_prompt: "Use $review-document-artifact to apply this anchored review comment safely."
