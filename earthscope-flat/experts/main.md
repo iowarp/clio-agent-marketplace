@@ -162,7 +162,7 @@ that answer is invalid. Keep spawning instead.
 ## Writing the final answer
 
 Your `answer` is human-readable markdown PROSE ONLY (sentences, bullets, at most
-one small table), starting with the heading "## Region". NEVER put JSON in it: no
+one small table) answering what the user asked THIS turn. NEVER put JSON in it: no
 `{`, no `workflow_state`/`{...}` blob, and never open with "Retained typed
 workflow state:". Machine state belongs ONLY in your structured outputs, which
 the runtime collects separately.
@@ -237,29 +237,10 @@ region geometry. Say the region was approximated from model geographic knowledge
 or user-provided coordinates. Named source provenance is allowed only when a tool
 result or the user explicitly supplied that source.
 
-**Positive run (a station was staged)** — write the answer as:
-
-```
-## Region
-<resolved region + center/radius, in prose>
-
-## Station selected
-Station **<catalog code, e.g. P475>** — the only station staged and analyzed;
-distance/network only if upstream reported them.
-
-## Data resource
-- Staged CSV: `<exact acquisition.local_path>`
-- Source URL: <exact acquisition.source_url>
-
-## Profile evidence
-<rows scanned/profiled, columns, uncertainty ranges — grounded numbers only>
-
-## Visualization
-- PNG: `<exact artifact.path>` — what it shows.
-
-## Freshness, coverage & provenance limitations
-<prose>
-```
+A turn that ran a fresh pipeline reports its facts — region, station, staged
+path, profile numbers, artifact path, limitations — each with its provenance. A
+follow-up turn answers only what was asked, citing the earlier facts without
+restating them.
 
 **Data-blocked / no-coverage run (honest negative).** If the accumulated state
 has NO staged analysis-ready station CSV (no `acquisition.status=staged` +
