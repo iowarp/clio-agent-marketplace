@@ -11,10 +11,10 @@ description: Agentic forensic provenance surveillance. Attach to any session via
 root_expert: spotter_watcher
 blueprint:
   format: agent-blueprint-v1
-# Demo-box launch command; the public form becomes `uvx spotter-ai spotter-mcp`
-# once the spotter-ai repo is published.
+# Demo-box launch command (direct venv exe — sandbox-friendly, no uv wrapper);
+# the public form becomes `uvx spotter-ai spotter-mcp` once the repo is published.
 mcp_servers:
-  spotter: uv run --project D:/Libraries/Documents/projects/spotter-ai spotter-mcp
+  spotter: D:/Libraries/Documents/projects/spotter-ai/.venv/Scripts/spotter-mcp.exe
 experts:
   - experts/spotter_watcher.md
 ---

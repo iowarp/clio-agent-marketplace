@@ -11,10 +11,10 @@ description: Synthetic plant-phenotyping campaign operator — the reference sta
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
-# Demo-box launch command; the public form becomes `uvx spotter-ai phenotype-mcp`
-# once the spotter-ai repo is published.
+# Demo-box launch command (direct venv exe — sandbox-friendly, no uv wrapper);
+# the public form becomes `uvx spotter-ai phenotype-mcp` once the repo is published.
 mcp_servers:
-  workload: uv run --project D:/Libraries/Documents/projects/spotter-ai phenotype-mcp
+  workload: D:/Libraries/Documents/projects/spotter-ai/.venv/Scripts/phenotype-mcp.exe
 experts:
   - experts/main.md
 ---
