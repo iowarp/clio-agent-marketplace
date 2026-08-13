@@ -18,6 +18,8 @@ dev = [
 
 [project.scripts]
 spotter-campaign = "spotter_ai.pipeline.campaign:main"
+spotter-mcp = "spotter_ai.server:main"
+phenotype-mcp = "spotter_ai.workload:main"
 
 [build-system]
 requires = ["hatchling"]
