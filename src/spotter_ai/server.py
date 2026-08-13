@@ -16,13 +16,14 @@ from __future__ import annotations
 
 import asyncio
 import time
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
 
 from spotter_ai.provenance.store import ProvenanceStore
+from spotter_ai.quarantine import lift_quarantine as quarantine_lift
+from spotter_ai.quarantine import write_quarantine
 
 #: How often wait_for_new_runs polls the provenance store while waiting.
 POLL_INTERVAL_S = 2.0
@@ -222,33 +223,41 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
 
         Agent story: once an agent has forensically confirmed tampering (e.g.
         via run_health + diff_runs + read_artifact), it calls this to halt
-        the campaign before another run starts -- the campaign CLI checks for
-        this sentinel before each run and exits immediately when it appears.
+        the campaign before another run starts -- the campaign CLI and the
+        workload MCP server's run_campaign both check for this sentinel
+        before each run and stop immediately when it appears.
 
         Args:
             run_id: The run this alert concerns.
             reason: Human-readable justification for the quarantine.
             data_dir: The campaign's data directory (must match the one the
-                running campaign CLI was invoked with).
+                running campaign was invoked with).
 
         Returns:
             A dict with ``quarantined: True``, ``path`` (the sentinel file
             written), ``run_id``, ``reason``, and ``timestamp``.
         """
-        timestamp = datetime.now(UTC).isoformat()
-        path = Path(data_dir) / "QUARANTINE"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            f"run_id: {run_id}\nreason: {reason}\ntimestamp: {timestamp}\n",
-            encoding="utf-8",
-        )
-        return {
-            "quarantined": True,
-            "path": str(path),
-            "run_id": run_id,
-            "reason": reason,
-            "timestamp": timestamp,
-        }
+        return write_quarantine(data_dir, run_id, reason)
+
+    @mcp.tool
+    def lift_quarantine(data_dir: str = "./campaign_data") -> dict[str, Any]:
+        """Remove the QUARANTINE sentinel, letting the campaign resume.
+
+        Agent story: the SPOTTER watcher agent (which mounts only this
+        forensic server, not the science-side workload server) uses this to
+        resume the campaign once a human has reviewed an alert and
+        explicitly said to continue -- e.g. after raise_alert turned out to
+        be a false positive.
+
+        Args:
+            data_dir: The campaign's data directory (must match the one
+                raise_alert was called with).
+
+        Returns:
+            A dict with ``lifted`` (``True`` only if a sentinel was actually
+            present and removed) and ``path``.
+        """
+        return quarantine_lift(data_dir)
 
     return mcp
 

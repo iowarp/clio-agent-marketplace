@@ -19,10 +19,9 @@ from pathlib import Path
 
 from spotter_ai.pipeline import stages
 from spotter_ai.provenance.store import ArtifactRef, ProvenanceStore
+from spotter_ai.quarantine import QUARANTINE_FILENAME, read_quarantine
 
-#: Sentinel filename that, when present in the data directory, halts the
-#: campaign before starting another run.
-QUARANTINE_FILENAME = "QUARANTINE"
+__all__ = ["QUARANTINE_FILENAME", "build_arg_parser", "main", "run_campaign", "run_single"]
 
 
 def _now() -> str:
@@ -66,15 +65,31 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _ensure_calibration_file(calibration_path: Path) -> None:
+def ensure_calibration_file(calibration_path: Path) -> None:
+    """Create a default ``calibration.json`` if none exists yet.
+
+    Shared by the CLI and other campaign drivers (e.g. the workload MCP
+    server) so every entry point bootstraps a fresh data directory the
+    same way.
+
+    Args:
+        calibration_path: Path to the campaign's ``calibration.json``.
+    """
     if not calibration_path.exists():
         calibration_path.parent.mkdir(parents=True, exist_ok=True)
         stages.write_json(calibration_path, dict(stages.DEFAULT_CALIBRATION))
 
 
-def _tamper_calibration(calibration_path: Path) -> None:
+def tamper_calibration(calibration_path: Path, scale_factor: float = 1.35) -> None:
+    """Overwrite ``calibration.json``'s ``scale_factor``, leaving ``offset`` untouched.
+
+    Args:
+        calibration_path: Path to the campaign's ``calibration.json``.
+        scale_factor: The drifted scale factor to write (default: ``1.35``,
+            this substrate's standard tamper magnitude).
+    """
     calibration = stages.read_json(calibration_path)
-    calibration["scale_factor"] = 1.35
+    calibration["scale_factor"] = scale_factor
     stages.write_json(calibration_path, calibration)
 
 
@@ -205,23 +220,22 @@ def run_campaign(args: argparse.Namespace, store: ProvenanceStore | None = None)
     runs_dir = data_dir / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
     calibration_path = data_dir / "calibration.json"
-    quarantine_path = data_dir / QUARANTINE_FILENAME
 
-    _ensure_calibration_file(calibration_path)
+    ensure_calibration_file(calibration_path)
     original_calibration_text = calibration_path.read_text(encoding="utf-8")
 
     store = store if store is not None else ProvenanceStore()
 
     for i in range(1, args.runs + 1):
-        if quarantine_path.exists():
-            reason = quarantine_path.read_text(encoding="utf-8")
+        reason = read_quarantine(data_dir)
+        if reason is not None:
             print(f"CAMPAIGN HALTED — quarantined by SPOTTER AI: {reason}")
             return 2
 
         run_id = f"run-{i:03d}"
         tampered_this_run = args.tamper_at is not None and i == args.tamper_at
         if tampered_this_run:
-            _tamper_calibration(calibration_path)
+            tamper_calibration(calibration_path)
 
         try:
             metrics = run_single(

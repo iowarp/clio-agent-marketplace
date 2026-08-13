@@ -255,3 +255,33 @@ class TestRaiseAlert:
         content = quarantine_path.read_text(encoding="utf-8")
         assert "run-003" in content
         assert "calibration drift confirmed" in content
+
+
+class TestLiftQuarantine:
+    async def test_raise_then_lift_removes_sentinel(
+        self, small_campaign: tuple[Path, Path]
+    ) -> None:
+        db_path, data_dir = small_campaign
+        server = create_server(db_path)
+        quarantine_path = data_dir / "QUARANTINE"
+
+        async with Client(server) as client:
+            await client.call_tool(
+                "raise_alert",
+                {"run_id": "run-003", "reason": "false alarm", "data_dir": str(data_dir)},
+            )
+            assert quarantine_path.exists()
+
+            result = await client.call_tool("lift_quarantine", {"data_dir": str(data_dir)})
+
+        assert result.data["lifted"] is True
+        assert not quarantine_path.exists()
+
+    async def test_lift_with_no_sentinel_reports_nothing_lifted(
+        self, small_campaign: tuple[Path, Path]
+    ) -> None:
+        db_path, data_dir = small_campaign
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("lift_quarantine", {"data_dir": str(data_dir)})
+        assert result.data["lifted"] is False
