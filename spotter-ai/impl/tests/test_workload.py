@@ -1,8 +1,8 @@
 """Contract tests for the FastMCP "phenotype-workload" tool server: running
 measurement batches in-process, run-numbering continuation across
-invocations, the invisible fault.json tamper mechanism, quarantine
-halting/lifting, campaign_status, server-side campaign/data-dir config
-resolution, and per-batch report artifacts.
+invocations, the invisible injection.json chaos-engineering fault-injection
+mechanism, quarantine halting/lifting, campaign_status, server-side
+campaign/data-dir config resolution, and per-batch report artifacts.
 """
 
 from __future__ import annotations
@@ -155,27 +155,30 @@ class TestMeasureCohortBasic:
 
 
 class TestFaultInjection:
-    """Proves the fault.json indexing semantics documented on measure_cohort:
+    """Proves the injection.json indexing semantics documented on measure_cohort:
     tamper_at matches the run's GLOBAL run-NNN number -- the same number
     embedded in its run_id -- regardless of which measure_cohort call actually
     produces that run, and none of it leaks into the tool's return value.
 
-    The demo drives a campaign as a sequence of smaller batched calls (e.g.
-    runs=8, then runs=6, ...), so a per-call-local index could never target
-    a run past the size of a single call. Global indexing is what lets a
-    demo operator plan "tamper run 12" up front.
+    The validation campaign drives a run as a sequence of smaller batched
+    calls (e.g. runs=8, then runs=6, ...), so a per-call-local index could
+    never target a run past the size of a single call. Global indexing is
+    what lets a validation operator plan "inject a fault at run 12" up
+    front.
     """
 
-    async def test_fault_matches_global_run_number_across_batched_calls(
+    async def test_injection_matches_global_run_number_across_batched_calls(
         self, tmp_path: Path, db_path: Path, data_dir: Path
     ) -> None:
         server = create_server(db_path)
         data_dir.mkdir(parents=True)
 
-        # Plant a fault for global run-012 *before either call* -- a
-        # per-invocation-local index could never reach "12" from an 8-run
+        # Plant a fault injection for global run-012 *before either call* --
+        # a per-invocation-local index could never reach "12" from an 8-run
         # first call or a 6-run second call.
-        (data_dir / "fault.json").write_text(json.dumps({"tamper_at": 12}), encoding="utf-8")
+        (data_dir / "injection.json").write_text(
+            json.dumps({"tamper_at": 12}), encoding="utf-8"
+        )
 
         # First call: 8 healthy runs (run-001..run-008). No local index in
         # this call ever equals 12, so nothing should be tampered here.
@@ -194,16 +197,18 @@ class TestFaultInjection:
         assert second.data["status"] == "completed"
 
         # Invisibility: nothing in either call's returned payload mentions
-        # the fault, in either call (written_path is a filesystem path, not
-        # payload content, so it is excluded from this text scan).
+        # the injected fault, in either call (written_path is a filesystem
+        # path, not payload content, so it is excluded from this text scan).
         for payload in (first.data, second.data):
             payload_text = json.dumps({k: v for k, v in payload.items() if k != "written_path"})
             payload_text = payload_text.lower()
             assert "tamper" not in payload_text
             assert "fault" not in payload_text
+            assert "injection" not in payload_text
 
-        # fault.json is left in place -- it's the demo's ground-truth record.
-        assert (data_dir / "fault.json").exists()
+        # injection.json is left in place -- it's the validation campaign's
+        # ground-truth record.
+        assert (data_dir / "injection.json").exists()
 
         # Calibration was restored immediately after the tampered run.
         calibration = stages.read_json(data_dir / "calibration.json")
@@ -241,7 +246,7 @@ class TestFaultInjection:
         assert executions, f"no calibrate stage recorded for {run_id}"
         assert executions[0]["params"]["scale_factor"] == pytest.approx(1.02)
 
-    async def test_no_fault_json_means_no_tamper(
+    async def test_no_injection_json_means_no_tamper(
         self, tmp_path: Path, db_path: Path, data_dir: Path
     ) -> None:
         server = create_server(db_path)
@@ -252,12 +257,12 @@ class TestFaultInjection:
         for entry in result.data["runs"]:
             self._assert_calibrate_untampered(store, entry["run_id"])
 
-    async def test_malformed_fault_json_is_ignored(
+    async def test_malformed_injection_json_is_ignored(
         self, tmp_path: Path, db_path: Path, data_dir: Path
     ) -> None:
         server = create_server(db_path)
         data_dir.mkdir(parents=True)
-        (data_dir / "fault.json").write_text("not valid json {{{", encoding="utf-8")
+        (data_dir / "injection.json").write_text("not valid json {{{", encoding="utf-8")
 
         async with Client(server) as client:
             result = await client.call_tool("measure_cohort", {"runs": 3, "pace_seconds": 0})

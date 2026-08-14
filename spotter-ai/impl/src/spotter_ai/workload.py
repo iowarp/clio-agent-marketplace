@@ -6,7 +6,8 @@ agent drives to actually run the phenotyping campaign -- as opposed to
 attribution surface a separate watcher agent uses to investigate it. The two
 servers are deliberately split: this one knows nothing about forensics, and
 critically, nothing it returns ever reveals whether a run was tampered with
-(see ``measure_cohort``'s fault-injection semantics below).
+(see ``measure_cohort``'s chaos-engineering fault-injection semantics
+below).
 
 Campaign name and data directory are workspace-fixed server config (see
 :mod:`spotter_ai.config`), resolved once when :func:`create_server` builds
@@ -35,13 +36,18 @@ from spotter_ai.provenance.store import ProvenanceStore
 from spotter_ai.quarantine import lift_quarantine as quarantine_lift
 from spotter_ai.quarantine import quarantine_path, read_quarantine
 
-#: Filename, under a campaign's data directory, that plants a one-run
-#: calibration-drift fault for measure_cohort to apply silently. See
-#: measure_cohort's docstring for the exact indexing semantics.
-FAULT_FILENAME = "fault.json"
+#: Filename, under a campaign's data directory, that configures a
+#: chaos-engineering fault-injection hook: a one-run calibration-drift
+#: fault measure_cohort applies silently on the campaign operator's behalf.
+#: This is a deliberate, documented validation-campaign control (the same
+#: standard practice as Chaos Monkey-style fault injection), not a hidden
+#: tamper -- see measure_cohort's docstring for the exact indexing
+#: semantics.
+INJECTION_FILENAME = "injection.json"
 
-#: The tamper magnitude applied when fault.json matches: calibration.json's
-#: scale_factor is temporarily rewritten to this value.
+#: The magnitude of the injected calibration drift when injection.json
+#: matches: calibration.json's scale_factor is temporarily rewritten to
+#: this value.
 TAMPERED_SCALE_FACTOR = 1.35
 
 #: Default pacing (seconds between runs) for a live demo -- see
@@ -82,12 +88,12 @@ def _existing_run_ids(runs_dir: Path) -> list[str]:
     return sorted(names)
 
 
-def _fault_matches(data_dir: Path, global_run_number: int) -> bool:
-    """Check whether fault.json requests a tamper at this GLOBAL run number.
+def _injection_matches(data_dir: Path, global_run_number: int) -> bool:
+    """Check whether injection.json requests a fault injection at this GLOBAL run number.
 
-    Malformed or unreadable fault.json is treated as "no fault" rather than
-    raised, since it is an out-of-band demo control file, not a pipeline
-    artifact.
+    Malformed or unreadable injection.json is treated as "no injection"
+    rather than raised, since it is an out-of-band validation-campaign
+    control file, not a pipeline artifact.
 
     Args:
         data_dir: The campaign's data directory.
@@ -97,17 +103,17 @@ def _fault_matches(data_dir: Path, global_run_number: int) -> bool:
             call's own local iteration count.
 
     Returns:
-        ``True`` if fault.json exists, parses, and its ``tamper_at`` equals
-        ``global_run_number``.
+        ``True`` if injection.json exists, parses, and its ``tamper_at``
+        equals ``global_run_number``.
     """
-    fault_path = data_dir / FAULT_FILENAME
-    if not fault_path.exists():
+    injection_path = data_dir / INJECTION_FILENAME
+    if not injection_path.exists():
         return False
     try:
-        fault = stages.read_json(fault_path)
+        injection = stages.read_json(injection_path)
     except (OSError, ValueError):
         return False
-    return isinstance(fault, dict) and fault.get("tamper_at") == global_run_number
+    return isinstance(injection, dict) and injection.get("tamper_at") == global_run_number
 
 
 def _summarize_completed(completed: list[dict[str, Any]]) -> dict[str, Any]:
@@ -241,27 +247,33 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         returns a ``status: "halted"`` result naming SPOTTER AI and the
         sentinel's contents -- it never raises for this case.
 
-        Fault injection (invisible to the caller): this tool takes NO
-        tamper parameter. Instead, before each run, if the campaign data
-        directory's ``fault.json`` exists with the shape
-        ``{"tamper_at": N}``, ``N`` is compared against the run's GLOBAL
-        run-NNN number -- the same number embedded in its run_id (e.g.
-        ``tamper_at: 12`` matches run-012) -- regardless of which
-        measure_cohort call actually produces that run. This matters because
-        a real campaign is typically driven as a sequence of smaller
-        batched calls (e.g. ``runs=8``, then ``runs=6``, ...); a demo
-        operator can plan "tamper run 12" up front without knowing in
-        advance which call's local iteration will land on it. For example:
-        a first call with ``runs=8`` produces run-001..run-008, and a
-        second call with ``runs=6`` and fault.json's ``tamper_at: 12``
-        tampers the *fifth* run of that second call -- global id run-012 --
-        not whatever run its local iteration count of 5 might suggest. When
-        matched, ``calibration.json``'s ``scale_factor`` is rewritten to
-        :data:`TAMPERED_SCALE_FACTOR` for that run only and restored
-        immediately afterward. Nothing about this ever appears in this
-        tool's return value or in any log this tool emits -- fault.json is
-        the demo's ground-truth record for the forensic server to be
-        judged against, and is left in place (never deleted) by this tool.
+        Fault injection (invisible to the caller): this is a
+        chaos-engineering fault-injection hook for validation campaigns --
+        a deliberate, documented control for exercising SPOTTER AI's
+        detection and attribution against a known-bad run, standard
+        practice for validating an anomaly-detection system, not a hidden
+        tamper. This tool takes NO injection parameter directly. Instead,
+        before each run, if the campaign data directory's
+        ``injection.json`` exists with the shape ``{"tamper_at": N}``,
+        ``N`` is compared against the run's GLOBAL run-NNN number -- the
+        same number embedded in its run_id (e.g. ``tamper_at: 12`` matches
+        run-012) -- regardless of which measure_cohort call actually
+        produces that run. This matters because a real campaign is
+        typically driven as a sequence of smaller batched calls (e.g.
+        ``runs=8``, then ``runs=6``, ...); a validation operator can plan
+        "inject a fault at run 12" up front without knowing in advance
+        which call's local iteration will land on it. For example: a first
+        call with ``runs=8`` produces run-001..run-008, and a second call
+        with ``runs=6`` and injection.json's ``tamper_at: 12`` injects the
+        fault into the *fifth* run of that second call -- global id
+        run-012 -- not whatever run its local iteration count of 5 might
+        suggest. When matched, ``calibration.json``'s ``scale_factor`` is
+        rewritten to :data:`TAMPERED_SCALE_FACTOR` for that run only and
+        restored immediately afterward. Nothing about this ever appears in
+        this tool's return value or in any log this tool emits --
+        injection.json is the validation campaign's ground-truth record for
+        the forensic server to be judged against, and is left in place
+        (never deleted) by this tool.
 
         Batch report: once at least one run completes in this call, a
         report JSON is written under the campaign data directory's
@@ -316,7 +328,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             global_index = start_index + local_index - 1
             run_id = f"run-{global_index:03d}"
 
-            tampered_this_run = _fault_matches(data_dir_path, global_index)
+            tampered_this_run = _injection_matches(data_dir_path, global_index)
             if tampered_this_run:
                 campaign_module.tamper_calibration(calibration_path, TAMPERED_SCALE_FACTOR)
 

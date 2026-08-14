@@ -10,10 +10,11 @@ that halts the campaign the moment it appears.
 
 ``--tamper-at`` matches the run's GLOBAL run-NNN number -- the same number
 embedded in its run_id (e.g. ``--tamper-at 12`` matches run-012) -- the same
-convention the workload MCP server's ``fault.json`` (see
-:mod:`spotter_ai.workload`) uses, so a demo operator reasons about "tamper
-run 12" identically whether the campaign is driven by this CLI in one shot
-or by a sequence of batched ``measure_cohort`` calls.
+convention the workload MCP server's ``injection.json`` (see
+:mod:`spotter_ai.workload`) uses for its own chaos-engineering
+fault-injection hook, so a validation operator reasons about "inject a
+fault at run 12" identically whether the campaign is driven by this CLI in
+one shot or by a sequence of batched ``measure_cohort`` calls.
 """
 
 from __future__ import annotations
