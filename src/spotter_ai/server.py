@@ -42,7 +42,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
 
     Returns:
         A configured :class:`fastmcp.FastMCP` server named ``"spotter"``,
-        with all 7 forensic-attribution tools registered.
+        with all 9 forensic-attribution tools registered.
     """
     store = ProvenanceStore(db_path)
     mcp: FastMCP = FastMCP("spotter")
@@ -93,6 +93,58 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         if store.get_run(run_id) is None:
             raise ValueError(f"run_id {run_id!r} not found")
         return {"run_id": run_id, "metrics": store.get_run_health(run_id)}
+
+    @mcp.tool
+    def campaign_health(campaign: str | None = None) -> dict[str, Any]:
+        """Sweep every completed run's health in one call: the watcher's one-call sweep per wake.
+
+        Agent story: run_health costs one LLM round PER run, which cannot
+        keep up with a live campaign -- in a dry run the watcher was still
+        checking run-010 when a 20-run campaign had already finished, so
+        detection never happened. campaign_health computes the same
+        leave-one-out z-scores for every completed run in a single call, so
+        the watcher can triage an entire campaign each time it wakes and
+        only spend a run_health/diff_runs round on the runs that actually
+        come back anomalous.
+
+        Args:
+            campaign: If given, only runs in this campaign are checked.
+
+        Returns:
+            A dict with ``campaign``, ``runs_checked`` (number of completed
+            runs evaluated), ``verdicts`` (one bounded row per run --
+            ``{"run_id", "verdict", "worst_metric", "worst_z", "value",
+            "baseline_mean"}``, reporting only the single most anomalous
+            metric per run, not the full metrics list -- use run_health for
+            that), and ``anomalous`` (the list of run_ids whose verdict is
+            ``"anomalous"``). Uses the same floored-std z-score as
+            run_health, since it is computed by the same code path.
+        """
+        verdicts = []
+        for run in store.list_runs(campaign=campaign):
+            if run["status"] != "completed":
+                continue
+            health = store.get_run_health(run["run_id"])
+            if not health:
+                continue
+            worst = max(health, key=lambda h: abs(h["z"]))
+            verdicts.append(
+                {
+                    "run_id": run["run_id"],
+                    "verdict": worst["verdict"],
+                    "worst_metric": worst["metric"],
+                    "worst_z": worst["z"],
+                    "value": worst["value"],
+                    "baseline_mean": worst["baseline_mean"],
+                }
+            )
+        anomalous = [v["run_id"] for v in verdicts if v["verdict"] == "anomalous"]
+        return {
+            "campaign": campaign,
+            "runs_checked": len(verdicts),
+            "verdicts": verdicts,
+            "anomalous": anomalous,
+        }
 
     @mcp.tool
     def diff_runs(run_id: str, baseline_run_id: str) -> dict[str, Any]:

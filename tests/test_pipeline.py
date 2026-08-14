@@ -189,7 +189,7 @@ class TestForensicMargins:
 
         biomasses = [r["metrics"]["mean_biomass"] for r in runs]
         cv = statistics.stdev(biomasses) / statistics.fmean(biomasses)
-        assert 0.01 < cv < 0.05, f"expected healthy CV in ~2-3% ballpark, got {cv:.4%}"
+        assert 0.01 < cv < 0.05, f"expected healthy CV in ~1-5% ballpark, got {cv:.4%}"
 
         for run in runs:
             health = store.get_run_health(run["run_id"])

@@ -15,11 +15,23 @@ ratio). ``ingest`` draws readings from ``random.Random(seed)``, so a run's
 data is fully determined by its seed. ``calibrate`` applies a campaign-level
 scale/offset correction (read from ``calibration.json``) to the two
 physical-scale channels (``leaf_px``, ``height_mm``); the greenness ratio is
-already sensor-normalized and is not calibrated. The noise level and the
-calibrated/uncalibrated feature mix in the biomass model were tuned (see
-``tests/test_pipeline.py``) so that a healthy campaign's ``mean_biomass``
-varies run-to-run with CV ~2-3%, while a calibration ``scale_factor`` drift
-from ``1.02`` to ``1.35`` shifts ``mean_biomass`` by ~25-30%.
+already sensor-normalized and is not calibrated. The noise level, plant
+count, and the calibrated/uncalibrated feature mix in the biomass model were
+tuned (see ``tests/test_pipeline.py``, ``tests/test_server.py``) so that a
+healthy campaign's ``mean_biomass`` varies run-to-run with CV ~1-3%, while a
+calibration ``scale_factor`` drift from ``1.02`` to ``1.35`` shifts
+``mean_biomass`` by double digits (z well past 5 against a healthy
+baseline). :data:`N_PLANTS` was raised from an initial 20 to 60 specifically
+because ``mean_leaf_area`` and ``mean_height`` -- unlike ``mean_biomass``,
+which is damped by its non-calibrated greenness/intercept terms -- are
+undamped means of a single noised channel and so carry a visibly higher
+natural CV; at 20 plants that was enough to occasionally push one of those
+two metrics' healthy leave-one-out z past 3 in an 11-14 run baseline (a
+false positive), since :func:`spotter_ai.server.create_server`'s
+``campaign_health`` tool takes the worst z across *all* recorded metrics per
+run, not just ``mean_biomass``. Tripling the plant count shrinks every
+metric's CV via the same ``1/sqrt(N)`` averaging effect without changing the
+noise model itself.
 """
 
 from __future__ import annotations
@@ -34,8 +46,9 @@ from typing import Any
 #: stage execution so provenance diffing can flag a code-version change.
 TOOL_VERSION = "0.1.0"
 
-#: Number of synthetic plants scanned per run.
-N_PLANTS = 20
+#: Number of synthetic plants scanned per run. See the module docstring for
+#: why this is 60 rather than a smaller, faster-to-generate number.
+N_PLANTS = 60
 
 #: Per-plant, per-run multiplicative noise stdev applied to the physical
 #: sensor channels (leaf pixel count, height). This is the dominant source of

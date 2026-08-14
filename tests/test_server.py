@@ -98,6 +98,97 @@ class TestRunHealth:
                 await client.call_tool("run_health", {"run_id": "run-999"})
 
 
+class TestCampaignHealth:
+    """The batched sweep the watcher calls once per wake instead of one
+    run_health round per run -- must reach the same verdicts run_health
+    would, for every completed run, in a single tool call.
+    """
+
+    async def test_contract_shape(self, small_campaign: tuple[Path, Path]) -> None:
+        db_path, _ = small_campaign
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("campaign_health", {})
+
+        data = result.data
+        assert set(data) == {"campaign", "runs_checked", "verdicts", "anomalous"}
+        assert data["campaign"] is None
+        assert data["runs_checked"] == 3
+        assert len(data["verdicts"]) == 3
+        for row in data["verdicts"]:
+            assert set(row) == {
+                "run_id",
+                "verdict",
+                "worst_metric",
+                "worst_z",
+                "value",
+                "baseline_mean",
+            }
+            assert row["verdict"] in {"normal", "anomalous"}
+            assert row["worst_metric"] in {"mean_biomass", "mean_leaf_area", "mean_height"}
+        assert isinstance(data["anomalous"], list)
+
+    async def test_healthy_campaign_all_normal(self, tmp_path: Path) -> None:
+        db_path = tmp_path / "provenance.sqlite"
+        data_dir = tmp_path / "campaign_data"
+        store = ProvenanceStore(db_path)
+        parser = build_arg_parser()
+        args = parser.parse_args([])
+        args.data_dir = str(data_dir)
+        args.runs = 11
+        assert run_campaign(args, store=store) == 0
+
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("campaign_health", {})
+
+        data = result.data
+        assert data["runs_checked"] == 11
+        assert data["anomalous"] == []
+        assert all(row["verdict"] == "normal" for row in data["verdicts"])
+
+    async def test_tampered_campaign_flags_exactly_run_012(self, tmp_path: Path) -> None:
+        db_path = tmp_path / "provenance.sqlite"
+        data_dir = tmp_path / "campaign_data"
+        store = ProvenanceStore(db_path)
+        parser = build_arg_parser()
+        args = parser.parse_args([])
+        args.data_dir = str(data_dir)
+        args.runs = 12
+        args.tamper_at = 12
+        assert run_campaign(args, store=store) == 0
+
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("campaign_health", {})
+
+        data = result.data
+        assert data["runs_checked"] == 12
+        assert data["anomalous"] == ["run-012"]
+
+        tampered_row = next(row for row in data["verdicts"] if row["run_id"] == "run-012")
+        assert tampered_row["verdict"] == "anomalous"
+        assert tampered_row["worst_metric"] == "mean_biomass"
+        assert tampered_row["worst_z"] > 5, f"expected worst_z > 5, got {tampered_row['worst_z']}"
+
+        for row in data["verdicts"]:
+            if row["run_id"] == "run-012":
+                continue
+            assert row["verdict"] == "normal", row
+
+    async def test_campaign_filter(self, small_campaign: tuple[Path, Path]) -> None:
+        db_path, _ = small_campaign
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("campaign_health", {"campaign": "does-not-exist"})
+        assert result.data == {
+            "campaign": "does-not-exist",
+            "runs_checked": 0,
+            "verdicts": [],
+            "anomalous": [],
+        }
+
+
 class TestDiffRuns:
     async def test_contract_shape(self, small_campaign: tuple[Path, Path]) -> None:
         db_path, _ = small_campaign
