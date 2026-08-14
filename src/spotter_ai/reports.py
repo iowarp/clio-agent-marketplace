@@ -6,9 +6,10 @@ was a terminal-style summary line and rows in the provenance store; there was
 nothing a human could open to see batch-level detail. This module renders
 one batch (plus the campaign's running totals) to a JSON file under
 ``<data_dir>/reports/batch-NNN.json`` -- the path ``measure_cohort`` returns
-as ``report_path``, and that the phenotype expert registers via the
-platform's ``create_artifact`` tool so it shows up in the session's artifact
-panel.
+as ``written_path``, one of clio-agent's recognized result-path keys
+(``gact/artifacts/designation.py``'s ``RESULT_PATH_KEYS``), so the platform's
+tool observer auto-registers it as a workspace artifact the moment the call
+completes -- no agent action, no separate ``create_artifact`` call.
 """
 
 from __future__ import annotations
@@ -75,7 +76,7 @@ def write_batch_report(
 
     Agent story: ``measure_cohort`` calls this once per invocation, after its
     runs complete, so a human (or the platform's artifact panel, once the
-    phenotype expert registers the returned path via ``create_artifact``) has
+    tool observer auto-registers the returned ``written_path``) has
     batch-level detail to open instead of only a terminal summary line.
 
     Args:

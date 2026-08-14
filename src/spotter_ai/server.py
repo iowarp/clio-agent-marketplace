@@ -60,7 +60,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
     data_dir_path = config.resolve_data_dir()
     mcp: FastMCP = FastMCP("spotter")
 
-    @mcp.tool
+    @mcp.tool(title="List campaign runs")
     def list_runs() -> dict[str, Any]:
         """List every run in this campaign with its status, headline metrics, and store-wide totals.
 
@@ -81,7 +81,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         runs = store.list_runs(campaign=campaign_name)
         return {"runs": runs, "totals": store.totals()}
 
-    @mcp.tool
+    @mcp.tool(title="Run health check")
     def run_health(run_id: str) -> dict[str, Any]:
         """Score a run's metrics against every other completed run via z-score.
 
@@ -106,7 +106,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             raise ValueError(f"run_id {run_id!r} not found")
         return {"run_id": run_id, "metrics": store.get_run_health(run_id)}
 
-    @mcp.tool
+    @mcp.tool(title="Campaign health sweep")
     def campaign_health() -> dict[str, Any]:
         """Sweep every completed run's health in this campaign in one call.
 
@@ -158,7 +158,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             "anomalous": anomalous,
         }
 
-    @mcp.tool
+    @mcp.tool(title="Compare two runs")
     def diff_runs(run_id: str, baseline_run_id: str) -> dict[str, Any]:
         """Compare two runs stage-by-stage and isolate forensically significant differences.
 
@@ -187,7 +187,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             raise ValueError(f"baseline_run_id {baseline_run_id!r} not found")
         return store.diff_stage_executions(run_id, baseline_run_id)
 
-    @mcp.tool
+    @mcp.tool(title="Trace run lineage")
     def trace_lineage(run_id: str, stage: str | None = None) -> dict[str, Any]:
         """Trace a run's stage chain backward from its last stage (or a given one).
 
@@ -216,7 +216,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         chain = store.trace_lineage(run_id, stage=stage)
         return {"run_id": run_id, "stage_filter": stage, "chain": chain}
 
-    @mcp.tool
+    @mcp.tool(title="Read provenance artifact")
     def read_artifact(artifact_id: int) -> dict[str, Any]:
         """Read one artifact's path, content hash, and (capped) content.
 
@@ -249,7 +249,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             "content": content[:READ_ARTIFACT_CONTENT_CAP],
         }
 
-    @mcp.tool
+    @mcp.tool(title="Wait for new runs")
     async def wait_for_new_runs(known_run_ids: list[str], timeout_s: float = 300) -> dict[str, Any]:
         """Long-poll for a completed run not already known to the caller.
 
@@ -281,7 +281,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
                 return {"timed_out": True}
             await asyncio.sleep(min(POLL_INTERVAL_S, remaining))
 
-    @mcp.tool
+    @mcp.tool(title="Raise anomaly alert")
     def raise_alert(run_id: str, reason: str) -> dict[str, Any]:
         """Quarantine the campaign by writing a QUARANTINE sentinel file.
 
@@ -301,7 +301,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         """
         return write_quarantine(data_dir_path, run_id, reason)
 
-    @mcp.tool
+    @mcp.tool(title="Lift quarantine")
     def lift_quarantine() -> dict[str, Any]:
         """Remove the QUARANTINE sentinel, letting the campaign resume.
 

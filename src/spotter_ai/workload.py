@@ -161,15 +161,22 @@ def _finalize_batch_result(
         message: The halt notice, when ``status == "halted"``.
 
     Returns:
-        The tool's result dict, including ``report_path`` (``None`` when no
-        runs completed in this call, so there is nothing to report).
+        The tool's result dict, including ``written_path`` (``None`` when no
+        runs completed in this call, so there is nothing to report). The key
+        is named ``written_path`` -- not the more domain-specific
+        ``report_path`` -- because it is one of clio-agent's
+        ``RESULT_PATH_KEYS`` (``designation.py``): the platform's tool
+        observer auto-mints any top-level result key in that fixed vocabulary
+        as a workspace artifact at tool completion, with zero further agent
+        action. A key outside that vocabulary (``report_path`` included)
+        mints nothing automatically.
     """
     result: dict[str, Any] = {
         "status": status,
         "campaign": campaign,
         "runs": completed,
         "summary": _summarize_completed(completed),
-        "report_path": None,
+        "written_path": None,
     }
     if message is not None:
         result["message"] = message
@@ -178,7 +185,7 @@ def _finalize_batch_result(
         report_path = reports.write_batch_report(
             data_dir_path, campaign, completed_full, campaign_runs
         )
-        result["report_path"] = str(report_path)
+        result["written_path"] = str(report_path)
     return result
 
 
@@ -203,7 +210,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
     data_dir_path = config.resolve_data_dir()
     mcp: FastMCP = FastMCP("phenotype-workload")
 
-    @mcp.tool
+    @mcp.tool(title="Measure plant cohort")
     def measure_cohort(
         runs: int = 14, pace_seconds: float = DEFAULT_PACE_SECONDS
     ) -> dict[str, Any]:
@@ -261,7 +268,10 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         ``reports/`` folder (see :mod:`spotter_ai.reports`) with this
         batch's per-run metrics table, batch-level mean/min/max stats, and
         the campaign's running totals. Its path comes back as
-        ``report_path`` so the caller can register it as an artifact.
+        ``written_path`` -- a name chosen from clio-agent's recognized
+        result-path vocabulary so the platform auto-registers it as a
+        workspace artifact the moment this call completes, with no further
+        agent action required.
 
         Args:
             runs: Number of runs to attempt in this invocation.
@@ -274,7 +284,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             ``campaign``, ``runs`` (list of ``{"run_id", "mean_biomass"}``
             for each run completed in this invocation, in order),
             ``summary`` (``{"run_count", "mean_biomass_avg"}`` over this
-            invocation's completed runs), ``report_path`` (workspace-relative
+            invocation's completed runs), ``written_path`` (workspace-relative
             path to this batch's report JSON, or ``None`` if no run
             completed in this call), and -- only when halted -- ``message``
             (the SPOTTER-AI quarantine notice).
@@ -345,7 +355,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             completed_full=completed_full,
         )
 
-    @mcp.tool
+    @mcp.tool(title="Campaign status")
     def campaign_status() -> dict[str, Any]:
         """Report the runs recorded so far for this campaign and its quarantine state.
 
@@ -383,7 +393,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             "quarantined": quarantine_path(data_dir_path).exists(),
         }
 
-    @mcp.tool
+    @mcp.tool(title="Lift quarantine")
     def lift_quarantine() -> dict[str, Any]:
         """Remove the QUARANTINE sentinel, letting measure_cohort proceed again.
 

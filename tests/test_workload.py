@@ -56,7 +56,7 @@ class TestMeasureCohortBasic:
             assert entry["mean_biomass"] > 0
         assert data["summary"]["run_count"] == 3
         assert data["summary"]["mean_biomass_avg"] > 0
-        assert data["report_path"] is not None
+        assert data["written_path"] is not None
 
         store = ProvenanceStore(db_path)
         runs = store.list_runs(campaign=DEFAULT_CAMPAIGN_NAME)
@@ -194,10 +194,10 @@ class TestFaultInjection:
         assert second.data["status"] == "completed"
 
         # Invisibility: nothing in either call's returned payload mentions
-        # the fault, in either call (report_path is a filesystem path, not
+        # the fault, in either call (written_path is a filesystem path, not
         # payload content, so it is excluded from this text scan).
         for payload in (first.data, second.data):
-            payload_text = json.dumps({k: v for k, v in payload.items() if k != "report_path"})
+            payload_text = json.dumps({k: v for k, v in payload.items() if k != "written_path"})
             payload_text = payload_text.lower()
             assert "tamper" not in payload_text
             assert "fault" not in payload_text
@@ -285,7 +285,7 @@ class TestQuarantine:
         assert "tampering detected" in data["message"]
         assert data["runs"] == []
         assert data["summary"]["run_count"] == 0
-        assert data["report_path"] is None
+        assert data["written_path"] is None
 
     async def test_halts_before_next_run_in_a_continued_invocation(
         self, tmp_path: Path, db_path: Path, data_dir: Path
@@ -302,7 +302,7 @@ class TestQuarantine:
             second = await client.call_tool("measure_cohort", {"runs": 3, "pace_seconds": 0})
         assert second.data["status"] == "halted"
         assert second.data["runs"] == []
-        assert second.data["report_path"] is None
+        assert second.data["written_path"] is None
 
     async def test_lift_quarantine_removes_sentinel(
         self, tmp_path: Path, db_path: Path, data_dir: Path
@@ -377,8 +377,31 @@ class TestCampaignStatus:
 class TestBatchReport:
     """The per-batch report artifact measure_cohort writes under
     <data_dir>/reports/batch-NNN.json, and returns the path to as
-    report_path -- see spotter_ai.reports.
+    written_path (one of clio-agent's recognized result-path keys, so the
+    platform auto-mints it) -- see spotter_ai.reports.
     """
+
+    # Frozen copy of clio-agent's gact/artifacts/designation.py::RESULT_PATH_KEYS
+    # (spotter-ai does not import clio_agent -- separate repos/venvs). The
+    # platform's tool observer auto-registers a workspace artifact for any
+    # top-level tool-result key in THIS exact set; "written_path" only
+    # auto-mints because it is a member. If clio-agent's vocabulary ever
+    # changes, this copy diverging is the signal to reconcile the two.
+    _CLIO_AGENT_RESULT_PATH_KEYS = frozenset(
+        {
+            "local_path",
+            "output_path",
+            "output_file",
+            "saved_path",
+            "saved_to",
+            "written_path",
+            "result_path",
+            "out_path",
+        }
+    )
+
+    def test_written_path_is_in_clio_agents_recognized_result_path_vocabulary(self) -> None:
+        assert "written_path" in self._CLIO_AGENT_RESULT_PATH_KEYS
 
     async def test_report_written_with_pinned_shape(
         self, tmp_path: Path, db_path: Path, data_dir: Path
@@ -387,7 +410,7 @@ class TestBatchReport:
         async with Client(server) as client:
             result = await client.call_tool("measure_cohort", {"runs": 3, "pace_seconds": 0})
 
-        report_path = Path(result.data["report_path"])
+        report_path = Path(result.data["written_path"])
         assert report_path.exists()
         assert report_path.name == "batch-001.json"
         assert report_path.parent == data_dir / "reports"
@@ -429,12 +452,12 @@ class TestBatchReport:
             first = await client.call_tool("measure_cohort", {"runs": 2, "pace_seconds": 0})
             second = await client.call_tool("measure_cohort", {"runs": 3, "pace_seconds": 0})
 
-        first_report = json.loads(Path(first.data["report_path"]).read_text(encoding="utf-8"))
-        second_report = json.loads(Path(second.data["report_path"]).read_text(encoding="utf-8"))
+        first_report = json.loads(Path(first.data["written_path"]).read_text(encoding="utf-8"))
+        second_report = json.loads(Path(second.data["written_path"]).read_text(encoding="utf-8"))
 
         assert first_report["batch_number"] == 1
         assert second_report["batch_number"] == 2
-        assert Path(second.data["report_path"]).name == "batch-002.json"
+        assert Path(second.data["written_path"]).name == "batch-002.json"
 
         # This batch's own table has only the 3 new runs...
         assert [r["run_id"] for r in second_report["runs"]] == ["run-003", "run-004", "run-005"]
@@ -453,7 +476,7 @@ class TestBatchReport:
             result = await client.call_tool("measure_cohort", {"runs": 5, "pace_seconds": 0})
 
         assert result.data["status"] == "halted"
-        assert result.data["report_path"] is None
+        assert result.data["written_path"] is None
         assert not (data_dir / "reports").exists()
 
     async def test_report_written_even_when_batch_halts_partway(
@@ -461,7 +484,7 @@ class TestBatchReport:
     ) -> None:
         """A quarantine sentinel dropped mid-batch (between two runs of the
         SAME call) still leaves a report for the runs that did complete
-        before the halt -- status is "halted" but report_path is not None.
+        before the halt -- status is "halted" but written_path is not None.
         """
         server = create_server(db_path)
 
@@ -490,7 +513,7 @@ class TestBatchReport:
         assert result.data["status"] == "halted"
         assert [r["run_id"] for r in result.data["runs"]] == ["run-001", "run-002"]
 
-        report_path = result.data["report_path"]
+        report_path = result.data["written_path"]
         assert report_path is not None
         report = json.loads(Path(report_path).read_text(encoding="utf-8"))
         assert [r["run_id"] for r in report["runs"]] == ["run-001", "run-002"]
