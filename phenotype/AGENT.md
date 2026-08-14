@@ -14,7 +14,7 @@ blueprint:
 # Demo-box launch command (direct venv exe — sandbox-friendly, no uv wrapper);
 # the public form becomes `uvx spotter-ai phenotype-mcp` once the repo is published.
 mcp_servers:
-  workload: D:/Libraries/Documents/projects/spotter-ai/.venv/Scripts/phenotype-mcp.exe
+  phenotype: D:/Libraries/Documents/projects/spotter-ai/.venv/Scripts/phenotype-mcp.exe
 experts:
   - experts/main.md
 ---
