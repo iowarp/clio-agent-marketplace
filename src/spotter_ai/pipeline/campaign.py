@@ -7,6 +7,13 @@ runs through the five pipeline stages, recording every stage execution to the
 ``SPOTTER_DB`` environment variable. Optionally injects a one-run calibration
 drift fault (``--tamper-at``) and always honors a quarantine sentinel file
 that halts the campaign the moment it appears.
+
+``--tamper-at`` matches the run's GLOBAL run-NNN number -- the same number
+embedded in its run_id (e.g. ``--tamper-at 12`` matches run-012) -- the same
+convention the workload MCP server's ``fault.json`` (see
+:mod:`spotter_ai.workload`) uses, so a demo operator reasons about "tamper
+run 12" identically whether the campaign is driven by this CLI in one shot
+or by a sequence of batched ``run_campaign`` calls.
 """
 
 from __future__ import annotations
@@ -56,8 +63,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--tamper-at",
         type=int,
         default=None,
-        help="1-based run number before which calibration.json's scale_factor is set to 1.35; "
-        "restored after that run completes",
+        help="global run-NNN number (as in run_id, e.g. 12 for run-012) at which "
+        "calibration.json's scale_factor is set to 1.35; restored after that run completes",
     )
     parser.add_argument(
         "--sleep", type=float, default=0.0, help="seconds to sleep between runs (default: 0)"

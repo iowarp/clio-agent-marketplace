@@ -216,6 +216,32 @@ class TestForensicMargins:
         biomass_011 = next(h for h in health_011 if h["metric"] == "mean_biomass")
         assert abs(biomass_011["z"]) < 3
 
+    def test_tamper_at_targets_the_global_run_number(self, tmp_path: Path, db_path: Path) -> None:
+        """--tamper-at matches the run's GLOBAL run-NNN number, not the total
+        run count or any other position-dependent notion -- the same
+        convention the workload MCP server's fault.json uses (see
+        spotter_ai.workload.run_campaign). runs=15/tamper_at=7 decouples the
+        two: if --tamper-at were (mis)interpreted as anything other than the
+        literal run-007 target, this would fail.
+        """
+        exit_code = _run(tmp_path, runs=15, tamper_at=7)
+        assert exit_code == 0
+        store = ProvenanceStore(db_path)
+        assert len(store.list_runs()) == 15
+
+        health_007 = store.get_run_health("run-007")
+        biomass_007 = next(h for h in health_007 if h["metric"] == "mean_biomass")
+        assert biomass_007["z"] > 5, f"expected run-007 z > 5, got {biomass_007['z']:.2f}"
+        assert biomass_007["verdict"] == "anomalous"
+
+        for healthy_run_id in ("run-001", "run-006", "run-008", "run-015"):
+            health = store.get_run_health(healthy_run_id)
+            biomass = next(h for h in health if h["metric"] == "mean_biomass")
+            assert abs(biomass["z"]) < 3, f"{healthy_run_id} z={biomass['z']:.2f}"
+
+        calibration = stages.read_json(tmp_path / "campaign_data" / "calibration.json")
+        assert calibration["scale_factor"] == pytest.approx(1.02)
+
     def test_diff_isolates_exactly_calibrate(self, tmp_path: Path, db_path: Path) -> None:
         exit_code = _run(tmp_path, runs=12, tamper_at=12)
         assert exit_code == 0

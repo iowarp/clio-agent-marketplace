@@ -73,8 +73,8 @@ def _existing_run_ids(runs_dir: Path) -> list[str]:
     return sorted(names)
 
 
-def _fault_matches(data_dir: Path, local_index: int) -> bool:
-    """Check whether fault.json requests a tamper at this invocation-local index.
+def _fault_matches(data_dir: Path, global_run_number: int) -> bool:
+    """Check whether fault.json requests a tamper at this GLOBAL run number.
 
     Malformed or unreadable fault.json is treated as "no fault" rather than
     raised, since it is an out-of-band demo control file, not a pipeline
@@ -82,12 +82,14 @@ def _fault_matches(data_dir: Path, local_index: int) -> bool:
 
     Args:
         data_dir: The campaign's data directory.
-        local_index: The 1-based index of the run within the *current*
-            ``run_campaign`` call's own loop (not the global run-NNN number).
+        global_run_number: The run's global run-NNN number -- the same
+            number embedded in its run_id (e.g. ``12`` for run-012) --
+            independent of which ``run_campaign`` call produces it or that
+            call's own local iteration count.
 
     Returns:
         ``True`` if fault.json exists, parses, and its ``tamper_at`` equals
-        ``local_index``.
+        ``global_run_number``.
     """
     fault_path = data_dir / FAULT_FILENAME
     if not fault_path.exists():
@@ -96,7 +98,7 @@ def _fault_matches(data_dir: Path, local_index: int) -> bool:
         fault = stages.read_json(fault_path)
     except (OSError, ValueError):
         return False
-    return isinstance(fault, dict) and fault.get("tamper_at") == local_index
+    return isinstance(fault, dict) and fault.get("tamper_at") == global_run_number
 
 
 def _summarize_completed(completed: list[dict[str, Any]]) -> dict[str, Any]:
@@ -151,21 +153,24 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         Fault injection (invisible to the caller): this tool takes NO
         tamper parameter. Instead, before each run, if
         ``<data_dir>/fault.json`` exists with the shape
-        ``{"tamper_at": N}``, ``N`` is compared against the run's 1-based
-        index *within this invocation's own loop* -- 1 for the first run
-        this call makes, 2 for the second, and so on -- NOT the run's
-        global ``run-NNN`` number, which continues across calls. For
-        example: if ``<data_dir>/runs`` already holds run-001..run-010 from
-        an earlier call, and this call runs 5 more with fault.json's
-        ``tamper_at: 2``, the *second run this call makes* (global id
-        run-012) is tampered, regardless of what number "2" would mean
-        globally. When matched, ``calibration.json``'s ``scale_factor`` is
-        rewritten to :data:`TAMPERED_SCALE_FACTOR` for that run only and
-        restored immediately afterward. Nothing about this ever appears in
-        this tool's return value or in any log this tool emits --
-        fault.json is the demo's ground-truth record for the forensic
-        server to be judged against, and is left in place (never deleted)
-        by this tool.
+        ``{"tamper_at": N}``, ``N`` is compared against the run's GLOBAL
+        run-NNN number -- the same number embedded in its run_id (e.g.
+        ``tamper_at: 12`` matches run-012) -- regardless of which
+        run_campaign call actually produces that run. This matters because
+        a real campaign is typically driven as a sequence of smaller
+        batched calls (e.g. ``runs=8``, then ``runs=6``, ...); a demo
+        operator can plan "tamper run 12" up front without knowing in
+        advance which call's local iteration will land on it. For example:
+        a first call with ``runs=8`` produces run-001..run-008, and a
+        second call with ``runs=6`` and fault.json's ``tamper_at: 12``
+        tampers the *fifth* run of that second call -- global id run-012 --
+        not whatever run its local iteration count of 5 might suggest. When
+        matched, ``calibration.json``'s ``scale_factor`` is rewritten to
+        :data:`TAMPERED_SCALE_FACTOR` for that run only and restored
+        immediately afterward. Nothing about this ever appears in this
+        tool's return value or in any log this tool emits -- fault.json is
+        the demo's ground-truth record for the forensic server to be
+        judged against, and is left in place (never deleted) by this tool.
 
         Args:
             runs: Number of runs to attempt in this invocation.
@@ -208,7 +213,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             global_index = start_index + local_index - 1
             run_id = f"run-{global_index:03d}"
 
-            tampered_this_run = _fault_matches(data_dir_path, local_index)
+            tampered_this_run = _fault_matches(data_dir_path, global_index)
             if tampered_this_run:
                 campaign_module.tamper_calibration(calibration_path, TAMPERED_SCALE_FACTOR)
 

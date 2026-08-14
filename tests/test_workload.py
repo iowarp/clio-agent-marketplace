@@ -76,43 +76,54 @@ class TestRunCampaignBasic:
 
 class TestFaultInjection:
     """Proves the fault.json indexing semantics documented on run_campaign:
-    tamper_at matches the 1-based index *within the calling invocation's own
-    loop*, not the run's global run-NNN number, and none of it leaks into the
-    tool's return value.
+    tamper_at matches the run's GLOBAL run-NNN number -- the same number
+    embedded in its run_id -- regardless of which run_campaign call actually
+    produces that run, and none of it leaks into the tool's return value.
+
+    The demo drives a campaign as a sequence of smaller batched calls (e.g.
+    runs=8, then runs=6, ...), so a per-call-local index could never target
+    a run past the size of a single call. Global indexing is what lets a
+    demo operator plan "tamper run 12" up front.
     """
 
-    async def test_fault_matches_local_invocation_index_not_global(
+    async def test_fault_matches_global_run_number_across_batched_calls(
         self, tmp_path: Path, db_path: Path
     ) -> None:
         server = create_server(db_path)
         data_dir = tmp_path / "campaign_data"
         data_dir.mkdir(parents=True)
 
-        # First invocation: 10 healthy runs (run-001..run-010), no fault.json.
+        # Plant a fault for global run-012 *before either call* -- a
+        # per-invocation-local index could never reach "12" from an 8-run
+        # first call or a 6-run second call.
+        (data_dir / "fault.json").write_text(json.dumps({"tamper_at": 12}), encoding="utf-8")
+
+        # First call: 8 healthy runs (run-001..run-008). No local index in
+        # this call ever equals 12, so nothing should be tampered here.
         async with Client(server) as client:
             first = await client.call_tool(
-                "run_campaign", {"runs": 10, "data_dir": str(data_dir), "sleep_s": 0}
+                "run_campaign", {"runs": 8, "data_dir": str(data_dir), "sleep_s": 0}
             )
-        assert [r["run_id"] for r in first.data["runs"]] == [f"run-{i:03d}" for i in range(1, 11)]
+        assert [r["run_id"] for r in first.data["runs"]] == [f"run-{i:03d}" for i in range(1, 9)]
+        assert first.data["status"] == "completed"
 
-        # Plant a fault for "the 2nd run of the NEXT invocation" -- if this
-        # matched the global run number instead, it would hit nothing (run-2
-        # already ran healthy) or the wrong run.
-        (data_dir / "fault.json").write_text(json.dumps({"tamper_at": 2}), encoding="utf-8")
-
+        # Second call: 6 more runs (run-009..run-014). Global run-012 falls
+        # inside this call, at its *5th* local iteration.
         async with Client(server) as client:
             second = await client.call_tool(
-                "run_campaign", {"runs": 5, "data_dir": str(data_dir), "sleep_s": 0}
+                "run_campaign", {"runs": 6, "data_dir": str(data_dir), "sleep_s": 0}
             )
 
         run_ids = [r["run_id"] for r in second.data["runs"]]
-        assert run_ids == ["run-011", "run-012", "run-013", "run-014", "run-015"]
-
-        # Invisibility: nothing in the returned payload mentions the fault.
-        payload_text = json.dumps(second.data).lower()
-        assert "tamper" not in payload_text
-        assert "fault" not in payload_text
+        assert run_ids == [f"run-{i:03d}" for i in range(9, 15)]
         assert second.data["status"] == "completed"
+
+        # Invisibility: nothing in either call's returned payload mentions
+        # the fault, in either call.
+        for payload in (first.data, second.data):
+            payload_text = json.dumps(payload).lower()
+            assert "tamper" not in payload_text
+            assert "fault" not in payload_text
 
         # fault.json is left in place -- it's the demo's ground-truth record.
         assert (data_dir / "fault.json").exists()
@@ -122,15 +133,16 @@ class TestFaultInjection:
         assert calibration["scale_factor"] == pytest.approx(1.02)
 
         # Forensic ground truth (via the provenance store directly, standing
-        # in for the separate "spotter" server): run-012 -- the *second* run
-        # of the second invocation -- is the anomaly; its neighbors are not.
+        # in for the separate "spotter" server): run-012 is the anomaly;
+        # its neighbors -- including run-008, the last run of the FIRST
+        # call, proving the first call was untouched -- are not.
         store = ProvenanceStore(db_path)
         health_012 = store.get_run_health("run-012")
         biomass_012 = next(h for h in health_012 if h["metric"] == "mean_biomass")
         assert biomass_012["z"] > 5, f"expected run-012 z > 5, got {biomass_012['z']:.2f}"
         assert biomass_012["verdict"] == "anomalous"
 
-        for healthy_run_id in ("run-011", "run-013"):
+        for healthy_run_id in ("run-008", "run-011", "run-013"):
             health = store.get_run_health(healthy_run_id)
             biomass = next(h for h in health if h["metric"] == "mean_biomass")
             assert abs(biomass["z"]) < 3, f"{healthy_run_id} z={biomass['z']:.2f}"
