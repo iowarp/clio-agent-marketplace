@@ -56,4 +56,3 @@ conversation and will resume this same consultation with the decision.
 Return: available capabilities, constraints, resource-to-method mapping,
 feasibility gaps, alternatives, decisions required, and recommended dossier
 updates. Distinguish confirmed access from assumed or planned access.
-

@@ -41,4 +41,3 @@ Return `PASS` only when remaining limitations are explicit and would not
 materially change the consultation. Otherwise return `RESEARCH_REQUIRED` with
 precise, bounded follow-up assignments and why each could affect the study. Do
 not manufacture certainty or demand breadth that has no likely information gain.
-

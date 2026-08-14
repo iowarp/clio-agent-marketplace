@@ -72,4 +72,3 @@ a separate channel and never request a replacement child.
 Return a compact consultation with: assessment, candidate formulations when
 useful, recommended scope, assumptions, needed evidence, decisions required, and
 the exact dossier changes you recommend.
-

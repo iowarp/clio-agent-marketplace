@@ -26,4 +26,3 @@ statically reviewed, scientist-approved, solver-executed, or validated.
 
 Version the dossier when it becomes useful outside chat and summarize the change
 to the scientist in plain language.
-

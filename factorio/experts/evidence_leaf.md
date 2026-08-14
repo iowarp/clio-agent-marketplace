@@ -58,4 +58,3 @@ Return:
 
 If nothing relevant can be fetched, return a typed evidence failure with the
 queries and fetch errors. Never fill the gap with remembered facts.
-

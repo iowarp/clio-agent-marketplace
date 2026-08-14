@@ -79,4 +79,3 @@ Your final packet must include: question and scope, search/source-family method,
 findings with inline citations, methodological landscape, competing evidence,
 gaps and relevance, implications for the Factorio dossier, references, and the
 complete source audit. Cite only sources read and used.
-

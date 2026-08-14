@@ -23,4 +23,3 @@ Audit five linked surfaces:
 Report concrete findings with severity and evidence. Do not let a checklist vote
 away a scientific contradiction. Never upgrade generated code to executed or
 validated without real solver artifacts.
-

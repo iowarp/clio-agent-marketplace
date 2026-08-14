@@ -56,4 +56,3 @@ remaining limitations are explicit. This status does not mean solver-verified.
 Do not ask the scientist raw review questions. When a genuine scientist-owned
 decision remains, describe it as a finding for Factorio to reconcile and route
 through the existing durable consultation.
-

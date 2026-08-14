@@ -20,4 +20,3 @@ with reasons in the decision ledger.
 
 Ask the smallest batch of high-information questions. Explain why each matters
 and what it unlocks. Do not claim novelty until evidence research supports it.
-
