@@ -14,7 +14,8 @@ All three resolve from environment variables:
 - ``SPOTTER_CAMPAIGN`` -- the campaign name (default:
   :data:`DEFAULT_CAMPAIGN_NAME`).
 - ``SPOTTER_DATA_DIR`` -- the campaign data directory (default:
-  :data:`DEFAULT_DATA_DIR`, resolved relative to the server's cwd).
+  :data:`DEFAULT_DATA_DIR`, resolved relative to the server's cwd, but
+  ALWAYS returned as an absolute path -- see :func:`resolve_data_dir`).
 - ``SPOTTER_DB`` -- the provenance database path (default: see
   :func:`resolve_db_path` -- a SIBLING of the resolved data directory, not
   an independently cwd-relative literal; see that function's docstring for
@@ -22,6 +23,18 @@ All three resolve from environment variables:
 
 Callers resolve these ONCE (at server construction / process start) and
 close over the result -- they are not re-read per tool call.
+
+Absoluteness matters beyond this process: every path a tool RETURNS (e.g.
+``measure_cohort``'s ``written_path``) is built from :func:`resolve_data_dir`,
+and clio-agent's platform auto-mints a recognized result-path key as a
+workspace artifact by resolving it with ``Path(value).resolve()`` -- against
+the PLATFORM SERVER's own process cwd, not this MCP server's. A relative
+value here is therefore ambiguous downstream and silently fails that
+platform's containment check (observed: #1218 r4, ``written_path`` returned
+as ``campaign_data\reports\batch-001.json``, resolved against the wrong
+process, rejected as outside the workspace root). Returning an already-
+absolute path removes the ambiguity entirely -- resolving it again is then
+always a no-op.
 """
 
 from __future__ import annotations
@@ -56,11 +69,18 @@ def resolve_campaign_name() -> str:
 def resolve_data_dir() -> Path:
     """Resolve the campaign data directory from ``SPOTTER_DATA_DIR``, or the default.
 
+    ALWAYS returns an absolute path, even when the source (an explicit
+    relative ``SPOTTER_DATA_DIR``, or the relative :data:`DEFAULT_DATA_DIR`
+    fallback) is relative -- resolved against THIS process's cwd, at the
+    moment this is called (server construction). See the module docstring
+    for why a relative result here is unsafe once it round-trips through a
+    tool result to a DIFFERENT process (#1218 r4).
+
     Returns:
-        The path from ``SPOTTER_DATA_DIR`` if set, otherwise
-        :data:`DEFAULT_DATA_DIR`.
+        The absolute path from ``SPOTTER_DATA_DIR`` if set, otherwise
+        :data:`DEFAULT_DATA_DIR` resolved against this process's cwd.
     """
-    return Path(os.environ.get("SPOTTER_DATA_DIR", DEFAULT_DATA_DIR))
+    return Path(os.environ.get("SPOTTER_DATA_DIR", DEFAULT_DATA_DIR)).resolve()
 
 
 def resolve_db_path() -> Path:
@@ -91,9 +111,10 @@ def resolve_db_path() -> Path:
 
     Returns:
         The absolute path from ``SPOTTER_DB`` if set, otherwise
-        ``resolve_data_dir().resolve().parent / DB_FILENAME``.
+        ``resolve_data_dir().parent / DB_FILENAME`` (already absolute, since
+        :func:`resolve_data_dir` now always returns one).
     """
     env_value = os.environ.get("SPOTTER_DB")
     if env_value:
         return Path(env_value).resolve()
-    return resolve_data_dir().resolve().parent / DB_FILENAME
+    return resolve_data_dir().parent / DB_FILENAME

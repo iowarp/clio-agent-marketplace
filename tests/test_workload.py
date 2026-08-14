@@ -403,6 +403,34 @@ class TestBatchReport:
     def test_written_path_is_in_clio_agents_recognized_result_path_vocabulary(self) -> None:
         assert "written_path" in self._CLIO_AGENT_RESULT_PATH_KEYS
 
+    async def test_written_path_is_always_absolute(
+        self, tmp_path: Path, db_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """#1218 r4 live-gate finding: written_path came back as
+        "campaign_data\\reports\\batch-001.json" (relative, SPOTTER_DATA_DIR
+        left at its relative default) and clio-agent's platform-side mint
+        resolved that string against its OWN process's cwd -- not this MCP
+        server's, and not the workspace root -- landing outside the
+        workspace and getting silently rejected (containment_rejected,
+        gact/artifacts/minting.py's _contained), so the artifact panel
+        stayed empty despite 5/5 tool calls returning a path. Reproduces
+        with SPOTTER_DATA_DIR explicitly set to a RELATIVE value (the
+        reported shape) and pins that written_path is absolute regardless.
+        """
+        monkeypatch.setenv("SPOTTER_DATA_DIR", "./campaign_data")
+        monkeypatch.chdir(tmp_path)
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("measure_cohort", {"runs": 1, "pace_seconds": 0})
+
+        written_path = result.data["written_path"]
+        assert written_path is not None
+        assert Path(written_path).is_absolute(), (
+            f"written_path must be absolute so a DIFFERENT process (the platform "
+            f"server) can resolve it correctly; got {written_path!r}"
+        )
+        assert Path(written_path) == tmp_path / "campaign_data" / "reports" / "batch-001.json"
+
     async def test_report_written_with_pinned_shape(
         self, tmp_path: Path, db_path: Path, data_dir: Path
     ) -> None:

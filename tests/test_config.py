@@ -35,7 +35,26 @@ class TestResolveDataDir:
 
     def test_env_unset_uses_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("SPOTTER_DATA_DIR", raising=False)
-        assert config.resolve_data_dir() == Path(config.DEFAULT_DATA_DIR)
+        assert config.resolve_data_dir() == Path(config.DEFAULT_DATA_DIR).resolve()
+
+    def test_always_returns_an_absolute_path(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """#1218 r4: a relative data dir round-tripped into a tool result
+        (measure_cohort's written_path) and got resolved by clio-agent
+        against the WRONG process's cwd (the platform server's, not this
+        MCP server's), silently failing the platform's containment check.
+        resolve_data_dir must never return a relative path, regardless of
+        source.
+        """
+        monkeypatch.setenv("SPOTTER_DATA_DIR", "./relative_campaign_data")
+        monkeypatch.chdir(tmp_path)
+        resolved = config.resolve_data_dir()
+        assert resolved.is_absolute()
+        assert resolved == tmp_path / "relative_campaign_data"
+
+        monkeypatch.delenv("SPOTTER_DATA_DIR", raising=False)
+        assert config.resolve_data_dir().is_absolute()
 
 
 class TestResolveDbPath:
