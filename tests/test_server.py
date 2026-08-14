@@ -145,8 +145,21 @@ class TestRunHealth:
         metric_names = {m["metric"] for m in data["metrics"]}
         assert metric_names == {"mean_biomass", "mean_leaf_area", "mean_height"}
         for m in data["metrics"]:
-            assert set(m) == {"metric", "value", "baseline_mean", "baseline_std", "z", "verdict"}
-            assert m["verdict"] in {"normal", "anomalous"}
+            assert set(m) == {
+                "metric",
+                "value",
+                "baseline_mean",
+                "baseline_std",
+                "baseline_n",
+                "z",
+                "verdict",
+            }
+            # small_campaign has only 3 runs -- a leave-one-out baseline_n
+            # of 2, well below MIN_BASELINE_SAMPLE -- so every verdict here
+            # MUST be insufficient_baseline, never a statistically unearned
+            # normal/anomalous call.
+            assert m["baseline_n"] == 2
+            assert m["verdict"] == "insufficient_baseline"
 
     async def test_unknown_run_raises(self, small_campaign: tuple[Path, Path]) -> None:
         db_path, _ = small_campaign
@@ -182,9 +195,14 @@ class TestCampaignHealth:
                 "value",
                 "baseline_mean",
             }
-            assert row["verdict"] in {"normal", "anomalous"}
+            # A 3-run campaign's leave-one-out baseline (n=2) is well below
+            # MIN_BASELINE_SAMPLE -- every verdict here MUST be
+            # insufficient_baseline, never a (statistically unearned)
+            # normal/anomalous call. See TestInsufficientBaselineGate in
+            # test_store.py for the deterministic version of this gate.
+            assert row["verdict"] == "insufficient_baseline"
             assert row["worst_metric"] in {"mean_biomass", "mean_leaf_area", "mean_height"}
-        assert isinstance(data["anomalous"], list)
+        assert data["anomalous"] == []
 
     async def test_no_campaign_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
         db_path, _ = small_campaign
@@ -247,6 +265,39 @@ class TestCampaignHealth:
             if row["run_id"] == "run-012":
                 continue
             assert row["verdict"] == "normal", row
+
+    async def test_sweeps_every_completed_run_no_cap_15_runs_late_tamper(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """#1218 r3: a live 15-run campaign's sweep reportedly checked only
+        10 of 15 runs and missed a tamper planted at run-012. This pins the
+        exact reported shape (15 runs, tamper late in the campaign, not at
+        the very first or last run) end to end: runs_checked must be 15 --
+        every completed run, not a truncated prefix -- and the tampered run
+        must be found. (Investigation found no cap/slice anywhere in
+        campaign_health's or list_runs' run enumeration -- this test is the
+        permanent guard against one ever being introduced.)
+        """
+        db_path = tmp_path / "provenance.sqlite"
+        data_dir = tmp_path / "campaign_data"
+        store = ProvenanceStore(db_path)
+        parser = build_arg_parser()
+        args = parser.parse_args([])
+        args.data_dir = str(data_dir)
+        args.runs = 15
+        args.tamper_at = 12
+        assert run_campaign(args, store=store) == 0
+
+        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("campaign_health", {})
+
+        data = result.data
+        assert data["runs_checked"] == 15
+        assert len(data["verdicts"]) == 15
+        assert {v["run_id"] for v in data["verdicts"]} == {f"run-{i:03d}" for i in range(1, 16)}
+        assert data["anomalous"] == ["run-012"]
 
     async def test_campaign_env_override_excludes_other_campaigns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

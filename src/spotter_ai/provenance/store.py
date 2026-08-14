@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import sqlite3
 import statistics
 from collections.abc import Iterable, Iterator, Mapping
@@ -36,6 +35,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
+
+from spotter_ai import config
 
 #: Parameter keys that are expected to vary per run by design (run identity,
 #: not campaign configuration) and are therefore excluded from discrepancy
@@ -46,10 +47,45 @@ IDENTITY_PARAM_KEYS = frozenset({"seed"})
 #: (as opposed to per-run generated data). See module docstring.
 EXTERNAL_CONFIG_ROLE_SUFFIX = "_config"
 
-#: Floor applied to a baseline standard deviation before it is used as a
-#: z-score denominator, so a metric with (near-)zero natural variance never
-#: divides by zero or produces a numerically meaningless score.
+#: Absolute floor applied to a baseline standard deviation before it is used
+#: as a z-score denominator, so a metric with LITERALLY zero baseline
+#: variance (or an empty/singleton baseline, see get_run_health) never
+#: divides by zero. This alone is not enough to prevent a small-sample false
+#: positive -- see RELATIVE_STD_FLOOR below.
 MIN_BASELINE_STD = 1e-6
+
+#: Floor on the baseline standard deviation, expressed as a FRACTION of the
+#: baseline mean's magnitude rather than an absolute constant like
+#: MIN_BASELINE_STD -- so it scales with each metric's own units instead of
+#: being calibrated to one metric and meaningless for another (mean_biomass
+#: and mean_height sit on very different scales). A small leave-one-out
+#: baseline can land unusually TIGHT by pure sampling luck -- a low empirical
+#: std that reflects sample-size noise, not the process actually being that
+#: stable -- and dividing by that near-zero std manufactures an arbitrarily
+#: large z for perfectly ordinary variation (observed: a 5-run campaign's
+#: run-003 scored mean_height z=-6.46 against a 4-run baseline that happened
+#: to be freakishly tight, #1218 r3). The synthetic pipeline's own healthy
+#: run-to-run CV is ~1-3% (see pipeline.stages's module docstring); flooring
+#: the std at 1% of the mean sits below that natural floor, so it damps
+#: sampling noise in a small sample without masking a genuine deviation
+#: (a real tamper shifts the mean by double digits, dwarfing a 1% floor).
+RELATIVE_STD_FLOOR = 0.01
+
+#: Minimum leave-one-out baseline sample size (the number of OTHER completed
+#: runs a run's z-score is computed against) required before a verdict of
+#: "normal"/"anomalous" is trusted. Statistical process control practice
+#: (Shewhart/Western Electric control-chart convention) calls for a
+#: substantial Phase I baseline -- commonly 20-25 historical subgroups --
+#: before control limits computed from that history are considered
+#: reliable; below that, the estimated standard deviation is itself so
+#: noisy that an ordinary run can trip a large |z| from sampling luck alone
+#: (exactly the run-003 false positive RELATIVE_STD_FLOOR's docstring
+#: describes). 8 is a pragmatic floor for a live demo campaign, not the
+#: textbook 20-25 -- well short of "reliable" in the SPC sense, but a
+#: documented, principled minimum rather than trusting any n>=1 baseline.
+#: Below this count, get_run_health reports "insufficient_baseline" instead
+#: of a verdict the sample cannot statistically back.
+MIN_BASELINE_SAMPLE = 8
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -102,12 +138,18 @@ CREATE INDEX IF NOT EXISTS idx_metrics_name ON metrics(name);
 def default_db_path() -> Path:
     """Resolve the provenance database path.
 
+    Thin wrapper over :func:`spotter_ai.config.resolve_db_path` -- kept here
+    (and re-exported from :mod:`spotter_ai.provenance`) for backward
+    compatibility with existing callers/imports; the actual resolution logic
+    lives in :mod:`spotter_ai.config` alongside campaign name and data
+    directory resolution, since all three must agree with each other (see
+    that module's docstring for why the database path is no longer resolved
+    independently of the data directory).
+
     Returns:
-        The path from the ``SPOTTER_DB`` environment variable if set,
-        otherwise ``./spotter_provenance.sqlite`` relative to the current
-        working directory.
+        The path :func:`spotter_ai.config.resolve_db_path` resolves.
     """
-    return Path(os.environ.get("SPOTTER_DB", "./spotter_provenance.sqlite"))
+    return config.resolve_db_path()
 
 
 @dataclass(frozen=True)
@@ -471,34 +513,52 @@ class ProvenanceStore:
 
         Returns:
             A list of dicts, one per metric the run recorded, each with
-            ``metric``, ``value``, ``baseline_mean``, ``baseline_std``, ``z``,
-            and ``verdict`` (``"normal"`` if ``abs(z) < 3`` else
-            ``"anomalous"``). The baseline standard deviation is floored at
-            :data:`MIN_BASELINE_STD` to avoid division by zero.
+            ``metric``, ``value``, ``baseline_mean``, ``baseline_std``,
+            ``baseline_n`` (the leave-one-out baseline's sample size -- the
+            count of OTHER completed runs this z-score was computed against),
+            ``z``, and ``verdict``. ``z`` is always computed (even below the
+            sample-size gate, so the number remains visible for context) but
+            ``verdict`` is only ``"normal"``/``"anomalous"`` (``abs(z) < 3``
+            or not) when ``baseline_n >= `` :data:`MIN_BASELINE_SAMPLE`;
+            below that, ``verdict`` is ``"insufficient_baseline"`` --  there
+            is not enough history yet to trust ANY z-score computed from it,
+            no matter how large. The baseline standard deviation is floored
+            at ``max(`` :data:`RELATIVE_STD_FLOOR` ``* abs(baseline_mean),``
+            :data:`MIN_BASELINE_STD` ``)`` before being used as the z-score
+            denominator, so a small baseline that happens to be freakishly
+            tight cannot manufacture an arbitrarily large z on its own.
         """
         metrics = self.get_run_metrics(run_id)
         results = []
         for name, value in metrics.items():
             baseline = self.get_metric_baseline(name, exclude_run_id=run_id)
-            if len(baseline) >= 2:
+            baseline_n = len(baseline)
+            if baseline_n >= 2:
                 baseline_mean = statistics.fmean(baseline)
                 baseline_std = statistics.stdev(baseline)
-            elif len(baseline) == 1:
+            elif baseline_n == 1:
                 baseline_mean = baseline[0]
                 baseline_std = 0.0
             else:
                 baseline_mean = value
                 baseline_std = 0.0
-            floored_std = max(baseline_std, MIN_BASELINE_STD)
+            floored_std = max(
+                baseline_std, RELATIVE_STD_FLOOR * abs(baseline_mean), MIN_BASELINE_STD
+            )
             z = (value - baseline_mean) / floored_std
+            if baseline_n < MIN_BASELINE_SAMPLE:
+                verdict = "insufficient_baseline"
+            else:
+                verdict = "normal" if abs(z) < 3 else "anomalous"
             results.append(
                 {
                     "metric": name,
                     "value": value,
                     "baseline_mean": baseline_mean,
                     "baseline_std": baseline_std,
+                    "baseline_n": baseline_n,
                     "z": z,
-                    "verdict": "normal" if abs(z) < 3 else "anomalous",
+                    "verdict": verdict,
                 }
             )
         return results
