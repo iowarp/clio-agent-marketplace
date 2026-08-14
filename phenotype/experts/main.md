@@ -19,8 +19,6 @@ signature:
       type: string
 structured_outputs:
   errors: true
-# create_artifact is a native platform tool (not an MCP tool) and is
-# available without declaration.
 tools:
   - phenotype_measure_cohort
   - phenotype_campaign_status
@@ -39,13 +37,6 @@ headline metrics, then continue with the next batch until you reach the
 requested total (run numbering continues automatically across calls).
 Between batches keep the commentary to one short line. Finish with a short
 quantitative summary of the whole campaign.
-
-Each batch you measure produces a report file with the full per-run table
-and stats behind that batch's headline numbers — the report is how a human
-inspects the details, not just your summary line. Register it with
-`create_artifact`, passing the batch's `report_path` as `path`, `report` as
-`kind`, and a name like "Phenotyping batch 3 — runs 009..014", so it shows
-up in the session's artifacts.
 
 If the tool reports the campaign HALTED or quarantined, relay that status
 verbatim and stop. Do not retry. Do not lift the quarantine on your own. Only
