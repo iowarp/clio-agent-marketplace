@@ -6,6 +6,12 @@ SQLite provenance store and the campaign data directory. This module makes
 no use of DSPy; it is a plain read/write surface an external agent (of any
 kind) can call over MCP to investigate a campaign.
 
+Campaign name and data directory are workspace-fixed server config (see
+:mod:`spotter_ai.config`), resolved once when :func:`create_server` builds
+the server -- they are never model-supplied tool arguments (the defect this
+fixed: ``campaign_health`` observed being called with ``campaign: null``,
+because the model had no way to know what value belonged there).
+
 Run directly with ``python -m spotter_ai.server`` to serve over stdio using
 the store resolved from the ``SPOTTER_DB`` environment variable. For testing
 or embedding, use :func:`create_server` to build an isolated server bound to
@@ -21,6 +27,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from spotter_ai import config
 from spotter_ai.provenance.store import ProvenanceStore
 from spotter_ai.quarantine import lift_quarantine as quarantine_lift
 from spotter_ai.quarantine import write_quarantine
@@ -42,31 +49,36 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
 
     Returns:
         A configured :class:`fastmcp.FastMCP` server named ``"spotter"``,
-        with all 9 forensic-attribution tools registered.
+        with all 9 forensic-attribution tools registered. The campaign name
+        and data directory are resolved once here (from
+        ``SPOTTER_CAMPAIGN``/``SPOTTER_DATA_DIR`` -- see
+        :mod:`spotter_ai.config`) and closed over by every tool below; they
+        are not re-read per call and are never tool arguments.
     """
     store = ProvenanceStore(db_path)
+    campaign_name = config.resolve_campaign_name()
+    data_dir_path = config.resolve_data_dir()
     mcp: FastMCP = FastMCP("spotter")
 
     @mcp.tool
-    def list_runs(campaign: str | None = None) -> dict[str, Any]:
-        """List every run with its status, headline metrics, and store-wide totals.
+    def list_runs() -> dict[str, Any]:
+        """List every run in this campaign with its status, headline metrics, and store-wide totals.
 
         Agent story: an agent orienting itself in a campaign calls this
         first, to see how many runs exist, which finished, and their
         headline numbers -- so it can report explored-vs-total progress
         before drilling into any single run.
 
-        Args:
-            campaign: If given, only runs in this campaign are listed.
-
         Returns:
-            A dict with ``"runs"`` (list of per-run summaries: ``run_id``,
-            ``campaign``, ``status``, ``started_at``, ``ended_at``,
-            ``metrics``, ``stage_count``, ``artifact_count``) and
-            ``"totals"`` (store-wide ``run_count``, ``stage_count``,
-            ``artifact_count``).
+            A dict with ``"runs"`` (list of per-run summaries, scoped to
+            this campaign: ``run_id``, ``campaign``, ``status``,
+            ``started_at``, ``ended_at``, ``metrics``, ``stage_count``,
+            ``artifact_count``) and ``"totals"`` (store-wide ``run_count``,
+            ``stage_count``, ``artifact_count`` -- across every campaign the
+            store has ever recorded, not just this one, since it reflects
+            the whole database).
         """
-        runs = store.list_runs(campaign=campaign)
+        runs = store.list_runs(campaign=campaign_name)
         return {"runs": runs, "totals": store.totals()}
 
     @mcp.tool
@@ -95,8 +107,10 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         return {"run_id": run_id, "metrics": store.get_run_health(run_id)}
 
     @mcp.tool
-    def campaign_health(campaign: str | None = None) -> dict[str, Any]:
-        """Sweep every completed run's health in one call: the watcher's one-call sweep per wake.
+    def campaign_health() -> dict[str, Any]:
+        """Sweep every completed run's health in this campaign in one call.
+
+        This is the watcher's one-call sweep per wake.
 
         Agent story: run_health costs one LLM round PER run, which cannot
         keep up with a live campaign -- in a dry run the watcher was still
@@ -107,21 +121,19 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         only spend a run_health/diff_runs round on the runs that actually
         come back anomalous.
 
-        Args:
-            campaign: If given, only runs in this campaign are checked.
-
         Returns:
-            A dict with ``campaign``, ``runs_checked`` (number of completed
-            runs evaluated), ``verdicts`` (one bounded row per run --
-            ``{"run_id", "verdict", "worst_metric", "worst_z", "value",
-            "baseline_mean"}``, reporting only the single most anomalous
-            metric per run, not the full metrics list -- use run_health for
-            that), and ``anomalous`` (the list of run_ids whose verdict is
-            ``"anomalous"``). Uses the same floored-std z-score as
-            run_health, since it is computed by the same code path.
+            A dict with ``campaign`` (this server's resolved campaign name),
+            ``runs_checked`` (number of completed runs evaluated),
+            ``verdicts`` (one bounded row per run -- ``{"run_id", "verdict",
+            "worst_metric", "worst_z", "value", "baseline_mean"}``,
+            reporting only the single most anomalous metric per run, not the
+            full metrics list -- use run_health for that), and ``anomalous``
+            (the list of run_ids whose verdict is ``"anomalous"``). Uses the
+            same floored-std z-score as run_health, since it is computed by
+            the same code path.
         """
         verdicts = []
-        for run in store.list_runs(campaign=campaign):
+        for run in store.list_runs(campaign=campaign_name):
             if run["status"] != "completed":
                 continue
             health = store.get_run_health(run["run_id"])
@@ -140,7 +152,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             )
         anomalous = [v["run_id"] for v in verdicts if v["verdict"] == "anomalous"]
         return {
-            "campaign": campaign,
+            "campaign": campaign_name,
             "runs_checked": len(verdicts),
             "verdicts": verdicts,
             "anomalous": anomalous,
@@ -270,29 +282,27 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             await asyncio.sleep(min(POLL_INTERVAL_S, remaining))
 
     @mcp.tool
-    def raise_alert(run_id: str, reason: str, data_dir: str = "./campaign_data") -> dict[str, Any]:
+    def raise_alert(run_id: str, reason: str) -> dict[str, Any]:
         """Quarantine the campaign by writing a QUARANTINE sentinel file.
 
         Agent story: once an agent has forensically confirmed tampering (e.g.
         via run_health + diff_runs + read_artifact), it calls this to halt
         the campaign before another run starts -- the campaign CLI and the
-        workload MCP server's run_campaign both check for this sentinel
+        workload MCP server's measure_cohort both check for this sentinel
         before each run and stop immediately when it appears.
 
         Args:
             run_id: The run this alert concerns.
             reason: Human-readable justification for the quarantine.
-            data_dir: The campaign's data directory (must match the one the
-                running campaign was invoked with).
 
         Returns:
             A dict with ``quarantined: True``, ``path`` (the sentinel file
             written), ``run_id``, ``reason``, and ``timestamp``.
         """
-        return write_quarantine(data_dir, run_id, reason)
+        return write_quarantine(data_dir_path, run_id, reason)
 
     @mcp.tool
-    def lift_quarantine(data_dir: str = "./campaign_data") -> dict[str, Any]:
+    def lift_quarantine() -> dict[str, Any]:
         """Remove the QUARANTINE sentinel, letting the campaign resume.
 
         Agent story: the SPOTTER watcher agent (which mounts only this
@@ -301,15 +311,11 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         explicitly said to continue -- e.g. after raise_alert turned out to
         be a false positive.
 
-        Args:
-            data_dir: The campaign's data directory (must match the one
-                raise_alert was called with).
-
         Returns:
             A dict with ``lifted`` (``True`` only if a sentinel was actually
             present and removed) and ``path``.
         """
-        return quarantine_lift(data_dir)
+        return quarantine_lift(data_dir_path)
 
     return mcp
 

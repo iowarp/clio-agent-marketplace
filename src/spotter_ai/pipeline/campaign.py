@@ -13,7 +13,7 @@ embedded in its run_id (e.g. ``--tamper-at 12`` matches run-012) -- the same
 convention the workload MCP server's ``fault.json`` (see
 :mod:`spotter_ai.workload`) uses, so a demo operator reasons about "tamper
 run 12" identically whether the campaign is driven by this CLI in one shot
-or by a sequence of batched ``run_campaign`` calls.
+or by a sequence of batched ``measure_cohort`` calls.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
+from spotter_ai import config
 from spotter_ai.pipeline import stages
 from spotter_ai.provenance.store import ArtifactRef, ProvenanceStore
 from spotter_ai.quarantine import QUARANTINE_FILENAME, read_quarantine
@@ -50,14 +51,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--campaign",
         type=str,
-        default="phenotype-2026",
-        help="campaign name (default: phenotype-2026)",
+        default=config.DEFAULT_CAMPAIGN_NAME,
+        help=f"campaign name (default: {config.DEFAULT_CAMPAIGN_NAME})",
     )
     parser.add_argument(
         "--data-dir",
         type=str,
-        default="./campaign_data",
-        help="directory for calibration.json and per-run artifacts (default: ./campaign_data)",
+        default=config.DEFAULT_DATA_DIR,
+        help=(
+            "directory for calibration.json and per-run artifacts "
+            f"(default: {config.DEFAULT_DATA_DIR})"
+        ),
     )
     parser.add_argument(
         "--tamper-at",

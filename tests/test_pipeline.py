@@ -220,7 +220,7 @@ class TestForensicMargins:
         """--tamper-at matches the run's GLOBAL run-NNN number, not the total
         run count or any other position-dependent notion -- the same
         convention the workload MCP server's fault.json uses (see
-        spotter_ai.workload.run_campaign). runs=15/tamper_at=7 decouples the
+        spotter_ai.workload.measure_cohort). runs=15/tamper_at=7 decouples the
         two: if --tamper-at were (mis)interpreted as anything other than the
         literal run-007 target, this would fail.
         """

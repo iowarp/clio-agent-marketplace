@@ -4,7 +4,7 @@ A single ``QUARANTINE`` file convention governs every place a campaign can be
 halted or resumed:
 
 - The campaign CLI (:mod:`spotter_ai.pipeline.campaign`) and the workload
-  MCP server's ``run_campaign`` both check for it before starting the next
+  MCP server's ``measure_cohort`` both check for it before starting the next
   run and halt immediately if it is present.
 - The forensic MCP server's ``raise_alert`` tool (:mod:`spotter_ai.server`)
   writes it once an agent has confirmed tampering.

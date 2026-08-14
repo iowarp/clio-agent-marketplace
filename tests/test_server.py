@@ -11,14 +11,22 @@ import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
+from spotter_ai.config import DEFAULT_CAMPAIGN_NAME
 from spotter_ai.pipeline.campaign import build_arg_parser, run_campaign
 from spotter_ai.provenance.store import ProvenanceStore
 from spotter_ai.server import create_server
 
 
 @pytest.fixture
-def small_campaign(tmp_path: Path) -> tuple[Path, Path]:
+def small_campaign(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
     """Run a tiny 3-run healthy campaign into an isolated tmp_path store.
+
+    Also points SPOTTER_DATA_DIR at this campaign's data directory, since
+    campaign name and data directory are server-side config resolved once
+    at create_server() construction (see spotter_ai.config) -- every test
+    using this fixture must call create_server() AFTER the fixture runs.
+    The campaign name is left at its default (config.DEFAULT_CAMPAIGN_NAME),
+    which the server resolves to the same way with no env var needed.
 
     Returns:
         A ``(db_path, data_dir)`` tuple.
@@ -34,6 +42,8 @@ def small_campaign(tmp_path: Path) -> tuple[Path, Path]:
 
     exit_code = run_campaign(args, store=store)
     assert exit_code == 0
+
+    monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
     return db_path, data_dir
 
 
@@ -67,11 +77,59 @@ class TestListRuns:
         assert totals["stage_count"] == 15
         assert totals["artifact_count"] > 0
 
-    async def test_campaign_filter(self, small_campaign: tuple[Path, Path]) -> None:
+    async def test_no_campaign_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
+        """campaign is server-side config now, not a per-call filter argument."""
         db_path, _ = small_campaign
         server = create_server(db_path)
         async with Client(server) as client:
-            result = await client.call_tool("list_runs", {"campaign": "does-not-exist"})
+            tools = await client.list_tools()
+        list_runs_tool = next(t for t in tools if t.name == "list_runs")
+        assert set(list_runs_tool.inputSchema.get("properties", {})) == set()
+
+    async def test_campaign_env_override_scopes_results(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """SPOTTER_CAMPAIGN, when set, is used instead of the default -- resolved
+        once at server construction, per spotter_ai.config.
+        """
+        db_path = tmp_path / "provenance.sqlite"
+        data_dir = tmp_path / "campaign_data"
+        store = ProvenanceStore(db_path)
+        parser = build_arg_parser()
+        args = parser.parse_args([])
+        args.data_dir = str(data_dir)
+        args.campaign = "owner-review-2026"
+        args.runs = 2
+        assert run_campaign(args, store=store) == 0
+
+        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
+        monkeypatch.setenv("SPOTTER_CAMPAIGN", "owner-review-2026")
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("list_runs", {})
+        assert len(result.data["runs"]) == 2
+
+    async def test_campaign_env_unset_uses_default_and_excludes_other_campaigns(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        db_path = tmp_path / "provenance.sqlite"
+        data_dir = tmp_path / "campaign_data"
+        store = ProvenanceStore(db_path)
+        parser = build_arg_parser()
+        args = parser.parse_args([])
+        args.data_dir = str(data_dir)
+        args.campaign = "a-different-campaign"
+        args.runs = 2
+        assert run_campaign(args, store=store) == 0
+
+        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
+        monkeypatch.delenv("SPOTTER_CAMPAIGN", raising=False)
+        server = create_server(db_path)
+        async with Client(server) as client:
+            result = await client.call_tool("list_runs", {})
+        # The runs recorded belong to "a-different-campaign", not the
+        # resolved default -- with no per-call filter argument anymore, the
+        # server-resolved campaign name is authoritative and excludes them.
         assert result.data["runs"] == []
 
 
@@ -112,7 +170,7 @@ class TestCampaignHealth:
 
         data = result.data
         assert set(data) == {"campaign", "runs_checked", "verdicts", "anomalous"}
-        assert data["campaign"] is None
+        assert data["campaign"] == DEFAULT_CAMPAIGN_NAME
         assert data["runs_checked"] == 3
         assert len(data["verdicts"]) == 3
         for row in data["verdicts"]:
@@ -128,7 +186,17 @@ class TestCampaignHealth:
             assert row["worst_metric"] in {"mean_biomass", "mean_leaf_area", "mean_height"}
         assert isinstance(data["anomalous"], list)
 
-    async def test_healthy_campaign_all_normal(self, tmp_path: Path) -> None:
+    async def test_no_campaign_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
+        db_path, _ = small_campaign
+        server = create_server(db_path)
+        async with Client(server) as client:
+            tools = await client.list_tools()
+        campaign_health_tool = next(t for t in tools if t.name == "campaign_health")
+        assert set(campaign_health_tool.inputSchema.get("properties", {})) == set()
+
+    async def test_healthy_campaign_all_normal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         db_path = tmp_path / "provenance.sqlite"
         data_dir = tmp_path / "campaign_data"
         store = ProvenanceStore(db_path)
@@ -138,6 +206,7 @@ class TestCampaignHealth:
         args.runs = 11
         assert run_campaign(args, store=store) == 0
 
+        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
         server = create_server(db_path)
         async with Client(server) as client:
             result = await client.call_tool("campaign_health", {})
@@ -147,7 +216,9 @@ class TestCampaignHealth:
         assert data["anomalous"] == []
         assert all(row["verdict"] == "normal" for row in data["verdicts"])
 
-    async def test_tampered_campaign_flags_exactly_run_012(self, tmp_path: Path) -> None:
+    async def test_tampered_campaign_flags_exactly_run_012(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         db_path = tmp_path / "provenance.sqlite"
         data_dir = tmp_path / "campaign_data"
         store = ProvenanceStore(db_path)
@@ -158,6 +229,7 @@ class TestCampaignHealth:
         args.tamper_at = 12
         assert run_campaign(args, store=store) == 0
 
+        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
         server = create_server(db_path)
         async with Client(server) as client:
             result = await client.call_tool("campaign_health", {})
@@ -176,13 +248,26 @@ class TestCampaignHealth:
                 continue
             assert row["verdict"] == "normal", row
 
-    async def test_campaign_filter(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
+    async def test_campaign_env_override_excludes_other_campaigns(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        db_path = tmp_path / "provenance.sqlite"
+        data_dir = tmp_path / "campaign_data"
+        store = ProvenanceStore(db_path)
+        parser = build_arg_parser()
+        args = parser.parse_args([])
+        args.data_dir = str(data_dir)
+        args.campaign = "does-not-match"
+        args.runs = 3
+        assert run_campaign(args, store=store) == 0
+
+        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
+        monkeypatch.delenv("SPOTTER_CAMPAIGN", raising=False)
         server = create_server(db_path)
         async with Client(server) as client:
-            result = await client.call_tool("campaign_health", {"campaign": "does-not-exist"})
+            result = await client.call_tool("campaign_health", {})
         assert result.data == {
-            "campaign": "does-not-exist",
+            "campaign": DEFAULT_CAMPAIGN_NAME,
             "runs_checked": 0,
             "verdicts": [],
             "anomalous": [],
@@ -332,7 +417,6 @@ class TestRaiseAlert:
                 {
                     "run_id": "run-003",
                     "reason": "calibration drift confirmed via diff_runs",
-                    "data_dir": str(data_dir),
                 },
             )
 
@@ -347,6 +431,14 @@ class TestRaiseAlert:
         assert "run-003" in content
         assert "calibration drift confirmed" in content
 
+    async def test_no_data_dir_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
+        db_path, _ = small_campaign
+        server = create_server(db_path)
+        async with Client(server) as client:
+            tools = await client.list_tools()
+        raise_alert_tool = next(t for t in tools if t.name == "raise_alert")
+        assert set(raise_alert_tool.inputSchema.get("properties", {})) == {"run_id", "reason"}
+
 
 class TestLiftQuarantine:
     async def test_raise_then_lift_removes_sentinel(
@@ -359,11 +451,11 @@ class TestLiftQuarantine:
         async with Client(server) as client:
             await client.call_tool(
                 "raise_alert",
-                {"run_id": "run-003", "reason": "false alarm", "data_dir": str(data_dir)},
+                {"run_id": "run-003", "reason": "false alarm"},
             )
             assert quarantine_path.exists()
 
-            result = await client.call_tool("lift_quarantine", {"data_dir": str(data_dir)})
+            result = await client.call_tool("lift_quarantine", {})
 
         assert result.data["lifted"] is True
         assert not quarantine_path.exists()
@@ -371,8 +463,16 @@ class TestLiftQuarantine:
     async def test_lift_with_no_sentinel_reports_nothing_lifted(
         self, small_campaign: tuple[Path, Path]
     ) -> None:
-        db_path, data_dir = small_campaign
+        db_path, _ = small_campaign
         server = create_server(db_path)
         async with Client(server) as client:
-            result = await client.call_tool("lift_quarantine", {"data_dir": str(data_dir)})
+            result = await client.call_tool("lift_quarantine", {})
         assert result.data["lifted"] is False
+
+    async def test_no_data_dir_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
+        db_path, _ = small_campaign
+        server = create_server(db_path)
+        async with Client(server) as client:
+            tools = await client.list_tools()
+        lift_quarantine_tool = next(t for t in tools if t.name == "lift_quarantine")
+        assert set(lift_quarantine_tool.inputSchema.get("properties", {})) == set()
