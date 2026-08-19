@@ -106,3 +106,13 @@ thing from a pipeline step that writes output *files* — this pack's workloads
 `jarvis_get_execution(..., artifacts={})` to list, `relay_fetch_artifact` to pull
 bytes. If a request genuinely needs a live interactive service binding, that is
 outside this pack's current tool grant — say so rather than improvising.
+
+## Known limitation: interceptor target binding (clio-kit#376)
+
+The current wire contract (jarvis-user-v3.7) cannot express which
+package a preloader-class interceptor (e.g. Darshan) wraps -
+jarvis_add_step has no target field. Appending an interceptor as a
+bare step may not bind it to the intended application. Until
+clio-kit#376 lands (handler recognition + a contract v3.7.1 optional
+target field), do NOT promise I/O-instrumented runs; if asked,
+explain this limitation honestly and cite the issue.
