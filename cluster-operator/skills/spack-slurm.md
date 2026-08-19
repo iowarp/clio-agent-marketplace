@@ -68,3 +68,11 @@ report exactly what it says. For an install, a follow-up `spack_find` with the
 same constraint is the honest way to confirm it now shows up, if the request
 calls for that confirmation rather than trusting the install call's own success
 signal alone.
+
+## load_spec: copy it unchanged
+
+remote_spack_spack_locate returns `load_spec` directly under
+`structured_result`. Copy that value UNCHANGED into the pipeline/step
+configuration that needs the package on PATH. Live-proven failure
+mode: paraphrasing or reconstructing it leaves the application off
+PATH and the run fails at launch.

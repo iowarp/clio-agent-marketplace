@@ -116,3 +116,13 @@ bare step may not bind it to the intended application. Until
 clio-kit#376 lands (handler recognition + a contract v3.7.1 optional
 target field), do NOT promise I/O-instrumented runs; if asked,
 explain this limitation honestly and cite the issue.
+
+## Execution mode: always prefer the scheduler path
+
+Run pipelines with the SCHEDULER execution mode (e.g. slurm), not
+mode=direct. Live-proven on ares: mode=direct leaves a live child
+process and the relay's containment refuses the call with
+'completed process left systemd-scope descendants'. The scheduler path
+is the correct route: the run gets a native scheduler id, terminal
+state, and return code (verified: a 100-step LAMMPS run via slurm,
+state=completed, return_code=0).
