@@ -83,11 +83,15 @@ class TestMeasureCohortBasic:
         measure_cohort_tool = next(t for t in tools if t.name == "measure_cohort")
         schema_props = measure_cohort_tool.inputSchema["properties"]
 
-        # ONLY the two per-call arguments are exposed -- campaign and
-        # data_dir are server-side config now, never model-supplied.
-        assert set(schema_props) == {"runs", "pace_seconds"}
+        # ONLY the per-call arguments are exposed -- campaign and data_dir
+        # are server-side config now, never model-supplied. timeout_seconds
+        # is the tool's DECLARED duration budget: clio-agent's derived
+        # per-call timeout backstop (#1230) reads its schema default so a
+        # paced batch is never killed by the flat 30s operator global.
+        assert set(schema_props) == {"runs", "pace_seconds", "timeout_seconds"}
         assert schema_props["runs"]["default"] == 14
         assert schema_props["pace_seconds"]["default"] == 10.0
+        assert schema_props["timeout_seconds"]["default"] == 600.0
         # No tamper parameter is exposed -- the fault mechanism is out-of-band.
         assert "tamper_at" not in schema_props
         assert "tamper" not in schema_props
@@ -100,7 +104,7 @@ class TestMeasureCohortBasic:
             tools = await client.list_tools()
         by_name = {t.name: set(t.inputSchema.get("properties", {})) for t in tools}
         assert by_name == {
-            "measure_cohort": {"runs", "pace_seconds"},
+            "measure_cohort": {"runs", "pace_seconds", "timeout_seconds"},
             "campaign_status": set(),
             "lift_quarantine": set(),
         }

@@ -218,7 +218,9 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
 
     @mcp.tool(title="Measure plant cohort")
     def measure_cohort(
-        runs: int = 14, pace_seconds: float = DEFAULT_PACE_SECONDS
+        runs: int = 14,
+        pace_seconds: float = DEFAULT_PACE_SECONDS,
+        timeout_seconds: float = 600.0,
     ) -> dict[str, Any]:
         """Run a batch of measurement passes over the 60-plant cohort, recording full provenance.
 
@@ -290,6 +292,16 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             pace_seconds: Seconds to pace between runs -- NOT a literal
                 "sleep for testing" delay, but the cadence a live demo runs
                 at so a human watching can follow along (default: 10.0).
+            timeout_seconds: The call-duration budget this tool DECLARES to
+                the platform. A paced batch legitimately runs for minutes
+                (runs x pace_seconds plus compute), and clio-agent's derived
+                per-call timeout backstop (iowarp/clio-agent#1230) reads this
+                parameter's schema default as the tool's own declared
+                expectation -- without it, a flat operator global (30s
+                default) kills an ordinary 5-run paced batch mid-flight as
+                ``outcome_unknown``. The server itself never consumes the
+                value; callers may pass a larger budget for oversized
+                batches.
 
         Returns:
             A dict with ``status`` (``"completed"`` or ``"halted"``),
@@ -301,6 +313,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
             completed in this call), and -- only when halted -- ``message``
             (the SPOTTER-AI quarantine notice).
         """
+        del timeout_seconds  # platform-declared budget (schema default) -- never consumed here
         runs_dir = data_dir_path / "runs"
         runs_dir.mkdir(parents=True, exist_ok=True)
         calibration_path = data_dir_path / "calibration.json"
