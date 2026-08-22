@@ -62,6 +62,11 @@ async def test_exposes_purpose_specific_tools_without_provider_arguments(native_
     }
     for tool in tools:
         assert "provider" not in tool.inputSchema.get("properties", {})
+        assert tool.annotations is not None
+        assert tool.annotations.readOnlyHint is True
+        assert tool.annotations.destructiveHint is False
+        assert tool.annotations.idempotentHint is True
+        assert tool.annotations.openWorldHint is True
 
 
 async def test_capabilities_name_the_active_providers(native_server) -> None:
