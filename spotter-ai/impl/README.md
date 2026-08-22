@@ -12,6 +12,8 @@ uv run spotter-mcp --clio-config /workspace/.clio/config.yaml
 ```
 
 `SPOTTER_CLIO_CONFIG` can provide the path when `--clio-config` is omitted.
+When launching through the bundled agent pack, `SPOTTER_IMPL_DIR` must be the absolute path to this
+`impl` directory.
 
 ## Provider configuration
 

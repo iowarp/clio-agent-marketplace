@@ -14,7 +14,7 @@ mcp_servers:
     args:
       - run
       - --project
-      - ${LOCALAPPDATA}/clio-agent/agent-blueprints/spotter-ai/impl
+      - ${SPOTTER_IMPL_DIR}
       - spotter-mcp
       - --clio-config
       - ${SPOTTER_CLIO_CONFIG}
@@ -40,3 +40,6 @@ with a weaker native approximation.
 This pack is an agent-facing MCP integration. gact-tui does not use it: the UI continues to call
 the stable clio-agent REST resources, and clio-agent queries its configured providers for those
 views.
+
+Set `SPOTTER_IMPL_DIR` to this pack's absolute `impl` directory and `SPOTTER_CLIO_CONFIG` to the
+CLIO YAML file. Both are explicit deployment inputs, so the same pack works on Windows and Linux.
