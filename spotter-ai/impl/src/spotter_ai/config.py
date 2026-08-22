@@ -1,120 +1,189 @@
-"""Server-side workload configuration, resolved once from the environment.
-
-Campaign name, data directory, and the provenance database path are
-workspace-fixed for the lifetime of a running ``phenotype-workload``/
-``spotter`` server process: a demo box points one server pair at one
-campaign's data directory and that never changes mid-session. Campaign/
-data-dir are therefore NOT per-call tool arguments -- a model should never
-be asked to repeat a constant on every call (that was the defect:
-``campaign``/``data_dir`` showing up in every tool schema, and
-``spotter_campaign_health`` observed being called with ``campaign: null``).
-
-All three resolve from environment variables:
-
-- ``SPOTTER_CAMPAIGN`` -- the campaign name (default:
-  :data:`DEFAULT_CAMPAIGN_NAME`).
-- ``SPOTTER_DATA_DIR`` -- the campaign data directory (default:
-  :data:`DEFAULT_DATA_DIR`, resolved relative to the server's cwd, but
-  ALWAYS returned as an absolute path -- see :func:`resolve_data_dir`).
-- ``SPOTTER_DB`` -- the provenance database path (default: see
-  :func:`resolve_db_path` -- a SIBLING of the resolved data directory, not
-  an independently cwd-relative literal; see that function's docstring for
-  why).
-
-Callers resolve these ONCE (at server construction / process start) and
-close over the result -- they are not re-read per tool call.
-
-Absoluteness matters beyond this process: every path a tool RETURNS (e.g.
-``measure_cohort``'s ``written_path``) is built from :func:`resolve_data_dir`,
-and clio-agent's platform auto-mints a recognized result-path key as a
-workspace artifact by resolving it with ``Path(value).resolve()`` -- against
-the PLATFORM SERVER's own process cwd, not this MCP server's. A relative
-value here is therefore ambiguous downstream and silently fails that
-platform's containment check (observed: #1218 r4, ``written_path`` returned
-as ``campaign_data\reports\batch-001.json``, resolved against the wrong
-process, rejected as outside the workspace root). Returning an already-
-absolute path removes the ambiguity entirely -- resolving it again is then
-always a no-op.
-"""
+"""Resolve Spotter's query providers from a CLIO provenance configuration."""
 
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-#: Campaign name applied when ``SPOTTER_CAMPAIGN`` is unset. Matches the
-#: campaign CLI's own historical default (see
-#: :mod:`spotter_ai.pipeline.campaign`).
-DEFAULT_CAMPAIGN_NAME = "phenotype-2026"
+import yaml
 
-#: Campaign data directory (relative to the server's cwd) applied when
-#: ``SPOTTER_DATA_DIR`` is unset.
-DEFAULT_DATA_DIR = "./campaign_data"
-
-#: Provenance database filename applied when ``SPOTTER_DB`` is unset -- see
-#: :func:`resolve_db_path` for where it is placed.
-DB_FILENAME = "spotter_provenance.sqlite"
+CONFIG_ENV = "SPOTTER_CLIO_CONFIG"
 
 
-def resolve_campaign_name() -> str:
-    """Resolve the campaign name from ``SPOTTER_CAMPAIGN``, or the default.
-
-    Returns:
-        The value of ``SPOTTER_CAMPAIGN`` if set, otherwise
-        :data:`DEFAULT_CAMPAIGN_NAME`.
-    """
-    return os.environ.get("SPOTTER_CAMPAIGN", DEFAULT_CAMPAIGN_NAME)
+class SpotterConfigurationError(ValueError):
+    """Raised when the CLIO configuration cannot describe a query provider."""
 
 
-def resolve_data_dir() -> Path:
-    """Resolve the campaign data directory from ``SPOTTER_DATA_DIR``, or the default.
+@dataclass(frozen=True)
+class FlowceptQueryConfig:
+    """Direct MongoDB query configuration derived from Flowcept settings."""
 
-    ALWAYS returns an absolute path, even when the source (an explicit
-    relative ``SPOTTER_DATA_DIR``, or the relative :data:`DEFAULT_DATA_DIR`
-    fallback) is relative -- resolved against THIS process's cwd, at the
-    moment this is called (server construction). See the module docstring
-    for why a relative result here is unsafe once it round-trips through a
-    tool result to a DIFFERENT process (#1218 r4).
-
-    Returns:
-        The absolute path from ``SPOTTER_DATA_DIR`` if set, otherwise
-        :data:`DEFAULT_DATA_DIR` resolved against this process's cwd.
-    """
-    return Path(os.environ.get("SPOTTER_DATA_DIR", DEFAULT_DATA_DIR)).resolve()
+    uri: str
+    database: str
 
 
-def resolve_db_path() -> Path:
-    """Resolve the provenance database path -- the ONE location both the
-    workload and forensic servers must agree on.
+@dataclass(frozen=True)
+class CMFQueryConfig:
+    """Direct CMF REST query configuration."""
 
-    ``SPOTTER_DB`` wins outright when set, resolved to an absolute path.
+    server_url: str
+    pipeline_name: str
 
-    When unset, the historical default was an independently cwd-relative
-    literal (``Path("./spotter_provenance.sqlite")``, resolved against
-    whatever the CURRENT PROCESS's cwd happened to be at connection time) --
-    computed completely separately from :func:`resolve_data_dir`'s own,
-    ALSO cwd-relative, default. The two could silently disagree whenever the
-    workload and forensic server processes were launched with different
-    working directories: a stray, empty database was observed created
-    *inside* the campaign data directory (``<data_dir>/spotter_provenance.sqlite``)
-    alongside the real one at the historical location one level up, when
-    just one of the two servers resolved this fallback from a different cwd
-    (#1218 r3).
 
-    The fix anchors the fallback to the SAME resolution :func:`resolve_data_dir`
-    already performs, rather than re-deriving cwd independently: the
-    database sits as a SIBLING of the resolved data directory -- i.e. one
-    level above ``campaign_data``, matching the historical workspace-root
-    location -- so as long as both servers agree on ``SPOTTER_DATA_DIR``
-    (or share a cwd), they now provably agree on the database path too,
-    because both derive it from the one same resolution.
+@dataclass(frozen=True)
+class NativeQueryConfig:
+    """Read-only CLIO/native JSONL and workspace locations."""
 
-    Returns:
-        The absolute path from ``SPOTTER_DB`` if set, otherwise
-        ``resolve_data_dir().parent / DB_FILENAME`` (already absolute, since
-        :func:`resolve_data_dir` now always returns one).
-    """
-    env_value = os.environ.get("SPOTTER_DB")
-    if env_value:
-        return Path(env_value).resolve()
-    return resolve_data_dir().parent / DB_FILENAME
+    jsonl_path: Path
+    workspace_root: Path
+
+
+@dataclass(frozen=True)
+class SpotterConfig:
+    """Selected agentic and artifact query providers."""
+
+    source_path: Path
+    agentic_provider: str
+    artifact_provider: str
+    flowcept: FlowceptQueryConfig | None = None
+    cmf: CMFQueryConfig | None = None
+    native: NativeQueryConfig | None = None
+
+
+def load_config(path: str | Path | None = None) -> SpotterConfig:
+    """Load one explicit CLIO YAML file and resolve Spotter's active providers."""
+    raw_path = str(path or os.environ.get(CONFIG_ENV, "")).strip()
+    if not raw_path:
+        raise SpotterConfigurationError(
+            f"configure a CLIO config path with --clio-config or {CONFIG_ENV}"
+        )
+    source = Path(raw_path).expanduser().resolve()
+    if not source.is_file():
+        raise SpotterConfigurationError(f"CLIO config file does not exist: {source}")
+    try:
+        document = yaml.safe_load(source.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise SpotterConfigurationError(f"could not read CLIO config {source}: {exc}") from exc
+    if not isinstance(document, Mapping):
+        raise SpotterConfigurationError("CLIO config must contain a YAML object")
+
+    providers = _string_list(_value(document, "provenance.agentic.providers", ["jsonl"]))
+    providers = ["jsonl" if name in {"native", "file"} else name for name in providers]
+    query_default = str(_value(document, "provenance.agentic.query_default", "")).strip().lower()
+    if query_default in {"native", "file"}:
+        query_default = "jsonl"
+    if not query_default:
+        query_default = providers[0] if len(providers) == 1 else "jsonl"
+    if query_default not in providers:
+        raise SpotterConfigurationError(
+            f"agentic query provider {query_default!r} is not enabled in {providers!r}"
+        )
+    if query_default not in {"jsonl", "flowcept"}:
+        raise SpotterConfigurationError(f"unsupported agentic query provider: {query_default}")
+
+    artifact_provider = (
+        str(_value(document, "provenance.artifacts.provider", "native")).strip().lower()
+    )
+    if artifact_provider not in {"native", "cmf"}:
+        raise SpotterConfigurationError(f"unsupported artifact query provider: {artifact_provider}")
+
+    flowcept = _flowcept_config(document, source) if query_default == "flowcept" else None
+    cmf = _cmf_config(document) if artifact_provider == "cmf" else None
+    native = (
+        _native_config(document, source)
+        if query_default == "jsonl" or artifact_provider == "native"
+        else None
+    )
+    return SpotterConfig(
+        source_path=source,
+        agentic_provider=query_default,
+        artifact_provider=artifact_provider,
+        flowcept=flowcept,
+        cmf=cmf,
+        native=native,
+    )
+
+
+def _flowcept_config(document: Mapping[str, Any], source: Path) -> FlowceptQueryConfig:
+    settings_value = str(_value(document, "provenance.agentic.flowcept.settings_path", "")).strip()
+    if not settings_value:
+        raise SpotterConfigurationError(
+            "Flowcept queries require provenance.agentic.flowcept.settings_path"
+        )
+    settings_path = _resolved_path(settings_value, source.parent)
+    try:
+        settings = yaml.safe_load(settings_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise SpotterConfigurationError(
+            f"could not read Flowcept settings {settings_path}: {exc}"
+        ) from exc
+    if not isinstance(settings, Mapping):
+        raise SpotterConfigurationError("Flowcept settings must contain a YAML object")
+    enabled = bool(_value(settings, "databases.mongodb.enabled", False))
+    if not enabled:
+        raise SpotterConfigurationError("Spotter requires Flowcept MongoDB query storage")
+    uri = str(_value(settings, "databases.mongodb.uri", "")).strip()
+    if not uri:
+        host = str(_value(settings, "databases.mongodb.host", "localhost")).strip()
+        port = int(_value(settings, "databases.mongodb.port", 27017))
+        uri = f"mongodb://{host}:{port}"
+    database = str(_value(settings, "databases.mongodb.db", "")).strip()
+    if not database:
+        database = str(_value(settings, "project.name", "flowcept")).strip() or "flowcept"
+    return FlowceptQueryConfig(uri=uri, database=database)
+
+
+def _cmf_config(document: Mapping[str, Any]) -> CMFQueryConfig:
+    server_url = str(_value(document, "provenance.artifacts.cmf.server_url", "")).strip()
+    if not server_url:
+        raise SpotterConfigurationError("CMF queries require provenance.artifacts.cmf.server_url")
+    pipeline = str(_value(document, "provenance.artifacts.cmf.pipeline_name", "clio-agent")).strip()
+    return CMFQueryConfig(server_url=server_url.rstrip("/"), pipeline_name=pipeline or "clio-agent")
+
+
+def _native_config(document: Mapping[str, Any], source: Path) -> NativeQueryConfig:
+    jsonl_value = str(_value(document, "provenance.agentic.jsonl.path", "")).strip()
+    if not jsonl_value:
+        raise SpotterConfigurationError(
+            "native queries require an explicit provenance.agentic.jsonl.path"
+        )
+    workspace_value = str(
+        _value(document, "provenance.artifacts.native.workspace_root", "")
+    ).strip()
+    if workspace_value:
+        workspace_root = _resolved_path(workspace_value, source.parent)
+    elif source.parent.name == ".clio":
+        workspace_root = source.parent.parent.resolve()
+    else:
+        raise SpotterConfigurationError(
+            "native queries require provenance.artifacts.native.workspace_root when the "
+            "config is not <workspace>/.clio/config.yaml"
+        )
+    return NativeQueryConfig(
+        jsonl_path=_resolved_path(jsonl_value, source.parent),
+        workspace_root=workspace_root,
+    )
+
+
+def _resolved_path(value: str, base: Path) -> Path:
+    path = Path(value).expanduser()
+    return (base / path).resolve() if not path.is_absolute() else path.resolve()
+
+
+def _value(document: Mapping[str, Any], dotted: str, default: Any) -> Any:
+    if dotted in document:
+        return document[dotted]
+    current: Any = document
+    for part in dotted.split("."):
+        if not isinstance(current, Mapping) or part not in current:
+            return default
+        current = current[part]
+    return current
+
+
+def _string_list(value: Any) -> list[str]:
+    raw = value if isinstance(value, (list, tuple)) else str(value).split(",")
+    return [str(item).strip().lower() for item in raw if str(item).strip()]

@@ -1,26 +1,72 @@
-# spotter-ai
+# Spotter provenance MCP
 
-SPOTTER-AI MVP — provenance capture + agentic forensic attribution demo substrate.
+Spotter is a standalone, read-only MCP server for agentic execution and artifact-lineage queries.
+It does not call clio-agent and it does not run or proxy the upstream Flowcept or CMF MCP servers.
+It reads one explicit CLIO YAML configuration and connects directly to the stores selected there.
 
-A tiny deterministic plant-phenotyping pipeline (ingest -> calibrate -> segment ->
-extract_traits -> predict) records every stage execution, artifact hash, and metric
-to a SQLite provenance store. A campaign CLI runs batches of synthetic runs and can
-inject a calibration-drift fault on demand. A FastMCP tool server ("spotter") exposes
-the provenance store to an agent so it can list runs, score run health, diff two runs,
-trace artifact lineage, read artifact content, wait for new runs, and quarantine a
-campaign it judges compromised.
+## Run
 
-## Quick start
-
-```bash
+```console
 uv sync --extra dev
-uv run python -m spotter_ai.pipeline.campaign --runs 12 --tamper-at 12
-uv run pytest
+uv run spotter-mcp --clio-config /workspace/.clio/config.yaml
 ```
 
-## Layout
+`SPOTTER_CLIO_CONFIG` can provide the path when `--clio-config` is omitted.
 
-- `src/spotter_ai/pipeline/stages.py` — the 5 deterministic pipeline stages.
-- `src/spotter_ai/pipeline/campaign.py` — CLI runner (`python -m spotter_ai.pipeline.campaign`).
-- `src/spotter_ai/provenance/store.py` — SQLite schema + recording/query API.
-- `src/spotter_ai/server.py` — FastMCP tool server (server name `spotter`).
+## Provider configuration
+
+```yaml
+provenance:
+  agentic:
+    providers: [flowcept]
+    query_default: flowcept
+    flowcept:
+      settings_path: /runtime/flowcept.yaml
+  artifacts:
+    provider: cmf
+    cmf:
+      server_url: http://127.0.0.1:8380
+      pipeline_name: clio-agent
+```
+
+Flowcept queries use the MongoDB settings in the referenced Flowcept settings file. CMF queries use
+the current CMF REST server. Provider credentials remain in those configuration files and are not
+accepted as model-supplied MCP arguments.
+
+For native querying, configure the journal explicitly:
+
+```yaml
+provenance:
+  agentic:
+    providers: [jsonl]
+    query_default: jsonl
+    jsonl:
+      path: /runtime/provenance
+  artifacts:
+    provider: native
+    native:
+      workspace_root: /workspace
+```
+
+## Native JSONL contract
+
+The native provider accepts either CLIO semantic-event records containing `event_type`, or the
+portable Spotter record dialect:
+
+```json
+{"schema_version":"spotter.provenance.v1","record_type":"workflow","workflow_id":"wf-1","data":{"status":"completed"}}
+```
+
+Defined portable `record_type` values are `workflow`, `agent`, `task`, `pipeline`, `execution`,
+`artifact`, and `model_card`. Each record stores its type-specific public fields in `data`; stable
+identity fields may also appear at the top level. Pipeline and model-card tools are advertised only
+when those record types are present. Unknown JSONL objects fail validation instead of being silently
+treated as provenance.
+
+## Semantics
+
+The MCP exposes purpose-specific tools rather than a generic query endpoint. Provider selection is
+not a tool argument. Each provider advertises its exact capability set, and unsupported operations
+raise a structured `capability_unavailable` error. Normalized fields support cross-provider agent
+reasoning; the complete source response remains under `extensions.flowcept`, `extensions.cmf`,
+`extensions.clio`, or `extensions.jsonl`.

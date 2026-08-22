@@ -1,529 +1,92 @@
-"""Contract tests for the FastMCP "spotter" tool server, exercised in-memory
-against a small campaign recorded into a tmp_path SQLite provenance store.
-"""
+"""FastMCP contract tests for the provider-aware Spotter surface."""
 
-from __future__ import annotations
-
-import time
+import json
 from pathlib import Path
 
 import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
-from spotter_ai.config import DEFAULT_CAMPAIGN_NAME
-from spotter_ai.pipeline.campaign import build_arg_parser, run_campaign
-from spotter_ai.provenance.store import ProvenanceStore
+from spotter_ai.config import NativeQueryConfig
+from spotter_ai.providers.jsonl import JsonlProvider
 from spotter_ai.server import create_server
+from spotter_ai.service import ProvenanceService
 
 
 @pytest.fixture
-def small_campaign(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
-    """Run a tiny 3-run healthy campaign into an isolated tmp_path store.
-
-    Also points SPOTTER_DATA_DIR at this campaign's data directory, since
-    campaign name and data directory are server-side config resolved once
-    at create_server() construction (see spotter_ai.config) -- every test
-    using this fixture must call create_server() AFTER the fixture runs.
-    The campaign name is left at its default (config.DEFAULT_CAMPAIGN_NAME),
-    which the server resolves to the same way with no env var needed.
-
-    Returns:
-        A ``(db_path, data_dir)`` tuple.
-    """
-    db_path = tmp_path / "provenance.sqlite"
-    data_dir = tmp_path / "campaign_data"
-    store = ProvenanceStore(db_path)
-
-    parser = build_arg_parser()
-    args = parser.parse_args([])
-    args.data_dir = str(data_dir)
-    args.runs = 3
-
-    exit_code = run_campaign(args, store=store)
-    assert exit_code == 0
-
-    monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
-    return db_path, data_dir
-
-
-class TestListRuns:
-    async def test_contract_shape(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("list_runs", {})
-
-        data = result.data
-        assert set(data) == {"runs", "totals"}
-        assert len(data["runs"]) == 3
-        for run in data["runs"]:
-            assert set(run) >= {
-                "run_id",
-                "campaign",
-                "status",
-                "started_at",
-                "ended_at",
-                "metrics",
-                "stage_count",
-                "artifact_count",
+def native_server(tmp_path: Path):
+    """Create a server backed by one real native provider."""
+    journal = tmp_path / "events.jsonl"
+    journal.write_text(
+        json.dumps(
+            {
+                "event_type": "lm.completed",
+                "event_id": "event-1",
+                "session_id": "session-1",
+                "trace_id": "campaign-1",
+                "turn_id": "turn-1",
+                "occurred_at": "2026-08-22T12:00:00Z",
+                "actor": {"agent_id": "agent-1"},
+                "payload": {"correlation_id": "correlation-1"},
             }
-            assert run["status"] == "completed"
-            assert run["stage_count"] == 5
-            assert run["metrics"]["mean_biomass"] > 0
-
-        totals = data["totals"]
-        assert totals["run_count"] == 3
-        assert totals["stage_count"] == 15
-        assert totals["artifact_count"] > 0
-
-    async def test_no_campaign_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
-        """campaign is server-side config now, not a per-call filter argument."""
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            tools = await client.list_tools()
-        list_runs_tool = next(t for t in tools if t.name == "list_runs")
-        assert set(list_runs_tool.inputSchema.get("properties", {})) == set()
-
-    async def test_campaign_env_override_scopes_results(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """SPOTTER_CAMPAIGN, when set, is used instead of the default -- resolved
-        once at server construction, per spotter_ai.config.
-        """
-        db_path = tmp_path / "provenance.sqlite"
-        data_dir = tmp_path / "campaign_data"
-        store = ProvenanceStore(db_path)
-        parser = build_arg_parser()
-        args = parser.parse_args([])
-        args.data_dir = str(data_dir)
-        args.campaign = "owner-review-2026"
-        args.runs = 2
-        assert run_campaign(args, store=store) == 0
-
-        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
-        monkeypatch.setenv("SPOTTER_CAMPAIGN", "owner-review-2026")
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("list_runs", {})
-        assert len(result.data["runs"]) == 2
-
-    async def test_campaign_env_unset_uses_default_and_excludes_other_campaigns(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        db_path = tmp_path / "provenance.sqlite"
-        data_dir = tmp_path / "campaign_data"
-        store = ProvenanceStore(db_path)
-        parser = build_arg_parser()
-        args = parser.parse_args([])
-        args.data_dir = str(data_dir)
-        args.campaign = "a-different-campaign"
-        args.runs = 2
-        assert run_campaign(args, store=store) == 0
-
-        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
-        monkeypatch.delenv("SPOTTER_CAMPAIGN", raising=False)
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("list_runs", {})
-        # The runs recorded belong to "a-different-campaign", not the
-        # resolved default -- with no per-call filter argument anymore, the
-        # server-resolved campaign name is authoritative and excludes them.
-        assert result.data["runs"] == []
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
+    return create_server(service=ProvenanceService(provider, provider))
 
 
-class TestRunHealth:
-    async def test_contract_shape(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("run_health", {"run_id": "run-001"})
+async def test_exposes_purpose_specific_tools_without_provider_arguments(native_server) -> None:
+    """The agent selects a question, while configuration selects providers."""
+    async with Client(native_server) as client:
+        tools = await client.list_tools()
 
-        data = result.data
-        assert data["run_id"] == "run-001"
-        metric_names = {m["metric"] for m in data["metrics"]}
-        assert metric_names == {"mean_biomass", "mean_leaf_area", "mean_height"}
-        for m in data["metrics"]:
-            assert set(m) == {
-                "metric",
-                "value",
-                "baseline_mean",
-                "baseline_std",
-                "baseline_n",
-                "z",
-                "verdict",
-            }
-            # small_campaign has only 3 runs -- a leave-one-out baseline_n
-            # of 2, well below MIN_BASELINE_SAMPLE -- so every verdict here
-            # MUST be insufficient_baseline, never a statistically unearned
-            # normal/anomalous call.
-            assert m["baseline_n"] == 2
-            assert m["verdict"] == "insufficient_baseline"
-
-    async def test_unknown_run_raises(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            with pytest.raises(ToolError):
-                await client.call_tool("run_health", {"run_id": "run-999"})
+    names = {tool.name for tool in tools}
+    assert names == {
+        "capabilities",
+        "list_campaigns",
+        "list_workflows",
+        "list_agents",
+        "query_tasks",
+        "summarize_tasks",
+        "get_timeline",
+        "list_pipelines",
+        "list_executions",
+        "list_artifact_types",
+        "list_artifacts",
+        "get_execution_lineage",
+        "get_artifact_lineage",
+        "get_model_card",
+        "trace_correlation",
+    }
+    for tool in tools:
+        assert "provider" not in tool.inputSchema.get("properties", {})
 
 
-class TestCampaignHealth:
-    """The batched sweep the watcher calls once per wake instead of one
-    run_health round per run -- must reach the same verdicts run_health
-    would, for every completed run, in a single tool call.
-    """
+async def test_capabilities_name_the_active_providers(native_server) -> None:
+    """Capability discovery reports both independent provider domains."""
+    async with Client(native_server) as client:
+        result = await client.call_tool("capabilities", {})
 
-    async def test_contract_shape(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("campaign_health", {})
-
-        data = result.data
-        assert set(data) == {"campaign", "runs_checked", "verdicts", "anomalous"}
-        assert data["campaign"] == DEFAULT_CAMPAIGN_NAME
-        assert data["runs_checked"] == 3
-        assert len(data["verdicts"]) == 3
-        for row in data["verdicts"]:
-            assert set(row) == {
-                "run_id",
-                "verdict",
-                "worst_metric",
-                "worst_z",
-                "value",
-                "baseline_mean",
-            }
-            # A 3-run campaign's leave-one-out baseline (n=2) is well below
-            # MIN_BASELINE_SAMPLE -- every verdict here MUST be
-            # insufficient_baseline, never a (statistically unearned)
-            # normal/anomalous call. See TestInsufficientBaselineGate in
-            # test_store.py for the deterministic version of this gate.
-            assert row["verdict"] == "insufficient_baseline"
-            assert row["worst_metric"] in {"mean_biomass", "mean_leaf_area", "mean_height"}
-        assert data["anomalous"] == []
-
-    async def test_no_campaign_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            tools = await client.list_tools()
-        campaign_health_tool = next(t for t in tools if t.name == "campaign_health")
-        assert set(campaign_health_tool.inputSchema.get("properties", {})) == set()
-
-    async def test_healthy_campaign_all_normal(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        db_path = tmp_path / "provenance.sqlite"
-        data_dir = tmp_path / "campaign_data"
-        store = ProvenanceStore(db_path)
-        parser = build_arg_parser()
-        args = parser.parse_args([])
-        args.data_dir = str(data_dir)
-        args.runs = 11
-        assert run_campaign(args, store=store) == 0
-
-        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("campaign_health", {})
-
-        data = result.data
-        assert data["runs_checked"] == 11
-        assert data["anomalous"] == []
-        assert all(row["verdict"] == "normal" for row in data["verdicts"])
-
-    async def test_tampered_campaign_flags_exactly_run_012(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        db_path = tmp_path / "provenance.sqlite"
-        data_dir = tmp_path / "campaign_data"
-        store = ProvenanceStore(db_path)
-        parser = build_arg_parser()
-        args = parser.parse_args([])
-        args.data_dir = str(data_dir)
-        args.runs = 12
-        args.tamper_at = 12
-        assert run_campaign(args, store=store) == 0
-
-        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("campaign_health", {})
-
-        data = result.data
-        assert data["runs_checked"] == 12
-        assert data["anomalous"] == ["run-012"]
-
-        tampered_row = next(row for row in data["verdicts"] if row["run_id"] == "run-012")
-        assert tampered_row["verdict"] == "anomalous"
-        assert tampered_row["worst_metric"] == "mean_biomass"
-        assert tampered_row["worst_z"] > 5, f"expected worst_z > 5, got {tampered_row['worst_z']}"
-
-        for row in data["verdicts"]:
-            if row["run_id"] == "run-012":
-                continue
-            assert row["verdict"] == "normal", row
-
-    async def test_sweeps_every_completed_run_no_cap_15_runs_late_tamper(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """#1218 r3: a live 15-run campaign's sweep reportedly checked only
-        10 of 15 runs and missed a tamper planted at run-012. This pins the
-        exact reported shape (15 runs, tamper late in the campaign, not at
-        the very first or last run) end to end: runs_checked must be 15 --
-        every completed run, not a truncated prefix -- and the tampered run
-        must be found. (Investigation found no cap/slice anywhere in
-        campaign_health's or list_runs' run enumeration -- this test is the
-        permanent guard against one ever being introduced.)
-        """
-        db_path = tmp_path / "provenance.sqlite"
-        data_dir = tmp_path / "campaign_data"
-        store = ProvenanceStore(db_path)
-        parser = build_arg_parser()
-        args = parser.parse_args([])
-        args.data_dir = str(data_dir)
-        args.runs = 15
-        args.tamper_at = 12
-        assert run_campaign(args, store=store) == 0
-
-        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("campaign_health", {})
-
-        data = result.data
-        assert data["runs_checked"] == 15
-        assert len(data["verdicts"]) == 15
-        assert {v["run_id"] for v in data["verdicts"]} == {f"run-{i:03d}" for i in range(1, 16)}
-        assert data["anomalous"] == ["run-012"]
-
-    async def test_campaign_env_override_excludes_other_campaigns(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        db_path = tmp_path / "provenance.sqlite"
-        data_dir = tmp_path / "campaign_data"
-        store = ProvenanceStore(db_path)
-        parser = build_arg_parser()
-        args = parser.parse_args([])
-        args.data_dir = str(data_dir)
-        args.campaign = "does-not-match"
-        args.runs = 3
-        assert run_campaign(args, store=store) == 0
-
-        monkeypatch.setenv("SPOTTER_DATA_DIR", str(data_dir))
-        monkeypatch.delenv("SPOTTER_CAMPAIGN", raising=False)
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("campaign_health", {})
-        assert result.data == {
-            "campaign": DEFAULT_CAMPAIGN_NAME,
-            "runs_checked": 0,
-            "verdicts": [],
-            "anomalous": [],
-        }
+    assert result.data["agentic"]["provider"] == "native"
+    assert result.data["artifact"]["provider"] == "native"
+    assert "get_timeline" in result.data["agentic"]["capabilities"]
+    assert "list_pipelines" not in result.data["artifact"]["capabilities"]
 
 
-class TestDiffRuns:
-    async def test_contract_shape(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool(
-                "diff_runs", {"run_id": "run-002", "baseline_run_id": "run-001"}
-            )
-
-        data = result.data
-        assert data["run_id"] == "run-002"
-        assert data["baseline_run_id"] == "run-001"
-        assert len(data["stages"]) == 5
-        for stage in data["stages"]:
-            assert set(stage) == {
-                "stage",
-                "params_equal",
-                "input_hashes_equal",
-                "tool_version_equal",
-                "output_summary_deltas",
-            }
-        # Two healthy runs: no forensic discrepancies expected.
-        assert data["discrepancies"] == []
-
-    async def test_unknown_run_raises(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        payload = {"run_id": "run-999", "baseline_run_id": "run-001"}
-        async with Client(server) as client:
-            with pytest.raises(ToolError):
-                await client.call_tool("diff_runs", payload)
+async def test_unsupported_semantics_fail_instead_of_falling_back(native_server) -> None:
+    """A missing native capability is an explicit typed tool error."""
+    async with Client(native_server) as client:
+        with pytest.raises(ToolError, match="capability_unavailable"):
+            await client.call_tool("get_model_card", {"model_id": "model-1"})
 
 
-class TestTraceLineage:
-    async def test_full_chain_is_backward_ordered(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("trace_lineage", {"run_id": "run-001"})
+async def test_cross_domain_correlation_uses_same_native_evidence_once(native_server) -> None:
+    """Correlation keeps the two domain labels even when one store serves both."""
+    async with Client(native_server) as client:
+        result = await client.call_tool("trace_correlation", {"correlation_id": "correlation-1"})
 
-        data = result.data
-        assert data["run_id"] == "run-001"
-        chain = data["chain"]
-        assert [entry["stage"] for entry in chain] == [
-            "predict",
-            "extract_traits",
-            "segment",
-            "calibrate",
-            "ingest",
-        ]
-        expected_ref_keys = {"artifact_id", "sha256", "path", "kind", "role", "summary"}
-        for entry in chain:
-            assert "inputs" in entry and "outputs" in entry
-            for artifact_ref in entry["inputs"] + entry["outputs"]:
-                assert set(artifact_ref) == expected_ref_keys
-
-    async def test_stage_filter_truncates_ancestry(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        payload = {"run_id": "run-001", "stage": "segment"}
-        async with Client(server) as client:
-            result = await client.call_tool("trace_lineage", payload)
-
-        chain = result.data["chain"]
-        assert [entry["stage"] for entry in chain] == ["segment", "calibrate", "ingest"]
-
-    async def test_unknown_stage_raises(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        payload = {"run_id": "run-001", "stage": "not-a-stage"}
-        async with Client(server) as client:
-            with pytest.raises(ToolError):
-                await client.call_tool("trace_lineage", payload)
-
-
-class TestReadArtifact:
-    async def test_reads_capped_content(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            lineage = await client.call_tool("trace_lineage", {"run_id": "run-001"})
-            artifact_id = lineage.data["chain"][0]["outputs"][0]["artifact_id"]
-
-            result = await client.call_tool("read_artifact", {"artifact_id": artifact_id})
-
-        data = result.data
-        assert set(data) == {"path", "sha256", "content"}
-        assert data["path"].endswith("predictions.json")
-        assert len(data["sha256"]) == 64
-        assert len(data["content"]) <= 4000
-        assert '"predictions"' in data["content"]
-
-    async def test_unknown_artifact_raises(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            with pytest.raises(ToolError):
-                await client.call_tool("read_artifact", {"artifact_id": 999999})
-
-
-class TestWaitForNewRuns:
-    async def test_returns_immediately_when_unknown_completed_run_exists(
-        self, small_campaign: tuple[Path, Path]
-    ) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            started = time.monotonic()
-            result = await client.call_tool(
-                "wait_for_new_runs", {"known_run_ids": ["run-001", "run-002"], "timeout_s": 300}
-            )
-            elapsed = time.monotonic() - started
-
-        assert elapsed < 1.0
-        data = result.data
-        assert "new_runs" in data
-        assert [r["run_id"] for r in data["new_runs"]] == ["run-003"]
-
-    async def test_times_out_fast_when_nothing_new(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            started = time.monotonic()
-            result = await client.call_tool(
-                "wait_for_new_runs",
-                {"known_run_ids": ["run-001", "run-002", "run-003"], "timeout_s": 0.1},
-            )
-            elapsed = time.monotonic() - started
-
-        assert elapsed < 2.0
-        assert result.data == {"timed_out": True}
-
-
-class TestRaiseAlert:
-    async def test_writes_quarantine_file(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, data_dir = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool(
-                "raise_alert",
-                {
-                    "run_id": "run-003",
-                    "reason": "calibration drift confirmed via diff_runs",
-                },
-            )
-
-        data = result.data
-        assert data["quarantined"] is True
-        assert data["run_id"] == "run-003"
-        assert "calibration drift" in data["reason"]
-
-        quarantine_path = data_dir / "QUARANTINE"
-        assert quarantine_path.exists()
-        content = quarantine_path.read_text(encoding="utf-8")
-        assert "run-003" in content
-        assert "calibration drift confirmed" in content
-
-    async def test_no_data_dir_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            tools = await client.list_tools()
-        raise_alert_tool = next(t for t in tools if t.name == "raise_alert")
-        assert set(raise_alert_tool.inputSchema.get("properties", {})) == {"run_id", "reason"}
-
-
-class TestLiftQuarantine:
-    async def test_raise_then_lift_removes_sentinel(
-        self, small_campaign: tuple[Path, Path]
-    ) -> None:
-        db_path, data_dir = small_campaign
-        server = create_server(db_path)
-        quarantine_path = data_dir / "QUARANTINE"
-
-        async with Client(server) as client:
-            await client.call_tool(
-                "raise_alert",
-                {"run_id": "run-003", "reason": "false alarm"},
-            )
-            assert quarantine_path.exists()
-
-            result = await client.call_tool("lift_quarantine", {})
-
-        assert result.data["lifted"] is True
-        assert not quarantine_path.exists()
-
-    async def test_lift_with_no_sentinel_reports_nothing_lifted(
-        self, small_campaign: tuple[Path, Path]
-    ) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            result = await client.call_tool("lift_quarantine", {})
-        assert result.data["lifted"] is False
-
-    async def test_no_data_dir_argument_in_schema(self, small_campaign: tuple[Path, Path]) -> None:
-        db_path, _ = small_campaign
-        server = create_server(db_path)
-        async with Client(server) as client:
-            tools = await client.list_tools()
-        lift_quarantine_tool = next(t for t in tools if t.name == "lift_quarantine")
-        assert set(lift_quarantine_tool.inputSchema.get("properties", {})) == set()
+    assert result.data["agentic"]["count"] == 1
+    assert result.data["artifact"]["count"] == 1
+    assert result.data["agentic"]["items"] == result.data["artifact"]["items"]
