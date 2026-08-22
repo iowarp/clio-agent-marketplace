@@ -191,8 +191,10 @@ class CMFProvider:
         )
         if not isinstance(raw, dict):
             raise ProvenanceError("not_found", f"CMF execution not found: {execution_id}")
-        nodes = raw.get("nodes") if isinstance(raw.get("nodes"), list) else []
-        links = raw.get("links") if isinstance(raw.get("links"), list) else []
+        raw_nodes = raw.get("nodes")
+        raw_links = raw.get("links")
+        nodes: list[Any] = raw_nodes if isinstance(raw_nodes, list) else []
+        links: list[Any] = raw_links if isinstance(raw_links, list) else []
         return {
             "root": execution_id,
             "pipeline": selected,
