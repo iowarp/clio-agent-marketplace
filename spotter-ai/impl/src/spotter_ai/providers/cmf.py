@@ -216,21 +216,56 @@ class CMFProvider:
         selected = self._selected_pipeline(pipeline)
         raw = self._get(f"/api/artifact-lineage/tangled-tree/{quote(selected, safe='')}")
         layers = raw if isinstance(raw, list) else []
+        artifact_rows = self.list_artifacts(
+            pipeline=selected,
+            stage=None,
+            artifact_type=None,
+            limit=10_000,
+        )["items"]
+        aliases: dict[str, list[str]] = {}
+        requested_display_id = ""
+        for artifact in artifact_rows:
+            stable_id = str(artifact.get("artifact_id") or "")
+            display_id = _lineage_display_id(
+                str(artifact.get("name") or ""),
+                str(artifact.get("artifact_type") or ""),
+            )
+            if stable_id and display_id:
+                aliases.setdefault(display_id, []).append(stable_id)
+            if stable_id == artifact_id:
+                requested_display_id = display_id
+
+        def stable_node_id(display_id: str) -> str:
+            candidates = aliases.get(display_id, [])
+            if display_id == requested_display_id:
+                return artifact_id
+            return candidates[0] if len(candidates) == 1 else display_id
+
         nodes: list[dict[str, Any]] = []
         edges: list[dict[str, str]] = []
         for depth, layer in enumerate(layers):
             for row in layer if isinstance(layer, list) else []:
                 if not isinstance(row, dict):
                     continue
-                node_id = str(row.get("id") or "")
-                nodes.append({"id": node_id, "type": "artifact", "depth": depth})
+                display_id = str(row.get("id") or "")
+                node_id = stable_node_id(display_id)
+                nodes.append(
+                    {
+                        "id": node_id,
+                        "type": "artifact",
+                        "depth": depth,
+                        "extensions": {"cmf": {"display_id": display_id}},
+                    }
+                )
                 edges.extend(
-                    {"source": str(parent), "target": node_id, "kind": "generated"}
+                    {
+                        "source": stable_node_id(str(parent)),
+                        "target": node_id,
+                        "kind": "generated",
+                    }
                     for parent in row.get("parents") or []
                 )
-        matching = [
-            node for node in nodes if node["id"] == artifact_id or artifact_id in node["id"]
-        ]
+        matching = [node for node in nodes if node["id"] == artifact_id]
         if artifact_id and not matching:
             raise ProvenanceError(
                 "not_found",
@@ -300,6 +335,32 @@ def _property(row: dict[str, Any], name: str) -> Any:
         if f"{prefix}{name}" in row:
             return row[f"{prefix}{name}"]
     return None
+
+
+def _lineage_display_id(name: str, artifact_type: str) -> str:
+    """Reproduce the artifact labels emitted by CMF's tangled-tree endpoint."""
+    try:
+        split_by_colon = name.split(":")
+        if artifact_type == "Metrics":
+            return f"{split_by_colon[0]}:{split_by_colon[1][:4]}:{split_by_colon[2]}"
+        if artifact_type == "Model":
+            return f"{split_by_colon[-3].split('/')[-1]}:{split_by_colon[-2][:4]}"
+        if artifact_type == "Dataset":
+            artifact_path = name.rsplit(":")[0]
+            parts = artifact_path.split("/")
+            artifact_name = parts[-1] or parts[-2]
+            return f"{artifact_name}:{split_by_colon[-1][:4]}"
+        if artifact_type == "Dataslice":
+            relative = name.split("/", 1)[1]
+            path, lineage_id = relative.rsplit(":", 1)
+            return f"{path}:{lineage_id[:4]}"
+        if artifact_type == "Step_Metrics":
+            relative = name.split("/", 1)[1]
+            values = name.rsplit(":")
+            return f"{relative.rsplit(':', 3)[0]}:{values[-3][:4]}:{values[-2]}:{values[-1][:4]}"
+    except (IndexError, ValueError):
+        return name
+    return name
 
 
 def _limit(value: int) -> int:
