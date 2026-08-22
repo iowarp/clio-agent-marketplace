@@ -22,6 +22,30 @@ _CAPABILITIES = {
     "trace_correlation",
 }
 
+# Mirror Flowcept's own agent-query pruning for workflow records.
+_WORKFLOW_HEAVY_FIELDS = {
+    "adapter_id",
+    "code_repository",
+    "conf",
+    "environment_id",
+    "extra_metadata",
+    "flowcept_settings",
+    "flowcept_version",
+    "interceptor_ids",
+    "machine_info",
+    "sys_name",
+}
+_SENSITIVE_KEY_PARTS = {
+    "access_key",
+    "api_key",
+    "authorization",
+    "credential",
+    "passwd",
+    "password",
+    "secret",
+    "token",
+}
+
 
 class FlowceptProvider:
     """Query Flowcept's documented workflow/task collections without its MCP."""
@@ -282,6 +306,7 @@ class FlowceptProvider:
 
 
 def _workflow(row: dict[str, Any]) -> dict[str, Any]:
+    public = {key: value for key, value in row.items() if key not in _WORKFLOW_HEAVY_FIELDS}
     return {
         "workflow_id": str(row.get("workflow_id") or ""),
         "parent_workflow_id": str(row.get("parent_workflow_id") or ""),
@@ -291,7 +316,7 @@ def _workflow(row: dict[str, Any]) -> dict[str, Any]:
         "subtype": str(row.get("subtype") or ""),
         "started_at": _number(row.get("started_at")),
         "ended_at": _number(row.get("ended_at")),
-        "extensions": {"flowcept": _public(row)},
+        "extensions": {"flowcept": _public(public)},
     }
 
 
@@ -339,7 +364,9 @@ def _number(value: Any) -> float | None:
 def _public(value: Any) -> Any:
     if isinstance(value, dict):
         return {
-            str(key): _public(item) for key, item in value.items() if key not in {"_id", "data"}
+            str(key): _public(item)
+            for key, item in value.items()
+            if key not in {"_id", "data"} and not _sensitive_key(str(key))
         }
     if isinstance(value, (list, tuple)):
         return [_public(item) for item in value]
@@ -350,3 +377,8 @@ def _public(value: Any) -> Any:
     if isinstance(value, bytes):
         return None
     return str(value)
+
+
+def _sensitive_key(key: str) -> bool:
+    normalized = key.strip().lower().replace("-", "_")
+    return any(part in normalized for part in _SENSITIVE_KEY_PARTS)
