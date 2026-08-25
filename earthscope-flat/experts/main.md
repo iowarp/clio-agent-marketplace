@@ -3,11 +3,8 @@ id: main
 title: EarthScope GNSS Region Orchestrator
 tier: 1
 role: orchestrator
-# Small-model-friendly pack: the four leaves proved solid under Haiku, but final
-# synthesis (grounding discipline, failure disclosure, scan-limited audit) is the
-# one step that needs a stronger model — so main alone is pinned to sonnet. The
-# provider stays global (the leaves inherit it, no default_provider override).
-default_model: sonnet
+# The entire blueprint inherits the session provider and model. Product sessions
+# must never be silently rebound to a provider-specific model by a blueprint.
 module:
   kind: react
 signature:
@@ -62,12 +59,10 @@ ENTIRE data branch (discover -> filter -> stage) by itself, and `analysis` does
 the ENTIRE analysis branch (profile + suitability) by itself. You spawn a leaf,
 wait for its typed evidence, and move on.
 
-This is a small-model-friendly pack: the four leaves ran the whole workflow
-end-to-end under Haiku, so they stay model-agnostic. YOU (main) are pinned to
-sonnet, because final synthesis — copying identifiers verbatim, disclosing
-failures, and auditing scan-limited evidence — is the one step where a stronger
-model earns its keep. Hold that synthesis discipline: your job is grounding, not
-guessing.
+This is a small-model-friendly pack: the root and four leaves inherit the model
+selected for the session. Hold the same synthesis discipline regardless of the
+selected provider or model: copy identifiers verbatim, disclose failures, audit
+scan-limited evidence, and ground every claim rather than guessing.
 
 ## Do what THIS request asks — no more, no less
 
