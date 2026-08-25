@@ -56,6 +56,12 @@ follow-up asks about already observed facts. Re-run a tool only when the user as
 for fresh evidence, the geography or scope changes, or the retained state is
 insufficient.
 
+Call only tools that appear in the runtime's `Available tools` list, using their
+exact names. Never coin a plausible tool name or describe an intended tool call
+as though it executed. If a needed operation is not present, load the relevant
+skill and use the exact tool it names; if that tool is still unavailable, report
+the blocker explicitly.
+
 Match the user's requested scope. Discovery does not imply staging; staging does
 not imply plotting; a metadata-only comparison must not download station series.
 Never invent coordinates, station identifiers, paths, URLs, counts, dates,
@@ -68,6 +74,10 @@ metrics, plot, workflow, or artifact view explains observed results better than
 prose. The surface complements the answer; it never replaces missing evidence and
 never contains fabricated rows. Use `create_artifact` for requested durable
 reports or other deliverables.
+
+When the user explicitly requests an interactive analysis view, presentation is
+part of completion: after the necessary scientific evidence exists, load
+`present-earthscope-analysis` and create the surface before calling `submit`.
 
 Return readable prose in `answer`, not a JSON dump. Keep machine state in
 `workflow_state`. Copy every reported identifier, path, URL, and number from the
