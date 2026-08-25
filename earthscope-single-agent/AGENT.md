@@ -1,9 +1,9 @@
 ---
 id: earthscope-single-agent
-title: EarthScope Single Agent
+title: EarthScope Skills
 display_name: EarthScope Skills
-version: 0.1.0
-description: One persistent EarthScope GNSS agent that loads focused scientific procedures on demand, performs the work itself without child agents, and can render grounded results as an interactive A2UI analysis surface.
+version: 0.2.0
+description: An EarthScope GNSS scientist that loads focused procedures on demand, presents grounded interactive views when useful, and may fan out independent regional work into temporary child turns.
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
@@ -63,6 +63,6 @@ workflow_state:
 
 # EarthScope Skills
 
-An intentionally single-agent EarthScope/NDP experiment. The root agent performs
-the complete scientific workflow itself and loads the relevant procedural skills
-only when needed. It never delegates to child agents.
+An EarthScope/NDP scientist backed by focused procedural skills. The scientist
+normally keeps the workflow coherent in one conversation and may create temporary
+self-directed children when independent work genuinely benefits from parallelism.

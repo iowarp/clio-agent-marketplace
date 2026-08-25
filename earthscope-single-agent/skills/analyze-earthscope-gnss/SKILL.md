@@ -10,7 +10,9 @@ CSV, record `profile.status=blocked` and stop.
 
 Preserve the tool's file size, columns, rows examined, rows used for numeric
 summaries, missing-value scope, and reported min/max/mean values. A scan-limited
-profile is not full-file truth. Do not infer or claim full duration, recency,
+profile is not full-file truth. When `scan_limited=true`, `row_count` is the scan
+cap reached, not the file's total row count; describe it as "at least" that many
+rows and never relabel it as a total. Do not infer or claim full duration, recency,
 cadence, continuity, gap-free coverage, completeness, noise, quality, reference
 frame, or suitability unless a tool explicitly measured that property. A filename
 suffix is not a date range. Treat opaque quality fields as opaque.
