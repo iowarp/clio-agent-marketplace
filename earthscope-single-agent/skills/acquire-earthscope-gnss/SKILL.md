@@ -10,6 +10,10 @@ yourself in causal order.
 1. Find the EarthScope station catalog with
    `ndp_search_datasets(search_terms=["earthscope", "converted"], limit=10)`.
    Select the returned `earthscope_converted_data.csv` resource URL.
+   Preserve that exact tool-observed URL in workflow state and reuse it throughout
+   the session. If a resumed turn no longer has the URL in active context, repeat
+   this bounded search once and select the same returned resource; do not insert a
+   redundant `ndp_get_dataset_details` dependency between discovery and staging.
 2. Stage that catalog by URL with `ndp_stage_resource`. When an active workspace
    root is available, use it as `output_dir`. Copy the returned raw path.
 3. Normalize the catalog with `pandas_filter_data`, keeping rows where `Latitude`
@@ -20,6 +24,12 @@ yourself in causal order.
 4. Call `geo_filter_points_by_radius` once with the fixed region center/radius and
    explicit columns `Latitude`, `(deg)`, and `Site`. Preserve the returned ranked
    points, `total_points`, `within_radius_count`, and `skipped_invalid`.
+
+The staged raw catalog is never analysis-ready, even when a parser can read it.
+Steps 2, 3, and 4 are a strict dependency chain: never call
+`geo_filter_points_by_radius` on the raw staged catalog, and never omit
+`pandas_filter_data`. If normalization fails, report that failure instead of
+continuing with a partial or high-invalid filter result.
 
 A zero-candidate conclusion is valid only when the filter structurally succeeded,
 input rows were nonzero, invalid skips were not substantial, and
@@ -39,3 +49,11 @@ Try the next ranked station only when the current station has no matching CSV or
 staging fails. A successful acquisition requires an on-disk station time-series
 CSV and `analysis_ready=true`; the metadata catalog alone is `metadata_only`.
 Never derive a station id or filename from a city name.
+
+After ranking multiple stations, spatial presentation materially helps the user
+understand the choice: load `present-interactive-analysis` and create or update
+`earthscope-stations` immediately from the bounded, tool-returned ranked points.
+Show the selected station distinctly from the other candidates and include the
+observed distance/count evidence. A compact table is appropriate when coordinates
+are unavailable; otherwise prefer the interactive map. Do not wait until the end
+of the turn to hide this step inside a large dashboard.

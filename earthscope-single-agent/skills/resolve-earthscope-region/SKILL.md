@@ -18,3 +18,7 @@ regional radius, label it as an assumption, and keep it fixed for downstream
 filtering. Record the resolved label, center latitude, center longitude, radius or
 bounds, confidence, provenance, and warnings in `workflow_state.geospatial`.
 Do not make any EarthScope availability claim in this step.
+
+If a map would materially help the user, load `present-interactive-analysis`
+and create or update the `earthscope-region` surface with the grounded center.
+Do not render a map merely to decorate a coordinate answer.
