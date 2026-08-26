@@ -26,8 +26,14 @@ the tool boundary in `workflow_state.visualization` and `workflow_state.artifact
 The PNG is a durable export, not the primary interactive plot. When the user asks
 to plot a data series, a live chart materially helps: load
 `present-interactive-analysis` and create or update `earthscope-timeseries` using
-`clio.time-series.v1`, the registered staged CSV artifact URI, the confirmed time
-column as `xKey`, and confirmed displacement columns as `yKeys`. Also retain the
-PNG artifact for download and provenance, exposed as a secondary action rather
-than a second inline image. Use image-only presentation only when a data-backed
-chart is unavailable, and state that presentation limitation explicitly.
+exactly one primary `clio.time-series.v1`, the registered staged CSV artifact URI,
+the confirmed time column as `xKey`, and confirmed displacement columns as
+`yKeys`.
+
+Do not add `clio.artifact.v1`, `Image`, an image tab, or a second surface for the
+PNG when that interactive chart is present. Register the PNG so the conversation
+can expose it as a compact attachment and the workspace canvas can open it on
+demand; registration is sufficient. Never place the static image below, beside,
+or inside the interactive chart. Use image-only presentation only when a
+data-backed chart is unavailable, and state that presentation limitation
+explicitly.
