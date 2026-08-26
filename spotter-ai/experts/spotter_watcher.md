@@ -4,7 +4,6 @@ title: SPOTTER Provenance Investigator
 description: Investigates distributed agent execution and artifact lineage using the configured
   Flowcept, CMF, or native provenance stores, preserving provider-specific evidence.
 tier: 1
-default_model: gpt-5.6-luna
 module:
   kind: react
 signature:
