@@ -13,12 +13,12 @@ from pathlib import Path
 import pytest
 from fastmcp import Client
 
-from spotter_ai.config import DEFAULT_CAMPAIGN_NAME
-from spotter_ai.pipeline import stages
-from spotter_ai.provenance.store import ProvenanceStore
-from spotter_ai.quarantine import write_quarantine
-from spotter_ai.reports import REPORT_METRICS
-from spotter_ai.workload import create_server
+from phenotype_workload.config import DEFAULT_CAMPAIGN_NAME
+from phenotype_workload.pipeline import stages
+from phenotype_workload.provenance.store import ProvenanceStore
+from phenotype_workload.quarantine import write_quarantine
+from phenotype_workload.reports import REPORT_METRICS
+from phenotype_workload.workload import create_server
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Point SPOTTER_DATA_DIR at an isolated directory under tmp_path.
 
     Campaign name and data directory are server-side config, resolved once
-    when create_server() builds the server (see spotter_ai.config) -- so the
+    when create_server() builds the server (see phenotype_workload.config) -- so the
     env var must be set BEFORE create_server() is called in each test.
     """
     d = tmp_path / "campaign_data"
@@ -113,7 +113,7 @@ class TestMeasureCohortBasic:
         self, tmp_path: Path, db_path: Path, data_dir: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """SPOTTER_CAMPAIGN, when set, is used instead of the default -- resolved
-        once at server construction, per spotter_ai.config.
+        once at server construction, per phenotype_workload.config.
         """
         monkeypatch.setenv("SPOTTER_CAMPAIGN", "owner-review-2026")
         server = create_server(db_path)
@@ -387,7 +387,7 @@ class TestBatchReport:
     """The per-batch report artifact measure_cohort writes under
     <data_dir>/reports/batch-NNN.json, and returns the path to as
     written_path (one of clio-agent's recognized result-path keys, so the
-    platform auto-mints it) -- see spotter_ai.reports.
+    platform auto-mints it) -- see phenotype_workload.reports.
     """
 
     # Frozen copy of clio-agent's gact/artifacts/designation.py::RESULT_PATH_KEYS
@@ -528,7 +528,7 @@ class TestBatchReport:
         # Same technique test_pipeline.py's test_quarantine_halts_mid_campaign
         # uses: wrap run_single so the sentinel appears right after the 2nd
         # run of a 5-run call, forcing a halt with 2 completed runs in hand.
-        import spotter_ai.workload as workload_module
+        import phenotype_workload.workload as workload_module
 
         original_run_single = workload_module.campaign_module.run_single
         call_count = {"n": 0}

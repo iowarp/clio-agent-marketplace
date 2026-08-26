@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from spotter_ai.pipeline import stages
-from spotter_ai.pipeline.campaign import build_arg_parser, run_campaign
-from spotter_ai.provenance.store import ProvenanceStore
+from phenotype_workload.pipeline import stages
+from phenotype_workload.pipeline.campaign import build_arg_parser, run_campaign
+from phenotype_workload.provenance.store import ProvenanceStore
 
 
 @pytest.fixture
@@ -147,7 +147,7 @@ class TestCampaignCli:
         store = ProvenanceStore(db_path)
 
         # Run the campaign in a way that drops the sentinel after run-002.
-        import spotter_ai.pipeline.campaign as campaign_mod
+        import phenotype_workload.pipeline.campaign as campaign_mod
 
         original_run_single = campaign_mod.run_single
         call_count = {"n": 0}
@@ -220,7 +220,7 @@ class TestForensicMargins:
         """--tamper-at matches the run's GLOBAL run-NNN number, not the total
         run count or any other position-dependent notion -- the same
         convention the workload MCP server's injection.json fault-injection
-        hook uses (see spotter_ai.workload.measure_cohort). runs=15/tamper_at=7
+        hook uses (see phenotype_workload.workload.measure_cohort). runs=15/tamper_at=7
         decouples the two: if --tamper-at were (mis)interpreted as anything
         other than the literal run-007 target, this would fail.
         """

@@ -36,7 +36,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from spotter_ai import config
+from phenotype_workload import config
 
 #: Parameter keys that are expected to vary per run by design (run identity,
 #: not campaign configuration) and are therefore excluded from discrepancy
@@ -138,16 +138,16 @@ CREATE INDEX IF NOT EXISTS idx_metrics_name ON metrics(name);
 def default_db_path() -> Path:
     """Resolve the provenance database path.
 
-    Thin wrapper over :func:`spotter_ai.config.resolve_db_path` -- kept here
-    (and re-exported from :mod:`spotter_ai.provenance`) for backward
+    Thin wrapper over :func:`phenotype_workload.config.resolve_db_path` -- kept here
+    (and re-exported from :mod:`phenotype_workload.provenance`) for backward
     compatibility with existing callers/imports; the actual resolution logic
-    lives in :mod:`spotter_ai.config` alongside campaign name and data
+    lives in :mod:`phenotype_workload.config` alongside campaign name and data
     directory resolution, since all three must agree with each other (see
     that module's docstring for why the database path is no longer resolved
     independently of the data directory).
 
     Returns:
-        The path :func:`spotter_ai.config.resolve_db_path` resolves.
+        The path :func:`phenotype_workload.config.resolve_db_path` resolves.
     """
     return config.resolve_db_path()
 
