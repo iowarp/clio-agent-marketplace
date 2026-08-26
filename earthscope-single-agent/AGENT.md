@@ -2,7 +2,7 @@
 id: earthscope-single-agent
 title: EarthScope Skills
 display_name: EarthScope Skills
-version: 0.2.1
+version: 0.2.2
 description: An EarthScope GNSS scientist that loads focused procedures on demand, presents grounded interactive views when useful, and may fan out independent regional work into temporary child turns.
 root_expert: main
 blueprint:

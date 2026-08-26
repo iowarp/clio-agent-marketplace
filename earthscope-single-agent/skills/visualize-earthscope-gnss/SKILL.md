@@ -1,12 +1,30 @@
 ---
 name: visualize-earthscope-gnss
 title: Visualize EarthScope GNSS Data
-description: Produce a real, provenance-tracked GNSS plot from the exact staged CSV and confirmed columns.
+description: Present a real, interactive GNSS time series from the exact staged CSV and confirmed columns, with a static export only when requested.
 ---
 
 Use this skill only when the user requests a plot or when a plot materially helps
 answer the current question. Confirm the exact time and displacement column names
-from the profile, then call `plot_plot_timeseries` on the staged station CSV.
+from the profile. The primary plot is a live, data-backed A2UI chart, not a PNG.
+
+First load `present-interactive-analysis`. Reuse the registered staged CSV artifact
+from `workflow_state` when it already exists; do not register the same CSV again.
+Then create or update `earthscope-timeseries` using exactly one primary
+`clio.time-series.v1`, the registered staged CSV artifact URI as `dataUri`, the
+confirmed time column as `xKey`, and the confirmed displacement columns as
+`yKeys`. Require `rendered=true` and `state=ready` before moving on or saying the
+plot is available. Call these tools one at a time in causal order; do not batch a
+skill load, artifact registration, or surface creation into one model response.
+
+For the normal request to "plot" or "show" the series, stop after the interactive
+chart is ready and answer from the observed chart/data state. The renderer owns
+hover values, legend interaction, zoom, and pan over its bounded CSV preview.
+
+Generate a static PNG only when the user explicitly asks for an image, download,
+export, report asset, or durable static figure, or when the interactive chart is
+unavailable and you clearly report that degraded presentation. In that case call
+`plot_plot_timeseries` on the staged station CSV after the live chart is ready.
 
 Use the exact `acquisition.local_path` as `data_path`. Plot confirmed `east`,
 `north`, and `up` columns by default when all are present. Provide an explicit
@@ -23,17 +41,9 @@ uncapped observation established the total and the plotted scope matches it.
 Preserve the artifact identity created at
 the tool boundary in `workflow_state.visualization` and `workflow_state.artifact`.
 
-The PNG is a durable export, not the primary interactive plot. When the user asks
-to plot a data series, a live chart materially helps: load
-`present-interactive-analysis` and create or update `earthscope-timeseries` using
-exactly one primary `clio.time-series.v1`, the registered staged CSV artifact URI,
-the confirmed time column as `xKey`, and confirmed displacement columns as
-`yKeys`.
-
-Do not add `clio.artifact.v1`, `Image`, an image tab, or a second surface for the
-PNG when that interactive chart is present. Register the PNG so the conversation
-can expose it as a compact attachment and the workspace canvas can open it on
-demand; registration is sufficient. Never place the static image below, beside,
-or inside the interactive chart. Use image-only presentation only when a
-data-backed chart is unavailable, and state that presentation limitation
-explicitly.
+The PNG is a durable export, never the primary interactive plot. Do not add
+`clio.artifact.v1`, `Image`, an image tab, or a second surface for the PNG when
+the interactive chart is present. If a PNG was explicitly requested, register it
+so the conversation can expose it as a compact attachment and the workspace
+canvas can open it on demand; registration is sufficient. Never place the static
+image below, beside, or inside the interactive chart.

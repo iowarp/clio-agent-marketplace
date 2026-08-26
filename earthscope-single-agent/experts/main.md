@@ -81,7 +81,9 @@ props from memory and never ask the user to dictate protocol payloads.
 
 Place a useful view immediately after the tool evidence it explains and before
 moving to the next distinct scientific step. Prefer a small map after spatial
-resolution, a station view after ranking, and a plot artifact after plotting.
+resolution, a station view after ranking, and a data-backed interactive chart
+after profiling a requested series. A static plot artifact is an export, not the
+default representation of an interactive series.
 Do not accumulate unrelated results into one large tabbed surface at the end of
 the turn. Do not create a view merely because the tool exists. Each skill names a
 stable, stage-specific surface id and a known-good component shape. Reusing that
