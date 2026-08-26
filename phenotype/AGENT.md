@@ -11,22 +11,21 @@ description: Synthetic plant-phenotyping campaign operator — the reference sta
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
-# In-pack launch command: this pack shares the spotter-ai implementation,
-# imported at spotter-ai/impl (git-subtree, full history preserved). `uv
-# run --project <path> <entry>` resolves/builds that project's env on
-# demand -- the local-source form of the eventual `uvx spotter-ai
-# phenotype-mcp` once the repo is published to PyPI. See "Launch command"
-# below for why this uses the mapping (command + args-list) declaration
-# form instead of a single command string, and why the path is
-# `${LOCALAPPDATA}`-anchored rather than a pack-relative `../spotter-ai/impl`
-# hop.
+# In-pack launch command: the workload is its OWN project at phenotype/impl
+# (split from spotter-ai/impl — the provenance MCP and the synthetic workload
+# are two different things). `uv run --project <path> <entry>`
+# resolves/builds that project's env on demand -- the local-source form of
+# the eventual `uvx phenotype-workload phenotype-mcp` once published. See
+# "Launch command" below for why this uses the mapping (command + args-list)
+# declaration form instead of a single command string, and why the path is
+# `${LOCALAPPDATA}`-anchored rather than a pack-relative `./impl` hop.
 mcp_servers:
   phenotype:
     command: uv
     args:
       - run
       - --project
-      - ${LOCALAPPDATA}/clio-agent/agent-blueprints/spotter-ai/impl
+      - ${LOCALAPPDATA}/clio-agent/agent-blueprints/phenotype/impl
       - phenotype-mcp
 experts:
   - experts/main.md
