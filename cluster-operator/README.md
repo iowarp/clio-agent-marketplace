@@ -42,6 +42,8 @@ one local companion:
 | `jarvis_get_execution` | `jarvis` (curated) | `remote_jarvis_jarvis_get_execution` |
 | `relay_observe` | `relay` (follow) | `relay_observe` |
 | `relay_wait` | `relay` (follow) | `relay_wait` |
+| `relay_list_artifacts` | `relay` (follow) | `relay_list_artifacts` — accepts exactly one of `job_id`/`execution_id` (clio-relay#278) |
+| `relay_read_artifact` | `relay` (follow) | `relay_read_artifact` — bounded inline artifact read |
 | `relay_fetch_artifact` | `relay` (clio-agent's own, #1200) | n/a — local bounded transfer over the HTTP artifact door |
 | `remote_spack_spack_find` | `remote` (federated) | `remote_spack_spack_find` |
 | `remote_spack_spack_install` | `remote` (federated) | `remote_spack_spack_install` |

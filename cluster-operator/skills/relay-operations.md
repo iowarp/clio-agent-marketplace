@@ -60,11 +60,18 @@ projection layer does not read that field back off the real result. Never treat 
      execution, poll `jarvis_get_execution(pipeline_id, execution_id)` — the
      `pipeline_id`/`execution_id` your `jarvis_run` result carried — until its
      `terminal` field is true. Details in `jarvis-pipelines.md`.
-3. **Retrieve artifacts, don't assume them.** `jarvis_get_execution(...,
-   artifacts={})` lists artifact *records* — identity, role
-   (`intermediate`/`output`/`log`/`checkpoint`/`provenance`/`validation`), state,
-   location — content-free by default. Only call `relay_fetch_artifact` for bytes
-   you actually need to inspect locally.
+3. **Retrieve artifacts, don't assume them.** `relay_list_artifacts` is the
+   artifact index: pass EXACTLY ONE of `job_id` (a Spack/relay job handle) or
+   `execution_id` (the id your `jarvis_run` result carried — the server resolves
+   the owning job itself; works for deferred and synchronous runs alike; an
+   unknown or not-yours id answers a typed `execution_not_found`, never an empty
+   page). Each row carries `artifact_id`, kind, size, sha256. Then:
+   `relay_read_artifact(artifact_id=...)` for a bounded inline read (small text:
+   logs, reports), or `relay_fetch_artifact` only for bytes you genuinely need
+   as a local file. `jarvis_get_execution(..., artifacts={})` remains the
+   execution-record view (roles/state/location, content-free) — use it to
+   understand an execution, and `relay_list_artifacts` to enumerate what is
+   fetchable.
 
 ## The `cluster` argument
 
