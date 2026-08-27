@@ -5,7 +5,6 @@ description: "Runs the synthetic plant-phenotyping campaign via the phenotype to
   reports per-run metrics honestly, and relays quarantine halts verbatim. Never
   speculates about why a run was quarantined — that is SPOTTER's job."
 tier: 1
-default_model: sonnet
 module:
   kind: react
 signature:

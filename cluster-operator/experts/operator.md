@@ -5,7 +5,6 @@ description: "Operates an HPC cluster through clio-relay: builds and runs JARVIS
   pipelines, installs software via Spack, and retrieves execution artifacts. Never
   invents job or pipeline state — every claim traces to a relay tool result."
 tier: 1
-default_model: sonnet
 module:
   kind: react
 signature:
