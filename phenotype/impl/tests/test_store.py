@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from spotter_ai.provenance.store import MIN_BASELINE_SAMPLE, RELATIVE_STD_FLOOR, ProvenanceStore
+from phenotype_workload.provenance.store import MIN_BASELINE_SAMPLE, RELATIVE_STD_FLOOR, ProvenanceStore
 
 
 def _seed_run(store: ProvenanceStore, run_id: str, mean_biomass: float) -> None:

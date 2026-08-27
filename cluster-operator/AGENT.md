@@ -40,7 +40,7 @@ correctly. If the live serve has no relay configured, the operator's tools are
 absent and the expert is disabled with typed `unknown tool reference` diagnostics —
 that is the correct, honest failure mode, not a bug in this pack.
 
-## The relay tool ACL (12 relay tools + 1 local companion)
+## The relay tool ACL (14 relay tools + 1 local companion)
 
 Every tool below is real and verified live against the operator relay door
 (`clio-relay` MCP door, `tools/list`, 2026-08-18): the door serves 21 tools total,
@@ -49,8 +49,11 @@ of which clio-agent projects three families onto its own gateway namespaces:
 - `jarvis` (6, from `clio_agent.tools.jarvis_jobs.JARVIS_TOOL_NAMES`) — pipeline
   authoring, already curated by clio-agent to the door's registered
   `remote_jarvis_jarvis_*` route.
-- `relay` (`relay_observe`, `relay_wait`, `relay_fetch_artifact`) — job/task
-  follow-up and bounded artifact transfer.
+- `relay` (`relay_observe`, `relay_wait`, `relay_list_artifacts`,
+  `relay_read_artifact`, `relay_fetch_artifact`) — job/task follow-up, artifact
+  listing (by `job_id` OR `execution_id` — clio-relay#278 made the execution id
+  a first-class listing key, retiring the old guess-the-owning-job workaround),
+  bounded inline reads, and bounded local transfer.
 - `remote` (federated door catalog, everything prefixed `remote_`) — of which only
   the three `remote_spack_spack_*` tools have no curated clio-agent equivalent, so
   those three are the only `remote_*` tools this pack grants. (The federation also
@@ -67,7 +70,8 @@ See the README's GAP list.
 ```
 jarvis_create_pipeline    jarvis_describe        jarvis_add_step
 jarvis_edit_step          jarvis_run             jarvis_get_execution
-relay_observe             relay_wait             relay_fetch_artifact
+relay_observe             relay_wait             relay_list_artifacts
+relay_read_artifact       relay_fetch_artifact
 remote_spack_spack_find   remote_spack_spack_install   remote_spack_spack_locate
 fs_read_file
 ```

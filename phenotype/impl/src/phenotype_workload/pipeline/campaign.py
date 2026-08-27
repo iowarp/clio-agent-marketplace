@@ -1,9 +1,9 @@
 """Campaign CLI runner: drives batches of pipeline runs through the provenance store.
 
-Run as ``python -m spotter_ai.pipeline.campaign [options]``. Each invocation
-runs a batch of :data:`~spotter_ai.pipeline.stages.N_PLANTS`-plant synthetic
+Run as ``python -m phenotype_workload.pipeline.campaign [options]``. Each invocation
+runs a batch of :data:`~phenotype_workload.pipeline.stages.N_PLANTS`-plant synthetic
 runs through the five pipeline stages, recording every stage execution to the
-:class:`~spotter_ai.provenance.store.ProvenanceStore` resolved from the
+:class:`~phenotype_workload.provenance.store.ProvenanceStore` resolved from the
 ``SPOTTER_DB`` environment variable. Optionally injects a one-run calibration
 drift fault (``--tamper-at``) and always honors a quarantine sentinel file
 that halts the campaign the moment it appears.
@@ -11,7 +11,7 @@ that halts the campaign the moment it appears.
 ``--tamper-at`` matches the run's GLOBAL run-NNN number -- the same number
 embedded in its run_id (e.g. ``--tamper-at 12`` matches run-012) -- the same
 convention the workload MCP server's ``injection.json`` (see
-:mod:`spotter_ai.workload`) uses for its own chaos-engineering
+:mod:`phenotype_workload.workload`) uses for its own chaos-engineering
 fault-injection hook, so a validation operator reasons about "inject a
 fault at run 12" identically whether the campaign is driven by this CLI in
 one shot or by a sequence of batched ``measure_cohort`` calls.
@@ -25,10 +25,10 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from spotter_ai import config
-from spotter_ai.pipeline import stages
-from spotter_ai.provenance.store import ArtifactRef, ProvenanceStore
-from spotter_ai.quarantine import QUARANTINE_FILENAME, read_quarantine
+from phenotype_workload import config
+from phenotype_workload.pipeline import stages
+from phenotype_workload.provenance.store import ArtifactRef, ProvenanceStore
+from phenotype_workload.quarantine import QUARANTINE_FILENAME, read_quarantine
 
 __all__ = ["QUARANTINE_FILENAME", "build_arg_parser", "main", "run_campaign", "run_single"]
 
@@ -44,7 +44,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         A configured :class:`argparse.ArgumentParser`.
     """
     parser = argparse.ArgumentParser(
-        prog="spotter_ai.pipeline.campaign",
+        prog="phenotype_workload.pipeline.campaign",
         description="Run a batch of synthetic plant-phenotyping pipeline runs "
         "with full provenance capture.",
     )
@@ -119,7 +119,7 @@ def run_single(
         store: The provenance store to record this run's stage executions to.
         run_id: Unique identifier for this run, e.g. ``"run-001"``.
         campaign: Name of the campaign this run belongs to.
-        seed: Deterministic seed for :func:`~spotter_ai.pipeline.stages.ingest`.
+        seed: Deterministic seed for :func:`~phenotype_workload.pipeline.stages.ingest`.
         run_dir: Directory this run's artifacts are written into.
         calibration_path: Path to the campaign's ``calibration.json``.
 

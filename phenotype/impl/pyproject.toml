@@ -1,34 +1,31 @@
 [project]
-name = "spotter-ai"
-version = "0.2.0"
-description = "Provider-aware agentic and artifact provenance MCP"
+name = "phenotype-workload"
+version = "0.1.0"
+description = "Synthetic phenotyping workload: deterministic 5-stage pipeline + SQLite provenance capture (the swappable demo science SPOTTER watches)"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = [
     "fastmcp>=3.2.4",
-    "httpx>=0.27",
-    "pymongo>=4.8",
-    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
-    "pyright>=1.1.400",
     "ruff>=0.6",
 ]
 
 [project.scripts]
-spotter-mcp = "spotter_ai.server:main"
+phenotype-mcp = "phenotype_workload.workload:main"
+spotter-campaign = "phenotype_workload.pipeline.campaign:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/spotter_ai"]
+packages = ["src/phenotype_workload"]
 
 [tool.ruff]
 target-version = "py312"
@@ -40,10 +37,3 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-
-[tool.pyright]
-pythonVersion = "3.12"
-venvPath = "."
-venv = ".venv"
-include = ["src", "tests"]
-reportMissingTypeStubs = false

@@ -3,8 +3,8 @@
 Each stage is a pure function over JSON artifact files: it reads its inputs
 from disk (if any), computes a result deterministically, writes a JSON
 artifact, and returns that artifact's path. Stages do not talk to the
-provenance store directly -- :mod:`spotter_ai.pipeline.campaign` wires stage
-execution to :class:`spotter_ai.provenance.store.ProvenanceStore` so the
+provenance store directly -- :mod:`phenotype_workload.pipeline.campaign` wires stage
+execution to :class:`phenotype_workload.provenance.store.ProvenanceStore` so the
 stages themselves stay trivially unit-testable.
 
 Pipeline: ``ingest -> calibrate -> segment -> extract_traits -> predict``.
@@ -27,7 +27,7 @@ which is damped by its non-calibrated greenness/intercept terms -- are
 undamped means of a single noised channel and so carry a visibly higher
 natural CV; at 20 plants that was enough to occasionally push one of those
 two metrics' healthy leave-one-out z past 3 in an 11-14 run baseline (a
-false positive), since :func:`spotter_ai.server.create_server`'s
+false positive), since the SPOTTER forensic server (``spotter-ai`` pack)'s
 ``campaign_health`` tool takes the worst z across *all* recorded metrics per
 run, not just ``mean_biomass``. Tripling the plant count shrinks every
 metric's CV via the same ``1/sqrt(N)`` averaging effect without changing the

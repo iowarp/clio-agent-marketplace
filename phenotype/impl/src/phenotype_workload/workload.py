@@ -2,7 +2,7 @@
 
 Server name: ``"phenotype-workload"``. This is the surface a science/ops
 agent drives to actually run the phenotyping campaign -- as opposed to
-:mod:`spotter_ai.server` (server name ``"spotter"``), which is the forensic
+the SPOTTER forensic MCP (the ``spotter-ai`` pack) (server name ``"spotter"``), which is the forensic
 attribution surface a separate watcher agent uses to investigate it. The two
 servers are deliberately split: this one knows nothing about forensics, and
 critically, nothing it returns ever reveals whether a run was tampered with
@@ -10,10 +10,10 @@ critically, nothing it returns ever reveals whether a run was tampered with
 below).
 
 Campaign name and data directory are workspace-fixed server config (see
-:mod:`spotter_ai.config`), resolved once when :func:`create_server` builds
+:mod:`phenotype_workload.config`), resolved once when :func:`create_server` builds
 the server -- they are never model-supplied tool arguments.
 
-Run directly with ``python -m spotter_ai.workload`` to serve over stdio using
+Run directly with ``python -m phenotype_workload.workload`` to serve over stdio using
 the store resolved from the ``SPOTTER_DB`` environment variable. For testing
 or embedding, use :func:`create_server` to build an isolated server bound to
 a specific database path.
@@ -29,12 +29,12 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from spotter_ai import config, reports
-from spotter_ai.pipeline import campaign as campaign_module
-from spotter_ai.pipeline import stages
-from spotter_ai.provenance.store import ProvenanceStore
-from spotter_ai.quarantine import lift_quarantine as quarantine_lift
-from spotter_ai.quarantine import quarantine_path, read_quarantine
+from phenotype_workload import config, reports
+from phenotype_workload.pipeline import campaign as campaign_module
+from phenotype_workload.pipeline import stages
+from phenotype_workload.provenance.store import ProvenanceStore
+from phenotype_workload.quarantine import lift_quarantine as quarantine_lift
+from phenotype_workload.quarantine import quarantine_path, read_quarantine
 
 #: Filename, under a campaign's data directory, that configures a
 #: chaos-engineering fault-injection hook: a one-run calibration-drift
@@ -201,14 +201,14 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
     Args:
         db_path: Path to the SQLite provenance database. Defaults to the
             store resolved from the ``SPOTTER_DB`` environment variable (see
-            :func:`spotter_ai.provenance.store.default_db_path`).
+            :func:`phenotype_workload.provenance.store.default_db_path`).
 
     Returns:
         A configured :class:`fastmcp.FastMCP` server named
         ``"phenotype-workload"``, with all 3 science-side tools registered.
         The campaign name and data directory are resolved once here (from
         ``SPOTTER_CAMPAIGN``/``SPOTTER_DATA_DIR`` -- see
-        :mod:`spotter_ai.config`) and closed over by every tool below; they
+        :mod:`phenotype_workload.config`) and closed over by every tool below; they
         are not re-read per call and are never tool arguments.
     """
     store = ProvenanceStore(db_path)
@@ -227,7 +227,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
         Named "measure_cohort" (not "run_campaign"): the campaign is fixed
         workspace config now, not a per-call concept, and what actually
         varies call to call is how many more measurement passes to take --
-        each run pushes the same fixed cohort (:data:`~spotter_ai.pipeline.stages.N_PLANTS`
+        each run pushes the same fixed cohort (:data:`~phenotype_workload.pipeline.stages.N_PLANTS`
         plants) through ingest -> calibrate -> segment -> extract_traits ->
         predict and records one biomass/leaf-area/height reading per plant,
         summarized to run-level metrics.
@@ -279,7 +279,7 @@ def create_server(db_path: Path | str | None = None) -> FastMCP:
 
         Batch report: once at least one run completes in this call, a
         report JSON is written under the campaign data directory's
-        ``reports/`` folder (see :mod:`spotter_ai.reports`) with this
+        ``reports/`` folder (see :mod:`phenotype_workload.reports`) with this
         batch's per-run metrics table, batch-level mean/min/max stats, and
         the campaign's running totals. Its path comes back as
         ``written_path`` -- a name chosen from clio-agent's recognized

@@ -35,6 +35,8 @@ tools:
   - jarvis_get_execution
   - relay_observe
   - relay_wait
+  - relay_list_artifacts
+  - relay_read_artifact
   - relay_fetch_artifact
   - remote_spack_spack_find
   - remote_spack_spack_install

@@ -25,7 +25,7 @@ from typing import Any
 REPORTS_DIRNAME = "reports"
 
 #: The three per-run metrics every batch report tabulates, matching
-#: :func:`spotter_ai.pipeline.stages.predict`'s ``metrics`` output.
+#: :func:`phenotype_workload.pipeline.stages.predict`'s ``metrics`` output.
 REPORT_METRICS = ("mean_biomass", "mean_leaf_area", "mean_height")
 
 
@@ -35,7 +35,7 @@ def next_batch_number(reports_dir: Path) -> int:
     Scans ``reports_dir`` for existing ``batch-NNN.json`` files (written by
     any prior ``measure_cohort`` call against this same data directory) and
     returns one past the highest number found -- the same continuation
-    convention :func:`spotter_ai.workload._next_run_start_index` uses for
+    convention :func:`phenotype_workload.workload._next_run_start_index` uses for
     run numbering.
 
     Args:
@@ -83,7 +83,7 @@ def write_batch_report(
         data_dir: The campaign's data directory; the report is written to
             ``<data_dir>/reports/batch-NNN.json``.
         campaign: The campaign name recorded on the report (server-resolved
-            config, not a per-call argument -- see :mod:`spotter_ai.config`).
+            config, not a per-call argument -- see :mod:`phenotype_workload.config`).
         batch_runs: This call's completed runs, in run order, each a dict
             with ``run_id``, ``mean_biomass``, ``mean_leaf_area``,
             ``mean_height``.

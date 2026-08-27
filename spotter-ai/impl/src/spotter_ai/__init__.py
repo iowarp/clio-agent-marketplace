@@ -1,3 +1,3 @@
-"""SPOTTER-AI MVP: provenance capture + agentic forensic attribution demo substrate."""
+"""Provider-aware agentic and artifact provenance query service."""
 
 __all__: list[str] = []
