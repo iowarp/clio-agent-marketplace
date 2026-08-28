@@ -2,16 +2,28 @@
 id: earthscope-single-agent
 title: EarthScope Skills
 display_name: EarthScope Skills
-version: 0.2.2
+version: 0.2.3
 description: An EarthScope GNSS scientist that loads focused procedures on demand, presents grounded interactive views when useful, and may fan out independent regional work into temporary child turns.
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
 mcp_servers:
-  ndp: clio-kit mcp-server ndp
-  geo: clio-kit mcp-server geo
-  pandas: clio-kit mcp-server pandas
-  plot: clio-kit mcp-server plot
+  ndp:
+    command: clio-kit
+    args: [mcp-server, ndp]
+    probe_timeout_retries: 10
+  geo:
+    command: clio-kit
+    args: [mcp-server, geo]
+    probe_timeout_retries: 10
+  pandas:
+    command: clio-kit
+    args: [mcp-server, pandas]
+    probe_timeout_retries: 10
+  plot:
+    command: clio-kit
+    args: [mcp-server, plot]
+    probe_timeout_retries: 10
 experts:
   - experts/main.md
 defaults:
