@@ -1,9 +1,9 @@
 ---
 id: earthscope-flat
 title: EarthScope Flat
-display_name: EarthScope (Flat / Haiku)
+display_name: EarthScope (Flat)
 version: 0.1.0
-description: Small-model-friendly FLAT variant of earthscope-gnss-region — 5 experts, depth 1 (main orchestrator over four self-sufficient leaves; ndp absorbs discovery/catalog/staging, analysis absorbs profiling/suitability), no tier-2 orchestrators. Resolves a geography, discovers+stages an NDP EarthScope GNSS station CSV, profiles it, and produces an evidence-backed PNG. Experiment-validated end-to-end under Haiku, with main pinned to sonnet for synthesis discipline; the leaves stay model-agnostic.
+description: Small-model-friendly FLAT variant of earthscope-gnss-region — 5 experts, depth 1 (main orchestrator over four self-sufficient leaves; ndp absorbs discovery/catalog/staging, analysis absorbs profiling/suitability), no tier-2 orchestrators. Resolves a geography, discovers+stages an NDP EarthScope GNSS station CSV, profiles it, and produces an evidence-backed PNG. Every expert inherits the provider and model selected for the session.
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
@@ -88,7 +88,7 @@ workflow_state:
         next_action: retry the child expert after provider availability is restored
 ---
 
-# EarthScope GNSS Region Agent (Flat / Haiku variant)
+# EarthScope GNSS Region Agent (Flat variant)
 
 Marketplace Agent Blueprint for NDP/EarthScope meeting demos where the user
 asks a natural geographic question about seismic or geodetic context in a U.S.

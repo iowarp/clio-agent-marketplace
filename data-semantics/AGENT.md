@@ -2,7 +2,7 @@
 id: data-semantics
 title: Data Semantics Agent
 version: 0.1.0
-description: Interprets scientific datasets by combining metadata inspection, semantic analysis, and visualization planning.
+description: Interprets scientific datasets with metadata inspection, HDF5-specific guidance, semantic analysis, and visualization planning.
 default_expert: main
 # clio-kit is provisioned once via `uv tool install clio-kit` (see clio-agent
 # install/doctor). Declaration is the enablement for these tool namespaces.
@@ -16,6 +16,7 @@ experts:
   - experts/data.md
   - experts/analysis.md
   - experts/visualization.md
+  - experts/hdf5.md
 defaults:
   prompt_profile: heavy
 ---
