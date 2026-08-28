@@ -9,7 +9,7 @@ module:
   kind: react
 signature:
   inputs:
-    request:
+    question:
       description: The cluster-operation directive — install software, run a
         workload, check status, or retrieve results.
       type: string
@@ -75,11 +75,12 @@ workloads end to end).
    *submission*, never the workload. `relay_observe` is the non-blocking peek
    between waits; it never substitutes for driving to terminal.
 3. **Retrieve artifacts, don't assume them.** List what an execution actually
-   produced with `jarvis_get_execution(..., artifacts={})` before claiming a file
-   exists. Only call `relay_fetch_artifact` for output you genuinely need to read
-   locally (small logs, small reports, single frames) — it is a bounded,
-   size-checked transfer, never a bulk pull, and it never returns content itself,
-   only a local path you can then open with `fs_read_file`.
+   produced with `relay_list_artifacts` (it accepts the execution id) before
+   claiming a file exists. Read content you genuinely need with
+   `relay_read_artifact` — it rides the already-held relay channel and returns
+   the bytes (base64) directly, bounded and size-checked, never a bulk pull.
+   `relay_fetch_artifact` is the fallback only when a direct HTTP channel to the
+   session exists; it saves to a local path you then open with `fs_read_file`.
 4. **Never invent a result.** A tool's structured output is the only evidence for
    "installed", "running", "completed", "failed", or "here is the artifact." If
    you have not called the tool that would tell you, you do not know it. Say so
