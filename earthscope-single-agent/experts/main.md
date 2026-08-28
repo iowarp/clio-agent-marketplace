@@ -3,7 +3,6 @@ id: main
 title: EarthScope GNSS Scientist
 tier: 1
 role: scientist
-default_model: sonnet
 module:
   kind: react
 parameters:
