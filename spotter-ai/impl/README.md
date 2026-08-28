@@ -1,8 +1,14 @@
-# Spotter provenance MCP
+# SPOTTER forensic and provenance MCP
 
-Spotter is a standalone, read-only MCP server for agentic execution and artifact-lineage queries.
+SPOTTER is a standalone MCP server with two complementary surfaces:
+
+- provider-aware agentic execution and artifact-lineage queries over native JSONL, Flowcept, and CMF;
+- phenotype campaign health, run comparison, lineage inspection, alerting, quarantine, and recovery.
+
 It does not call clio-agent and it does not run or proxy the upstream Flowcept or CMF MCP servers.
-It reads one explicit CLIO YAML configuration and connects directly to the stores selected there.
+Provider queries read one explicit CLIO YAML configuration and connect directly to the stores selected
+there. Campaign forensics reads an existing phenotype SQLite database in read-only mode; only the
+explicit alert and quarantine tools mutate their bounded sentinel files.
 
 ## Run
 
@@ -14,6 +20,19 @@ uv run spotter-mcp --clio-config /workspace/.clio/config.yaml
 `SPOTTER_CLIO_CONFIG` can provide the path when `--clio-config` is omitted.
 When launching through the bundled agent pack, `SPOTTER_IMPL_DIR` must be the absolute path to this
 `impl` directory.
+
+To attach the watcher to a phenotype campaign, use the same campaign variables as the workload:
+
+```console
+SPOTTER_CAMPAIGN=phenotype-2026
+SPOTTER_DB=/workspace/spotter_provenance.sqlite
+SPOTTER_DATA_DIR=/workspace/campaign_data
+```
+
+The server never creates a missing campaign database. Until the workload has produced the database
+and its required schema, the campaign capability reports `campaign_store_unavailable` explicitly.
+The watcher can then perform one health sweep, inspect a suspicious run, raise the native alert card,
+quarantine further batches, and lift quarantine only after an explicit human resolution.
 
 ## Provider configuration
 
@@ -72,3 +91,9 @@ not a tool argument. Each provider advertises its exact capability set, and unsu
 raise a structured `capability_unavailable` error. Normalized fields support cross-provider agent
 reasoning; the complete source response remains under `extensions.flowcept`, `extensions.cmf`,
 `extensions.clio`, or `extensions.jsonl`.
+
+Campaign tools preserve the same explicit boundary. Inspection tools are read-only; `raise_alert`
+atomically writes the campaign `QUARANTINE` sentinel and `lift_quarantine` removes it. The health
+calculation is shared with the reference phenotype workload: at least eight completed peers, a one
+percent relative standard-deviation floor, and an anomaly threshold of `abs(z) >= 3`. Missing stores,
+schemas, runs, or artifacts return typed provenance errors instead of fabricated empty results.
