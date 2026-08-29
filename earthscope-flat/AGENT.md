@@ -7,7 +7,7 @@ description: Small-model-friendly FLAT variant of earthscope-gnss-region — 5 e
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
-# clio-kit is provisioned once via `uv tool install clio-kit==2.2.3` (see clio-agent install/doctor).
+# clio-kit is provisioned once via `uv tool install clio-kit==2.10.6` (see clio-agent install/doctor).
 # Installed-tool launchers replace `uvx clio-kit@...`: concurrent uvx spawns raced on a cold
 # uv cache (truncated pyvenv.cfg -> dead transport -> _UnsupportedSessionAgent), and
 # `uv cache prune/clean` deletes ephemeral envs under RUNNING servers (astral-sh/uv#11694).
