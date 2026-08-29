@@ -24,6 +24,16 @@ yourself in causal order.
 4. Call `geo_filter_points_by_radius` once with the fixed region center/radius and
    explicit columns `Latitude`, `(deg)`, and `Site`. Preserve the returned ranked
    points, `total_points`, `within_radius_count`, and `skipped_invalid`.
+5. When the filter returns multiple ranked stations with coordinates, present the
+   spatial evidence before searching for a station series. Load
+   `present-interactive-analysis`, then create or update `earthscope-stations`
+   from only the bounded, tool-returned ranked points. Prefer the interactive map
+   and identify the first ranked point as the leading candidate. Require
+   `rendered=true` and `state=ready` before continuing to station-resource search.
+   If coordinates are unavailable, use a compact table instead. Skip this step
+   only when one or zero stations were returned or presentation itself fails; in
+   that case keep the observed station evidence and report the presentation
+   failure rather than fabricating a view.
 
 The staged raw catalog is never analysis-ready, even when a parser can read it.
 Steps 2, 3, and 4 are a strict dependency chain: never call
@@ -50,10 +60,8 @@ staging fails. A successful acquisition requires an on-disk station time-series
 CSV and `analysis_ready=true`; the metadata catalog alone is `metadata_only`.
 Never derive a station id or filename from a city name.
 
-After ranking multiple stations, spatial presentation materially helps the user
-understand the choice: load `present-interactive-analysis` and create or update
-`earthscope-stations` immediately from the bounded, tool-returned ranked points.
-Show the selected station distinctly from the other candidates and include the
-observed distance/count evidence. A compact table is appropriate when coordinates
-are unavailable; otherwise prefer the interactive map. Do not wait until the end
-of the turn to hide this step inside a large dashboard.
+After a station CSV stages successfully, update `earthscope-stations` once so the
+staged station is visibly selected rather than merely the leading candidate.
+Preserve the same bounded points and observed distance/count evidence. Do not
+wait until the end of the turn or combine this map with later time-series output
+inside a large dashboard.
