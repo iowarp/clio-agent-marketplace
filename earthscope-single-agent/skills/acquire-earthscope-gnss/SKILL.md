@@ -27,8 +27,9 @@ yourself in causal order.
 5. When the filter returns multiple ranked stations with coordinates, present the
    spatial evidence before searching for a station series. Load
    `present-interactive-analysis`, then create or update `earthscope-stations`
-   from only the bounded, tool-returned ranked points. Prefer the interactive map
-   and identify the first ranked point as the leading candidate. Require
+   immediately from only the bounded, tool-returned ranked points. Identify the
+   first ranked point as the leading candidate; otherwise prefer the interactive map
+   over a static or prose-only presentation. Require
    `rendered=true` and `state=ready` before continuing to station-resource search.
    If coordinates are unavailable, use a compact table instead. Skip this step
    only when one or zero stations were returned or presentation itself fails; in
