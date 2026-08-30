@@ -47,9 +47,17 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         self.assertIn("Never place the static image below, beside, or inside the interactive chart", visualize)
 
     def test_parallel_region_skill_remains_explicit_visible_delegation(self) -> None:
+        expert = _prose("experts/main.md")
         compare = _prose("skills/compare-earthscope-coverage/SKILL.md")
         delegate = _prose("skills/delegate-earthscope-region/SKILL.md")
 
+        self.assertIn("load `compare-earthscope-coverage` before any regional resolution", expert)
+        self.assertIn("is an action, not documentation", expert)
+        self.assertIn("Never invoke such a skill speculatively", expert)
+        self.assertLess(
+            _read("experts/main.md").index("  - compare-earthscope-coverage"),
+            _read("experts/main.md").index("  - delegate-earthscope-region"),
+        )
         self.assertIn('load_skill(skill_id="delegate-earthscope-region"', compare)
         self.assertIn("Collect the returned task ids with `wait_agent_tasks`", compare)
         self.assertIn("Never delegate all regions", compare)
