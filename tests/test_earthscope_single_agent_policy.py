@@ -52,7 +52,11 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
 
         self.assertIn('load_skill(skill_id="delegate-earthscope-region"', compare)
         self.assertIn("Collect the returned task ids with `wait_agent_tasks`", compare)
+        self.assertIn("Never delegate all regions", compare)
+        self.assertIn("literal cleaned catalog path", compare)
         self.assertIn("effect: spawn_subagent_with_skill", delegate)
+        self.assertIn("You are already running this skill", delegate)
+        self.assertIn("Do not call `load_skill`, `spawn_skill_task`", delegate)
 
 
 if __name__ == "__main__":

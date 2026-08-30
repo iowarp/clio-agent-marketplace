@@ -5,7 +5,10 @@ description: Resolve and count one independently assigned EarthScope region in a
 effect: spawn_subagent_with_skill
 ---
 
-Complete only the specific regional assignment in the seeded user message.
+You are already running this skill in the delegated child. Do not call
+`load_skill`, `spawn_skill_task`, or any other delegation tool. Complete the
+specific regional assignment directly in this child turn.
+
 The assignment must include the full place name, fixed radius, exact cleaned
 catalog path, and required columns. Do not infer missing values from another
 region or stage any station time-series resource.
