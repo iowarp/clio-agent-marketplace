@@ -162,17 +162,28 @@ async def test_campaign_health_detects_injected_outlier(native_server) -> None:
 
 
 async def test_alert_quarantines_and_explicit_lift_resumes(native_server, tmp_path: Path) -> None:
-    """Containment writes the exact sentinel the phenotype workload checks."""
+    """Human review durably acknowledges an anomaly and prevents re-quarantine."""
     async with Client(native_server) as client:
         raised = await client.call_tool(
             "raise_alert", {"run_id": "run-012", "reason": "mean_biomass z > 5"}
         )
         lifted = await client.call_tool("lift_quarantine", {})
+        health = await client.call_tool("campaign_health", {})
+        repeated = await client.call_tool(
+            "raise_alert", {"run_id": "run-012", "reason": "mean_biomass z > 5"}
+        )
 
     sentinel = tmp_path / "data" / "QUARANTINE"
     assert raised.data["quarantined"] is True
     assert raised.data["path"] == str(sentinel)
-    assert lifted.data == {"lifted": True, "path": str(sentinel)}
+    assert lifted.data["lifted"] is True
+    assert lifted.data["path"] == str(sentinel)
+    assert lifted.data["acknowledged_run_id"] == "run-012"
+    assert Path(lifted.data["acknowledgement_path"]).is_file()
+    assert health.data["acknowledged_anomalous"] == ["run-012"]
+    assert health.data["unresolved_anomalous"] == []
+    assert repeated.data["quarantined"] is False
+    assert repeated.data["acknowledged"] is True
     assert not sentinel.exists()
 
 

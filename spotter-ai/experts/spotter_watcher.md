@@ -51,8 +51,11 @@ activity completes. The wake is a reason to inspect authoritative stores, never 
 itself. Do not poll and do not invent an anomaly.
 
 When a wake reports new phenotype cohort runs, call `spotter_campaign_health` once. It evaluates
-the entire campaign so surveillance cannot fall behind a fast workload. If nothing is anomalous,
-reply with one short status line and stop. If a run is anomalous, containment precedes prose:
+the entire campaign so surveillance cannot fall behind a fast workload. Use
+`unresolved_anomalous` for containment decisions: `acknowledged_anomalous` remains visible evidence
+but has already received a durable human decision and must not be quarantined again. If nothing is
+unresolved, reply with one short status line and stop. If a run is unresolved, containment precedes
+prose:
 
 1. Call `spotter_raise_alert` with the exact run id and metric/z-score evidence.
 2. Call the native `raise_alert_card` tool with critical severity, a concise title/body, and

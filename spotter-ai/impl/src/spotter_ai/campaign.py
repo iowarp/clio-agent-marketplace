@@ -26,6 +26,7 @@ MIN_BASELINE_SAMPLE = 8
 MIN_BASELINE_STD = 1e-6
 RELATIVE_STD_FLOOR = 0.01
 QUARANTINE_FILENAME = "QUARANTINE"
+ACKNOWLEDGED_ANOMALIES_FILENAME = "ACKNOWLEDGED_ANOMALIES.json"
 READ_ARTIFACT_CONTENT_CAP = 4000
 _REQUIRED_TABLES = frozenset({"runs", "stage_executions", "artifacts", "io", "metrics"})
 
@@ -262,12 +263,52 @@ class CampaignForensics:
                     "baseline_n": worst["baseline_n"],
                 }
             )
+        anomalous = [str(row["run_id"]) for row in verdicts if row["verdict"] == "anomalous"]
+        acknowledged = self._acknowledged_anomalies()
         return {
             "campaign": self.config.campaign,
             "runs_checked": len(verdicts),
             "verdicts": verdicts,
-            "anomalous": [str(row["run_id"]) for row in verdicts if row["verdict"] == "anomalous"],
+            "anomalous": anomalous,
+            "acknowledged_anomalous": [run_id for run_id in anomalous if run_id in acknowledged],
+            "unresolved_anomalous": [run_id for run_id in anomalous if run_id not in acknowledged],
         }
+
+    def _acknowledged_anomalies(self) -> set[str]:
+        """Read durable human acknowledgements without inventing missing state."""
+        path = self.config.data_directory / ACKNOWLEDGED_ANOMALIES_FILENAME
+        if not path.is_file():
+            return set()
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ProvenanceError(
+                code="campaign_acknowledgements_invalid",
+                message=f"could not read campaign acknowledgements: {exc}",
+                details={"path": str(path)},
+            ) from exc
+        run_ids = payload.get("run_ids") if isinstance(payload, dict) else None
+        if not isinstance(run_ids, list) or not all(isinstance(item, str) for item in run_ids):
+            raise ProvenanceError(
+                code="campaign_acknowledgements_invalid",
+                message="campaign acknowledgements must contain a string run_ids list",
+                details={"path": str(path)},
+            )
+        return set(run_ids)
+
+    def _acknowledge_anomaly(self, run_id: str) -> Path:
+        """Persist one reviewed anomaly atomically so later sweeps cannot re-quarantine it."""
+        path = self.config.data_directory / ACKNOWLEDGED_ANOMALIES_FILENAME
+        path.parent.mkdir(parents=True, exist_ok=True)
+        run_ids = self._acknowledged_anomalies()
+        run_ids.add(run_id)
+        temporary = path.with_suffix(".tmp")
+        temporary.write_text(
+            json.dumps({"run_ids": sorted(run_ids)}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(path)
+        return path
 
     def _stage_executions(self, run_id: str) -> list[dict[str, Any]]:
         self._run(run_id)
@@ -415,6 +456,13 @@ class CampaignForensics:
     def raise_alert(self, run_id: str, reason: str) -> dict[str, Any]:
         """Validate the implicated run, then atomically quarantine the campaign."""
         self._run(run_id)
+        if run_id in self._acknowledged_anomalies():
+            return {
+                "quarantined": False,
+                "acknowledged": True,
+                "run_id": run_id,
+                "reason": reason,
+            }
         timestamp = datetime.now(UTC).isoformat()
         path = self.config.data_directory / QUARANTINE_FILENAME
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -432,12 +480,25 @@ class CampaignForensics:
         }
 
     def lift_quarantine(self) -> dict[str, Any]:
-        """Remove the shared sentinel after explicit human authorization."""
+        """Acknowledge the implicated run and remove the sentinel after human authorization."""
         path = self.config.data_directory / QUARANTINE_FILENAME
         existed = path.is_file()
+        acknowledged_run_id: str | None = None
+        acknowledgement_path: Path | None = None
         if existed:
+            for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+                if line.startswith("run_id:"):
+                    acknowledged_run_id = line.partition(":")[2].strip() or None
+                    break
+            if acknowledged_run_id is not None:
+                acknowledgement_path = self._acknowledge_anomaly(acknowledged_run_id)
             path.unlink()
-        return {"lifted": existed, "path": str(path)}
+        return {
+            "lifted": existed,
+            "path": str(path),
+            "acknowledged_run_id": acknowledged_run_id,
+            "acknowledgement_path": str(acknowledgement_path) if acknowledgement_path else None,
+        }
 
 
 def validate_reason(reason: str) -> str:
