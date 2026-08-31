@@ -11,11 +11,25 @@ provenance is current; do not download or stage any station time-series CSV.
 
 Before dispatching any region, the parent must have the literal path to one
 current cleaned station catalog and the verified `Latitude`, `(deg)`, and `Site`
-columns. If retained state does not contain that path, use the normal EarthScope
-catalog discovery, staging, and cleaning tools in the parent first. Catalog
-metadata preparation is allowed for this comparison; station time-series
-staging is not. Do not dispatch an assignment with a missing or described-only
-catalog path.
+columns. The raw staged EarthScope catalog is never this cleaned catalog: its
+header repeats unit labels and a plain CSV reader can overwrite the real
+longitude column. If retained state does not contain a previously normalized
+`earthscope_stations_clean.csv`, perform this exact preparation in the parent:
+
+1. Find and stage only the EarthScope station-metadata catalog using the same
+   bounded search and `ndp_stage_resource` procedure documented by
+   `acquire-earthscope-gnss`.
+2. Call `pandas_filter_data` on the returned raw path, keep rows whose
+   `Latitude` is between -90 and 90, and write
+   `earthscope_stations_clean.csv` under the active workspace root.
+3. Use the returned normalized output path for every parent and child radius
+   filter. Never substitute the raw staged path, and never treat profiling the
+   raw file as normalization.
+
+Catalog metadata preparation is allowed for this comparison; station
+time-series staging is not. Do not dispatch an assignment with a missing,
+described-only, raw, or failed-normalization catalog path. If normalization
+fails, report the comparison unavailable instead of dispatching invalid work.
 
 For three or more independent regions, the parent is one participant in the
 parallel work: keep exactly one region in the parent and fan out only the other
