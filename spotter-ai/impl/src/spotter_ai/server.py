@@ -10,6 +10,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from spotter_ai.campaign import CampaignForensics, stable_tool_annotations, validate_reason
 from spotter_ai.config import SpotterConfig, load_config
 from spotter_ai.errors import ProvenanceError
 from spotter_ai.providers.factory import create_providers
@@ -35,18 +36,60 @@ def create_server(
     config: SpotterConfig | str | Path | None = None,
     *,
     service: ProvenanceService | None = None,
+    campaign: CampaignForensics | None = None,
 ) -> FastMCP:
-    """Build Spotter using an explicit CLIO config or an injected test service."""
+    """Build provider-aware and campaign-forensic Spotter tools in one server."""
     if service is None:
         resolved = config if isinstance(config, SpotterConfig) else load_config(config)
         service = ProvenanceService(*create_providers(resolved))
     active = service
+    active_campaign = campaign or CampaignForensics()
     mcp = FastMCP("spotter")
 
     @mcp.tool(title="Inspect provenance capabilities", annotations=_READ_ONLY_ANNOTATIONS)
     def capabilities() -> dict[str, Any]:
         """Report active agentic/artifact providers, health, and exact operations."""
-        return active.capabilities()
+        return {**active.capabilities(), "campaign_forensics": active_campaign.capabilities()}
+
+    @mcp.tool(title="List campaign runs", annotations=stable_tool_annotations(read_only=True))
+    def list_runs() -> dict[str, Any]:
+        """List phenotype runs, metrics, and recorded graph cardinality."""
+        return _invoke(active_campaign.list_runs)
+
+    @mcp.tool(title="Run health check", annotations=stable_tool_annotations(read_only=True))
+    def run_health(run_id: str) -> dict[str, Any]:
+        """Score one phenotype run against the campaign's completed peers."""
+        return _invoke(lambda: active_campaign.run_health(run_id))
+
+    @mcp.tool(title="Campaign health sweep", annotations=stable_tool_annotations(read_only=True))
+    def campaign_health() -> dict[str, Any]:
+        """Sweep all completed phenotype runs in one bounded call."""
+        return _invoke(active_campaign.campaign_health)
+
+    @mcp.tool(title="Compare two runs", annotations=stable_tool_annotations(read_only=True))
+    def diff_runs(run_id: str, baseline_run_id: str) -> dict[str, Any]:
+        """Compare two phenotype runs stage by stage without hiding discrepancies."""
+        return _invoke(lambda: active_campaign.diff_runs(run_id, baseline_run_id))
+
+    @mcp.tool(title="Trace run lineage", annotations=stable_tool_annotations(read_only=True))
+    def trace_lineage(run_id: str, stage: str | None = None) -> dict[str, Any]:
+        """Trace one phenotype run's exact stage and artifact chain."""
+        return _invoke(lambda: active_campaign.trace_lineage(run_id, stage))
+
+    @mcp.tool(title="Read provenance artifact", annotations=stable_tool_annotations(read_only=True))
+    def read_artifact(artifact_id: int) -> dict[str, Any]:
+        """Read one exact phenotype artifact with bounded content."""
+        return _invoke(lambda: active_campaign.read_artifact(artifact_id))
+
+    @mcp.tool(title="Raise anomaly alert", annotations=stable_tool_annotations(read_only=False))
+    def raise_alert(run_id: str, reason: str) -> dict[str, Any]:
+        """Quarantine the phenotype campaign after validating the implicated run."""
+        return _invoke(lambda: active_campaign.raise_alert(run_id, validate_reason(reason)))
+
+    @mcp.tool(title="Lift quarantine", annotations=stable_tool_annotations(read_only=False))
+    def lift_quarantine() -> dict[str, Any]:
+        """Resume the phenotype campaign after explicit human authorization."""
+        return _invoke(active_campaign.lift_quarantine)
 
     @mcp.tool(title="List provenance campaigns", annotations=_READ_ONLY_ANNOTATIONS)
     def list_campaigns(campaign_id: str | None = None, limit: int = 100) -> dict[str, Any]:
