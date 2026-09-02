@@ -44,6 +44,13 @@ class BaseAgentPolicyTests(unittest.TestCase):
         self.assertIn("Ask one focused follow-up", prose)
         self.assertIn("Respect the session's execution and confirmation policies", prose)
 
+    def test_root_declares_no_workflow_state_ontology(self) -> None:
+        """Base Agent keeps its answer-only contract in marketplace data."""
+
+        expert = (ROOT / "experts" / "base.md").read_text(encoding="utf-8")
+
+        self.assertIn("structured_outputs:\n  workflow_state: false\n", expert)
+
 
 if __name__ == "__main__":
     unittest.main()

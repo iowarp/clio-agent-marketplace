@@ -14,6 +14,8 @@ signature:
     answer:
       description: The final answer to the user's request.
       type: string
+structured_outputs:
+  workflow_state: false
 tools:
   - shell_bash
   - fs_read_file
