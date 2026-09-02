@@ -14,6 +14,10 @@ signature:
     answer:
       description: The final answer to the user's request.
       type: string
+# No workflow chrome: this agent declares no typed workflow_state, so its answer
+# stays the visible deliverable and the run keeps the clean TTFT baseline.
+structured_outputs:
+  workflow_state: false
 tools:
   - shell_bash
   - fs_read_file
