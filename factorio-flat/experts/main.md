@@ -4,6 +4,7 @@ title: Factorio Principal Investigator
 description: Scientist-facing research partner that answers directly when it can and brings in focused methods or specialist judgment only when useful.
 tier: 1
 role: orchestrator
+delegation_policy: adaptive
 module:
   kind: react
 parameters:

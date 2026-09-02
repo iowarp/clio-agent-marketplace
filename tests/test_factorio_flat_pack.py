@@ -127,6 +127,10 @@ class FactorioFlatPackTests(unittest.TestCase):
 
         self.assertEqual(delegators, {"main", "evidence_researcher"})
         self.assertEqual(child_owners, delegators)
+        self.assertIn(
+            "delegation_policy: adaptive",
+            _frontmatter(self.experts["main"]),
+        )
 
     def test_coordination_and_evidence_skills_use_progressive_disclosure(self) -> None:
         """Detailed task mechanics live in bundled references loaded on demand."""
