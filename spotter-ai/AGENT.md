@@ -1,10 +1,10 @@
 ---
 id: spotter-ai
 title: SPOTTER AI
-display_name: SPOTTER AI (provenance investigator)
-version: 0.2.0
-description: Provider-aware investigation of agentic execution and artifact lineage across
-  Flowcept, CMF, and documented native JSONL provenance stores.
+display_name: SPOTTER AI (forensic watcher)
+version: 0.3.0
+description: Live anomaly surveillance, containment, and evidence-backed provenance investigation
+  across the reference phenotype campaign, Flowcept, CMF, and native stores.
 root_expert: spotter_watcher
 blueprint:
   format: agent-blueprint-v1
@@ -23,11 +23,16 @@ experts:
   - experts/spotter_watcher.md
 ---
 
-# SPOTTER AI — provider-aware provenance investigator
+# SPOTTER AI — forensic watcher and provider-aware provenance investigator
 
 SPOTTER investigates agentic execution and artifact provenance without calling back into
 clio-agent. Its MCP reads the explicit CLIO YAML path in `SPOTTER_CLIO_CONFIG`, uses that file to
 select the active agentic and artifact providers, and connects directly to their query stores.
+
+For the reference phenotype workload, the same MCP also reads the campaign SQLite store selected
+by `SPOTTER_DB`, shares the campaign identity and data directory from `SPOTTER_CAMPAIGN` and
+`SPOTTER_DATA_DIR`, and owns the compatible quarantine/lift controls. These tools restore active
+surveillance without replacing or weakening the provider-aware query surface.
 
 The two query domains are independently configurable:
 
