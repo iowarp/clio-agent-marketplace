@@ -1,0 +1,111 @@
+[
+  {
+    "case_id": "greeting",
+    "response": "Hello. What scientific question or result would you like to examine?",
+    "actions": []
+  },
+  {
+    "case_id": "simple_question",
+    "response": "Stress is internal force per unit area, while strain is the resulting relative deformation. Stress has pressure units; strain is dimensionless.",
+    "actions": []
+  },
+  {
+    "case_id": "useful_clarification",
+    "response": "The physical question determines the model. Which measured response should this simulation explain or predict?",
+    "actions": [
+      {
+        "name": "ask_user",
+        "arguments": {
+          "question": "Which measured response should the simulation explain or predict?",
+          "reason": "The target response determines the analysis procedure, loads, outputs, and validation evidence."
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "focused_skill_and_delegation",
+    "response": "A useful formulation links scan speed to a specified material state and fatigue endpoint. The methodologist recommends separating the processing hypothesis from the life-prediction claim and naming the comparison condition.",
+    "actions": [
+      {"name": "load_skill", "arguments": {"skill_id": "coordinate-scientific-work"}},
+      {"name": "load_skill", "arguments": {"skill_id": "frame-research-problem"}},
+      {
+        "name": "spawn_agent_task",
+        "arguments": {
+          "agent": "research_methodologist",
+          "task": "Assess one bounded paper-question formulation from the supplied pilot observation."
+        },
+        "result": {"tasks": [{"task_id": "task-method-1", "status": "accepted"}]}
+      },
+      {
+        "name": "wait_agent_tasks",
+        "arguments": {"task_ids": ["task-method-1"], "timeout_s": 60},
+        "result": {"tasks": [{"task_id": "task-method-1", "status": "completed"}]}
+      }
+    ]
+  },
+  {
+    "case_id": "parallel_investigation",
+    "response": "The evidence lane found a condition-dependent dwell-fatigue mechanism, while the feasibility lane identified the required hold-time control and temperature instrumentation. The present lab plan is viable only within the confirmed temperature range.",
+    "actions": [
+      {"name": "load_skill", "arguments": {"skill_id": "coordinate-scientific-work"}},
+      {
+        "name": "spawn_agents_parallel",
+        "arguments": {
+          "spawns": [
+            {"agent": "evidence_researcher", "task": "Assess the bounded mechanism claim."},
+            {"agent": "virtual_lab", "task": "Assess this semester's validation feasibility."}
+          ]
+        },
+        "result": {
+          "tasks": [
+            {"task_id": "task-evidence-1", "status": "accepted"},
+            {"task_id": "task-lab-1", "status": "accepted"}
+          ]
+        }
+      },
+      {
+        "name": "wait_agent_tasks",
+        "arguments": {"task_ids": ["task-evidence-1", "task-lab-1"], "timeout_s": 120},
+        "result": {
+          "tasks": [
+            {"task_id": "task-evidence-1", "status": "completed"},
+            {"task_id": "task-lab-1", "status": "completed"}
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "case_id": "blocked_child_resume",
+    "response": "The original simulation consultation resumed after the fixture decision and returned a formulation with that choice recorded as scientist-supplied.",
+    "actions": [
+      {"name": "load_skill", "arguments": {"skill_id": "coordinate-scientific-work"}},
+      {
+        "name": "spawn_agent_task",
+        "arguments": {
+          "agent": "simulation_methodologist",
+          "task": "Formulate the model and ask directly if a consequential fixture choice is absent."
+        },
+        "result": {"tasks": [{"task_id": "task-sim-42", "status": "accepted"}]}
+      },
+      {
+        "name": "wait_agent_tasks",
+        "arguments": {"task_ids": ["task-sim-42"], "timeout_s": 60},
+        "result": {"tasks": [{"task_id": "task-sim-42", "status": "needs_input"}]}
+      },
+      {
+        "name": "ask_user",
+        "actor_task_id": "task-sim-42",
+        "arguments": {
+          "question": "Does the lower fixture permit axial translation?",
+          "reason": "This changes the load path and rigid-body constraints."
+        }
+      },
+      {
+        "name": "wait_agent_tasks",
+        "arguments": {"task_ids": ["task-sim-42"], "timeout_s": 60},
+        "result": {"tasks": [{"task_id": "task-sim-42", "status": "completed"}]}
+      }
+    ]
+  }
+]
