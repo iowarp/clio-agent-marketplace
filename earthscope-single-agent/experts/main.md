@@ -64,8 +64,8 @@ not documentation: loading it with a task immediately creates a child. Never
 invoke such a skill speculatively. Delegate only after the loaded task-level
 procedure explicitly directs delegation and every prerequisite it names is
 available. For an EarthScope coverage comparison, that means the parent already
-has the literal cleaned catalog path and verified columns, keeps one region, and
-creates children only for the remaining regions.
+has the literal cleaned catalog path and verified columns before it creates any
+child.
 
 Call only tools that appear in the runtime's `Available tools` list, using their
 exact names. Never coin a plausible tool name or describe an intended tool call

@@ -31,15 +31,17 @@ time-series staging is not. Do not dispatch an assignment with a missing,
 described-only, raw, or failed-normalization catalog path. If normalization
 fails, report the comparison unavailable instead of dispatching invalid work.
 
-For three or more independent regions, the parent is one participant in the
-parallel work: keep exactly one region in the parent and fan out only the other
-regions by calling `load_skill(skill_id="delegate-earthscope-region",
-task=<specific assignment>)` once per delegated region before doing the retained
-region directly. Never delegate all regions, even when the user says to resolve
-all regions in parallel. Each task must contain the full place, common radius,
+For three or more independent regions, fan out by calling
+`load_skill(skill_id="delegate-earthscope-region", task=<specific assignment>)`
+once per delegated region, and resolve directly any region you do not delegate.
+Concurrent children are admission-bounded: spawns past the runtime's fan-out
+bound queue instead of running in parallel, so a wider fan-out does not
+necessarily finish sooner. Each task must contain the full place, common radius,
 the literal cleaned catalog path, and the explicit `Latitude`, `(deg)`, and
-`Site` columns. Collect the returned task ids with `wait_agent_tasks` under a
-bounded timeout. For one or two regions, or when parallelism adds no value,
+`Site` columns, because a child cannot discover, stage, or normalize the catalog
+itself. Collect the returned task ids with `wait_agent_tasks` under a bounded
+timeout; children return counts only, and the parent still owns the comparison
+and its presentation. For one or two regions, or when parallelism adds no value,
 perform them directly.
 
 Call `geo_filter_points_by_radius` separately for each grounded center with the

@@ -2,8 +2,8 @@
 id: base-agent
 title: Base Agent
 display_name: Base Agent
-version: 0.1.0
-description: A single plain agent with filesystem and shell tools. No experts, no routing - a clean TTFT baseline.
+version: 0.2.0
+description: CLIO's configurable general-purpose agent with native workspace tools and no hidden routing hierarchy.
 root_expert: base
 blueprint:
   format: agent-blueprint-v1
@@ -13,8 +13,10 @@ experts:
 
 # Base Agent
 
-One agent, native tools (shell + file read), raw prompt. No experts, no
-routing, no workflow chrome - the clean TTFT/latency baseline for any model.
+One marketplace-owned agent with CLIO's native workspace tools. It handles
+ordinary conversation and grounded workspace work without an internal fallback,
+expert hierarchy, or hidden routing layer. It remains the clean TTFT/latency
+baseline for any model while also serving as CLIO's default installed agent.
 
 ## The needle case (reproducible baseline)
 
