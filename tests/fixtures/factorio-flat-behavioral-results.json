@@ -1,13 +1,19 @@
 [
   {
     "case_id": "greeting",
-    "response": "Hello. What scientific question or result would you like to examine?",
-    "actions": []
+    "response": "Hello. What scientific question, result, or dataset would you like to work on?",
+    "actions": [],
+    "tasks": [],
+    "questions": [],
+    "sessions": [{"session_id": "sess_root_greeting", "status": "idle"}]
   },
   {
     "case_id": "simple_question",
-    "response": "Stress is internal force per unit area, while strain is the resulting relative deformation. Stress has pressure units; strain is dimensionless.",
-    "actions": []
+    "response": "Stress is internal force per unit area, while strain is the resulting relative deformation. Stress carries pressure units; strain is dimensionless. The material law relates the two.",
+    "actions": [],
+    "tasks": [],
+    "questions": [],
+    "sessions": [{"session_id": "sess_root_concept", "status": "idle"}]
   },
   {
     "case_id": "useful_clarification",
@@ -18,94 +24,255 @@
         "arguments": {
           "question": "Which measured response should the simulation explain or predict?",
           "reason": "The target response determines the analysis procedure, loads, outputs, and validation evidence."
-        }
+        },
+        "result": {"question_id": "q_clarify_1", "status": "pending"}
       }
-    ]
+    ],
+    "tasks": [],
+    "questions": [
+      {
+        "id": "q_clarify_1",
+        "session_id": "sess_root_clarify",
+        "owner_session_id": "sess_root_clarify",
+        "attended_session_id": "sess_root_clarify",
+        "status": "pending",
+        "source": "orchestrator",
+        "prompt": "Which measured response should the simulation explain or predict?",
+        "metadata": {}
+      }
+    ],
+    "sessions": [{"session_id": "sess_root_clarify", "status": "waiting_user"}]
   },
   {
     "case_id": "focused_skill_and_delegation",
-    "response": "A useful formulation links scan speed to a specified material state and fatigue endpoint. The methodologist recommends separating the processing hypothesis from the life-prediction claim and naming the comparison condition.",
+    "response": "A defensible formulation separates the processing hypothesis from the life-prediction claim: whether increasing scan speed shifts the endurance limit of the as-built alloy against a fixed-speed control condition. The methodologist recommends naming that comparison condition and the endurance-limit endpoint before any further work.",
     "actions": [
-      {"name": "load_skill", "arguments": {"skill_id": "coordinate-scientific-work"}},
-      {"name": "load_skill", "arguments": {"skill_id": "frame-research-problem"}},
+      {
+        "name": "load_skill",
+        "arguments": {"skill_id": "coordinate-scientific-work"},
+        "result": {"status": "loaded"}
+      },
+      {
+        "name": "load_skill",
+        "arguments": {"skill_id": "frame-research-problem"},
+        "result": {"status": "loaded"}
+      },
       {
         "name": "spawn_agent_task",
         "arguments": {
           "agent": "research_methodologist",
           "task": "Assess one bounded paper-question formulation from the supplied pilot observation."
         },
-        "result": {"tasks": [{"task_id": "task-method-1", "status": "accepted"}]}
+        "result": {
+          "task_id": "task_method_1",
+          "status": "running",
+          "run_index": 0,
+          "queued_reason": ""
+        }
       },
       {
         "name": "wait_agent_tasks",
-        "arguments": {"task_ids": ["task-method-1"], "timeout_s": 60},
-        "result": {"tasks": [{"task_id": "task-method-1", "status": "completed"}]}
+        "arguments": {"task_ids": ["task_method_1"], "timeout_s": 60},
+        "result": {
+          "results": [
+            {
+              "agent_id": "research_methodologist",
+              "parent_id": "main",
+              "task_id": "task_method_1",
+              "run_index": 0,
+              "status": "completed",
+              "stage": "delegate.completed",
+              "output": "The pilot observation supports one bounded formulation: whether increasing laser scan speed shifts the high-cycle endurance limit of the as-built alloy relative to a fixed-speed control condition. Separate the processing hypothesis from the life-prediction claim, name the comparison condition, and state the endurance-limit endpoint the study will measure.",
+              "message_ref": "msg_method_1",
+              "error_reason": ""
+            }
+          ],
+          "workflow_state_conflicts": [],
+          "merged_workflow_state": {}
+        }
       }
+    ],
+    "tasks": [
+      {
+        "task_id": "task_method_1",
+        "agent": "research_methodologist",
+        "child_session_id": "sess_child_method_1",
+        "status": "completed",
+        "error_reason": ""
+      }
+    ],
+    "questions": [],
+    "sessions": [
+      {"session_id": "sess_root_framing", "status": "idle"},
+      {"session_id": "sess_child_method_1", "status": "idle"}
     ]
   },
   {
     "case_id": "parallel_investigation",
-    "response": "The evidence lane found a condition-dependent dwell-fatigue mechanism, while the feasibility lane identified the required hold-time control and temperature instrumentation. The present lab plan is viable only within the confirmed temperature range.",
+    "response": "The evidence is condition-dependent: primary sources report a dwell-fatigue debit in near-alpha titanium only above roughly half the yield stress and below about 200 C, and two studies find none outside that window. The lab can hold that stress window on the existing servo-hydraulic frame, but the 200 C chamber lacks a calibrated thermocouple feedthrough, so only the room-temperature arm is feasible this term without added instrumentation.",
     "actions": [
-      {"name": "load_skill", "arguments": {"skill_id": "coordinate-scientific-work"}},
+      {
+        "name": "load_skill",
+        "arguments": {"skill_id": "coordinate-scientific-work"},
+        "result": {"status": "loaded"}
+      },
       {
         "name": "spawn_agents_parallel",
         "arguments": {
           "spawns": [
-            {"agent": "evidence_researcher", "task": "Assess the bounded mechanism claim."},
+            {"agent": "evidence_researcher", "task": "Assess the bounded dwell-fatigue mechanism claim."},
             {"agent": "virtual_lab", "task": "Assess this semester's validation feasibility."}
           ]
         },
         "result": {
-          "tasks": [
-            {"task_id": "task-evidence-1", "status": "accepted"},
-            {"task_id": "task-lab-1", "status": "accepted"}
+          "spawned": [
+            {"task_id": "task_evidence_1", "status": "running", "run_index": 0, "queued_reason": ""},
+            {"task_id": "task_lab_1", "status": "running", "run_index": 0, "queued_reason": ""}
           ]
         }
       },
       {
         "name": "wait_agent_tasks",
-        "arguments": {"task_ids": ["task-evidence-1", "task-lab-1"], "timeout_s": 120},
+        "arguments": {"task_ids": ["task_evidence_1", "task_lab_1"], "timeout_s": 120},
         "result": {
-          "tasks": [
-            {"task_id": "task-evidence-1", "status": "completed"},
-            {"task_id": "task-lab-1", "status": "completed"}
-          ]
+          "results": [
+            {
+              "agent_id": "evidence_researcher",
+              "parent_id": "main",
+              "task_id": "task_evidence_1",
+              "run_index": 0,
+              "status": "completed",
+              "stage": "delegate.completed",
+              "output": "Primary sources report a dwell-fatigue debit in near-alpha titanium that appears only above roughly half the yield stress and below about 200 C; two studies report no debit outside that window, so the mechanism claim is condition-dependent rather than general.",
+              "message_ref": "msg_evidence_1",
+              "error_reason": ""
+            },
+            {
+              "agent_id": "virtual_lab",
+              "parent_id": "main",
+              "task_id": "task_lab_1",
+              "run_index": 0,
+              "status": "completed",
+              "stage": "delegate.completed",
+              "output": "The lab can run the required hold-time control on the existing servo-hydraulic frame, but the 200 C chamber has no calibrated thermocouple feedthrough; without added instrumentation only the room-temperature arm of the comparison is feasible before the end of term.",
+              "message_ref": "msg_lab_1",
+              "error_reason": ""
+            }
+          ],
+          "workflow_state_conflicts": [],
+          "merged_workflow_state": {}
         }
       }
+    ],
+    "tasks": [
+      {
+        "task_id": "task_evidence_1",
+        "agent": "evidence_researcher",
+        "child_session_id": "sess_child_evidence_1",
+        "status": "completed",
+        "error_reason": ""
+      },
+      {
+        "task_id": "task_lab_1",
+        "agent": "virtual_lab",
+        "child_session_id": "sess_child_lab_1",
+        "status": "completed",
+        "error_reason": ""
+      }
+    ],
+    "questions": [],
+    "sessions": [
+      {"session_id": "sess_root_parallel", "status": "idle"},
+      {"session_id": "sess_child_evidence_1", "status": "idle"},
+      {"session_id": "sess_child_lab_1", "status": "idle"}
     ]
   },
   {
     "case_id": "blocked_child_resume",
-    "response": "The original simulation consultation resumed after the fixture decision and returned a formulation with that choice recorded as scientist-supplied.",
+    "response": "The same consultation resumed after your fixture answer. With the lower fixture free to translate axially the formulation uses a fixed node set at the upper grip and a sliding contact below, keeping the load path uniaxial; the axial-translation choice is recorded as scientist-supplied, and mesh refinement at the fillet governs the reported stress concentration.",
     "actions": [
-      {"name": "load_skill", "arguments": {"skill_id": "coordinate-scientific-work"}},
+      {
+        "name": "load_skill",
+        "arguments": {"skill_id": "coordinate-scientific-work"},
+        "result": {"status": "loaded"}
+      },
       {
         "name": "spawn_agent_task",
         "arguments": {
           "agent": "simulation_methodologist",
           "task": "Formulate the model and ask directly if a consequential fixture choice is absent."
         },
-        "result": {"tasks": [{"task_id": "task-sim-42", "status": "accepted"}]}
+        "result": {
+          "task_id": "task_sim_42",
+          "status": "running",
+          "run_index": 0,
+          "queued_reason": ""
+        }
       },
       {
-        "name": "wait_agent_tasks",
-        "arguments": {"task_ids": ["task-sim-42"], "timeout_s": 60},
-        "result": {"tasks": [{"task_id": "task-sim-42", "status": "needs_input"}]}
-      },
-      {
-        "name": "ask_user",
-        "actor_task_id": "task-sim-42",
-        "arguments": {
-          "question": "Does the lower fixture permit axial translation?",
-          "reason": "This changes the load path and rigid-body constraints."
+        "name": "check_agent_tasks",
+        "arguments": {"task_ids": ["task_sim_42"]},
+        "result": {
+          "tasks": [
+            {
+              "task_id": "task_sim_42",
+              "agent": "simulation_methodologist",
+              "status": "running",
+              "queued_reason": ""
+            }
+          ]
         }
       },
       {
         "name": "wait_agent_tasks",
-        "arguments": {"task_ids": ["task-sim-42"], "timeout_s": 60},
-        "result": {"tasks": [{"task_id": "task-sim-42", "status": "completed"}]}
+        "arguments": {"task_ids": ["task_sim_42"], "timeout_s": 120},
+        "result": {
+          "results": [
+            {
+              "agent_id": "simulation_methodologist",
+              "parent_id": "main",
+              "task_id": "task_sim_42",
+              "run_index": 0,
+              "status": "completed",
+              "stage": "delegate.completed",
+              "output": "With the lower fixture free to translate axially, the model uses a single fixed node set at the upper grip and a sliding contact at the lower fixture, so the load path stays uniaxial and the axial-translation choice is recorded as scientist-supplied rather than inferred. Mesh refinement at the fillet governs the reported stress concentration.",
+              "message_ref": "msg_sim_42",
+              "error_reason": ""
+            }
+          ],
+          "workflow_state_conflicts": [],
+          "merged_workflow_state": {}
+        }
       }
+    ],
+    "tasks": [
+      {
+        "task_id": "task_sim_42",
+        "agent": "simulation_methodologist",
+        "child_session_id": "sess_child_sim_42",
+        "status": "completed",
+        "error_reason": ""
+      }
+    ],
+    "questions": [
+      {
+        "id": "q_forwarded_1",
+        "session_id": "sess_root_sim",
+        "owner_session_id": "sess_child_sim_42",
+        "attended_session_id": "sess_root_sim",
+        "status": "answered",
+        "source": "child_forwarded",
+        "prompt": "Does the lower fixture permit axial translation?",
+        "metadata": {
+          "forwarded_from_session": "sess_child_sim_42",
+          "forwarded_from_question": "q_child_sim_42_1",
+          "task_id": "task_sim_42"
+        }
+      }
+    ],
+    "sessions": [
+      {"session_id": "sess_root_sim", "status": "waiting_user"},
+      {"session_id": "sess_child_sim_42", "status": "waiting_user"}
     ]
   }
 ]
