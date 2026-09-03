@@ -14,11 +14,12 @@ remains useful. Do not issue repeated immediate polls.
 A consultation reports one of `queued`, `running`, `completed`, `failed`, or
 `cancelled`. There is no separate paused status: when a child with `ask_user`
 needs a scientist-owned decision, its task stays `running` and the runtime
-forwards its question to you. The question still belongs to that child. Keep its
-task id, put the scientist's answer through the forwarded question rather than
-answering on their behalf, and do not spawn a replacement consultation. After the
-answer, wait for that same task id. This preserves the consultation's context,
-trajectory, and provenance.
+surfaces that child's question to the scientist for you. You do not relay the
+question or the answer — the runtime resumes the child on the same task id once
+the scientist answers, and fails that task if the question is declined or goes
+unanswered. Keep the task id, do not answer on the scientist's behalf, and do not
+spawn a replacement consultation. After the answer, wait for that same task id.
+This preserves the consultation's context, trajectory, and provenance.
 
 Treat terminal failure, cancellation, or unavailable tooling as evidence about
 what remains unresolved. Do not silently retry with a different expert or fill a

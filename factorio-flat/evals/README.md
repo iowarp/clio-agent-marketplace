@@ -47,19 +47,58 @@ returns those handles under `spawned`, `wait_agent_tasks` returns full-fidelity
 rows under `results`, and `check_agent_tasks` returns compact rows under `tasks`.
 
 There is no paused task status. A child that needs a scientist-owned decision
-keeps status `running`; the runtime flips that child's session to `waiting_user`
-and mints a forwarded question on the attended root whose `owner_session_id` is
-the child session. The evaluator recognizes a blocked consultation by that
-conjunction, attributing it to a task by joining the question's
-`owner_session_id` to the task's `child_session_id`.
+keeps status `running`. The order is: the child's own turn asks and goes
+`waiting_user`, and that status is what triggers the runtime to mint a forwarded
+question on the attended root whose `owner_session_id` is the child session —
+nothing in the forward path sets the child's status. The evaluator recognizes a
+blocked consultation by that conjunction, attributing it to a task by joining the
+question's `owner_session_id` to the task's `child_session_id`.
+
+## Rules that reject a trace outright
+
+These are integrity rules, not case expectations: they apply to every case, and
+an adapter that violates one produces a trace the grader refuses rather than
+grades. Most describe states the runtime cannot actually reach, so tripping one
+means the capture is wrong.
+
+- every one of the five top-level keys is present and of the right type, and the
+  nested `spawns` / `spawned` / `results` / `tasks` lists hold only objects;
+- a task's `status` is one of the five above and a question's is one of the four;
+- `task_id` is unique across `tasks`, and each row carries `agent`,
+  `child_session_id`, and a status;
+- every `sessions` row carries a non-empty `status`, and every task's
+  `child_session_id` appears there — this is what makes `sessions` load-bearing
+  wherever children ran, rather than a key nothing reads;
+- every task id a spawn returned appears in `tasks` with the agent that spawn
+  requested, and every task in `tasks` was produced by a spawn call in the trace
+  (the spawn call is the only place the requested agent appears, so both
+  directions of that join are needed);
+- `spawn_agents_parallel` returns exactly one handle per requested spawn — a
+  refused spawn is a handle carrying `error`, not an omission;
+- a forwarded question's `owner_session_id` is some spawned child's session;
+- a forwarded question that is not `answered` never sits under a `completed`
+  task: a declined forward relays down and an unattended one expires, and both
+  fail the bound task.
+
+## What the cases assert
 
 The evaluator never reads pack prompts and does not compare exact prose. It
 checks response floors and ceilings, the capabilities a case genuinely needs,
-question utility, fan-out width, the exact agents consulted, whether the
-consulted children actually completed, whether the answer carries what they
-returned, and blocked-child resume continuity. It asserts outcomes only: no
-forbidden-tool lists, no call caps, and no required tool ordering. Evaluate a
-captured result file with:
+fan-out width, the exact agents consulted, whether the consulted children
+actually completed and were collected, whether the answer carries what they
+returned, and blocked-child resume continuity.
+
+It asserts outcomes only: no forbidden-tool lists, no call caps, and no required
+tool ordering. Two consequences worth being explicit about. There is no cap on
+how many clarifications a turn may ask — how many a decision needs is the agent's
+call — so the only question rule beyond "it has a question and a stated
+consequence" is that the same question is not asked twice. And the grounding
+floor counts distinct shared terms of six or more characters between the answer
+and each child's returned output, minus what the scientist already supplied; it
+is a floor on carried information and cannot tell a synthesis from a verbatim
+copy of one child's result. Judging that needs a reader.
+
+Evaluate a captured result file with:
 
 ```powershell
 uv run --no-project python scripts/evaluate_factorio_flat.py `

@@ -174,6 +174,54 @@ class FactorioFlatTraceConsistencyTests(unittest.TestCase):
 
         self.assertTrue(any("handles" in failure.message for failure in failures))
 
+    def test_a_roster_task_with_no_spawn_call_is_rejected(self) -> None:
+        """Only the spawn call names the requested agent, so exact_agents needs it."""
+
+        case, result = _pair("focused_skill_and_delegation")
+        result["tasks"].append(
+            {
+                "task_id": "task_phantom",
+                "agent": "abaqus_engineer",
+                "child_session_id": "sess_phantom",
+                "status": "completed",
+                "error_reason": "",
+            }
+        )
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("no spawn call" in failure.message for failure in failures))
+
+    def test_a_child_session_with_no_observed_status_is_rejected(self) -> None:
+        """Every child the roster names ran somewhere observable."""
+
+        case, result = _pair("parallel_investigation")
+        result["sessions"] = []
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("never observed a status" in failure.message for failure in failures))
+
+    def test_a_non_object_row_in_a_nested_list_is_rejected(self) -> None:
+        """Silently filtering a bad nested row hides the row that broke."""
+
+        case, result = _pair("parallel_investigation")
+        _action(result, "spawn_agents_parallel")["result"]["spawned"].append("task_ghost")
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("non-object row" in failure.message for failure in failures))
+
+    def test_an_ask_user_call_that_minted_no_question_is_rejected(self) -> None:
+        """A clarification with no question row hides the pending state itself."""
+
+        case, result = _pair("useful_clarification")
+        result["questions"] = []
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("no question row records" in f.message for f in failures))
+
     def test_a_session_row_without_a_status_is_rejected(self) -> None:
         """A session row exists to record a status; an empty one records nothing."""
 
@@ -232,6 +280,66 @@ class FactorioFlatOutcomeTests(unittest.TestCase):
         failures = evaluate_case(case, result)
 
         self.assertTrue(any("direct answer" in failure.message for failure in failures))
+
+    def test_a_deflected_direct_answer_case_fails(self) -> None:
+        """Handing the question back is not answering it.
+
+        The pack's root prompt says a greeting or an ordinary question is
+        answered directly; a question left pending is the runtime state that
+        says the scientist, not the agent, owes the next move.
+        """
+
+        for case_id in ("greeting", "simple_question"):
+            with self.subTest(case=case_id):
+                case, result = _pair(case_id)
+                result["actions"].append(
+                    {
+                        "name": "ask_user",
+                        "arguments": {"question": "Which project?", "reason": "It decides all."},
+                        "result": {"question_id": "q_deflect", "status": "pending"},
+                    }
+                )
+                result["questions"].append(
+                    {
+                        "id": "q_deflect",
+                        "session_id": "sess_root",
+                        "owner_session_id": "sess_root",
+                        "attended_session_id": "sess_root",
+                        "status": "pending",
+                        "source": "orchestrator",
+                        "prompt": "Which project?",
+                        "metadata": {},
+                    }
+                )
+
+                failures = evaluate_case(case, result)
+
+                self.assertTrue(any("pending" in failure.message for failure in failures))
+
+    def test_a_repeated_clarification_fails(self) -> None:
+        """No cap on how many questions a decision needs, but not the same one twice."""
+
+        case, result = _pair("useful_clarification")
+        result["actions"].append(deepcopy(result["actions"][0]))
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("asked twice" in failure.message for failure in failures))
+
+    def test_an_answer_of_borrowed_nouns_fails_the_grounding_floor(self) -> None:
+        """The floor sits well above the two nouns a padded answer can borrow."""
+
+        case, result = _pair("parallel_investigation")
+        result["response"] = (
+            "I have considered everything and the situation regarding titanium and the "
+            "servo-hydraulic feedthrough thermocouple mechanism appears entirely normal "
+            "overall, so nothing further really matters here and we should simply "
+            "continue exactly as before without changing anything at all today."
+        )
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("not grounded" in failure.message for failure in failures))
 
     def test_a_failed_child_fails_a_delegation_case(self) -> None:
         """A case answered over children that all failed is not a pass."""
@@ -355,6 +463,24 @@ class FactorioFlatBlockedChildTests(unittest.TestCase):
 
         self.assertTrue(any("replace" in message for message in messages), messages)
         self.assertTrue(any("same task id" in message for message in messages), messages)
+
+    def test_an_unanswered_forward_cannot_sit_under_a_completed_task(self) -> None:
+        """The runtime fails a task whose forward is cancelled, expired, or open.
+
+        ``relay_forwarded_cancel`` and the unattended-forward deadline both fail
+        the bound task, so these three traces are ones the runtime cannot emit.
+        """
+
+        for status in ("pending", "cancelled", "expired"):
+            with self.subTest(status=status):
+                case, result = _pair("blocked_child_resume")
+                result["questions"][0]["status"] = status
+
+                failures = evaluate_case(case, result)
+
+                self.assertTrue(
+                    any("reports completed" in failure.message for failure in failures), status
+                )
 
     def test_a_root_owned_question_is_not_a_blocked_child(self) -> None:
         """Attribution is the question owner joined to the task's child session."""

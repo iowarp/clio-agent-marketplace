@@ -43,12 +43,18 @@ _DEAD_STRUCTURED_OUTPUTS = frozenset({"evidence", "errors", "delegation", "artif
 def _load_experts() -> dict[str, dict[str, Any]]:
     """Return every expert declared by the manifest, keyed by its declared id."""
 
+    return {parsed["id"]: parsed for parsed, _ in _load_expert_files().values()}
+
+
+def _load_expert_files() -> dict[str, tuple[dict[str, Any], str]]:
+    """Return ``id -> (parsed frontmatter, manifest-relative path)`` per expert."""
+
     manifest = parse_frontmatter(ROOT / "AGENT.md")
-    experts: dict[str, dict[str, Any]] = {}
+    loaded: dict[str, tuple[dict[str, Any], str]] = {}
     for relative in manifest["experts"]:
         parsed = parse_frontmatter(ROOT / relative)
-        experts[parsed["id"]] = parsed
-    return experts
+        loaded[parsed["id"]] = (parsed, str(relative))
+    return loaded
 
 
 class FactorioFlatManifestTests(unittest.TestCase):
@@ -82,6 +88,19 @@ class FactorioFlatManifestTests(unittest.TestCase):
 
         self.assertIn(self.manifest["root_expert"], experts)
         self.assertEqual(self.manifest["root_expert"], "main")
+
+    def test_manifest_declares_the_web_mcp_its_leaves_depend_on(self) -> None:
+        """``web_search`` / ``web_fetch`` come from this declared server, not thin air.
+
+        Asserted before the comment below it: the comment explains how the
+        server is provisioned, so guarding the prose while leaving the
+        declaration free to be dropped or repointed would be backwards.
+        """
+
+        servers = self.manifest["mcp_servers"]
+
+        self.assertIsInstance(servers, dict)
+        self.assertEqual(servers["web"], "clio-kit mcp-server web")
 
     def test_manifest_records_clio_kit_provisioning(self) -> None:
         """Sibling parity: the manifest carries the provisioning rationale.
@@ -135,6 +154,22 @@ class FactorioFlatDelegationEdgeTests(unittest.TestCase):
 
         self.assertEqual(rootless, {"main"})
 
+    def test_tier_agrees_with_the_parent_edge(self) -> None:
+        """A tier that disagrees with the edge set DISABLES the expert at load.
+
+        The loader errors ``tier > 1 experts must declare parent_id`` and an
+        expert carrying errors loads disabled — so a root at ``tier: 2`` bricks
+        the pack silently.
+        """
+
+        for expert_id, parsed in self.experts.items():
+            tier = parsed["tier"]
+            self.assertIsInstance(tier, int, expert_id)
+            if self.parents[expert_id]:
+                self.assertGreater(tier, 1, f"{expert_id} has a parent but claims tier {tier}")
+            else:
+                self.assertEqual(tier, 1, f"{expert_id} is the root but claims tier {tier}")
+
     def test_declared_children_agree_with_the_derived_parent_edges(self) -> None:
         """``children:`` is documentation; it must not contradict the loader.
 
@@ -181,7 +216,9 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
     """Each expert declares an explicit, least-privilege runtime contract."""
 
     def setUp(self) -> None:
-        self.experts = _load_experts()
+        loaded = _load_expert_files()
+        self.experts = {expert_id: parsed for expert_id, (parsed, _) in loaded.items()}
+        self.expert_paths = {expert_id: path for expert_id, (_, path) in loaded.items()}
 
     def test_every_expert_declares_a_react_module_over_a_typed_signature(self) -> None:
         """Every expert is a react loop answering into a typed ``answer`` field."""
@@ -217,6 +254,25 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
 
         for expert_id, parsed in self.experts.items():
             self.assertEqual(set(parsed) & _DEAD_EXPERT_KEYS, set(), expert_id)
+
+    def test_no_expert_pins_a_model_or_provider(self) -> None:
+        """Every expert inherits the session's provider and model.
+
+        The loader honours a bare ``model:`` / ``provider:`` as well as the
+        ``default_model:`` the repo's pin checker scans for, so a pack-local
+        assertion is what actually keeps this pack model-agnostic.
+        """
+
+        for expert_id, parsed in self.experts.items():
+            for key in ("model", "default_model", "provider", "default_provider", "api_base"):
+                self.assertNotIn(key, parsed, f"{expert_id} pins {key}")
+
+    def test_every_expert_ships_a_prompt_body(self) -> None:
+        """An expert with no body loads DISABLED ('must provide a prompt body')."""
+
+        for expert_id, relative in self.expert_paths.items():
+            body = re.split(r"(?m)^---\s*$", (ROOT / relative).read_text(encoding="utf-8"))[2]
+            self.assertTrue(body.strip(), f"{expert_id} ships an empty prompt body")
 
     def test_tools_are_explicitly_least_privilege(self) -> None:
         """Interactive, presentation, and web tools stay with their owners."""
@@ -274,6 +330,18 @@ class FactorioFlatSkillWiringTests(unittest.TestCase):
 
         for path in sorted(ROOT.glob("skills/*/SKILL.md")):
             self.assertEqual(parse_frontmatter(path)["name"], path.parent.name)
+
+    def test_every_skill_declares_a_description(self) -> None:
+        """The description is the always-visible half of progressive disclosure.
+
+        It is what the model reads when deciding whether to load the skill at
+        all, so a skill without one is a skill that is never chosen on purpose.
+        """
+
+        for path in sorted(ROOT.glob("skills/*/SKILL.md")):
+            description = parse_frontmatter(path).get("description")
+            self.assertIsInstance(description, str, path.parent.name)
+            self.assertTrue(description.strip(), path.parent.name)
 
     def test_every_bundled_reference_link_resolves(self) -> None:
         """Progressive disclosure is only real when the linked file exists."""

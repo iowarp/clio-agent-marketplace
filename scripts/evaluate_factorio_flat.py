@@ -9,26 +9,39 @@ it matches on is one the runtime actually produces.
   ``failed``, ``cancelled`` — the set is closed, and the three terminal ones are
   immutable. There is no paused status.
 * A child that needs a scientist-owned decision therefore stays ``running``. The
-  runtime mints a FORWARDED ``UserQuestion`` on the attended (root) session whose
-  ``owner_session_id`` is the child session, and flips that child session to
-  ``waiting_user``. A blocked consultation is exactly that conjunction, and it is
-  attributed to a task by joining the question's ``owner_session_id`` to the
-  task's ``child_session_id``.
+  ORDER is: the child's own turn calls ``ask_user`` and goes ``waiting_user``,
+  and that status is what TRIGGERS the forward — the completion hook sees the
+  child parked and mints a FORWARDED ``UserQuestion`` on the attended (root)
+  session whose ``owner_session_id`` is the child session. Nothing in the
+  forward path sets the child's status. A blocked consultation is exactly that
+  conjunction, and it is attributed to a task by joining the question's
+  ``owner_session_id`` to the task's ``child_session_id``.
+* The forward's every edge terminates typed, so "stays ``running``" holds only
+  while the forward is live: a parent cancel/decline relays down and an
+  unattended-parent deadline expires it, and BOTH fail the bound task. A
+  completed task under a forward that was never answered is therefore a trace
+  the runtime cannot emit, and the grader rejects it.
 
 The grader asserts OUTCOMES — what the turn achieved — not turn structure. It
 never dictates tool ordering, never caps how often a tool may be called, and
-never carries a forbidden-tool blacklist: a case that must be answered directly
-says so as an outcome (no children were spawned), and a case that must produce
-substance says so as a floor on the answer, grounded in what the children
-actually returned.
+never carries a forbidden-tool blacklist. A case that must be answered directly
+says so as two outcomes: no child ran, and no question was left pending for the
+scientist (a pending question is the runtime state that says the scientist owes
+the next move, which is what "answered directly" rules out). A case that must
+produce substance says so as a floor on the answer, grounded in what the
+children actually returned.
 
-Known limit of the grounding floor: it measures whether the answer CARRIES what
-a child returned, by term overlap with that child's own output. It therefore
-cannot distinguish a synthesis from a verbatim copy of a single child's result —
-an answer that quotes one child wholesale clears the floor. Judging synthesis
-quality needs a reader, not a lexical check, and no amount of pattern matching
-here would substitute for one; the floor's job is only to reject answers that
-carry nothing.
+Known limit of the grounding floor — stated exactly, because this is the
+assertion that replaced grading on tool names. It measures ONE thing: how many
+distinct terms of six or more characters the answer shares with each child's own
+returned output, after subtracting the terms the scientist already supplied. It
+is a floor on carried information and nothing more. It cannot tell a synthesis
+from a verbatim copy of one child's output, and an answer that asserts nothing
+but borrows enough nouns from every child will clear it. Judging whether an
+answer reasons needs a reader; a lexical rule that tried would be the prose
+keyword-matching this repository bans everywhere else. The floor's job is to
+reject answers that carry nothing, and the cases set it well below the margin a
+real synthesis leaves (the reference traces share 10-16 terms per child).
 """
 
 from __future__ import annotations
@@ -210,21 +223,37 @@ def _returned_output(row: dict[str, Any]) -> str:
     return str(row.get("output") or nested.get("answer_excerpt") or "")
 
 
-def _forwarded_child_sessions(result: dict[str, Any]) -> set[str]:
-    """Return the child sessions that owned a question forwarded to the parent.
+def _forwarded_questions(result: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the question rows a child owned and the runtime forwarded upward.
 
     A question the attended session owns itself (``owner_session_id`` equals
     ``attended_session_id``) is the root asking on its own behalf, never a
     blocked child.
     """
 
-    return {
-        str(question["owner_session_id"])
+    return [
+        question
         for question in _rows(result.get("questions"))
         if question.get("source") == FORWARDED_QUESTION_SOURCE
         and question.get("owner_session_id")
         and question.get("owner_session_id") != question.get("attended_session_id")
-    }
+    ]
+
+
+def _forwarded_child_sessions(result: dict[str, Any]) -> set[str]:
+    """Return the child sessions that owned a question forwarded to the parent."""
+
+    return {str(question["owner_session_id"]) for question in _forwarded_questions(result)}
+
+
+def _pending_questions(result: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the questions still waiting on the scientist when the turn ended."""
+
+    return [
+        question
+        for question in _rows(result.get("questions"))
+        if str(question.get("status", "")) == "pending"
+    ]
 
 
 def _observed_session_statuses(result: dict[str, Any]) -> dict[str, set[str]]:
@@ -257,9 +286,28 @@ def _check_shape(case_id: str, result: dict[str, Any]) -> list[EvaluationFailure
     for action in result["actions"]:
         if not isinstance(action, dict) or not str(action.get("name") or ""):
             failures.append(EvaluationFailure(case_id, "each action needs a name"))
-        elif not isinstance(action.get("arguments", {}), dict):
+            continue
+        if not isinstance(action.get("arguments", {}), dict):
             failures.append(
                 EvaluationFailure(case_id, f"action {action['name']} arguments must be an object")
+            )
+        # The nested lists carry the spawn handles and collected task rows every
+        # assertion below reads. Filtering a non-mapping out of them silently
+        # would hide exactly the row that broke, so reject it here instead.
+        arguments = action.get("arguments") if isinstance(action.get("arguments"), dict) else {}
+        payload = action.get("result") if isinstance(action.get("result"), dict) else {}
+        for holder, key in ((arguments, "spawns"), (payload, "spawned"), (payload, "results")):
+            nested = holder.get(key)
+            if isinstance(nested, list) and not all(isinstance(row, dict) for row in nested):
+                failures.append(
+                    EvaluationFailure(
+                        case_id, f"action {action['name']} has a non-object row in {key}"
+                    )
+                )
+        nested_tasks = payload.get("tasks")
+        if isinstance(nested_tasks, list) and not all(isinstance(r, dict) for r in nested_tasks):
+            failures.append(
+                EvaluationFailure(case_id, f"action {action['name']} has a non-object row in tasks")
             )
     for row in result["tasks"]:
         if not isinstance(row, dict) or not str(row.get("task_id") or ""):
@@ -302,7 +350,8 @@ def _check_shape(case_id: str, result: dict[str, Any]) -> list[EvaluationFailure
             continue
         arguments = action.get("arguments") if isinstance(action.get("arguments"), dict) else {}
         payload = action.get("result") if isinstance(action.get("result"), dict) else {}
-        requested, returned = len(_rows(arguments.get("spawns"))), len(_rows(payload.get("spawned")))
+        requested = len(_rows(arguments.get("spawns")))
+        returned = len(_rows(payload.get("spawned")))
         # The runtime returns one handle per requested spawn — a refusal included.
         if requested != returned:
             failures.append(
@@ -316,7 +365,9 @@ def _check_shape(case_id: str, result: dict[str, Any]) -> list[EvaluationFailure
     for row in _rows(result.get("tasks")):
         task_id = str(row.get("task_id") or "")
         if task_id and task_id in seen:
-            failures.append(EvaluationFailure(case_id, f"task {task_id} appears twice in the roster"))
+            failures.append(
+                EvaluationFailure(case_id, f"task {task_id} appears twice in the roster")
+            )
         seen.add(task_id)
     for row in result["sessions"]:
         if not isinstance(row, dict) or not str(row.get("session_id") or ""):
@@ -341,6 +392,7 @@ def _check_consistency(case_id: str, result: dict[str, Any]) -> list[EvaluationF
 
     failures: list[EvaluationFailure] = []
     roster = _task_roster(result)
+    spawned_ids = {task_id for _, _, task_id in _spawn_events(result)}
     for _, agent, task_id in _spawn_events(result):
         row = roster.get(task_id)
         if row is None:
@@ -355,13 +407,71 @@ def _check_consistency(case_id: str, result: dict[str, Any]) -> list[EvaluationF
                     f"{row.get('agent')!r}",
                 )
             )
+    # …and the same join in the other direction. Only the spawn CALL carries the
+    # requested agent, so a roster task with no captured spawn is a child that
+    # ran outside everything ``exact_agents`` can see.
+    for task_id in sorted(set(roster) - spawned_ids):
+        failures.append(
+            EvaluationFailure(
+                case_id,
+                f"task {task_id} ({roster[task_id].get('agent', '?')}) is in the roster but no "
+                "spawn call in the trace produced it",
+            )
+        )
+    # The same join for questions: an ask_user call mints a row, so a call with
+    # no row hides the pending state the direct-answer cases assert on.
+    question_ids = {str(row.get("id") or "") for row in _rows(result.get("questions"))}
+    for action in _actions(result, "ask_user"):
+        payload = action.get("result") if isinstance(action.get("result"), dict) else {}
+        minted = str(payload.get("question_id") or "")
+        if not minted:
+            failures.append(
+                EvaluationFailure(case_id, "an ask_user call recorded no question_id")
+            )
+        elif minted not in question_ids:
+            failures.append(
+                EvaluationFailure(
+                    case_id, f"ask_user returned {minted}, which no question row records"
+                )
+            )
     child_sessions = {str(row.get("child_session_id") or "") for row in roster.values()}
+    by_child = {str(row.get("child_session_id") or ""): row for row in roster.values()}
+    for question in _forwarded_questions(result):
+        owner, status = str(question["owner_session_id"]), str(question.get("status", ""))
+        row = by_child.get(owner)
+        # The runtime terminates every non-answered forward: a cancel/decline
+        # relays down (relay_forwarded_cancel) and an unattended deadline expires
+        # it, and BOTH fail the bound task. So a completed task under a forward
+        # that was never answered is a trace the runtime cannot have produced.
+        if row is not None and status != "answered" and str(row.get("status")) == "completed":
+            failures.append(
+                EvaluationFailure(
+                    case_id,
+                    f"question {question['id']} forwarded from {owner} is {status!r}, but its "
+                    f"task {row.get('task_id')} reports completed — the runtime fails a task "
+                    "whose forward is cancelled, expired, or still unanswered",
+                )
+            )
     for owner in sorted(_forwarded_child_sessions(result)):
         if owner not in child_sessions:
             failures.append(
                 EvaluationFailure(
                     case_id,
                     f"a question was forwarded from {owner}, which is no spawned child's session",
+                )
+            )
+    # Every child the roster names ran in a session, so its status is observable;
+    # this is what makes `sessions` load-bearing wherever children ran, rather
+    # than a key the shape gate demands and only one case reads.
+    observed = set(_observed_session_statuses(result))
+    for task_id, row in sorted(roster.items()):
+        child_session = str(row.get("child_session_id") or "")
+        if child_session and child_session not in observed:
+            failures.append(
+                EvaluationFailure(
+                    case_id,
+                    f"task {task_id} ran in session {child_session}, which the trace never "
+                    "observed a status for",
                 )
             )
     return failures
@@ -380,7 +490,9 @@ def _check_response(
     min_words = expectation.get("min_words")
     if isinstance(min_words, int) and words < min_words:
         failures.append(
-            EvaluationFailure(case_id, f"response has {words} words, below the floor of {min_words}")
+            EvaluationFailure(
+                case_id, f"response has {words} words, below the floor of {min_words}"
+            )
         )
     max_words = expectation.get("max_words")
     if isinstance(max_words, int) and words > max_words:
@@ -409,18 +521,34 @@ def _check_actions(
 def _check_question(
     case_id: str, expectation: dict[str, Any], result: dict[str, Any]
 ) -> list[EvaluationFailure]:
-    """Check that clarification calls are focused and decision-useful."""
+    """Check that clarification calls are focused and decision-useful.
+
+    There is no cap on how many questions a turn may ask — how many a decision
+    needs is the agent's call, not the grader's. Asking the SAME question twice
+    is different: it is not a second question, and it leaves the scientist two
+    rows to answer for one decision.
+    """
 
     failures: list[EvaluationFailure] = []
     questions = _actions(result, "ask_user")
     if len(questions) < int(expectation.get("min_count", 0)):
         failures.append(EvaluationFailure(case_id, "too few clarification questions"))
+    asked: set[str] = set()
+    for action in questions:
+        arguments = action.get("arguments") if isinstance(action.get("arguments"), dict) else {}
+        text = " ".join(str(arguments.get("question") or "").lower().split())
+        if text and text in asked:
+            failures.append(
+                EvaluationFailure(case_id, f"the same clarification was asked twice: {text!r}")
+            )
+        asked.add(text)
     for action in questions:
         arguments = action.get("arguments")
         if not isinstance(arguments, dict):
             failures.append(EvaluationFailure(case_id, "ask_user arguments must be an object"))
             continue
-        if expectation.get("requires_question") and not str(arguments.get("question") or "").strip():
+        asked_text = str(arguments.get("question") or "").strip()
+        if expectation.get("requires_question") and not asked_text:
             failures.append(EvaluationFailure(case_id, "ask_user needs a concrete question"))
         if expectation.get("requires_reason") and not str(arguments.get("reason") or "").strip():
             failures.append(EvaluationFailure(case_id, "ask_user needs scientific consequence"))
@@ -489,6 +617,19 @@ def _check_outcome(
                 )
             )
 
+    # The other half of "answered directly": the turn ANSWERED rather than
+    # handing the question back. A pending question is the runtime state that
+    # says the scientist, not the agent, owes the next move.
+    if expectation.get("no_pending_question"):
+        for question in _pending_questions(result):
+            failures.append(
+                EvaluationFailure(
+                    case_id,
+                    f"expected a direct answer, but the turn left question {question['id']} "
+                    "pending for the scientist",
+                )
+            )
+
     collected = _collected_rows(result)
     if expectation.get("children_completed"):
         if not roster:
@@ -532,7 +673,8 @@ def _check_outcome(
         # Iterate the ROSTER, not just what carried an output: a completed child
         # whose collected row returned nothing must fail the floor rather than
         # silently drop out of it.
-        for task_id in sorted(task for task, row in roster.items() if row.get("status") == "completed"):
+        completed = sorted(t for t, row in roster.items() if row.get("status") == "completed")
+        for task_id in completed:
             output = outputs.get(task_id, "")
             if not output:
                 failures.append(
