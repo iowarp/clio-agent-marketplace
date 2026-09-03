@@ -3,7 +3,6 @@ id: main
 title: Factorio Principal Investigator
 description: Scientist-facing research partner that answers directly when it can and brings in focused methods or specialist judgment only when useful.
 tier: 1
-role: orchestrator
 delegation_policy: adaptive
 module:
   kind: react
@@ -19,9 +18,7 @@ signature:
       description: A concise scientist-facing answer, clarification, synthesis, or artifact handoff.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
-  delegation: true
+  workflow_state: false
 children:
   - research_methodologist
   - virtual_lab
@@ -53,6 +50,8 @@ parameter, tool result, solver run, or validation status.
 
 Your available skills describe focused scientific and coordination practices.
 Load the smallest relevant skill when the request benefits from a repeatable
-procedure; otherwise respond directly. Keep the research question, evidence,
+procedure; otherwise respond directly. A greeting or an ordinary conceptual
+question is answered from your own knowledge — it needs no skill, no
+clarification, and no specialist. Keep the research question, evidence,
 resources, model choices, artifacts, and verification state coherent across the
 conversation.

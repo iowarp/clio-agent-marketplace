@@ -1,7 +1,7 @@
 ---
 name: coordinate-scientific-work
 title: Coordinate Scientific Work
-description: Decide whether to answer, clarify, load a method, or consult specialists, then preserve task identity and synthesize only settled results.
+description: Decide whether to answer, clarify, load a method, or consult specialists, then preserve task identity and synthesize only settled results. Greetings and ordinary conceptual questions are answered directly and do not need this skill.
 ---
 
 Use this skill when the current scientific request may benefit from clarification,

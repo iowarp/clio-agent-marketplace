@@ -18,8 +18,7 @@ signature:
       description: READY_FOR_SCIENTIST_REVIEW or REVISION_REQUIRED with evidence-linked findings.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
+  workflow_state: false
 ---
 
 # Independent Scientific and Simulation Reviewer

@@ -11,11 +11,14 @@ outstanding ids that can progress independently. A timeout or running state is
 not a completed result; use `check_agent_tasks` or another bounded wait when work
 remains useful. Do not issue repeated immediate polls.
 
-An expert with `ask_user` may pause in `needs_input`. The question belongs to that
-child task and the runtime resumes the same task when the scientist answers. Keep
-its task id, do not answer on the scientist's behalf, and do not spawn a
-replacement. After the answer, wait for that same task id. This preserves the
-consultation's context, trajectory, and provenance.
+A consultation reports one of `queued`, `running`, `completed`, `failed`, or
+`cancelled`. There is no separate paused status: when a child with `ask_user`
+needs a scientist-owned decision, its task stays `running` and the runtime
+forwards its question to you. The question still belongs to that child. Keep its
+task id, put the scientist's answer through the forwarded question rather than
+answering on their behalf, and do not spawn a replacement consultation. After the
+answer, wait for that same task id. This preserves the consultation's context,
+trajectory, and provenance.
 
 Treat terminal failure, cancellation, or unavailable tooling as evidence about
 what remains unresolved. Do not silently retry with a different expert or fill a

@@ -4,7 +4,7 @@ title: Scientific Evidence Coordinator
 description: Coordinates bounded evidence lanes and independent criticism into a source-grounded scientific dossier.
 tier: 2
 parent: main
-role: orchestrator
+delegation_policy: adaptive
 module:
   kind: react
 parameters:
@@ -19,9 +19,7 @@ signature:
       description: A critic-reviewed evidence dossier with citations, claim map, uncertainty, and source audit.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
-  delegation: true
+  workflow_state: false
 children:
   - evidence_leaf
   - evidence_critic

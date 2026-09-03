@@ -18,8 +18,7 @@ signature:
       description: Generated package content, manifest, traceability, static audit, commands, and verification checklist.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
+  workflow_state: false
 tools:
   - ask_user
 ---

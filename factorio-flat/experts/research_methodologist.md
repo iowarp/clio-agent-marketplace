@@ -18,8 +18,7 @@ signature:
       description: A bounded methodology consultation with recommendations, alternatives, assumptions, and decisions.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
+  workflow_state: false
 tools:
   - ask_user
 ---

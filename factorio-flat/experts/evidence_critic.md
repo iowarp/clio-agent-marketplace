@@ -18,8 +18,7 @@ signature:
       description: PASS or RESEARCH_REQUIRED with claim-level findings and bounded follow-ups.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
+  workflow_state: false
 tools:
   - web_search
   - web_fetch

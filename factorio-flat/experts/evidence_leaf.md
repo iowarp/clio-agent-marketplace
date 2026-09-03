@@ -18,8 +18,7 @@ signature:
       description: A fact-versus-inference evidence packet with citations, contradictions, leads, and source records.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
+  workflow_state: false
 tools:
   - web_search
   - web_fetch

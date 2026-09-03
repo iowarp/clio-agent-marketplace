@@ -7,6 +7,13 @@ description: A scientist-facing research partner with a small permanent identity
 root_expert: main
 blueprint:
   format: agent-blueprint-v1
+# Provider selection belongs to deployment configuration. Factorio Flat's evidence
+# researchers use the installed web MCP, which can point at a self-hosted
+# clio-search/SearXNG deployment without paid-provider credentials.
+# clio-kit is provisioned once via `uv tool install clio-kit==2.10.6` (see clio-agent install/doctor).
+# Installed-tool launchers replace `uvx clio-kit@...`: concurrent uvx spawns raced on a cold
+# uv cache (truncated pyvenv.cfg -> dead transport -> _UnsupportedSessionAgent), and
+# `uv cache prune/clean` deletes ephemeral envs under RUNNING servers (astral-sh/uv#11694).
 mcp_servers:
   web: clio-kit mcp-server web
 experts:

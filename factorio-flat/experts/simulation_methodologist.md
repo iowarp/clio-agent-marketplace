@@ -18,8 +18,7 @@ signature:
       description: A simulation specification, alternatives, validation plan, risks, and decisions.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
+  workflow_state: false
 tools:
   - ask_user
   - create_a2ui_surface
