@@ -246,13 +246,25 @@ def _forwarded_child_sessions(result: dict[str, Any]) -> set[str]:
     return {str(question["owner_session_id"]) for question in _forwarded_questions(result)}
 
 
-def _pending_questions(result: dict[str, Any]) -> list[dict[str, Any]]:
-    """Return the questions still waiting on the scientist when the turn ended."""
+def _root_owned_questions(result: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return every question the ATTENDED session put to the scientist itself.
+
+    Status-blind on purpose. Whether the ask is still ``pending``, was
+    ``answered``, was dismissed (``cancelled``), or lapsed (``expired``) says
+    only how the scientist responded and how long the capture ran — the runtime
+    stamps ``expires_at`` on every ask, so an ignored one expires rather than
+    sitting pending. What the direct-answer cases assert is that the turn put no
+    question to the scientist AT ALL, and that is true of the row's existence,
+    not of the state it happened to end in.
+
+    A question the attended session does not own is a child's, forwarded upward,
+    and is never the root deflecting.
+    """
 
     return [
         question
         for question in _rows(result.get("questions"))
-        if str(question.get("status", "")) == "pending"
+        if question.get("owner_session_id") == question.get("attended_session_id")
     ]
 
 
@@ -527,6 +539,12 @@ def _check_question(
     needs is the agent's call, not the grader's. Asking the SAME question twice
     is different: it is not a second question, and it leaves the scientist two
     rows to answer for one decision.
+
+    That duplicate rule compares normalized literal text, and nothing more. Two
+    rewordings of one question pass it. Recognizing them as the same question is
+    a semantic judgement, and a lexical rule that attempted it would be the prose
+    matching this repository bans; the rule's job is only to reject a turn that
+    repeats itself verbatim.
     """
 
     failures: list[EvaluationFailure] = []
@@ -618,15 +636,16 @@ def _check_outcome(
             )
 
     # The other half of "answered directly": the turn ANSWERED rather than
-    # handing the question back. A pending question is the runtime state that
-    # says the scientist, not the agent, owes the next move.
-    if expectation.get("no_pending_question"):
-        for question in _pending_questions(result):
+    # handing the question back. Asserted on the row's EXISTENCE, not its status
+    # — the runtime expires an ignored ask, so a status-sensitive rule would let
+    # the same deflection through once its TTL lapsed.
+    if expectation.get("no_question_asked"):
+        for question in _root_owned_questions(result):
             failures.append(
                 EvaluationFailure(
                     case_id,
-                    f"expected a direct answer, but the turn left question {question['id']} "
-                    "pending for the scientist",
+                    f"expected a direct answer, but the turn put question {question['id']} "
+                    f"({str(question.get('status', ''))}) to the scientist",
                 )
             )
 

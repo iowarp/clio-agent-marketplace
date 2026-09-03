@@ -281,40 +281,45 @@ class FactorioFlatOutcomeTests(unittest.TestCase):
 
         self.assertTrue(any("direct answer" in failure.message for failure in failures))
 
-    def test_a_deflected_direct_answer_case_fails(self) -> None:
-        """Handing the question back is not answering it.
+    def test_a_deflected_direct_answer_case_fails_in_every_question_status(self) -> None:
+        """Handing the question back is not answering it, however it ends.
 
         The pack's root prompt says a greeting or an ordinary question is
-        answered directly; a question left pending is the runtime state that
-        says the scientist, not the agent, owes the next move.
+        answered directly. The runtime stamps ``expires_at`` on every ask, so an
+        ignored deflection EXPIRES rather than staying pending — grading on the
+        row's status would let the same deflection through once its TTL lapsed.
+        The assertion is on the row existing at all.
         """
 
         for case_id in ("greeting", "simple_question"):
-            with self.subTest(case=case_id):
-                case, result = _pair(case_id)
-                result["actions"].append(
-                    {
-                        "name": "ask_user",
-                        "arguments": {"question": "Which project?", "reason": "It decides all."},
-                        "result": {"question_id": "q_deflect", "status": "pending"},
-                    }
-                )
-                result["questions"].append(
-                    {
-                        "id": "q_deflect",
-                        "session_id": "sess_root",
-                        "owner_session_id": "sess_root",
-                        "attended_session_id": "sess_root",
-                        "status": "pending",
-                        "source": "orchestrator",
-                        "prompt": "Which project?",
-                        "metadata": {},
-                    }
-                )
+            for status in ("pending", "answered", "cancelled", "expired"):
+                with self.subTest(case=case_id, status=status):
+                    case, result = _pair(case_id)
+                    result["actions"].append(
+                        {
+                            "name": "ask_user",
+                            "arguments": {"question": "Which project?", "reason": "Decides all."},
+                            "result": {"question_id": "q_deflect", "status": status},
+                        }
+                    )
+                    result["questions"].append(
+                        {
+                            "id": "q_deflect",
+                            "session_id": "sess_root",
+                            "owner_session_id": "sess_root",
+                            "attended_session_id": "sess_root",
+                            "status": status,
+                            "source": "orchestrator",
+                            "prompt": "Which project?",
+                            "metadata": {},
+                        }
+                    )
 
-                failures = evaluate_case(case, result)
+                    failures = evaluate_case(case, result)
 
-                self.assertTrue(any("pending" in failure.message for failure in failures))
+                    self.assertTrue(
+                        any("put question q_deflect" in f.message for f in failures), status
+                    )
 
     def test_a_repeated_clarification_fails(self) -> None:
         """No cap on how many questions a decision needs, but not the same one twice."""

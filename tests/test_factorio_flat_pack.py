@@ -261,6 +261,12 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
         The loader honours a bare ``model:`` / ``provider:`` as well as the
         ``default_model:`` the repo's pin checker scans for, so a pack-local
         assertion is what actually keeps this pack model-agnostic.
+
+        Deliberately stricter than ``scripts/check_model_pins.py``, which allows
+        a ``default_model:`` carrying an adjacent ``# model-pin-justification:``
+        comment. This pack is an A/B evaluation surface: a pin here would make
+        two variants incomparable, so it has no justified form. Relax this test
+        first if that ever stops being true.
         """
 
         for expert_id, parsed in self.experts.items():

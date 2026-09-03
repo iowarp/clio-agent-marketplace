@@ -89,14 +89,27 @@ actually completed and were collected, whether the answer carries what they
 returned, and blocked-child resume continuity.
 
 It asserts outcomes only: no forbidden-tool lists, no call caps, and no required
-tool ordering. Two consequences worth being explicit about. There is no cap on
-how many clarifications a turn may ask — how many a decision needs is the agent's
-call — so the only question rule beyond "it has a question and a stated
-consequence" is that the same question is not asked twice. And the grounding
-floor counts distinct shared terms of six or more characters between the answer
-and each child's returned output, minus what the scientist already supplied; it
-is a floor on carried information and cannot tell a synthesis from a verbatim
-copy of one child's result. Judging that needs a reader.
+tool ordering. A case that must be answered directly says so as two outcomes —
+no child ran, and the attended session put no question of its own to the
+scientist. That second one is asserted on the question row EXISTING, in any
+status: the runtime stamps `expires_at` on every ask, so an ignored deflection
+expires rather than staying pending, and a status-sensitive rule would let the
+same deflection through once its TTL lapsed.
+
+Three limits worth stating plainly rather than implying:
+
+- there is no cap on how many clarifications a turn may ask — how many a
+  decision needs is the agent's call — so beyond "it has a question and a stated
+  consequence" the only question rule is that the same question is not asked
+  twice, and that compares normalized literal text. Two rewordings of one
+  question pass it;
+- the grounding floor counts distinct shared terms of six or more characters
+  between the answer and each child's returned output, minus what the scientist
+  already supplied. It is a floor on carried information and cannot tell a
+  synthesis from a verbatim copy of one child's result;
+- everything above is validated against the hand-written fixture in this
+  repository. Judging whether an answer reasons — and confirming these rules
+  against traces a real session produces — needs live captures.
 
 Evaluate a captured result file with:
 

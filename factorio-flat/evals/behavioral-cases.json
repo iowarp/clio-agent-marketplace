@@ -10,7 +10,7 @@
       },
       "outcome": {
         "no_children": true,
-        "no_pending_question": true
+        "no_question_asked": true
       }
     }
   },
@@ -25,7 +25,7 @@
       },
       "outcome": {
         "no_children": true,
-        "no_pending_question": true
+        "no_question_asked": true
       }
     }
   },
