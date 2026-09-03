@@ -430,7 +430,20 @@ def _check_outcome(
         # Terms the scientist already supplied prove nothing about grounding, so
         # only what a child ADDED counts toward the floor.
         asked_terms = _content_terms(case.get("user_message", ""))
-        for task_id, output in sorted(_completed_outputs(collected).items()):
+        outputs = _completed_outputs(collected)
+        # Iterate the ROSTER, not just what carried an output: a completed child
+        # whose collected row returned nothing must fail the floor rather than
+        # silently drop out of it.
+        for task_id in sorted(task for task, row in roster.items() if row.get("status") == "completed"):
+            output = outputs.get(task_id, "")
+            if not output:
+                failures.append(
+                    EvaluationFailure(
+                        case_id,
+                        f"{task_id} completed but returned no output to ground the answer in",
+                    )
+                )
+                continue
             contributed = _content_terms(output) - asked_terms
             shared = contributed & response_terms
             if len(shared) < minimum:

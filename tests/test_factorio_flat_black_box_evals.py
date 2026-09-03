@@ -172,6 +172,28 @@ class FactorioFlatOutcomeTests(unittest.TestCase):
 
         self.assertTrue(any("failed" in failure.message for failure in failures))
 
+    def test_one_failed_child_among_several_fails_the_case(self) -> None:
+        """A partial failure is still work the synthesis cannot rest on."""
+
+        case, result = _pair("parallel_investigation")
+        result["tasks"][1]["status"] = "failed"
+        result["tasks"][1]["error_reason"] = "timeout"
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("task_lab_1" in failure.message for failure in failures))
+
+    def test_a_child_that_returned_nothing_cannot_ground_the_answer(self) -> None:
+        """A completed child with an empty output must fail the grounding floor."""
+
+        case, result = _pair("focused_skill_and_delegation")
+        for row in _action(result, "wait_agent_tasks")["result"]["results"]:
+            row["output"] = ""
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("no output" in failure.message for failure in failures))
+
     def test_an_answer_ungrounded_in_child_results_fails(self) -> None:
         """The synthesis must carry what the consultations actually returned."""
 
