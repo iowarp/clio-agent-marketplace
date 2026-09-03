@@ -21,6 +21,14 @@ never carries a forbidden-tool blacklist: a case that must be answered directly
 says so as an outcome (no children were spawned), and a case that must produce
 substance says so as a floor on the answer, grounded in what the children
 actually returned.
+
+Known limit of the grounding floor: it measures whether the answer CARRIES what
+a child returned, by term overlap with that child's own output. It therefore
+cannot distinguish a synthesis from a verbatim copy of a single child's result —
+an answer that quotes one child wholesale clears the floor. Judging synthesis
+quality needs a reader, not a lexical check, and no amount of pattern matching
+here would substitute for one; the floor's job is only to reject answers that
+carry nothing.
 """
 
 from __future__ import annotations
@@ -121,14 +129,16 @@ def _task_roster(result: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {str(row["task_id"]): row for row in _rows(result.get("tasks")) if row.get("task_id")}
 
 
-def _spawn_events(result: dict[str, Any]) -> list[tuple[int, str, str]]:
-    """Return ``(trace index, agent, task id)`` for every spawn the trace made.
+def _spawn_handles(result: dict[str, Any]) -> list[tuple[int, str, dict[str, Any]]]:
+    """Return ``(trace index, requested agent, returned handle)`` for every spawn.
 
-    ``spawn_agent_task`` returns one handle; ``spawn_agents_parallel`` returns a
-    ``spawned`` list of them in request order.
+    ``spawn_agent_task`` returns one handle; ``spawn_agents_parallel`` returns one
+    per requested spawn under ``spawned``, in request order. A REFUSED spawn is
+    still a handle — the runtime returns ``{"error": reason}`` in its place — so
+    refusals stay visible rather than vanishing from the trace.
     """
 
-    events: list[tuple[int, str, str]] = []
+    handles: list[tuple[int, str, dict[str, Any]]] = []
     for index, action in enumerate(_rows(result.get("actions"))):
         name = action.get("name")
         if name not in SPAWN_ACTIONS:
@@ -136,15 +146,33 @@ def _spawn_events(result: dict[str, Any]) -> list[tuple[int, str, str]]:
         arguments = action.get("arguments") if isinstance(action.get("arguments"), dict) else {}
         payload = action.get("result") if isinstance(action.get("result"), dict) else {}
         if name == "spawn_agent_task":
-            events.append(
-                (index, str(arguments.get("agent") or ""), str(payload.get("task_id") or ""))
-            )
+            handles.append((index, str(arguments.get("agent") or ""), payload))
             continue
         spawns = _rows(arguments.get("spawns"))
         for offset, handle in enumerate(_rows(payload.get("spawned"))):
             agent = str(spawns[offset].get("agent") or "") if offset < len(spawns) else ""
-            events.append((index, agent, str(handle.get("task_id") or "")))
-    return events
+            handles.append((index, agent, handle))
+    return handles
+
+
+def _spawn_events(result: dict[str, Any]) -> list[tuple[int, str, str]]:
+    """Return ``(trace index, agent, task id)`` for every ADMITTED spawn."""
+
+    return [
+        (index, agent, str(handle["task_id"]))
+        for index, agent, handle in _spawn_handles(result)
+        if handle.get("task_id")
+    ]
+
+
+def _refused_spawns(result: dict[str, Any]) -> list[tuple[str, str]]:
+    """Return ``(agent, typed reason)`` for every spawn that produced no task."""
+
+    return [
+        (agent or "?", str(handle.get("error") or "no task_id returned"))
+        for _, agent, handle in _spawn_handles(result)
+        if not handle.get("task_id")
+    ]
 
 
 def _collected_rows(result: dict[str, Any]) -> list[tuple[int, dict[str, Any]]]:
@@ -269,9 +297,73 @@ def _check_shape(case_id: str, result: dict[str, Any]) -> list[EvaluationFailure
                     f"cannot produce (statuses: {', '.join(sorted(QUESTION_STATUSES))})",
                 )
             )
+    for action in _rows(result.get("actions")):
+        if action.get("name") != "spawn_agents_parallel":
+            continue
+        arguments = action.get("arguments") if isinstance(action.get("arguments"), dict) else {}
+        payload = action.get("result") if isinstance(action.get("result"), dict) else {}
+        requested, returned = len(_rows(arguments.get("spawns"))), len(_rows(payload.get("spawned")))
+        # The runtime returns one handle per requested spawn — a refusal included.
+        if requested != returned:
+            failures.append(
+                EvaluationFailure(
+                    case_id,
+                    f"spawn_agents_parallel requested {requested} spawns but the trace "
+                    f"records {returned} handles",
+                )
+            )
+    seen: set[str] = set()
+    for row in _rows(result.get("tasks")):
+        task_id = str(row.get("task_id") or "")
+        if task_id and task_id in seen:
+            failures.append(EvaluationFailure(case_id, f"task {task_id} appears twice in the roster"))
+        seen.add(task_id)
     for row in result["sessions"]:
         if not isinstance(row, dict) or not str(row.get("session_id") or ""):
             failures.append(EvaluationFailure(case_id, "each session row needs a session_id"))
+        elif not str(row.get("status") or ""):
+            failures.append(
+                EvaluationFailure(case_id, f"session {row['session_id']} row carries no status")
+            )
+    return failures
+
+
+def _check_consistency(case_id: str, result: dict[str, Any]) -> list[EvaluationFailure]:
+    """Cross-check the trace against itself.
+
+    The trace is three views of one run — what the agent called, what tasks the
+    runtime holds, and what questions it minted. A contradiction between them
+    means the adapter mis-recorded the run, so no assertion built on it is worth
+    anything. Unlike :func:`_check_shape` this does not short-circuit: the trace
+    is readable, just internally inconsistent, and the semantic failures alongside
+    it are still informative.
+    """
+
+    failures: list[EvaluationFailure] = []
+    roster = _task_roster(result)
+    for _, agent, task_id in _spawn_events(result):
+        row = roster.get(task_id)
+        if row is None:
+            failures.append(
+                EvaluationFailure(case_id, f"spawn returned {task_id}, which no task row records")
+            )
+        elif agent and str(row.get("agent") or "") != agent:
+            failures.append(
+                EvaluationFailure(
+                    case_id,
+                    f"{task_id} was spawned as {agent} but the roster records "
+                    f"{row.get('agent')!r}",
+                )
+            )
+    child_sessions = {str(row.get("child_session_id") or "") for row in roster.values()}
+    for owner in sorted(_forwarded_child_sessions(result)):
+        if owner not in child_sessions:
+            failures.append(
+                EvaluationFailure(
+                    case_id,
+                    f"a question was forwarded from {owner}, which is no spawned child's session",
+                )
+            )
     return failures
 
 
@@ -402,6 +494,12 @@ def _check_outcome(
         if not roster:
             failures.append(
                 EvaluationFailure(case_id, "the case needs consulted work, but no child ran")
+            )
+        for agent, reason in _refused_spawns(result):
+            failures.append(
+                EvaluationFailure(
+                    case_id, f"the spawn of {agent} was refused ({reason}), so that lane never ran"
+                )
             )
         for task_id, row in sorted(roster.items()):
             status = str(row.get("status", ""))
@@ -571,7 +669,7 @@ def evaluate_case(case: dict[str, Any], result: dict[str, Any]) -> list[Evaluati
     if shape_failures := _check_shape(case_id, result):
         return shape_failures
 
-    failures: list[EvaluationFailure] = []
+    failures: list[EvaluationFailure] = _check_consistency(case_id, result)
     if isinstance(expect.get("response"), dict):
         failures.extend(_check_response(case_id, expect["response"], result))
     if isinstance(expect.get("actions"), dict):

@@ -109,6 +109,82 @@ class FactorioFlatTraceShapeTests(unittest.TestCase):
         self.assertTrue(any("blocked" in failure.message for failure in failures))
 
 
+class FactorioFlatTraceConsistencyTests(unittest.TestCase):
+    """The trace's three views of one run must not contradict each other."""
+
+    def test_a_duplicated_task_row_is_rejected(self) -> None:
+        """The roster is keyed by task id; a repeat means it was mis-recorded."""
+
+        case, result = _pair("blocked_child_resume")
+        result["tasks"].append(dict(result["tasks"][0]))
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("twice" in failure.message for failure in failures))
+
+    def test_a_spawned_task_absent_from_the_roster_is_rejected(self) -> None:
+        """A returned task id with no task row records work nothing tracked."""
+
+        case, result = _pair("focused_skill_and_delegation")
+        result["tasks"] = []
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("no task row records" in failure.message for failure in failures))
+
+    def test_a_roster_agent_disagreeing_with_its_spawn_is_rejected(self) -> None:
+        """Replacement detection joins on the agent, so the two must agree."""
+
+        case, result = _pair("blocked_child_resume")
+        result["tasks"][0]["agent"] = "virtual_lab"
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("but the roster records" in failure.message for failure in failures))
+
+    def test_a_forwarded_question_from_an_unknown_child_is_rejected(self) -> None:
+        """A forward must be attributable to a child this turn actually spawned."""
+
+        case, result = _pair("blocked_child_resume")
+        result["questions"].append(
+            {
+                "id": "q_orphan",
+                "session_id": "sess_root_sim",
+                "owner_session_id": "sess_child_never_spawned",
+                "attended_session_id": "sess_root_sim",
+                "status": "pending",
+                "source": "child_forwarded",
+                "prompt": "Whose question is this?",
+                "metadata": {},
+            }
+        )
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("no spawned child" in failure.message for failure in failures))
+
+    def test_a_fanout_returning_fewer_handles_than_requested_is_rejected(self) -> None:
+        """The runtime returns one handle per requested spawn, refusals included."""
+
+        case, result = _pair("parallel_investigation")
+        spawn = _action(result, "spawn_agents_parallel")
+        spawn["result"]["spawned"] = spawn["result"]["spawned"][:1]
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("handles" in failure.message for failure in failures))
+
+    def test_a_session_row_without_a_status_is_rejected(self) -> None:
+        """A session row exists to record a status; an empty one records nothing."""
+
+        case, result = _pair("greeting")
+        result["sessions"][0]["status"] = ""
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("no status" in failure.message for failure in failures))
+
+
 class FactorioFlatOutcomeTests(unittest.TestCase):
     """A case passes on what the turn achieved, not on which tools were named."""
 
@@ -182,6 +258,20 @@ class FactorioFlatOutcomeTests(unittest.TestCase):
         failures = evaluate_case(case, result)
 
         self.assertTrue(any("task_lab_1" in failure.message for failure in failures))
+
+    def test_a_refused_spawn_fails_a_delegation_case(self) -> None:
+        """A lane the runtime refused never ran, however the others turned out."""
+
+        case, result = _pair("parallel_investigation")
+        spawn = _action(result, "spawn_agents_parallel")
+        spawn["result"]["spawned"][1] = {"error": "spawn_depth_exceeded"}
+        result["tasks"] = [row for row in result["tasks"] if row["task_id"] != "task_lab_1"]
+        wait = _action(result, "wait_agent_tasks")["result"]
+        wait["results"] = [row for row in wait["results"] if row["task_id"] != "task_lab_1"]
+
+        failures = evaluate_case(case, result)
+
+        self.assertTrue(any("refused" in failure.message for failure in failures))
 
     def test_a_child_that_returned_nothing_cannot_ground_the_answer(self) -> None:
         """A completed child with an empty output must fail the grounding floor."""
