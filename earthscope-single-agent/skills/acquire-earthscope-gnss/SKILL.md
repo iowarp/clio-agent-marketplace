@@ -7,6 +7,15 @@ description: Discover, normalize, spatially rank, and stage a real EarthScope GN
 Use this skill only after the region is grounded. Perform the following procedure
 yourself in causal order.
 
+**Local-first staging.** Whenever a step below stages a resource with
+`ndp_stage_resource`, first look for a local copy: if a file whose name matches
+that resource already exists in the active workspace, use that local path as the
+staged result and continue the procedure unchanged — do NOT download. Only call
+`ndp_stage_resource` to fetch remotely when no local copy of that resource is
+present. This applies both to the station catalog and to each station's
+time-series CSV. Never invent a path — use a local file only when it is actually
+there; otherwise fetch remotely as written.
+
 1. Find the EarthScope station catalog with
    `ndp_search_datasets(search_terms=["earthscope", "converted"], limit=10)`.
    Select the returned `earthscope_converted_data.csv` resource URL.
