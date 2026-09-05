@@ -191,11 +191,16 @@ bare bibliography at the end while leaving the body unsupported.
 
 Call `create_artifact` with the complete report as inline `content`, a descriptive
 `.md` `name` inside the active workspace, `kind="report"`, and an annotation that
-identifies it as the critic-approved deep-research deliverable. Use the exact
-path or artifact reference returned by the tool; never invent, normalize, or
-reconstruct it. Artifact creation is part of completion. If it fails, repair and
-retry when safe or report a typed deliverable failure—do not claim the research
-completed without a real artifact.
+identifies it as the critic-approved deep-research deliverable. Set `used` to the
+exact final fetched URL of every `USED_AND_CITED` source, in first-use order, plus
+any workspace path or artifact id that materially informed the report. Do not put
+`READ_NOT_USED`, `REJECTED`, `FETCH_FAILED`, search-result, or remembered URLs in
+`used`. URL edges are explicit source assertions; the separately recorded tool
+execution proves which fetches actually ran. Use the exact path or artifact
+reference returned by the tool; never invent, normalize, or reconstruct it.
+Artifact creation is part of completion. If it fails, repair and retry when safe
+or report a typed deliverable failure—do not claim the research completed without
+a real artifact.
 
 Clearly distinguish:
 

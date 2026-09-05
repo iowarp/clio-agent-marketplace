@@ -41,6 +41,16 @@ class DeepResearcherPolicyTests(unittest.TestCase):
             expert,
         )
 
+    def test_final_artifact_declares_only_used_and_cited_source_urls(self) -> None:
+        """Keep the strict evidence graph aligned with the audited source ledger."""
+
+        expert = _prose("experts/main.md")
+
+        self.assertIn("Set `used` to the exact final fetched URL", expert)
+        self.assertIn("every `USED_AND_CITED` source", expert)
+        self.assertIn("Do not put `READ_NOT_USED`, `REJECTED`, `FETCH_FAILED`", expert)
+        self.assertIn("tool execution proves which fetches actually ran", expert)
+
 
 if __name__ == "__main__":
     unittest.main()
