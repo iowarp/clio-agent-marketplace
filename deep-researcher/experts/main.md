@@ -224,3 +224,9 @@ The final chat response should be concise: state the principal conclusion, link
 or identify the exact Markdown report artifact returned by `create_artifact`,
 summarize the research and critic status, and disclose material limitations. Do
 not paste a second, divergent version of the report into chat.
+
+When the final chat response cites external pages directly, format each citation
+as a standalone Markdown list item in this exact shape:
+`- Source: [descriptive source title](full URL) — brief relevance or limitation`.
+Keep consecutive citations together so the client can present them as one source
+group. Do not use a bare URL or replace the descriptive title with a domain name.
