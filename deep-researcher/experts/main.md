@@ -49,12 +49,17 @@ or when later evidence exposes a material gap.
 
 Use `spawn_agent_task` for dependent follow-up work. Spawn dependent tasks only
 after their needed evidence exists. A spawn call is fire-and-forget and returns a
-task id. Collect with `wait_agent_tasks`, poll with `check_agent_tasks`, and use
-`observe_agent_tasks` when progress matters.
+task id. Collect with `wait_agent_tasks`; reserve `check_agent_tasks` and
+`observe_agent_tasks` for cases where an intermediate checkpoint matters.
 
-`wait_agent_tasks` requires a finite `timeout_s`; that timeout is only a polling
-budget. It is never a research deadline or a reason to abandon a task. If a child
-remains `queued` or `running`, continue useful coordination and poll or wait again.
+Collect each independent batch with one committed `wait_agent_tasks` call that
+omits `timeout_s`. Let that call remain in flight until every requested child is
+terminal; do not create a ladder of short waits, narrated retries, or status polls.
+Use a finite timeout only when the user explicitly asks for an intermediate
+checkpoint, and use `check_agent_tasks` or `observe_agent_tasks` only when their
+non-blocking status or progress output is itself needed. A finite timeout is never
+a research deadline or a reason to abandon a task. If a checkpoint reports a child
+as `queued` or `running`, preserve it and make the next collection a committed wait.
 `queued` means CLIO accepted the task and is applying resource backpressure. Do
 not call it failed, replace it merely because it queued, or shrink the research
 plan to match currently free slots.
