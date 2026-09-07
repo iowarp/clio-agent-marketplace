@@ -39,8 +39,8 @@ bound queue instead of running in parallel, so a wider fan-out does not
 necessarily finish sooner. Each task must contain the full place, common radius,
 the literal cleaned catalog path, and the explicit `Latitude`, `(deg)`, and
 `Site` columns, because a child cannot discover, stage, or normalize the catalog
-itself. Collect the returned task ids with `wait_agent_tasks` under a bounded
-timeout; children return counts only, and the parent still owns the comparison
+itself. Collect every returned task id before comparing the regions; children
+return counts only, and the parent still owns the comparison
 and its presentation. For one or two regions, or when parallelism adds no value,
 perform them directly.
 

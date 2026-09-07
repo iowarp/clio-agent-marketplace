@@ -48,21 +48,12 @@ researchers whenever their likely information gain justifies another direction
 or when later evidence exposes a material gap.
 
 Use `spawn_agent_task` for dependent follow-up work. Spawn dependent tasks only
-after their needed evidence exists. A spawn call is fire-and-forget and returns a
-task id. Collect with `wait_agent_tasks`; reserve `check_agent_tasks` and
-`observe_agent_tasks` for cases where an intermediate checkpoint matters.
-
-Collect each independent batch with one committed `wait_agent_tasks` call that
-omits `timeout_s`. Let that call remain in flight until every requested child is
-terminal; do not create a ladder of short waits, narrated retries, or status polls.
-Use a finite timeout only when the user explicitly asks for an intermediate
-checkpoint, and use `check_agent_tasks` or `observe_agent_tasks` only when their
-non-blocking status or progress output is itself needed. A finite timeout is never
-a research deadline or a reason to abandon a task. If a checkpoint reports a child
-as `queued` or `running`, preserve it and make the next collection a committed wait.
-`queued` means CLIO accepted the task and is applying resource backpressure. Do
-not call it failed, replace it merely because it queued, or shrink the research
-plan to match currently free slots.
+after their needed evidence exists. You own this blueprint's complete internal
+researcher-and-critic tree: collect every accepted child through the runtime's
+native orchestration tools, preserve queued or running work, and do not replace a
+child merely because capacity is temporarily unavailable. The native tool
+contracts define collection and observation behavior; do not invent additional
+timeouts, retry choreography, polling policy, or transcript repair in this prompt.
 
 Read every individual task result returned by the collectors. Repeated copies of
 one child are independent evidence packets. Do not treat a merged

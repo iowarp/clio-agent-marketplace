@@ -15,19 +15,20 @@ def _prose(relative_path: str) -> str:
 
 
 class DeepResearcherPolicyTests(unittest.TestCase):
-    """Lock adaptive fan-out and committed-wait behavior."""
+    """Lock adaptive fan-out and evidence-complete coordination behavior."""
 
-    def test_coordinator_uses_one_committed_wait_per_batch(self) -> None:
-        """Prevent short polling ladders from returning to research runs."""
+    def test_coordinator_owns_tree_without_reauthoring_runtime_waits(self) -> None:
+        """Runtime tool contracts, not this prompt, own wait and observe semantics."""
 
         expert = _prose("experts/main.md")
 
-        self.assertIn("one committed `wait_agent_tasks` call", expert)
-        self.assertIn("omits `timeout_s`", expert)
-        self.assertIn("until every requested child is terminal", expert)
-        self.assertIn("do not create a ladder of short waits", expert)
-        self.assertNotIn("requires a finite `timeout_s`", expert)
-        self.assertNotIn("poll or wait again", expert)
+        self.assertIn("complete internal researcher-and-critic tree", expert)
+        self.assertIn("collect every accepted child", expert)
+        self.assertIn(
+            "native tool contracts define collection and observation behavior", expert
+        )
+        self.assertNotIn("timeout_s", expert)
+        self.assertNotIn("check_agent_tasks", expert)
 
     def test_research_breadth_and_rounds_remain_evidence_driven(self) -> None:
         """Keep the coordinator adaptive rather than imposing a worker quota."""

@@ -5,7 +5,6 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1] / "earthscope-single-agent"
 
 
@@ -29,7 +28,9 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
 
         self.assertIn("The user does not need to request A2UI", expert)
         self.assertIn("Do not describe implementation topology to the user", expert)
-        self.assertIn("Do not accumulate unrelated results into one large tabbed surface", expert)
+        self.assertIn(
+            "Do not accumulate unrelated results into one large tabbed surface", expert
+        )
 
     def test_station_ranking_requires_a_stage_local_interactive_map(self) -> None:
         acquire = _prose("skills/acquire-earthscope-gnss/SKILL.md")
@@ -43,15 +44,22 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
 
         self.assertIn("The primary plot is a live, data-backed A2UI chart", visualize)
         self.assertIn("using exactly one primary `clio.time-series.v1`", visualize)
-        self.assertIn("Generate a static PNG only when the user explicitly asks", visualize)
-        self.assertIn("Never place the static image below, beside, or inside the interactive chart", visualize)
+        self.assertIn(
+            "Generate a static PNG only when the user explicitly asks", visualize
+        )
+        self.assertIn(
+            "Never place the static image below, beside, or inside the interactive chart",
+            visualize,
+        )
 
     def test_parallel_region_skill_remains_explicit_visible_delegation(self) -> None:
         expert = _prose("experts/main.md")
         compare = _prose("skills/compare-earthscope-coverage/SKILL.md")
         delegate = _prose("skills/delegate-earthscope-region/SKILL.md")
 
-        self.assertIn("load `compare-earthscope-coverage` before any regional resolution", expert)
+        self.assertIn(
+            "load `compare-earthscope-coverage` before any regional resolution", expert
+        )
         self.assertIn("is an action, not documentation", expert)
         self.assertIn("Never invoke such a skill speculatively", expert)
         self.assertLess(
@@ -59,7 +67,7 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
             _read("experts/main.md").index("  - delegate-earthscope-region"),
         )
         self.assertIn('load_skill(skill_id="delegate-earthscope-region"', compare)
-        self.assertIn("Collect the returned task ids with `wait_agent_tasks`", compare)
+        self.assertIn("Collect every returned task id before comparing", compare)
         self.assertNotIn("Never delegate all regions", compare)
         self.assertIn("resolve directly any region you do not delegate", compare)
         self.assertIn("literal cleaned catalog path", compare)
