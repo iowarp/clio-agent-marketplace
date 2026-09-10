@@ -22,6 +22,13 @@ structured_outputs:
 tools:
   - ask_user
   - create_a2ui_surface
+skills:
+  - finite_element_analysis
+  - topology_optimization
+  - structural_analysis
+  - meshing
+  - boundary_conditions
+  - stress_strain_analysis
 ---
 
 # Simulation Methodologist

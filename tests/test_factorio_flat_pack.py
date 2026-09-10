@@ -293,6 +293,12 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
             "simulation_methodologist": ["ask_user", "create_a2ui_surface"],
             "abaqus_engineer": ["ask_user"],
             "independent_reviewer": [],
+            "materials_scientist": ["ask_user"],
+            "manufacturing_expert": ["ask_user"],
+            "characterization_expert": ["ask_user"],
+            "mechanical_testing_expert": ["ask_user"],
+            "fatigue_failure_expert": ["ask_user"],
+            "data_analysis_expert": ["ask_user"],
         }
 
         self.assertEqual(set(self.experts), set(expected))
@@ -303,13 +309,15 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
                 self.assertRegex(tool, _TOOL_NAME)
 
     def test_create_artifact_is_never_pinned_to_an_expert_allowlist(self) -> None:
-        """Durable dossiers use the auto-attached artifact tool, not an allowlist."""
+        """Durable deliverables use the auto-attached artifact tool, not an allowlist.
 
-        dossier = (ROOT / "skills/maintain-scientific-dossier/SKILL.md").read_text(
-            encoding="utf-8"
-        )
+        There is no dedicated dossier skill in the materials-science taxonomy;
+        the guarantee lives in the pack-level README instead.
+        """
 
-        self.assertIn("`create_artifact`", dossier)
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("`create_artifact`", readme)
         for expert_id, parsed in self.experts.items():
             self.assertNotIn("create_artifact", parsed.get("tools") or [], expert_id)
 
