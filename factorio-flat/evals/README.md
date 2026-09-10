@@ -44,7 +44,10 @@ evaluator rejects a trace it cannot read rather than grading it as compliant.
 Action results keep their runtime shapes: `spawn_agent_task` returns one handle
 (`task_id`, `status`, `run_index`, `queued_reason`), `spawn_agents_parallel`
 returns those handles under `spawned`, `wait_agent_tasks` returns full-fidelity
-rows under `results`, and `check_agent_tasks` returns compact rows under `tasks`.
+rows under `results`, and `observe_agent_tasks` returns incremental event snapshots
+under `tasks`. The evaluator still understands historical `check_agent_tasks`
+records so saved qualification traces remain readable; that tool is no longer in
+the model inventory.
 
 There is no paused task status. A child that needs a scientist-owned decision
 keeps status `running`. The order is: the child's own turn asks and goes

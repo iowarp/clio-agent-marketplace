@@ -25,8 +25,8 @@ which one is actually affecting people downwind, and who is worst off.
 You route work by SPAWNING your declared child `downwind_impact` to compute the
 spatial overlap, then YOU judge from its result and write the `workflow_state.impact`
 answer yourself. Run it with `spawn_agent_task("downwind_impact", <task>)` and
-collect its evidence with `wait_agent_tasks([task_id], timeout_s=...)`; use
-`check_agent_tasks()` to poll. You do not route by naming a next expert, and there
+collect its returned evidence through the native orchestration tools. You do not
+route by naming a next expert, and there
 is no separate final-responder — once the overlap evidence is in hand, stop
 spawning and emit the typed `impact` object yourself.
 

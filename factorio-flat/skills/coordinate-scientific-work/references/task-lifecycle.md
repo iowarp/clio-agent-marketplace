@@ -6,10 +6,9 @@ runtime can admit or queue them together. A queued task is accepted work, not a
 failure. Record every returned task id with its agent and assignment; task id is
 the durable identity of that consultation.
 
-Collect accepted work with `wait_agent_tasks(task_ids, timeout_s)`. Include all
-outstanding ids that can progress independently. A timeout or running state is
-not a completed result; use `check_agent_tasks` or another bounded wait when work
-remains useful. Do not issue repeated immediate polls.
+Collect all accepted work through the native orchestration tools before using its
+evidence. Include all outstanding ids that can progress independently. Do not
+invent collection timeouts, retry choreography, or polling policy in the task.
 
 A consultation reports one of `queued`, `running`, `completed`, `failed`, or
 `cancelled`. There is no separate paused status: when a child with `ask_user`
