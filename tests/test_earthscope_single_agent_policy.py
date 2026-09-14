@@ -28,9 +28,7 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
 
         self.assertIn("The user does not need to request A2UI", expert)
         self.assertIn("Do not describe implementation topology to the user", expert)
-        self.assertIn(
-            "Do not accumulate unrelated results into one large tabbed surface", expert
-        )
+        self.assertIn("Do not accumulate unrelated results into one large tabbed surface", expert)
 
     def test_station_ranking_requires_a_stage_local_interactive_map(self) -> None:
         acquire = _prose("skills/acquire-earthscope-gnss/SKILL.md")
@@ -39,14 +37,19 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         self.assertIn("otherwise prefer the interactive map", acquire)
         self.assertIn("Do not wait until the end of the turn", acquire)
 
+    def test_station_catalog_filter_pins_one_observed_latitude_column(self) -> None:
+        acquire = _prose("skills/acquire-earthscope-gnss/SKILL.md")
+
+        self.assertIn('"operator": "between", "value": [-90, 90]', acquire)
+        self.assertIn("every filter-condition key must be an observed column name", acquire)
+        self.assertIn("Do not split the bounds across invented column aliases", acquire)
+
     def test_interactive_time_series_is_primary_and_png_is_not_embedded(self) -> None:
         visualize = _prose("skills/visualize-earthscope-gnss/SKILL.md")
 
         self.assertIn("The primary plot is a live, data-backed A2UI chart", visualize)
         self.assertIn("using exactly one primary `clio.time-series.v1`", visualize)
-        self.assertIn(
-            "Generate a static PNG only when the user explicitly asks", visualize
-        )
+        self.assertIn("Generate a static PNG only when the user explicitly asks", visualize)
         self.assertIn(
             "Never place the static image below, beside, or inside the interactive chart",
             visualize,
@@ -57,9 +60,7 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         compare = _prose("skills/compare-earthscope-coverage/SKILL.md")
         delegate = _prose("skills/delegate-earthscope-region/SKILL.md")
 
-        self.assertIn(
-            "load `compare-earthscope-coverage` before any regional resolution", expert
-        )
+        self.assertIn("load `compare-earthscope-coverage` before any regional resolution", expert)
         self.assertIn("is an action, not documentation", expert)
         self.assertIn("Never invoke such a skill speculatively", expert)
         self.assertLess(
