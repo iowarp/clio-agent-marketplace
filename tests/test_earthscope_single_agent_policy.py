@@ -35,6 +35,9 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
 
         self.assertIn("create or update `earthscope-stations` immediately", acquire)
         self.assertIn("otherwise prefer the interactive map", acquire)
+        self.assertIn("one bounded mutually-exclusive `ChoicePicker`", acquire)
+        self.assertIn("submit `selected_station_ids`", acquire)
+        self.assertIn("Browser-submitted structured selection resumes the session", acquire)
         self.assertIn("Do not wait until the end of the turn", acquire)
 
     def test_station_catalog_filter_pins_one_observed_latitude_column(self) -> None:
