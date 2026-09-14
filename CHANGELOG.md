@@ -10,6 +10,10 @@
   fanout, interactive station selection, analysis, visualization, and reporting.
 - Factorio Flat, a small-model-friendly scientific research blueprint with
   bounded evidence fanout, review, virtual-lab, and Abaqus handoff skills.
+- Daisy Quach's Factorio Flat materials-science expansion, adding specialists
+  for materials, manufacturing, characterization, mechanical testing,
+  fatigue and failure, and scientific data analysis alongside the original
+  research and simulation experts.
 - A standalone phenotype workload package and provider-aware SPOTTER AI
   provenance services for native, Flowcept, CMF, and JSONL stores.
 
@@ -32,4 +36,3 @@
   ungrounded completion claims.
 - SPOTTER retains anomaly acknowledgements and removes environment-pinned model
   selection so the active session provider remains authoritative.
-
