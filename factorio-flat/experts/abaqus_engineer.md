@@ -21,6 +21,10 @@ structured_outputs:
   workflow_state: false
 tools:
   - ask_user
+skills:
+  - abaqus
+  - tosca
+  - morphorm
 ---
 
 # Abaqus and Tosca Engineer

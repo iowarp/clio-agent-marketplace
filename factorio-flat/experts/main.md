@@ -26,6 +26,12 @@ children:
   - simulation_methodologist
   - abaqus_engineer
   - independent_reviewer
+  - materials_scientist
+  - manufacturing_expert
+  - characterization_expert
+  - mechanical_testing_expert
+  - fatigue_failure_expert
+  - data_analysis_expert
 tools:
   - ask_user
   - create_a2ui_surface
@@ -35,6 +41,10 @@ skills:
   - maintain-scientific-dossier
   - formulate-abaqus-package
   - audit-scientific-package
+  - research_methodology
+  - experimental_design
+  - scientific_writing
+  - citation_management
 ---
 
 # Factorio Principal Investigator
