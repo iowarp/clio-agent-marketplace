@@ -73,6 +73,11 @@ To add your own catalog:
    a2ui_catalogs:
      <name>: catalogs/<name>
    ```
+   If your catalog needs runtime pieces newer than the widest clio-agent
+   version your pack otherwise supports (e.g. a specific campaign slice),
+   declare the floor as a PEP 440 specifier — `requires: {clio_agent:
+   ">=0.9.5"}` — so an older runtime refuses to activate the pack instead of
+   installing a catalog it cannot serve.
 3. **Declare it on the expert(s) that use it** (`experts/<id>.md`):
    ```yaml
    a2ui_catalogs:

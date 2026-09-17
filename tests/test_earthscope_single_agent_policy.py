@@ -5,6 +5,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from tests.test_base_agent_policy import parse_frontmatter
+
 ROOT = Path(__file__).resolve().parents[1] / "earthscope-single-agent"
 
 
@@ -95,6 +97,28 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
 
         self.assertIn("a2ui_catalogs:\n  earthscope-stations: catalogs/earthscope-stations", manifest)
         self.assertIn("a2ui_catalogs:\n  - earthscope-stations", expert)
+
+    def test_manifest_declares_a_pep440_clio_agent_floor(self) -> None:
+        manifest = parse_frontmatter(ROOT / "AGENT.md")
+
+        requires = manifest.get("requires")
+        self.assertIsInstance(requires, dict)
+        floor = requires.get("clio_agent")
+        self.assertIsInstance(floor, str)
+        self.assertTrue(floor.strip())
+
+        try:
+            from packaging.specifiers import SpecifierSet
+        except ImportError as exc:  # pragma: no cover - environment-dependent, not swallowed
+            self.fail(
+                "packaging is not importable in this interpreter -- this assertion "
+                "needs it (run via `uv run --with packaging ...`); it does not skip: "
+                f"{exc!r}"
+            )
+
+        spec = SpecifierSet(floor)
+        self.assertTrue(spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5")
+        self.assertFalse(spec.contains("0.9.4"), f"{floor!r} should exclude 0.9.4 (today's develop)")
 
     def test_station_catalog_filter_pins_one_observed_latitude_column(self) -> None:
         acquire = _prose("skills/acquire-earthscope-gnss/SKILL.md")
