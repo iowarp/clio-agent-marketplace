@@ -12,14 +12,15 @@ dependencies these checks exercise (this repository ships neither as its own
 dependency):
 
 * Every test in this module except
-  :func:`test_pack_blueprint_validates_with_no_errors_or_warnings` needs only
+  :func:`test_pack_blueprint_validates_against_the_real_validator` and
+  :func:`test_manifest_declares_a_pep440_clio_agent_floor` needs only
   ``clio-schemas`` (>=0.3, unreleased on PyPI at the time of writing — use a
   local checkout)::
 
       uv run --project /path/to/clio-schemas --with pytest pytest \\
           earthscope-single-agent/tests/test_a2ui_catalog_pack.py
 
-* :func:`test_pack_blueprint_validates_with_no_errors_or_warnings` and
+* :func:`test_pack_blueprint_validates_against_the_real_validator` and
   :func:`test_manifest_declares_a_pep440_clio_agent_floor` additionally need
   ``clio-agent`` importable (the former drives the REAL ``clio_agent.gact.
   agent_blueprints.validate_agent_blueprint_path`` structural validator
@@ -252,8 +253,29 @@ def test_render_narration_over_worked_example_context(
     assert "{searchId}" not in rendered
 
 
-def test_pack_blueprint_validates_with_no_errors_or_warnings() -> None:
+def _declared_clio_agent_floor() -> str:
+    """The ``requires.clio_agent`` specifier declared in ``AGENT.md``'s frontmatter."""
+
+    from clio_agent.gact.agent_blueprints import parse_agent_blueprint_root
+
+    blueprint = parse_agent_blueprint_root(PACK_ROOT, scope="session")
+    requires = blueprint.metadata.get("requires")
+    assert isinstance(requires, dict)
+    floor = requires.get("clio_agent")
+    assert isinstance(floor, str) and floor.strip()
+    return floor
+
+
+def test_pack_blueprint_validates_against_the_real_validator() -> None:
     """Runs clio-agent's REAL structural validator against this pack (needs clio-agent).
+
+    Asserts BOTH sides of the ``requires.clio_agent`` floor contract, keyed on the
+    running ``clio_agent.__version__``: at or above the floor the pack installs
+    with no errors, no warnings and enabled; below the floor it is refused with
+    exactly the typed ``blueprint_requires_newer_clio_agent`` error and nothing
+    else (no warnings, not enabled). Neither branch is a skip -- a pre-floor
+    clio-agent (today's develop, 0.9.4) proves the refusal; the release that
+    carries the floor proves the clean install.
 
     Calls ``clio_agent.gact.agent_blueprints.validate_agent_blueprint_path`` directly
     -- the exact function the live GACT server runs at pack install/enable time, never
@@ -270,7 +292,9 @@ def test_pack_blueprint_validates_with_no_errors_or_warnings() -> None:
     """
 
     try:
+        from clio_agent import __version__ as clio_agent_version
         from clio_agent.gact.agent_blueprints import validate_agent_blueprint_path
+        from packaging.specifiers import SpecifierSet
     except ImportError as exc:  # pragma: no cover - environment-dependent, not swallowed
         pytest.fail(
             "clio_agent is not importable in this interpreter -- this test requires a "
@@ -280,9 +304,18 @@ def test_pack_blueprint_validates_with_no_errors_or_warnings() -> None:
         return
 
     result = validate_agent_blueprint_path(PACK_ROOT, scope="session")
-    assert result["validation_errors"] == []
-    assert result["validation_warnings"] == []
-    assert result["enabled"] is True
+    floor = _declared_clio_agent_floor()
+    if SpecifierSet(floor).contains(clio_agent_version):
+        assert result["validation_errors"] == []
+        assert result["validation_warnings"] == []
+        assert result["enabled"] is True
+    else:
+        assert result["validation_errors"] == [
+            "earthscope-single-agent: blueprint_requires_newer_clio_agent: "
+            f"requires clio_agent{floor}, running {clio_agent_version}"
+        ]
+        assert result["validation_warnings"] == []
+        assert result["enabled"] is False
 
 
 def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
