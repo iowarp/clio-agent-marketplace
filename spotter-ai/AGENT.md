@@ -15,7 +15,6 @@ mcp_servers:
       - run
       - --project
       - ${SPOTTER_IMPL_DIR}
-      - --no-sync
       - spotter-mcp
       - --clio-config
       - ${SPOTTER_CLIO_CONFIG}
