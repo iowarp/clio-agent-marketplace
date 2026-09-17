@@ -20,11 +20,11 @@ recipe, not the field-by-field reference.
    place to read them back from without re-deriving them.
 2. **`StationPicker`** (id `stationsPicker`) is fixed to
    `variant: "multipleSelection"` by this catalog (see `catalog.clio.json`'s
-   `presets`) — never send a different `variant`. Its `options` are the same
-   ranked points as short `{label, value}` pairs (`value` is the exact
-   station id). Bind `value` to `/selectedStationIds` —
-   `{"path": "/selectedStationIds"}` — so the human's picks land in the data
-   model as they are made.
+   `presets`) — the catalog's own schema declares `variant` a `const`, so the
+   validator refuses any other value. Its `options` are the same ranked
+   points as short `{label, value}` pairs (`value` is the exact station id).
+   Bind `value` to `/selectedStationIds` — `{"path": "/selectedStationIds"}`
+   — so the human's picks land in the data model as they are made.
 3. A **`Button`** (id `confirmButton`) carries a `required` check on the same
    path, so the client refuses to submit with nothing selected:
    ```json

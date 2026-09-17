@@ -9,26 +9,30 @@ never against a private re-statement of them — and that the recipe
 
 Two separate Python environments are involved, matching the two separate
 dependencies these checks exercise (this repository ships neither as its own
-dependency — see ``scripts/validate_marketplace_blueprints.py``'s module
-docstring for why):
+dependency):
 
 * Every test in this module except
-  :func:`test_validate_marketplace_blueprints_script_passes` needs only
+  :func:`test_pack_blueprint_validates_with_no_errors_or_warnings` needs only
   ``clio-schemas`` (>=0.3, unreleased on PyPI at the time of writing — use a
   local checkout)::
 
       uv run --project /path/to/clio-schemas --with pytest pytest \\
           earthscope-single-agent/tests/test_a2ui_catalog_pack.py
 
-* :func:`test_validate_marketplace_blueprints_script_passes` additionally
-  needs ``clio-agent`` importable (it drives the real
-  ``validate_agent_blueprint_path`` structural validator, not a
-  reimplementation of it), so it imports that dependency lazily and fails
-  loudly — never silently skips — when it is not present. Run the full file
-  against a clio-agent checkout to exercise it too::
+* :func:`test_pack_blueprint_validates_with_no_errors_or_warnings`
+  additionally needs ``clio-agent`` importable (it drives the REAL
+  ``clio_agent.gact.agent_blueprints.validate_agent_blueprint_path``
+  structural validator directly — the same one the live GACT server runs at
+  pack install/enable time — never a reimplementation of it), so it imports
+  that dependency lazily and fails loudly — never silently skips — when it
+  is not present. Run the full file against a clio-agent checkout to
+  exercise it too::
 
       uv run --project /path/to/clio-agent --with pytest --with clio-schemas \\
           pytest earthscope-single-agent/tests/test_a2ui_catalog_pack.py
+
+  CI runs exactly this second form (see ``.github/workflows/ci.yml``'s
+  ``a2ui-catalog-pack`` job) against clio-agent's ``develop`` branch.
 """
 
 from __future__ import annotations
@@ -36,7 +40,6 @@ from __future__ import annotations
 import importlib.resources
 import json
 import re
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -48,7 +51,6 @@ from clio_schemas.a2ui.validation import catalog_validators, message_validator
 
 PACK_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_DIR = PACK_ROOT / "catalogs" / "earthscope-stations"
-MARKETPLACE_ROOT = PACK_ROOT.parent
 
 _EXPECTED_COMPONENTS = frozenset(
     {"Text", "Column", "Row", "Button", "StationMap", "StationPicker"}
@@ -184,26 +186,34 @@ def test_delivered_event_context_validates_against_context_schema(
         jsonschema.validate({"searchId": "x", "stationIds": []}, context_schema)
 
 
-def test_validate_marketplace_blueprints_script_passes() -> None:
-    """Runs the real offline blueprint validator against this repo (needs clio-agent).
+def test_pack_blueprint_validates_with_no_errors_or_warnings() -> None:
+    """Runs clio-agent's REAL structural validator against this pack (needs clio-agent).
+
+    Calls ``clio_agent.gact.agent_blueprints.validate_agent_blueprint_path`` directly
+    -- the exact function the live GACT server runs at pack install/enable time, never
+    a marketplace-side reimplementation of it (a prior version of this module shipped
+    a duplicate ``scripts/validate_marketplace_blueprints.py`` that wrapped this same
+    call and then silently downgraded one pack's errors to "OK"; that script and its
+    silent-fallback exemption are deleted -- this test asserts the real function's
+    output directly, with no exemption of any kind).
 
     Deliberately NOT wrapped in a try/except-skip: per this repository's testing
-    policy, a test that cannot run is a failure, not a silent pass. See this
-    module's docstring for the two-environment split and the exact command to
-    run this test under.
+    policy, a test that cannot run is a failure, not a silent pass. See this module's
+    docstring for the two-environment split and the exact command to run this test
+    under.
     """
 
     try:
-        import clio_agent  # noqa: F401
+        from clio_agent.gact.agent_blueprints import validate_agent_blueprint_path
     except ImportError as exc:  # pragma: no cover - environment-dependent, not swallowed
         pytest.fail(
             "clio_agent is not importable in this interpreter -- this test requires a "
             "clio-agent checkout (see this module's docstring for the exact command), "
             f"it does not skip: {exc!r}"
         )
+        return
 
-    sys.path.insert(0, str(MARKETPLACE_ROOT / "scripts"))
-    import validate_marketplace_blueprints as validator_script  # noqa: PLC0415
-
-    exit_code = validator_script.main([str(MARKETPLACE_ROOT)])
-    assert exit_code == 0
+    result = validate_agent_blueprint_path(PACK_ROOT, scope="session")
+    assert result["validation_errors"] == []
+    assert result["validation_warnings"] == []
+    assert result["enabled"] is True
