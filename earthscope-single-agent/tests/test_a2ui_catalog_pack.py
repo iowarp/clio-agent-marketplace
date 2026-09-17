@@ -19,14 +19,18 @@ dependency):
       uv run --project /path/to/clio-schemas --with pytest pytest \\
           earthscope-single-agent/tests/test_a2ui_catalog_pack.py
 
-* :func:`test_pack_blueprint_validates_with_no_errors_or_warnings`
-  additionally needs ``clio-agent`` importable (it drives the REAL
-  ``clio_agent.gact.agent_blueprints.validate_agent_blueprint_path``
-  structural validator directly — the same one the live GACT server runs at
-  pack install/enable time — never a reimplementation of it), so it imports
-  that dependency lazily and fails loudly — never silently skips — when it
-  is not present. Run the full file against a clio-agent checkout to
-  exercise it too::
+* :func:`test_pack_blueprint_validates_with_no_errors_or_warnings` and
+  :func:`test_manifest_declares_a_pep440_clio_agent_floor` additionally need
+  ``clio-agent`` importable (the former drives the REAL ``clio_agent.gact.
+  agent_blueprints.validate_agent_blueprint_path`` structural validator
+  directly — the same one the live GACT server runs at pack install/enable
+  time — never a reimplementation of it; the latter parses ``AGENT.md`` with
+  clio-agent's own blueprint parser and its declared ``requires.clio_agent``
+  floor with ``packaging.specifiers.SpecifierSet`` — a dependency clio-agent
+  itself brings transitively, never pinned separately by this repo). Both
+  import their dependency lazily and fail loudly — never silently skip —
+  when it is not present. Run the full file against a clio-agent checkout to
+  exercise them too::
 
       uv run --project /path/to/clio-agent --with pytest --with clio-schemas \\
           pytest earthscope-single-agent/tests/test_a2ui_catalog_pack.py
@@ -279,3 +283,39 @@ def test_pack_blueprint_validates_with_no_errors_or_warnings() -> None:
     assert result["validation_errors"] == []
     assert result["validation_warnings"] == []
     assert result["enabled"] is True
+
+
+def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
+    """``AGENT.md``'s ``requires.clio_agent`` floor is a real, meaningful specifier.
+
+    Parses the manifest with clio-agent's OWN blueprint parser (never a private
+    reimplementation of frontmatter parsing) and the declared floor with
+    ``packaging.specifiers.SpecifierSet``. ``tests/test_earthscope_single_agent_
+    policy.py`` keeps a dependency-free companion check (the key exists and is a
+    non-empty string) for CI's bare no-deps job; this test is the one that proves
+    the value actually parses as PEP 440 and means what the AGENT.md comment next
+    to it claims (admits the next clio-agent release, excludes today's develop).
+
+    Deliberately NOT wrapped in a try/except-skip -- see this module's docstring.
+    """
+
+    try:
+        from clio_agent.gact.agent_blueprints import parse_agent_blueprint_root
+        from packaging.specifiers import SpecifierSet
+    except ImportError as exc:  # pragma: no cover - environment-dependent, not swallowed
+        pytest.fail(
+            "clio_agent/packaging are not importable in this interpreter -- this "
+            "test requires a clio-agent checkout (see this module's docstring for "
+            f"the exact command), it does not skip: {exc!r}"
+        )
+        return
+
+    blueprint = parse_agent_blueprint_root(PACK_ROOT, scope="session")
+    requires = blueprint.metadata.get("requires")
+    assert isinstance(requires, dict)
+    floor = requires.get("clio_agent")
+    assert isinstance(floor, str) and floor.strip()
+
+    spec = SpecifierSet(floor)
+    assert spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5"
+    assert not spec.contains("0.9.4"), f"{floor!r} should exclude 0.9.4 (today's develop)"

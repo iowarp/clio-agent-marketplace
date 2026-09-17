@@ -98,7 +98,13 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         self.assertIn("a2ui_catalogs:\n  earthscope-stations: catalogs/earthscope-stations", manifest)
         self.assertIn("a2ui_catalogs:\n  - earthscope-stations", expert)
 
-    def test_manifest_declares_a_pep440_clio_agent_floor(self) -> None:
+    def test_manifest_declares_a_clio_agent_floor(self) -> None:
+        """Dependency-free: only that the key exists. The PEP 440 parse/semantics
+        assertion lives in earthscope-single-agent/tests/test_a2ui_catalog_pack.py,
+        where clio-agent (and the ``packaging`` it brings) is actually available --
+        this repo's own top-level ``tests/`` runs under a bare, dependency-free
+        interpreter in CI (see .github/workflows/ci.yml's model-inheritance job)."""
+
         manifest = parse_frontmatter(ROOT / "AGENT.md")
 
         requires = manifest.get("requires")
@@ -106,19 +112,6 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         floor = requires.get("clio_agent")
         self.assertIsInstance(floor, str)
         self.assertTrue(floor.strip())
-
-        try:
-            from packaging.specifiers import SpecifierSet
-        except ImportError as exc:  # pragma: no cover - environment-dependent, not swallowed
-            self.fail(
-                "packaging is not importable in this interpreter -- this assertion "
-                "needs it (run via `uv run --with packaging ...`); it does not skip: "
-                f"{exc!r}"
-            )
-
-        spec = SpecifierSet(floor)
-        self.assertTrue(spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5")
-        self.assertFalse(spec.contains("0.9.4"), f"{floor!r} should exclude 0.9.4 (today's develop)")
 
     def test_station_catalog_filter_pins_one_observed_latitude_column(self) -> None:
         acquire = _prose("skills/acquire-earthscope-gnss/SKILL.md")
