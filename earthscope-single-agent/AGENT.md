@@ -2,9 +2,11 @@
 id: earthscope-single-agent
 title: EarthScope Skills
 display_name: EarthScope Skills
-version: 0.2.3
+version: 0.3.0
 description: An EarthScope GNSS scientist that loads focused procedures on demand, presents grounded interactive views when useful, and may fan out independent regional work into temporary child turns.
 root_expert: main
+a2ui_catalogs:
+  earthscope-stations: catalogs/earthscope-stations
 blueprint:
   format: agent-blueprint-v1
 # clio-kit is provisioned once via `uv tool install clio-kit==2.10.6` (see clio-agent install/doctor).

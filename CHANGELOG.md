@@ -1,5 +1,24 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- EarthScope Skills ships its own A2UI catalog (`earthscope-stations`,
+  `catalogs/earthscope-stations/`): a `StationMap` (aliasing `clio.map.v1`)
+  and a multi-select `StationPicker` (aliasing `ChoicePicker`), alongside the
+  Basic `Text`/`Column`/`Row`/`Button` components, delivering a structured
+  `earthscope.stations.selected` domain event — no clio-agent or gact-tui
+  source change required. See `earthscope-single-agent/README.md`'s "Custom
+  A2UI catalogs" section for how a pack author adds one.
+
+### Changed
+
+- EarthScope Skills' acquisition procedure and root prompt route station
+  selection through the new catalog skill (`a2ui-catalog-earthscope-stations`)
+  and the `earthscope.stations.selected` event instead of the generic
+  `ChoicePicker` + `agent.submit` recipe.
+
 ## [0.6.3] - 2026-09-13
 
 ### Added

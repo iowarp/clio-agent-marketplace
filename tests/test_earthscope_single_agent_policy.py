@@ -35,10 +35,44 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
 
         self.assertIn("create or update `earthscope-stations` immediately", acquire)
         self.assertIn("otherwise prefer the interactive map", acquire)
-        self.assertIn("one bounded mutually-exclusive `ChoicePicker`", acquire)
-        self.assertIn("submit `selected_station_ids`", acquire)
-        self.assertIn("Browser-submitted structured selection resumes the session", acquire)
+        self.assertIn("Load the catalog skill `a2ui-catalog-earthscope-stations`", acquire)
+        self.assertIn("one `StationMap` showing every ranked point", acquire)
+        self.assertIn(
+            "one `StationPicker` bound to `/selectedStationIds`, defaulted to the leading "
+            "candidate",
+            acquire,
+        )
+        self.assertIn("dispatches `earthscope.stations.selected` with the confirmed", acquire)
+        self.assertIn('ask_user(..., surface_id="earthscope-stations")', acquire)
+        self.assertIn(
+            "Do not search for or stage a station series until a structured "
+            "`earthscope.stations.selected` selection resumes the session",
+            acquire,
+        )
+        self.assertNotIn("ChoicePicker", acquire)
+        self.assertNotIn("agent.submit", acquire)
+        self.assertNotIn("selected_station_ids`", acquire)
         self.assertIn("Do not wait until the end of the turn", acquire)
+
+    def test_root_contract_routes_station_views_to_the_pack_catalog_skill(self) -> None:
+        expert = _prose("experts/main.md")
+
+        self.assertIn(
+            "load the catalog skill `a2ui-catalog-earthscope-stations`", expert
+        )
+        self.assertIn(
+            "it carries this pack's own `StationMap`/`StationPicker` recipe and the "
+            "`earthscope.stations.selected` event contract",
+            expert,
+        )
+        self.assertIn("For every other interactive view, load `present-interactive-analysis`", expert)
+
+    def test_manifest_and_expert_declare_the_earthscope_stations_catalog(self) -> None:
+        manifest = _read("AGENT.md")
+        expert = _read("experts/main.md")
+
+        self.assertIn("a2ui_catalogs:\n  earthscope-stations: catalogs/earthscope-stations", manifest)
+        self.assertIn("a2ui_catalogs:\n  - earthscope-stations", expert)
 
     def test_station_catalog_filter_pins_one_observed_latitude_column(self) -> None:
         acquire = _prose("skills/acquire-earthscope-gnss/SKILL.md")

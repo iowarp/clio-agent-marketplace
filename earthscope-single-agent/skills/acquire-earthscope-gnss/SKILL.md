@@ -49,16 +49,21 @@ there; otherwise fetch remotely as written.
    explicit columns `Latitude`, `(deg)`, and `Site`. Preserve the returned ranked
    points, `total_points`, `within_radius_count`, and `skipped_invalid`.
 5. When the filter returns multiple ranked stations with coordinates, present the
-   spatial evidence before searching for a station series. Load
-   `present-interactive-analysis`, then create or update `earthscope-stations`
-   immediately from only the bounded, tool-returned ranked points. Identify the
-   first ranked point as the leading candidate; otherwise prefer the interactive map
-   over a static or prose-only presentation. When the user asks to choose before
-   staging, use the skill's human-selectable map recipe: include one bounded
-   mutually-exclusive `ChoicePicker`, default it to the leading candidate, and
-   submit `selected_station_ids` through the recipe's `agent.submit` action. Stop
-   after the surface is ready. Do not search for or stage a station series until a
-   Browser-submitted structured selection resumes the session. Require
+   spatial evidence before searching for a station series. Load the catalog skill
+   `a2ui-catalog-earthscope-stations`, then create or update `earthscope-stations`
+   immediately from only the bounded, tool-returned ranked points: one `StationMap`
+   showing every ranked point and one `StationPicker` bound to
+   `/selectedStationIds`, defaulted to the leading candidate. Identify the first
+   ranked point as the leading candidate; otherwise prefer the interactive map
+   over a static or prose-only presentation. When the user must choose before
+   staging, use the catalog's own recipe: a `Button` whose `required` check
+   guards `/selectedStationIds` and whose action dispatches
+   `earthscope.stations.selected` with the confirmed `stationIds` — never a
+   default you invent. Stop after the surface is ready; if ending the turn to
+   wait for that choice, call `ask_user(..., surface_id="earthscope-stations")`
+   so the dispatcher resumes this exact question when the event arrives. Do not
+   search for or stage a station series until a structured
+   `earthscope.stations.selected` selection resumes the session. Require
    `rendered=true` and `state=ready` before continuing to station-resource search.
    If coordinates are unavailable, use a compact table instead. Skip this step
    only when one or zero stations were returned or presentation itself fails; in
