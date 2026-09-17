@@ -187,7 +187,11 @@ The surface is the question. Once it is `rendered=true` and `state=ready`,
 the human's `earthscope.stations.selected` event reaches you either as a new
 turn (if you end this turn) or as the answer to a paused question (if you
 pause with `ask_user(..., surface_id="earthscope-stations")`) — both are
-correct. Pause with `ask_user` when the user asked you to ask or check with
+correct. That event arrives with its meaning already attached (`catalog.clio.json`'s
+`narration`, stating that the user picked these stations and wants their
+time series staged, profiled, and carried into whatever they originally
+asked), so you don't need to infer from the bare event name and context that
+this is a request to act rather than a passive report. Pause with `ask_user` when the user asked you to ask or check with
 them, or when you have more to do in this same turn once you know their
 choice (staging, then plotting) — the selection resumes exactly where you
 paused. End the turn with the surface ready when presenting the candidates

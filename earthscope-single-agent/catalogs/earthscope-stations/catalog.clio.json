@@ -45,7 +45,8 @@
             "minItems": 1
           }
         }
-      }
+      },
+      "narration": "The user selected GNSS stations {stationIds} on the station map for search {searchId} and asked for their analysis: stage and profile the time series of exactly these stations, then continue with what they originally asked."
     }
   },
   "instructions": "instructions.md"

@@ -40,12 +40,13 @@ from __future__ import annotations
 import importlib.resources
 import json
 import re
+import string
 from pathlib import Path
 from typing import Any
 
 import jsonschema
 import pytest
-from clio_schemas.a2ui.sidecar import CatalogSidecar
+from clio_schemas.a2ui.sidecar import CatalogSidecar, render_narration
 from clio_schemas.a2ui.v0_9_1.catalog_file import CatalogFile
 from clio_schemas.a2ui.validation import catalog_validators, message_validator
 
@@ -184,6 +185,67 @@ def test_delivered_event_context_validates_against_context_schema(
     # proving the schema actually constrains rather than merely describing the shape.
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate({"searchId": "x", "stationIds": []}, context_schema)
+
+
+def test_sidecar_narration_parses_under_0_3_2(sidecar_raw: dict[str, Any]) -> None:
+    """The event's ``narration`` (clio-schemas 0.3.2) parses on this sidecar."""
+
+    sidecar = CatalogSidecar.model_validate(sidecar_raw)
+    route = sidecar.events["earthscope.stations.selected"]
+    assert route.narration is not None
+    assert "{stationIds}" in route.narration
+    assert "{searchId}" in route.narration
+
+
+def test_narration_placeholders_are_all_context_schema_properties(
+    sidecar_raw: dict[str, Any],
+) -> None:
+    """Every ``{placeholder}`` in the narration names a declared context field.
+
+    ``CatalogSidecar`` already enforces this at parse time (a mismatch would
+    have raised in the fixture above); this test re-derives the placeholder
+    set independently and asserts it against ``context_schema.properties``
+    directly, so a future relaxation of that validator would still be caught
+    here.
+    """
+
+    sidecar = CatalogSidecar.model_validate(sidecar_raw)
+    route = sidecar.events["earthscope.stations.selected"]
+    assert route.context_schema is not None
+    properties = set(route.context_schema["properties"])
+
+    used = {
+        field_name.split(".", 1)[0].split("[", 1)[0]
+        for _, field_name, _, _ in string.Formatter().parse(route.narration)
+        if field_name
+    }
+    assert used, "narration should reference at least one context field"
+    assert used <= properties
+
+
+def test_render_narration_over_worked_example_context(
+    sidecar_raw: dict[str, Any],
+) -> None:
+    """``render_narration`` over instructions.md's worked-example context.
+
+    The delivered-event example (the last fenced JSON block) is
+    ``{"searchId": "earthscope-la-20260917", "stationIds": ["CI01", "CI02"]}``;
+    rendering must embed the searchId verbatim and the station ids as a
+    compact JSON array (``["CI01","CI02"]``-style), not a Python repr.
+    """
+
+    sidecar = CatalogSidecar.model_validate(sidecar_raw)
+    route = sidecar.events["earthscope.stations.selected"]
+
+    event_context = _instructions_json_blocks()[-1]
+    assert set(event_context) == {"searchId", "stationIds"}
+
+    rendered = render_narration(route, event_context)
+    assert rendered is not None
+    assert event_context["searchId"] in rendered
+    assert json.dumps(event_context["stationIds"], separators=(",", ":")) in rendered
+    assert "{stationIds}" not in rendered
+    assert "{searchId}" not in rendered
 
 
 def test_pack_blueprint_validates_with_no_errors_or_warnings() -> None:
