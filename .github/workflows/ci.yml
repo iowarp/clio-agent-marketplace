@@ -18,3 +18,26 @@ jobs:
         run: uv run --no-project python -m unittest discover -s tests -v
       - name: Reject undocumented model pins
         run: uv run --no-project python scripts/check_model_pins.py .
+
+  a2ui-catalog-pack:
+    # Composability proof for the earthscope-stations A2UI catalog
+    # (docs/design/a2ui-compat-campaign-2026-09.md S7): runs the REAL
+    # clio_agent.gact.agent_blueprints.validate_agent_blueprint_path against
+    # this pack and validates the catalog against clio-schemas' official
+    # shapes. Needs clio-agent importable, which the no-deps
+    # `model-inheritance` job above deliberately does not carry -- see
+    # earthscope-single-agent/tests/test_a2ui_catalog_pack.py's module
+    # docstring. clio-agent's own uv source pins clio-schemas 0.3.1, so the
+    # a2ui submodule import resolves without a separate pin here.
+    # `--prerelease=allow`: clio-agent depends on pre-release dspy/fastmcp
+    # (see clio-agent's own CLAUDE.md "uv installs need --prerelease allow").
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Run the A2UI catalog composability tests
+        run: |
+          uv run --prerelease=allow \
+            --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
+            --with pytest \
+            pytest earthscope-single-agent/tests/test_a2ui_catalog_pack.py -v
