@@ -44,9 +44,31 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         )
         self.assertIn("dispatches `earthscope.stations.selected` with the confirmed", acquire)
         self.assertIn('ask_user(..., surface_id="earthscope-stations")', acquire)
+        self.assertIn("The surface is the question", acquire)
         self.assertIn(
-            "Do not search for or stage a station series until a structured "
-            "`earthscope.stations.selected` selection resumes the session",
+            "reaches you either as a new turn, if you end this turn here, or as the "
+            "answer to a paused question",
+            acquire,
+        )
+        self.assertIn(
+            "Pause with `ask_user` when the user asked you to check with them, or "
+            "when you still have more to do in this same turn once you know their "
+            "choice",
+            acquire,
+        )
+        self.assertIn(
+            "End the turn with the surface ready when presenting the candidates is "
+            "the natural end of what was asked",
+            acquire,
+        )
+        self.assertIn(
+            "never search for or stage a station series before that structured "
+            "selection arrives",
+            acquire,
+        )
+        self.assertIn(
+            "every rendered or staged station id must come from the tool-returned "
+            "ranked points, never invented",
             acquire,
         )
         self.assertNotIn("ChoicePicker", acquire)

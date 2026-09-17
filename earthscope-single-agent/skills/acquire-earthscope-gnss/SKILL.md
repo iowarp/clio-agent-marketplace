@@ -59,11 +59,19 @@ there; otherwise fetch remotely as written.
    staging, use the catalog's own recipe: a `Button` whose `required` check
    guards `/selectedStationIds` and whose action dispatches
    `earthscope.stations.selected` with the confirmed `stationIds` — never a
-   default you invent. Stop after the surface is ready; if ending the turn to
-   wait for that choice, call `ask_user(..., surface_id="earthscope-stations")`
-   so the dispatcher resumes this exact question when the event arrives. Do not
-   search for or stage a station series until a structured
-   `earthscope.stations.selected` selection resumes the session. Require
+   default you invent. The surface is the question: once it is
+   `rendered=true` and `state=ready`, that `earthscope.stations.selected`
+   event reaches you either as a new turn, if you end this turn here, or as
+   the answer to a paused question, if you pause with
+   `ask_user(..., surface_id="earthscope-stations")` — both are correct.
+   Pause with `ask_user` when the user asked you to check with them, or when
+   you still have more to do in this same turn once you know their choice
+   (staging, then plotting) — the selection resumes exactly where you
+   paused. End the turn with the surface ready when presenting the
+   candidates is the natural end of what was asked. Either way, never search
+   for or stage a station series before that structured selection arrives,
+   and every rendered or staged station id must come from the tool-returned
+   ranked points, never invented. Require
    `rendered=true` and `state=ready` before continuing to station-resource search.
    If coordinates are unavailable, use a compact table instead. Skip this step
    only when one or zero stations were returned or presentation itself fails; in

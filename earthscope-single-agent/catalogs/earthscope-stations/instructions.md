@@ -183,8 +183,15 @@ delivered `earthscope.stations.selected` event context is:
 
 ## After creating the surface
 
-Stop after the surface is ready (`rendered=true`, `state=ready`); do not
-search for or stage a station series until this structured event resumes the
-session. If the agent must end its turn to wait for the selection, pass this
-surface's id to `ask_user(..., surface_id="earthscope-stations")` so the
-dispatcher correlates the resuming event to the exact waiting question.
+The surface is the question. Once it is `rendered=true` and `state=ready`,
+the human's `earthscope.stations.selected` event reaches you either as a new
+turn (if you end this turn) or as the answer to a paused question (if you
+pause with `ask_user(..., surface_id="earthscope-stations")`) — both are
+correct. Pause with `ask_user` when the user asked you to ask or check with
+them, or when you have more to do in this same turn once you know their
+choice (staging, then plotting) — the selection resumes exactly where you
+paused. End the turn with the surface ready when presenting the candidates
+is the natural end of what was asked. Either way, never search for or stage
+a station series before that structured selection arrives, and every
+rendered or staged station id must come from the tool-returned ranked
+points, never invented.
