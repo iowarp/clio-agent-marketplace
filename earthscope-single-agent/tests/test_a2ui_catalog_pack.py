@@ -269,13 +269,22 @@ def _declared_clio_agent_floor() -> str:
 def test_pack_blueprint_validates_against_the_real_validator() -> None:
     """Runs clio-agent's REAL structural validator against this pack (needs clio-agent).
 
-    Asserts BOTH sides of the ``requires.clio_agent`` floor contract, keyed on the
-    running ``clio_agent.__version__``: at or above the floor the pack installs
-    with no errors, no warnings and enabled; below the floor it is refused with
-    exactly the typed ``blueprint_requires_newer_clio_agent`` error and nothing
-    else (no warnings, not enabled). Neither branch is a skip -- a pre-floor
-    clio-agent (today's develop, 0.9.4) proves the refusal; the release that
-    carries the floor proves the clean install.
+    Asserts the ``requires.clio_agent`` floor contract keyed on two facts about
+    the running clio-agent, never on an environment flag: whether it enforces
+    floors at all (the ``clio_agent.gact.agent_blueprint_requires`` owner module
+    exists, campaign slice S8) and ``clio_agent.__version__`` against the floor.
+
+    * enforcing, at or above the floor: installs clean -- no errors, no warnings,
+      enabled (the release that carries the floor);
+    * enforcing, below the floor: refused with exactly the typed
+      ``blueprint_requires_newer_clio_agent`` error, no warnings, not enabled
+      (develop between the S8 merge and the release bump);
+    * not enforcing: a clio-agent that predates floors ignores the key and
+      installs the pack clean (develop before S8 lands) -- and such a build MUST
+      be below the floor, otherwise the release shipped without the enforcement
+      the pack relies on.
+
+    None of the branches skips.
 
     Calls ``clio_agent.gact.agent_blueprints.validate_agent_blueprint_path`` directly
     -- the exact function the live GACT server runs at pack install/enable time, never
@@ -292,6 +301,8 @@ def test_pack_blueprint_validates_against_the_real_validator() -> None:
     """
 
     try:
+        import importlib.util
+
         from clio_agent import __version__ as clio_agent_version
         from clio_agent.gact.agent_blueprints import validate_agent_blueprint_path
         from packaging.specifiers import SpecifierSet
@@ -305,17 +316,31 @@ def test_pack_blueprint_validates_against_the_real_validator() -> None:
 
     result = validate_agent_blueprint_path(PACK_ROOT, scope="session")
     floor = _declared_clio_agent_floor()
-    if SpecifierSet(floor).contains(clio_agent_version):
+    satisfies_floor = SpecifierSet(floor).contains(clio_agent_version)
+    enforces_floors = (
+        importlib.util.find_spec("clio_agent.gact.agent_blueprint_requires") is not None
+    )
+
+    if enforces_floors and satisfies_floor:
         assert result["validation_errors"] == []
         assert result["validation_warnings"] == []
         assert result["enabled"] is True
-    else:
+    elif enforces_floors:
         assert result["validation_errors"] == [
             "earthscope-single-agent: blueprint_requires_newer_clio_agent: "
             f"requires clio_agent{floor}, running {clio_agent_version}"
         ]
         assert result["validation_warnings"] == []
         assert result["enabled"] is False
+    else:
+        assert not satisfies_floor, (
+            f"clio-agent {clio_agent_version} satisfies {floor!r} but does not carry "
+            "the floor enforcement (clio_agent.gact.agent_blueprint_requires) -- the "
+            "release shipped without the semantics this pack's floor relies on"
+        )
+        assert result["validation_errors"] == []
+        assert result["validation_warnings"] == []
+        assert result["enabled"] is True
 
 
 def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
