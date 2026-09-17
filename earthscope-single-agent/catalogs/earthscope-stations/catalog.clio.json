@@ -1,0 +1,53 @@
+{
+  "catalogId": "https://iowarp.ai/a2ui/catalogs/earthscope-stations/v1",
+  "protocolVersion": "0.9.1",
+  "trust": {
+    "source": "pack"
+  },
+  "implements": {
+    "StationMap": {
+      "kernel": "clio.map.v1"
+    },
+    "StationPicker": {
+      "kernel": "ChoicePicker",
+      "presets": {
+        "variant": "multipleSelection"
+      }
+    },
+    "Text": {
+      "kernel": "Text"
+    },
+    "Column": {
+      "kernel": "Column"
+    },
+    "Row": {
+      "kernel": "Row"
+    },
+    "Button": {
+      "kernel": "Button"
+    }
+  },
+  "events": {
+    "earthscope.stations.selected": {
+      "destination": "agent",
+      "context_schema": {
+        "type": "object",
+        "required": ["searchId", "stationIds"],
+        "properties": {
+          "searchId": {
+            "type": "string"
+          },
+          "stationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "narration": "The user selected GNSS stations {stationIds} on the station map for search {searchId} and asked for their analysis: stage and profile the time series of exactly these stations, then continue with what they originally asked."
+    }
+  },
+  "instructions": "instructions.md"
+}

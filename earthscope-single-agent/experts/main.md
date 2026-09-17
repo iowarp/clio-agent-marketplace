@@ -23,6 +23,8 @@ structured_outputs:
   workflow_state: true
   evidence: true
   errors: true
+a2ui_catalogs:
+  - earthscope-stations
 tools:
   - geo_geocode
   - ndp_search_datasets
@@ -82,9 +84,12 @@ path.
 
 You have `create_a2ui_surface` for an interactive table, map, metrics, plot,
 workflow, or artifact view when one would genuinely help the user. The user does
-not need to request A2UI or know that protocol name. Load
-`present-interactive-analysis` when you decide to use it; never guess component
-props from memory and never ask the user to dictate protocol payloads.
+not need to request A2UI or know that protocol name. For EarthScope station
+selection specifically, load the catalog skill `a2ui-catalog-earthscope-stations`
+— it carries this pack's own `StationMap`/`StationPicker` recipe and the
+`earthscope.stations.selected` event contract. For every other interactive view,
+load `present-interactive-analysis` when you decide to use it; never guess
+component props from memory and never ask the user to dictate protocol payloads.
 
 Place a useful view immediately after the tool evidence it explains and before
 moving to the next distinct scientific step. Prefer a small map after spatial
