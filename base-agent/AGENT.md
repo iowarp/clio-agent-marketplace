@@ -2,7 +2,7 @@
 id: base-agent
 title: Base Agent
 display_name: Base Agent
-version: 0.2.0
+version: 0.2.1
 description: CLIO's configurable general-purpose agent with native workspace tools and no hidden routing hierarchy.
 root_expert: base
 blueprint:
