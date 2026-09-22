@@ -375,5 +375,7 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     assert isinstance(floor, str) and floor.strip()
 
     spec = SpecifierSet(floor)
+    assert spec.contains("0.9.4.15"), f"{floor!r} should admit 0.9.4.15 (first carrying release)"
     assert spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5"
-    assert not spec.contains("0.9.4"), f"{floor!r} should exclude 0.9.4 (today's develop)"
+    assert not spec.contains("0.9.4.14"), f"{floor!r} should exclude 0.9.4.14 (today's develop)"
+    assert not spec.contains("0.9.4"), f"{floor!r} should exclude 0.9.4"
