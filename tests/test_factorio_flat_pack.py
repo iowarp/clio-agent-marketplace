@@ -283,7 +283,7 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
         """Interactive, presentation, and web tools stay with their owners."""
 
         expected = {
-            "main": ["ask_user", "create_a2ui_surface", "view_image"],
+            "main": ["ask_user", "create_a2ui_surface", "shell_bash", "view_image"],
             "research_methodologist": ["ask_user"],
             "virtual_lab": ["ask_user", "create_a2ui_surface"],
             "evidence_researcher": ["ask_user"],
@@ -397,6 +397,25 @@ class FactorioFlatPdfSkillTests(unittest.TestCase):
         main = parse_frontmatter(ROOT / "experts" / "main.md")
 
         self.assertIn("work-with-pdfs", main["skills"])
+        self.assertIn("create-pdf-report", main["skills"])
+
+    def test_pdf_reading_and_authoring_are_distinct_skills(self) -> None:
+        """An ordinary PDF question never pulls in the report-authoring workflow."""
+
+        reading = parse_frontmatter(ROOT / "skills" / "work-with-pdfs" / "SKILL.md")
+        authoring = parse_frontmatter(ROOT / "skills" / "create-pdf-report" / "SKILL.md")
+
+        self.assertIn("existing PDFs", reading["description"])
+        self.assertIn("explicitly requests a PDF", authoring["description"])
+
+    def test_pdf_skill_requires_pixels_for_engineering_drawing_geometry(self) -> None:
+        """Detached text labels cannot prove drawing geometry or units."""
+
+        body = (ROOT / "skills" / "work-with-pdfs" / "SKILL.md").read_text(encoding="utf-8")
+
+        self.assertIn("always layout-dependent", body)
+        self.assertIn("call `view_image` before answering", body)
+        self.assertIn("Do not infer drawing units", body)
 
     def test_helper_records_real_outputs_from_both_stages(self) -> None:
         """A successful preparation records concrete text and page artifacts."""
@@ -459,6 +478,34 @@ class FactorioFlatPdfSkillTests(unittest.TestCase):
             self.assertEqual(result["status"], "partial")
             self.assertEqual(result["docling"]["status"], "failed")
             self.assertEqual(result["pages"]["status"], "complete")
+
+    def test_visual_only_renders_without_calling_docling(self) -> None:
+        """Drawing questions can reach pixels without waiting for conversion."""
+
+        def converter(source: Path, markdown: Path, structured: Path, max_pages: int) -> None:
+            self.fail("visual-only preparation must not call Docling")
+
+        def renderer(source: Path, pages: Path, max_pages: int, dpi: int) -> list[Path]:
+            pages.mkdir(parents=True)
+            rendered = pages / "page-0001.png"
+            rendered.write_bytes(b"png")
+            return [rendered]
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "drawing.pdf"
+            source.write_bytes(b"%PDF-1.7\n")
+            result = self.helper.prepare_pdf(
+                source,
+                root / "prepared",
+                visual_only=True,
+                converter=converter,
+                renderer=renderer,
+            )
+
+            self.assertEqual(result["status"], "complete")
+            self.assertEqual(result["docling"], {"status": "skipped", "reason": "visual_only"})
+            self.assertEqual(result["pages"]["count"], 1)
 
     def test_helper_rejects_non_pdf_inputs_before_running_stages(self) -> None:
         """The script must not send an arbitrary workspace file into PDF tooling."""

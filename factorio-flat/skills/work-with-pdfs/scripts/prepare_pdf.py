@@ -91,6 +91,17 @@ def _failure(exc: Exception) -> dict[str, str]:
     }
 
 
+def _write_manifest(output_dir: Path, manifest: dict[str, Any]) -> Path:
+    """Persist the current preparation state and return its manifest path."""
+
+    manifest_path = output_dir / "manifest.json"
+    _atomic_text(
+        manifest_path,
+        f"{json.dumps(manifest, indent=2, ensure_ascii=False)}\n",
+    )
+    return manifest_path
+
+
 def prepare_pdf(
     source: Path,
     output_dir: Path,
@@ -98,6 +109,7 @@ def prepare_pdf(
     max_pages: int = DEFAULT_MAX_PAGES,
     max_bytes: int = DEFAULT_MAX_BYTES,
     dpi: int = DEFAULT_DPI,
+    visual_only: bool = False,
     converter: Converter = convert_with_docling,
     renderer: Renderer = render_pages,
 ) -> dict[str, Any]:
@@ -126,17 +138,12 @@ def prepare_pdf(
         "source": str(source),
         "source_bytes": size,
         "limits": {"max_pages": max_pages, "max_bytes": max_bytes, "dpi": dpi},
+        "docling": {"status": "skipped", "reason": "visual_only"}
+        if visual_only
+        else {"status": "pending"},
+        "pages": {"status": "pending"},
+        "status": "processing",
     }
-    try:
-        converter(source, markdown_path, json_path, max_pages)
-        manifest["docling"] = {
-            "status": "complete",
-            "markdown": str(markdown_path),
-            "structured_json": str(json_path),
-        }
-    except Exception as exc:  # noqa: BLE001 - stage failure is preserved in the manifest
-        manifest["docling"] = _failure(exc)
-
     try:
         page_paths = renderer(source, pages_dir, max_pages, dpi)
         manifest["pages"] = {
@@ -147,18 +154,33 @@ def prepare_pdf(
     except Exception as exc:  # noqa: BLE001 - stage failure is preserved in the manifest
         manifest["pages"] = _failure(exc)
 
-    manifest["status"] = (
-        "complete"
-        if manifest["docling"]["status"] == manifest["pages"]["status"] == "complete"
-        else "partial"
-        if "complete" in {manifest["docling"]["status"], manifest["pages"]["status"]}
-        else "failed"
-    )
-    manifest_path = output_dir / "manifest.json"
-    _atomic_text(
-        manifest_path,
-        f"{json.dumps(manifest, indent=2, ensure_ascii=False)}\n",
-    )
+    # Pixels are the time-sensitive fallback for scans and layout-dependent
+    # questions. Persist them before the potentially slower Docling stage so a
+    # bounded caller still receives honest visual evidence if conversion times out.
+    manifest_path = _write_manifest(output_dir, manifest)
+
+    if not visual_only:
+        try:
+            converter(source, markdown_path, json_path, max_pages)
+            manifest["docling"] = {
+                "status": "complete",
+                "markdown": str(markdown_path),
+                "structured_json": str(json_path),
+            }
+        except Exception as exc:  # noqa: BLE001 - stage failure is preserved in manifest
+            manifest["docling"] = _failure(exc)
+
+    if visual_only:
+        manifest["status"] = "complete" if manifest["pages"]["status"] == "complete" else "failed"
+    else:
+        manifest["status"] = (
+            "complete"
+            if manifest["docling"]["status"] == manifest["pages"]["status"] == "complete"
+            else "partial"
+            if "complete" in {manifest["docling"]["status"], manifest["pages"]["status"]}
+            else "failed"
+        )
+    _write_manifest(output_dir, manifest)
     manifest["manifest"] = str(manifest_path)
     if manifest["status"] == "failed":
         raise RuntimeError(f"both PDF preparation stages failed; inspect {manifest_path}")
@@ -174,6 +196,7 @@ def main() -> int:
     parser.add_argument("--max-pages", type=int, default=DEFAULT_MAX_PAGES)
     parser.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES)
     parser.add_argument("--dpi", type=int, default=DEFAULT_DPI)
+    parser.add_argument("--visual-only", action="store_true")
     args = parser.parse_args()
     result = prepare_pdf(
         args.source,
@@ -181,6 +204,7 @@ def main() -> int:
         max_pages=args.max_pages,
         max_bytes=args.max_bytes,
         dpi=args.dpi,
+        visual_only=args.visual_only,
     )
     print(json.dumps(result, indent=2))
     return 0

@@ -35,6 +35,7 @@ children:
 tools:
   - ask_user
   - create_a2ui_surface
+  - shell_bash
   - view_image
 skills:
   - coordinate-scientific-work
@@ -47,6 +48,7 @@ skills:
   - scientific_writing
   - citation_management
   - work-with-pdfs
+  - create-pdf-report
 ---
 
 # Factorio Principal Investigator
