@@ -23,6 +23,7 @@ tools:
   - fs_read_file
   - fs_propose_edit
   - fs_apply_edit_write
+  - view_image
 ---
 
 # Base Agent
