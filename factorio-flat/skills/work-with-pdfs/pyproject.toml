@@ -1,0 +1,12 @@
+[project]
+name = "factorio-flat-pdf-preparation"
+version = "0.1.0"
+description = "Bounded PDF conversion and page rendering for the Factorio Flat skill"
+requires-python = ">=3.11"
+dependencies = [
+  "docling>=2.0",
+  "pymupdf>=1.24",
+]
+
+[tool.uv]
+package = false

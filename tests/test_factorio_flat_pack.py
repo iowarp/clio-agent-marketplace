@@ -14,13 +14,14 @@ loudly instead of yielding a partial mapping that makes an assertion vacuous.
 
 from __future__ import annotations
 
+import importlib.util
 import re
+import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
 
 from tests.test_base_agent_policy import parse_frontmatter
-
 
 ROOT = Path(__file__).resolve().parents[1] / "factorio-flat"
 
@@ -75,9 +76,7 @@ class FactorioFlatManifestTests(unittest.TestCase):
         """An unlisted expert file is invisible to the runtime, so forbid drift."""
 
         declared = {str(relative) for relative in self.manifest["experts"]}
-        on_disk = {
-            path.relative_to(ROOT).as_posix() for path in (ROOT / "experts").glob("*.md")
-        }
+        on_disk = {path.relative_to(ROOT).as_posix() for path in (ROOT / "experts").glob("*.md")}
 
         self.assertEqual(declared, on_disk)
 
@@ -284,7 +283,7 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
         """Interactive, presentation, and web tools stay with their owners."""
 
         expected = {
-            "main": ["ask_user", "create_a2ui_surface"],
+            "main": ["ask_user", "create_a2ui_surface", "view_image"],
             "research_methodologist": ["ask_user"],
             "virtual_lab": ["ask_user", "create_a2ui_surface"],
             "evidence_researcher": ["ask_user"],
@@ -378,6 +377,99 @@ class FactorioFlatSkillWiringTests(unittest.TestCase):
             self.assertTrue(any(domain in url for url in urls), domain)
         for url in urls:
             self.assertTrue(any(domain in url for domain in allowed), url)
+
+
+class FactorioFlatPdfSkillTests(unittest.TestCase):
+    """The PDF skill must be wired and its preparation helper must be functional."""
+
+    def setUp(self) -> None:
+        script_path = ROOT / "skills" / "work-with-pdfs" / "scripts" / "prepare_pdf.py"
+        spec = importlib.util.spec_from_file_location("factorio_flat_prepare_pdf", script_path)
+        if spec is None or spec.loader is None:
+            self.fail(f"cannot import {script_path}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.helper = module
+
+    def test_root_expert_can_load_the_pdf_skill(self) -> None:
+        """PDF work starts at the scientist-facing root and loads on demand."""
+
+        main = parse_frontmatter(ROOT / "experts" / "main.md")
+
+        self.assertIn("work-with-pdfs", main["skills"])
+
+    def test_helper_records_real_outputs_from_both_stages(self) -> None:
+        """A successful preparation records concrete text and page artifacts."""
+
+        def converter(source: Path, markdown: Path, structured: Path, max_pages: int) -> None:
+            self.assertEqual(max_pages, 5)
+            markdown.write_text("# Converted\n", encoding="utf-8")
+            structured.write_text("{}\n", encoding="utf-8")
+
+        def renderer(source: Path, pages: Path, max_pages: int, dpi: int) -> list[Path]:
+            self.assertEqual((max_pages, dpi), (5, 96))
+            pages.mkdir(parents=True)
+            rendered = [pages / "page-0001.png", pages / "page-0002.png"]
+            for path in rendered:
+                path.write_bytes(b"png")
+            return rendered
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "paper.pdf"
+            source.write_bytes(b"%PDF-1.7\n")
+            result = self.helper.prepare_pdf(
+                source,
+                root / "prepared",
+                max_pages=5,
+                dpi=96,
+                converter=converter,
+                renderer=renderer,
+            )
+
+            manifest = Path(result["manifest"])
+            recorded = __import__("json").loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual(result["status"], "complete")
+            self.assertEqual(recorded["docling"]["status"], "complete")
+            self.assertEqual(recorded["pages"]["count"], 2)
+
+    def test_helper_preserves_a_docling_failure_when_pages_render(self) -> None:
+        """A fallback image set is useful without hiding the failed text conversion."""
+
+        def converter(source: Path, markdown: Path, structured: Path, max_pages: int) -> None:
+            raise RuntimeError("conversion unavailable")
+
+        def renderer(source: Path, pages: Path, max_pages: int, dpi: int) -> list[Path]:
+            pages.mkdir(parents=True)
+            rendered = pages / "page-0001.png"
+            rendered.write_bytes(b"png")
+            return [rendered]
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "scan.pdf"
+            source.write_bytes(b"%PDF-1.7\n")
+            result = self.helper.prepare_pdf(
+                source,
+                root / "prepared",
+                converter=converter,
+                renderer=renderer,
+            )
+
+            self.assertEqual(result["status"], "partial")
+            self.assertEqual(result["docling"]["status"], "failed")
+            self.assertEqual(result["pages"]["status"], "complete")
+
+    def test_helper_rejects_non_pdf_inputs_before_running_stages(self) -> None:
+        """The script must not send an arbitrary workspace file into PDF tooling."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "notes.txt"
+            source.write_text("not a pdf", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "existing .pdf"):
+                self.helper.prepare_pdf(source, root / "prepared")
 
 
 if __name__ == "__main__":

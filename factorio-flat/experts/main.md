@@ -35,6 +35,7 @@ children:
 tools:
   - ask_user
   - create_a2ui_surface
+  - view_image
 skills:
   - coordinate-scientific-work
   - frame-research-problem
@@ -45,6 +46,7 @@ skills:
   - experimental_design
   - scientific_writing
   - citation_management
+  - work-with-pdfs
 ---
 
 # Factorio Principal Investigator
