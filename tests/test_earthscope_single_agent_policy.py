@@ -5,6 +5,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from tests.test_base_agent_policy import parse_frontmatter
+
 ROOT = Path(__file__).resolve().parents[1] / "earthscope-single-agent"
 
 
@@ -35,10 +37,81 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
 
         self.assertIn("create or update `earthscope-stations` immediately", acquire)
         self.assertIn("otherwise prefer the interactive map", acquire)
-        self.assertIn("one bounded mutually-exclusive `ChoicePicker`", acquire)
-        self.assertIn("submit `selected_station_ids`", acquire)
-        self.assertIn("Browser-submitted structured selection resumes the session", acquire)
+        self.assertIn("Load the catalog skill `a2ui-catalog-earthscope-stations`", acquire)
+        self.assertIn("one `StationMap` showing every ranked point", acquire)
+        self.assertIn(
+            "one `StationPicker` bound to `/selectedStationIds`, defaulted to the leading "
+            "candidate",
+            acquire,
+        )
+        self.assertIn("dispatches `earthscope.stations.selected` with the confirmed", acquire)
+        self.assertIn('ask_user(..., surface_id="earthscope-stations")', acquire)
+        self.assertIn("The surface is the question", acquire)
+        self.assertIn(
+            "reaches you either as a new turn, if you end this turn here, or as the "
+            "answer to a paused question",
+            acquire,
+        )
+        self.assertIn(
+            "Pause with `ask_user` when the user asked you to check with them, or "
+            "when you still have more to do in this same turn once you know their "
+            "choice",
+            acquire,
+        )
+        self.assertIn(
+            "End the turn with the surface ready when presenting the candidates is "
+            "the natural end of what was asked",
+            acquire,
+        )
+        self.assertIn(
+            "never search for or stage a station series before that structured "
+            "selection arrives",
+            acquire,
+        )
+        self.assertIn(
+            "every rendered or staged station id must come from the tool-returned "
+            "ranked points, never invented",
+            acquire,
+        )
+        self.assertNotIn("ChoicePicker", acquire)
+        self.assertNotIn("agent.submit", acquire)
+        self.assertNotIn("selected_station_ids`", acquire)
         self.assertIn("Do not wait until the end of the turn", acquire)
+
+    def test_root_contract_routes_station_views_to_the_pack_catalog_skill(self) -> None:
+        expert = _prose("experts/main.md")
+
+        self.assertIn(
+            "load the catalog skill `a2ui-catalog-earthscope-stations`", expert
+        )
+        self.assertIn(
+            "it carries this pack's own `StationMap`/`StationPicker` recipe and the "
+            "`earthscope.stations.selected` event contract",
+            expert,
+        )
+        self.assertIn("For every other interactive view, load `present-interactive-analysis`", expert)
+
+    def test_manifest_and_expert_declare_the_earthscope_stations_catalog(self) -> None:
+        manifest = _read("AGENT.md")
+        expert = _read("experts/main.md")
+
+        self.assertIn("a2ui_catalogs:\n  earthscope-stations: catalogs/earthscope-stations", manifest)
+        self.assertIn("a2ui_catalogs:\n  - earthscope-stations", expert)
+
+    def test_manifest_declares_a_clio_agent_floor(self) -> None:
+        """Dependency-free: only that the key exists. The PEP 440 parse/semantics
+        assertion lives in earthscope-single-agent/tests/test_a2ui_catalog_pack.py,
+        where clio-agent (and the ``packaging`` it brings) is actually available --
+        this repo's own top-level ``tests/`` runs under a bare, dependency-free
+        interpreter in CI (see .github/workflows/ci.yml's model-inheritance job)."""
+
+        manifest = parse_frontmatter(ROOT / "AGENT.md")
+
+        requires = manifest.get("requires")
+        self.assertIsInstance(requires, dict)
+        floor = requires.get("clio_agent")
+        self.assertIsInstance(floor, str)
+        self.assertTrue(floor.strip())
 
     def test_station_catalog_filter_pins_one_observed_latitude_column(self) -> None:
         acquire = _prose("skills/acquire-earthscope-gnss/SKILL.md")

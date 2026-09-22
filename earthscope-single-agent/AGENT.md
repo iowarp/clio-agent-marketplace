@@ -2,9 +2,19 @@
 id: earthscope-single-agent
 title: EarthScope Skills
 display_name: EarthScope Skills
-version: 0.2.3
+version: 0.3.0
 description: An EarthScope GNSS scientist that loads focused procedures on demand, presents grounded interactive views when useful, and may fan out independent regional work into temporary child turns.
 root_expert: main
+a2ui_catalogs:
+  earthscope-stations: catalogs/earthscope-stations
+# Floor for the earthscope-stations A2UI catalog wiring (campaign slices
+# S2-S5b: pack catalog registry, capability negotiation, producer tools,
+# dispatcher). develop's pyproject is at 0.9.4 today; 0.9.5 is the next
+# clio-agent release expected to carry all of them. Enforced by clio-agent
+# S8 (typed blueprint_requires_newer_clio_agent at validate/activation/
+# install) -- packs without `requires` are unaffected.
+requires:
+  clio_agent: ">=0.9.5"
 blueprint:
   format: agent-blueprint-v1
 # clio-kit is provisioned once via `uv tool install clio-kit==2.10.6` (see clio-agent install/doctor).
