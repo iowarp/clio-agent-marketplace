@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.4] - 2026-09-22
+
+### Added
+
+- Factorio Flat can prepare existing PDFs as bounded Docling text, structured
+  JSON, and rendered page images, including a visual-only path for engineering
+  drawings, scans, equations, and other layout-dependent evidence.
+- Factorio Flat includes a separate PDF-report creation skill which activates
+  only when a scientist explicitly requests a PDF deliverable; ordinary reports
+  remain Markdown.
+
+### Fixed
+
+- PDF guidance now uses materialized workspace paths for both `@` references
+  and uploaded sources, distinguishes rendered output from actual visual
+  inspection, and prohibits guessing dimensions or units from extracted labels.
+
 ## [0.6.3] - 2026-09-13
 
 ### Added
