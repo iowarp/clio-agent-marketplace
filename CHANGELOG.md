@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-09-23
+
 ### Added
 
 - Base Agent (0.2.1) declares `view_image`, so the PDF workflow CLIO gives it
@@ -14,6 +16,12 @@
   `earthscope.stations.selected` domain event — no clio-agent or gact-tui
   source change required. See `earthscope-single-agent/README.md`'s "Custom
   A2UI catalogs" section for how a pack author adds one.
+- Factorio Flat can prepare existing PDFs as bounded Docling text, structured
+  JSON, and rendered page images, including a visual-only path for engineering
+  drawings, scans, equations, and other layout-dependent evidence.
+- Factorio Flat includes a separate PDF-report creation skill which activates
+  only when a scientist explicitly requests a PDF deliverable; ordinary reports
+  remain Markdown.
 
 ### Changed
 
@@ -22,22 +30,15 @@
   and the `earthscope.stations.selected` event instead of the generic
   `ChoicePicker` + `agent.submit` recipe.
 
-## [0.6.4] - 2026-09-22
-
-### Added
-
-- Factorio Flat can prepare existing PDFs as bounded Docling text, structured
-  JSON, and rendered page images, including a visual-only path for engineering
-  drawings, scans, equations, and other layout-dependent evidence.
-- Factorio Flat includes a separate PDF-report creation skill which activates
-  only when a scientist explicitly requests a PDF deliverable; ordinary reports
-  remain Markdown.
-
 ### Fixed
 
 - PDF guidance now uses materialized workspace paths for both `@` references
   and uploaded sources, distinguishes rendered output from actual visual
   inspection, and prohibits guessing dimensions or units from extracted labels.
+- SPOTTER AI syncs its environment when its MCP server starts instead of
+  running against a possibly stale one.
+- EarthScope Skills now requires clio-agent 0.9.4.15 or newer (the first
+  release that serves its A2UI catalog) instead of an unreleased 0.9.5.
 
 ## [0.6.3] - 2026-09-13
 
