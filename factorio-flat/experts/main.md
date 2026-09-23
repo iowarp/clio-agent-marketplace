@@ -37,6 +37,7 @@ tools:
   - create_a2ui_surface
   - shell_bash
   - view_image
+  - view_pdf
 skills:
   - coordinate-scientific-work
   - frame-research-problem

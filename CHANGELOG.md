@@ -2,11 +2,17 @@
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-09-23
+
 ### Added
 
-- Base Agent (0.2.1) declares `view_image`, so the PDF workflow CLIO gives it
-  can inspect rendered pages of drawings, scans and other visual-only evidence
-  instead of reporting that it cannot see them.
+- Base Agent (0.2.2) declares `view_image` and `view_pdf`, so the PDF workflow
+  CLIO gives it can inspect rendered pages of drawings and scans, and read a
+  PDF natively on a PDF-capable model.
+- Factorio Flat declares `view_pdf`, and the `work-with-pdfs` skill reads a PDF
+  natively with it when the connected model is PDF-capable, falling back to
+  the conversion and rendered-page workflow otherwise (requires clio-agent
+  0.9.4.15 or newer).
 - EarthScope Skills ships its own A2UI catalog (`earthscope-stations`,
   `catalogs/earthscope-stations/`): a `StationMap` (aliasing `clio.map.v1`)
   and a multi-select `StationPicker` (aliasing `ChoicePicker`), alongside the
@@ -14,6 +20,12 @@
   `earthscope.stations.selected` domain event — no clio-agent or gact-tui
   source change required. See `earthscope-single-agent/README.md`'s "Custom
   A2UI catalogs" section for how a pack author adds one.
+- Factorio Flat can prepare existing PDFs as bounded Docling text, structured
+  JSON, and rendered page images, including a visual-only path for engineering
+  drawings, scans, equations, and other layout-dependent evidence.
+- Factorio Flat includes a separate PDF-report creation skill which activates
+  only when a scientist explicitly requests a PDF deliverable; ordinary reports
+  remain Markdown.
 
 ### Changed
 
@@ -22,22 +34,15 @@
   and the `earthscope.stations.selected` event instead of the generic
   `ChoicePicker` + `agent.submit` recipe.
 
-## [0.6.4] - 2026-09-22
-
-### Added
-
-- Factorio Flat can prepare existing PDFs as bounded Docling text, structured
-  JSON, and rendered page images, including a visual-only path for engineering
-  drawings, scans, equations, and other layout-dependent evidence.
-- Factorio Flat includes a separate PDF-report creation skill which activates
-  only when a scientist explicitly requests a PDF deliverable; ordinary reports
-  remain Markdown.
-
 ### Fixed
 
 - PDF guidance now uses materialized workspace paths for both `@` references
   and uploaded sources, distinguishes rendered output from actual visual
   inspection, and prohibits guessing dimensions or units from extracted labels.
+- SPOTTER AI syncs its environment when its MCP server starts instead of
+  running against a possibly stale one.
+- EarthScope Skills now requires clio-agent 0.9.4.15 or newer (the first
+  release that serves its A2UI catalog) instead of an unreleased 0.9.5.
 
 ## [0.6.3] - 2026-09-13
 
