@@ -6,9 +6,13 @@
 
 ### Added
 
-- Base Agent (0.2.1) declares `view_image`, so the PDF workflow CLIO gives it
-  can inspect rendered pages of drawings, scans and other visual-only evidence
-  instead of reporting that it cannot see them.
+- Base Agent (0.2.2) declares `view_image` and `view_pdf`, so the PDF workflow
+  CLIO gives it can inspect rendered pages of drawings and scans, and read a
+  PDF natively on a PDF-capable model.
+- Factorio Flat declares `view_pdf`, and the `work-with-pdfs` skill reads a PDF
+  natively with it when the connected model is PDF-capable, falling back to
+  the conversion and rendered-page workflow otherwise (requires clio-agent
+  0.9.4.15 or newer).
 - EarthScope Skills ships its own A2UI catalog (`earthscope-stations`,
   `catalogs/earthscope-stations/`): a `StationMap` (aliasing `clio.map.v1`)
   and a multi-select `StationPicker` (aliasing `ChoicePicker`), alongside the

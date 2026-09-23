@@ -24,6 +24,7 @@ tools:
   - fs_propose_edit
   - fs_apply_edit_write
   - view_image
+  - view_pdf
 ---
 
 # Base Agent

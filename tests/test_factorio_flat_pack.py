@@ -283,7 +283,7 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
         """Interactive, presentation, and web tools stay with their owners."""
 
         expected = {
-            "main": ["ask_user", "create_a2ui_surface", "shell_bash", "view_image"],
+            "main": ["ask_user", "create_a2ui_surface", "shell_bash", "view_image", "view_pdf"],
             "research_methodologist": ["ask_user"],
             "virtual_lab": ["ask_user", "create_a2ui_surface"],
             "evidence_researcher": ["ask_user"],
