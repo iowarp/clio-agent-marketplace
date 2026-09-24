@@ -21,15 +21,24 @@ from tests.test_base_agent_policy import _parse_mapping, _significant_lines
 
 MARKETPLACE = Path(__file__).resolve().parents[1]
 
-#: Every pack whose agent produces A2UI surfaces, and the catalogs it
-#: declares, in the declared (preference) order.
+#: Every shipped pack and the catalogs it declares, in the declared
+#: (preference) order. Every shipped agent keeps A2UI through clio-workspace.
 EXPECTED_CATALOGS: dict[str, list[Any]] = {
     "base-agent": ["clio-workspace"],
+    "cluster-operator": ["clio-workspace"],
+    "data-semantics": ["clio-workspace"],
+    "deep-researcher": ["clio-workspace"],
+    "document-production": ["clio-workspace"],
+    "earthscope-flat": ["clio-workspace"],
+    "earthscope-gnss-region": ["clio-workspace"],
+    "factorio": ["clio-workspace"],
     "factorio-flat": ["clio-workspace"],
+    "phenotype": ["clio-workspace"],
     "spotter-ai": ["clio-workspace"],
+    "wildfire-smoke-impact-review": ["clio-workspace"],
     "earthscope-single-agent": [
-        {"earthscope-stations": "catalogs/earthscope-stations"},
         "clio-workspace",
+        {"earthscope-stations": "catalogs/earthscope-stations"},
     ],
 }
 
@@ -62,8 +71,42 @@ def _top_level_block(path: Path, key: str) -> Any:
     return mapping[key]
 
 
+def _shipped_packs() -> list[Path]:
+    """Every top-level pack directory (one carrying an ``AGENT.md``)."""
+
+    return sorted(path.parent for path in MARKETPLACE.glob("*/AGENT.md"))
+
+
+def _root_expert_kind(pack: Path) -> str | None:
+    """The ``module.kind`` of a pack's root expert, or ``None`` if undeclared."""
+
+    root_id = _top_level_block(pack / "AGENT.md", "root_expert") or _top_level_block(
+        pack / "AGENT.md", "default_expert"
+    )
+    for expert in sorted((pack / "experts").glob("*.md")):
+        if _top_level_block(expert, "id") == root_id:
+            module = _top_level_block(expert, "module")
+            return module.get("kind") if isinstance(module, dict) else None
+    return None
+
+
 class A2UICatalogDeclarationTests(unittest.TestCase):
-    """Each A2UI-producing pack lists its catalogs and carries the floor."""
+    """Each shipped pack lists its catalogs and carries the floor."""
+
+    def test_every_react_root_pack_declares_clio_workspace(self) -> None:
+        """A react root is where A2UI producer tools attach; without a declared
+        catalog clio-agent 0.9.4.17 attaches none, so a new pack that forgot the
+        list would silently lose A2UI."""
+
+        react_roots = [pack for pack in _shipped_packs() if _root_expert_kind(pack) == "react"]
+        self.assertTrue(react_roots)
+        for pack in react_roots:
+            with self.subTest(pack=pack.name):
+                declared = _top_level_block(pack / "AGENT.md", "a2ui_catalogs") or []
+                self.assertIn("clio-workspace", declared)
+
+    def test_the_expected_table_covers_every_shipped_pack(self) -> None:
+        self.assertEqual(sorted(EXPECTED_CATALOGS), [pack.name for pack in _shipped_packs()])
 
     def test_each_pack_declares_its_catalogs_in_preference_order(self) -> None:
         for pack, expected in EXPECTED_CATALOGS.items():

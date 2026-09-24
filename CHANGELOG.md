@@ -6,17 +6,21 @@
 
 - A2UI catalogs are now declared per agent. clio-agent 0.9.4.17 makes an
   agent's `a2ui_catalogs` the complete list of catalogs it may produce
-  against, in preference order, with nothing implicit. Base Agent (0.2.3),
-  Factorio Flat (0.2.1), and SPOTTER AI (0.3.1) list the builtin
-  `clio-workspace` catalog. EarthScope Skills (0.3.1) lists its own
-  `earthscope-stations` catalog first, so its station view is the default
-  for a surface that names no catalog, and then `clio-workspace` for its
-  other interactive views. No shipped pack lists the builtin Basic catalog.
-  Packs that list no catalogs get no A2UI producer tools.
+  against, in preference order, with nothing implicit. Every shipped agent
+  lists the builtin `clio-workspace` catalog, so every one keeps A2UI: Base
+  Agent (0.2.3), Factorio Flat (0.2.1), SPOTTER AI (0.3.1), Cluster Operator
+  (0.1.1), Data Semantics (0.1.1), Deep Researcher
+  (0.1.1), Document Production (0.1.1), EarthScope Flat
+  (0.1.1), EarthScope (0.1.1), Factorio
+  (0.1.1), Phenotype (0.1.1), and NIFC (0.1.1).
+  EarthScope Skills (0.3.1) lists `clio-workspace` first, as the default for
+  tables, charts, and metrics, then its own `earthscope-stations` catalog.
+  The station catalog's instructions state its catalogId, so a station view
+  names it. No shipped pack lists the builtin Basic catalog.
 - EarthScope Skills uses the list form of `a2ui_catalogs`
   (`- earthscope-stations: catalogs/earthscope-stations`). Its README
   describes the per-agent rule for pack authors.
-- These four packs now require clio-agent 0.9.4.17 or newer. An older
+- Every shipped pack now requires clio-agent 0.9.4.17 or newer. An older
   runtime would ignore the list, so the floor makes it refuse to activate
   them instead.
 

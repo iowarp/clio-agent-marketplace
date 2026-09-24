@@ -7,14 +7,13 @@ description: An EarthScope GNSS scientist that loads focused procedures on deman
 root_expert: main
 # A2UI catalogs are a per-agent allowlist, in preference order: this agent
 # may produce surfaces only against the catalogs listed here (nothing is
-# implicit, the builtins included). The pack's own earthscope-stations
-# catalog comes first -- station selection is this agent's signature view,
-# so an unnamed surface auto-selects it -- then the builtin clio-workspace
-# catalog for every other interactive view (tables, charts, metrics); a
-# surface meant for clio-workspace passes its catalog_id explicitly.
+# implicit, the builtins included). The builtin clio-workspace catalog comes
+# first -- it is the general default for tables, charts, metrics, and maps --
+# then the pack's own earthscope-stations catalog, whose station views name
+# that catalog explicitly (its instructions.md states the catalogId).
 a2ui_catalogs:
-  - earthscope-stations: catalogs/earthscope-stations
   - clio-workspace
+  - earthscope-stations: catalogs/earthscope-stations
 # Floor: clio-agent 0.9.4.17 is the first release that reads the list form
 # above (and the per-agent allowlist it expresses); earlier releases would
 # silently drop the pack catalog. Enforced as a typed

@@ -71,8 +71,8 @@ To add your own catalog:
 2. **Declare it in `AGENT.md`'s frontmatter**, in the agent's catalog list:
    ```yaml
    a2ui_catalogs:
-     - <name>: catalogs/<name>
      - clio-workspace
+     - <name>: catalogs/<name>
    ```
    `a2ui_catalogs` is the agent's COMPLETE allowlist, in preference order
    (clio-agent 0.9.4.17 and newer): the agent can produce surfaces only
@@ -81,7 +81,9 @@ To add your own catalog:
    the pack ships. Nothing is implicit: list `clio-workspace` if the agent
    also builds general tables, charts, or metrics, and `basic` only if it
    really produces against it. The first listed catalog the client supports
-   is what a surface created with an empty `catalog_id` gets. An agent that
+   is what a surface created with an empty `catalog_id` gets, so a pack
+   catalog listed after `clio-workspace` states its own `catalogId` in its
+   `instructions.md` for the producer to pass as `catalog_id`. An agent that
    lists nothing gets no A2UI producer tools at all. Declare the floor as a
    PEP 440 specifier — `requires: {clio_agent: ">=0.9.4.17"}` — so an older
    runtime refuses to activate the pack instead of silently ignoring the

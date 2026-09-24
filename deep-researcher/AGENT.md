@@ -2,9 +2,18 @@
 id: deep-researcher
 title: Deep Researcher
 display_name: Deep Researcher
-version: 0.1.0
+version: 0.1.1
 description: Model-agnostic, agent-driven deep web research. A flat coordinator dynamically fans out as many web researchers as the question needs, sends the assembled evidence through an independent web-enabled critic, closes material gaps, and creates a clean Markdown report artifact with inline citations and an auditable source ledger. CLIO alone controls runtime concurrency and queues excess work; the blueprint declares no workflow, worker count, research-round limit, or paid search provider.
 root_expert: main
+# A2UI catalogs are a per-agent allowlist: this agent may produce surfaces
+# only against the catalogs listed here, in this preference order (nothing is
+# implicit, the builtins included). clio-agent 0.9.4.17 is the first release
+# that reads this list; an older runtime would ignore it, so the floor makes
+# it refuse the pack instead.
+a2ui_catalogs:
+  - clio-workspace
+requires:
+  clio_agent: ">=0.9.4.17"
 blueprint:
   format: agent-blueprint-v1
 # The installed clio-kit launcher avoids concurrent `uvx` environment creation races.

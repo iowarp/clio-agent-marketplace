@@ -9,6 +9,11 @@ event. `StationMap` and `StationPicker` alias the renderer's existing
 property shape is defined in `catalog.json` — this page is about the
 recipe, not the field-by-field reference.
 
+This catalog's id is `https://iowarp.ai/a2ui/catalogs/earthscope-stations/v1`.
+A station surface is created against it by name: pass that id as
+`create_a2ui_surface`'s `catalog_id` (a surface created with an empty
+`catalog_id` uses the agent's default catalog, which is not this one).
+
 ## The station-selection recipe
 
 1. **`StationMap`** (id `stationsMap`) renders the ranked, tool-returned

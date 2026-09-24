@@ -2,9 +2,18 @@
 id: earthscope-gnss-region
 title: EarthScope
 display_name: EarthScope
-version: 0.1.0
+version: 0.1.1
 description: Resolves a requested geography, discovers NDP EarthScope GNSS resources, profiles station CSV time series, and produces evidence-backed artifacts.
 root_expert: main
+# A2UI catalogs are a per-agent allowlist: this agent may produce surfaces
+# only against the catalogs listed here, in this preference order (nothing is
+# implicit, the builtins included). clio-agent 0.9.4.17 is the first release
+# that reads this list; an older runtime would ignore it, so the floor makes
+# it refuse the pack instead.
+a2ui_catalogs:
+  - clio-workspace
+requires:
+  clio_agent: ">=0.9.4.17"
 blueprint:
   format: agent-blueprint-v1
 # clio-kit is provisioned once via `uv tool install clio-kit==2.10.6` (see clio-agent install/doctor).
