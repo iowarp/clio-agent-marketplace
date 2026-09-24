@@ -10,7 +10,8 @@ root_expert: main
 # implicit, the builtins included). The builtin clio-workspace catalog comes
 # first -- it is the general default for tables, charts, metrics, and maps --
 # then the pack's own earthscope-stations catalog, whose station views name
-# that catalog explicitly (its instructions.md states the catalogId).
+# that catalog explicitly (the generated catalog skill states its catalogId
+# and that it is not this agent's default).
 a2ui_catalogs:
   - clio-workspace
   - earthscope-stations: catalogs/earthscope-stations

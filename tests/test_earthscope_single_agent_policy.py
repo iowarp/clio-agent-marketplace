@@ -102,14 +102,6 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         )
         self.assertIn("a2ui_catalogs:\n  - clio-workspace\n  - earthscope-stations\n", expert)
 
-    def test_station_catalog_instructions_name_its_catalog_id_for_the_producer(self) -> None:
-        """clio-workspace is the default catalog, so a station surface names its own."""
-
-        instructions = _prose("catalogs/earthscope-stations/instructions.md")
-        self.assertIn(
-            "pass that id as `create_a2ui_surface`'s `catalog_id`", instructions
-        )
-        self.assertIn("`https://iowarp.ai/a2ui/catalogs/earthscope-stations/v1`", instructions)
 
     def test_manifest_declares_a_clio_agent_floor(self) -> None:
         """Dependency-free: only that the key exists. The PEP 440 parse/semantics

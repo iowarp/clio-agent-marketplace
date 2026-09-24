@@ -2,9 +2,11 @@
 
 clio-agent 0.9.4.17 makes an agent's ``a2ui_catalogs`` the COMPLETE list of
 catalogs it may produce against, in preference order: nothing is implicit,
-the builtin ``clio-workspace`` and ``basic`` catalogs included. A pack that
-produces A2UI must therefore list what it uses, and must carry the
-``requires.clio_agent`` floor, because an older runtime would ignore the list.
+the builtin ``clio-workspace`` and ``basic`` catalogs included. A pack must
+therefore list what it uses. Only a pack whose list names a PACK-LOCAL catalog
+needs the ``requires.clio_agent`` floor: an older runtime reads the list form
+as no pack catalogs, which drops that catalog, while a builtins-only list
+still gets the builtins an older runtime always offered.
 
 Dependency-free (runs under CI's bare ``model-inheritance`` interpreter): it
 reads only the ``a2ui_catalogs`` and ``requires`` blocks with the strict
@@ -46,6 +48,9 @@ EXPECTED_CATALOGS: dict[str, list[Any]] = {
 BUILTIN_CATALOGS = frozenset({"clio-workspace", "basic"})
 
 FLOOR = ">=0.9.4.17"
+
+#: The packs whose list names a pack-local catalog -- the only ones with a floor.
+FLOORED_PACKS = frozenset({"earthscope-single-agent"})
 
 
 def _frontmatter_lines(path: Path) -> list[str]:
@@ -137,11 +142,16 @@ class A2UICatalogDeclarationTests(unittest.TestCase):
                 declared = _top_level_block(MARKETPLACE / pack / "AGENT.md", "a2ui_catalogs")
                 self.assertNotIn("basic", declared)
 
-    def test_each_declaring_pack_requires_the_first_list_reading_clio_agent(self) -> None:
-        for pack in EXPECTED_CATALOGS:
+    def test_only_packs_declaring_a_pack_catalog_carry_the_floor(self) -> None:
+        for pack, expected in EXPECTED_CATALOGS.items():
             with self.subTest(pack=pack):
                 requires = _top_level_block(MARKETPLACE / pack / "AGENT.md", "requires")
-                self.assertEqual(requires, {"clio_agent": FLOOR})
+                names_pack_catalog = any(isinstance(entry, dict) for entry in expected)
+                self.assertEqual(names_pack_catalog, pack in FLOORED_PACKS)
+                if pack in FLOORED_PACKS:
+                    self.assertEqual(requires, {"clio_agent": FLOOR})
+                else:
+                    self.assertNotEqual((requires or {}).get("clio_agent"), FLOOR)
 
 
 if __name__ == "__main__":

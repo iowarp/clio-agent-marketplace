@@ -5,15 +5,13 @@ display_name: Factorio
 version: 0.1.1
 description: A persistent scientist-facing research partner that develops a paper idea into an evidence-grounded, scientist-approved simulation formulation and a reviewable Abaqus script. Factorio conducts the conversation itself, dynamically consults durable specialists, records scientific decisions and assumptions, and revisits earlier reasoning whenever evidence changes the study. It is an agent-driven research environment, not a slash-command interface or declared workflow.
 root_expert: main
-# A2UI catalogs are a per-agent allowlist: this agent may produce surfaces
-# only against the catalogs listed here, in this preference order (nothing is
-# implicit, the builtins included). clio-agent 0.9.4.17 is the first release
-# that reads this list; an older runtime would ignore it, so the floor makes
-# it refuse the pack instead.
+# A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
+# agent may produce surfaces only against the catalogs listed here, in this
+# preference order (nothing is implicit, the builtins included). An older
+# runtime reads a builtins-only list as no pack catalogs and still offers its
+# builtins, so this pack needs no clio-agent floor.
 a2ui_catalogs:
   - clio-workspace
-requires:
-  clio_agent: ">=0.9.4.17"
 blueprint:
   format: agent-blueprint-v1
 # Provider selection belongs to deployment configuration. Factorio's evidence

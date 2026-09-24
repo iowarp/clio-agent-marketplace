@@ -4,15 +4,13 @@ title: Data Semantics Agent
 version: 0.1.1
 description: Interprets scientific datasets with metadata inspection, HDF5-specific guidance, semantic analysis, and visualization planning.
 default_expert: main
-# A2UI catalogs are a per-agent allowlist: this agent may produce surfaces
-# only against the catalogs listed here, in this preference order (nothing is
-# implicit, the builtins included). clio-agent 0.9.4.17 is the first release
-# that reads this list; an older runtime would ignore it, so the floor makes
-# it refuse the pack instead.
+# A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
+# agent may produce surfaces only against the catalogs listed here, in this
+# preference order (nothing is implicit, the builtins included). An older
+# runtime reads a builtins-only list as no pack catalogs and still offers its
+# builtins, so this pack needs no clio-agent floor.
 a2ui_catalogs:
   - clio-workspace
-requires:
-  clio_agent: ">=0.9.4.17"
 # clio-kit is provisioned once via `uv tool install clio-kit` (see clio-agent
 # install/doctor). Declaration is the enablement for these tool namespaces.
 mcp_servers:

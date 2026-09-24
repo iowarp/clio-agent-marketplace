@@ -15,14 +15,15 @@
   (0.1.1), Phenotype (0.1.1), and NIFC (0.1.1).
   EarthScope Skills (0.3.1) lists `clio-workspace` first, as the default for
   tables, charts, and metrics, then its own `earthscope-stations` catalog.
-  The station catalog's instructions state its catalogId, so a station view
-  names it. No shipped pack lists the builtin Basic catalog.
+  A station view names its catalog; clio-agent's generated catalog skill
+  states the catalogId. No shipped pack lists the builtin Basic catalog.
 - EarthScope Skills uses the list form of `a2ui_catalogs`
   (`- earthscope-stations: catalogs/earthscope-stations`). Its README
   describes the per-agent rule for pack authors.
-- Every shipped pack now requires clio-agent 0.9.4.17 or newer. An older
-  runtime would ignore the list, so the floor makes it refuse to activate
-  them instead.
+- EarthScope Skills now requires clio-agent 0.9.4.17 or newer, the first
+  release that reads the list form; an older runtime would drop its station
+  catalog. The other packs list only builtins, which an older runtime still
+  offers, so their floors are unchanged.
 
 ## [0.6.4] - 2026-09-23
 
