@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-09-24
+
 ### Changed
 
 - A2UI catalogs are now declared per agent. clio-agent 0.9.4.17 makes an
