@@ -2,19 +2,25 @@
 id: earthscope-single-agent
 title: EarthScope Skills
 display_name: EarthScope Skills
-version: 0.3.0
+version: 0.3.1
 description: An EarthScope GNSS scientist that loads focused procedures on demand, presents grounded interactive views when useful, and may fan out independent regional work into temporary child turns.
 root_expert: main
+# A2UI catalogs are a per-agent allowlist, in preference order: this agent
+# may produce surfaces only against the catalogs listed here (nothing is
+# implicit, the builtins included). The pack's own earthscope-stations
+# catalog comes first -- station selection is this agent's signature view,
+# so an unnamed surface auto-selects it -- then the builtin clio-workspace
+# catalog for every other interactive view (tables, charts, metrics); a
+# surface meant for clio-workspace passes its catalog_id explicitly.
 a2ui_catalogs:
-  earthscope-stations: catalogs/earthscope-stations
-# Floor for the earthscope-stations A2UI catalog wiring (campaign slices
-# S2-S5b: pack catalog registry, capability negotiation, producer tools,
-# dispatcher). clio-agent 0.9.4.15 is the first release carrying all of
-# them (the A2UI campaign ships as a 0.9.4 patch, not 0.9.5). Enforced by
-# clio-agent S8 (typed blueprint_requires_newer_clio_agent at validate/
-# activation/install) -- packs without `requires` are unaffected.
+  - earthscope-stations: catalogs/earthscope-stations
+  - clio-workspace
+# Floor: clio-agent 0.9.4.17 is the first release that reads the list form
+# above (and the per-agent allowlist it expresses); earlier releases would
+# silently drop the pack catalog. Enforced as a typed
+# blueprint_requires_newer_clio_agent at validate/activation/install.
 requires:
-  clio_agent: ">=0.9.4.15"
+  clio_agent: ">=0.9.4.17"
 blueprint:
   format: agent-blueprint-v1
 # clio-kit is provisioned once via `uv tool install clio-kit==2.10.6` (see clio-agent install/doctor).

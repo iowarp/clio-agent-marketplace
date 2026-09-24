@@ -68,24 +68,32 @@ To add your own catalog:
      (`createSurface`/`updateComponents`/`updateDataModel`), and any rules
      specific to your domain (e.g. "ids come only from observed tool
      evidence").
-2. **Declare it in `AGENT.md`'s frontmatter**:
+2. **Declare it in `AGENT.md`'s frontmatter**, in the agent's catalog list:
    ```yaml
    a2ui_catalogs:
-     <name>: catalogs/<name>
+     - <name>: catalogs/<name>
+     - clio-workspace
    ```
-   If your catalog needs runtime pieces newer than the widest clio-agent
-   version your pack otherwise supports (e.g. a specific campaign slice),
-   declare the floor as a PEP 440 specifier — `requires: {clio_agent:
-   ">=0.9.4.15"}` — so an older runtime refuses to activate the pack instead of
-   installing a catalog it cannot serve.
+   `a2ui_catalogs` is the agent's COMPLETE allowlist, in preference order
+   (clio-agent 0.9.4.17 and newer): the agent can produce surfaces only
+   against the catalogs listed here. A bare name references a builtin
+   catalog (`clio-workspace` or `basic`); `name: relative/dir` is a catalog
+   the pack ships. Nothing is implicit: list `clio-workspace` if the agent
+   also builds general tables, charts, or metrics, and `basic` only if it
+   really produces against it. The first listed catalog the client supports
+   is what a surface created with an empty `catalog_id` gets. An agent that
+   lists nothing gets no A2UI producer tools at all. Declare the floor as a
+   PEP 440 specifier — `requires: {clio_agent: ">=0.9.4.17"}` — so an older
+   runtime refuses to activate the pack instead of silently ignoring the
+   list.
 3. **Declare it on the expert(s) that use it** (`experts/<id>.md`):
    ```yaml
    a2ui_catalogs:
      - <name>
    ```
    and point that expert's A2UI-usage prose at the generated catalog skill
-   `a2ui-catalog-<name>` (the runtime turns every installed catalog into a
-   progressive-disclosure skill automatically — you never write that
+   `a2ui-catalog-<name>` (the runtime turns every catalog the agent declares
+   into a progressive-disclosure skill automatically — you never write that
    skill's body yourself, and you never need to add it to the expert's
    `skills:` list).
 4. **Prove it** with a test mirroring

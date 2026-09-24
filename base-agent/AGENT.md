@@ -2,9 +2,18 @@
 id: base-agent
 title: Base Agent
 display_name: Base Agent
-version: 0.2.2
+version: 0.2.3
 description: CLIO's configurable general-purpose agent with native workspace tools and no hidden routing hierarchy.
 root_expert: base
+# A2UI catalogs are a per-agent allowlist: this agent may produce surfaces
+# only against the catalogs listed here, in this preference order (nothing is
+# implicit, the builtins included). clio-agent 0.9.4.17 is the first release
+# that reads this list; an older runtime would ignore it, so the floor makes
+# it refuse the pack instead.
+a2ui_catalogs:
+  - clio-workspace
+requires:
+  clio_agent: ">=0.9.4.17"
 blueprint:
   format: agent-blueprint-v1
 experts:

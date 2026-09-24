@@ -65,7 +65,12 @@ def _significant_lines(block: str) -> list[_Line]:
 
 
 def _parse_sequence(lines: list[_Line], start: int, indent: int) -> tuple[list[Any], int]:
-    """Parse a block sequence of scalars, returning its items and the next index."""
+    """Parse a block sequence, returning its items and the next index.
+
+    Items are scalars or one-line, one-key mappings (``- name: value``, the
+    pack-local form of an ``a2ui_catalogs`` entry); a mapping item with a
+    nested value or more than one key is still refused.
+    """
     items: list[Any] = []
     index = start
     while index < len(lines) and lines[index].indent == indent:
@@ -74,8 +79,13 @@ def _parse_sequence(lines: list[_Line], start: int, indent: int) -> tuple[list[A
             break
         item = line.text[2:].strip()
         if _MAPPING_ITEM.match(item):
-            raise ValueError(f"line {line.number}: mappings inside sequences are unsupported")
-        items.append(_scalar(item))
+            key, _, rest = item.partition(":")
+            nested = index + 1 < len(lines) and lines[index + 1].indent > indent
+            if not rest.strip() or nested:
+                raise ValueError(f"line {line.number}: nested mappings inside sequences are unsupported")
+            items.append({key.strip(): _scalar(rest)})
+        else:
+            items.append(_scalar(item))
         index += 1
     return items, index
 
@@ -112,8 +122,8 @@ def _parse_mapping(lines: list[_Line], start: int, indent: int) -> tuple[dict[st
 def parse_frontmatter(path: Path) -> dict[str, Any]:
     """Parse the YAML frontmatter fenced by ``---`` at the top of a pack file.
 
-    Deliberately a strict subset (nested mappings, scalar block/flow sequences,
-    comments): anything it does not understand raises instead of silently
+    Deliberately a strict subset (nested mappings, block/flow sequences of
+    scalars or one-line one-key mappings, comments): anything it does not understand raises instead of silently
     yielding a partial mapping that would make a policy assertion vacuous.
     """
     raw = path.read_text(encoding="utf-8")

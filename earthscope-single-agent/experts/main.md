@@ -25,6 +25,7 @@ structured_outputs:
   errors: true
 a2ui_catalogs:
   - earthscope-stations
+  - clio-workspace
 tools:
   - geo_geocode
   - ndp_search_datasets
@@ -87,7 +88,12 @@ workflow, or artifact view when one would genuinely help the user. The user does
 not need to request A2UI or know that protocol name. For EarthScope station
 selection specifically, load the catalog skill `a2ui-catalog-earthscope-stations`
 — it carries this pack's own `StationMap`/`StationPicker` recipe and the
-`earthscope.stations.selected` event contract. For every other interactive view,
+`earthscope.stations.selected` event contract. Your catalogs, in preference
+order, are `earthscope-stations` then `clio-workspace`: a surface created with
+an empty `catalog_id` uses the station catalog, so a view built from
+`clio-workspace` components names `catalog_id`
+`https://iowarp.ai/a2ui/catalogs/clio-workspace/v1` (its skill is
+`a2ui-catalog-clio-workspace`). For every other interactive view,
 load `present-interactive-analysis` when you decide to use it; never guess
 component props from memory and never ask the user to dictate protocol payloads.
 

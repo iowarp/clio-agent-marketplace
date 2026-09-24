@@ -26,7 +26,9 @@ parallelism, and task continuity without matching exact prose.
 
 `ask_user` and `create_a2ui_surface` are explicit runtime tool dependencies for
 the experts that declare them. The runtime must expose those names during pack
-validation and execution, including on child experts. `create_artifact` remains
+validation and execution, including on child experts. Surfaces are produced
+against the builtin `clio-workspace` catalog, the only entry in the pack's
+`a2ui_catalogs` allowlist (clio-agent 0.9.4.17 or newer). `create_artifact` remains
 an auto-attached ReAct lifecycle tool, so a skill can use it for durable
 deliverables without adding it to curated expert allowlists.
 

@@ -352,7 +352,9 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     policy.py`` keeps a dependency-free companion check (the key exists and is a
     non-empty string) for CI's bare no-deps job; this test is the one that proves
     the value actually parses as PEP 440 and means what the AGENT.md comment next
-    to it claims (admits the next clio-agent release, excludes today's develop).
+    to it claims (admits 0.9.4.17, the first release reading the per-agent
+    ``a2ui_catalogs`` list form, and excludes 0.9.4.16, which would silently drop
+    the pack catalog).
 
     Deliberately NOT wrapped in a try/except-skip -- see this module's docstring.
     """
@@ -375,7 +377,7 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     assert isinstance(floor, str) and floor.strip()
 
     spec = SpecifierSet(floor)
-    assert spec.contains("0.9.4.15"), f"{floor!r} should admit 0.9.4.15 (first carrying release)"
+    assert spec.contains("0.9.4.17"), f"{floor!r} should admit 0.9.4.17 (first list-form release)"
     assert spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5"
-    assert not spec.contains("0.9.4.14"), f"{floor!r} should exclude 0.9.4.14 (today's develop)"
+    assert not spec.contains("0.9.4.16"), f"{floor!r} should exclude 0.9.4.16 (drops the list form)"
     assert not spec.contains("0.9.4"), f"{floor!r} should exclude 0.9.4"

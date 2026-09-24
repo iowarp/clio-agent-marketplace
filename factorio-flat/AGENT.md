@@ -2,9 +2,18 @@
 id: factorio-flat
 title: Factorio Flat
 display_name: Factorio Flat
-version: 0.2.0
+version: 0.2.1
 description: A scientist-facing research partner spanning research framing, evidence coordination, simulation, and adversarial review, extended with materials science, manufacturing, characterization, mechanical testing, fatigue/failure, and data analysis specialists.
 root_expert: main
+# A2UI catalogs are a per-agent allowlist: this agent may produce surfaces
+# only against the catalogs listed here, in this preference order (nothing is
+# implicit, the builtins included). clio-agent 0.9.4.17 is the first release
+# that reads this list; an older runtime would ignore it, so the floor makes
+# it refuse the pack instead.
+a2ui_catalogs:
+  - clio-workspace
+requires:
+  clio_agent: ">=0.9.4.17"
 blueprint:
   format: agent-blueprint-v1
 # Provider selection belongs to deployment configuration. Factorio Flat's
