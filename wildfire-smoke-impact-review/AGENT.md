@@ -2,9 +2,16 @@
 id: wildfire-smoke-impact-review
 title: NIFC
 display_name: NIFC
-version: 0.1.0
+version: 0.1.1
 description: Finds an active wildfire impacting people downwind by fusing live fire perimeters, smoke forecast, and air-quality data, and renders a situational map.
 root_expert: main
+# A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
+# agent may produce surfaces only against the catalogs listed here, in this
+# preference order (nothing is implicit, the builtins included). An older
+# runtime reads a builtins-only list as no pack catalogs and still offers its
+# builtins, so this pack needs no clio-agent floor.
+a2ui_catalogs:
+  - clio-workspace
 blueprint:
   format: agent-blueprint-v1
 # clio-kit is provisioned once via `uv tool install clio-kit==2.10.6` (see clio-agent install/doctor).

@@ -2,13 +2,20 @@
 id: phenotype
 title: Phenotype Campaign
 display_name: Phenotype (synthetic workload)
-version: 0.1.0
+version: 0.1.1
 description: Synthetic plant-phenotyping campaign operator — the reference stand-in
   workload for SPOTTER AI. Runs a deterministic 5-stage pipeline (ingest ->
   calibrate -> segment -> extract traits -> predict) with full provenance capture
   per stage execution. Swap this pack for your own workflow; SPOTTER attaches the
   same way.
 root_expert: main
+# A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
+# agent may produce surfaces only against the catalogs listed here, in this
+# preference order (nothing is implicit, the builtins included). An older
+# runtime reads a builtins-only list as no pack catalogs and still offers its
+# builtins, so this pack needs no clio-agent floor.
+a2ui_catalogs:
+  - clio-workspace
 blueprint:
   format: agent-blueprint-v1
 # In-pack launch command: the workload is its OWN project at phenotype/impl

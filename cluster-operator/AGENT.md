@@ -2,7 +2,7 @@
 id: cluster-operator
 title: Cluster Operator
 display_name: Cluster Operator (HPC via clio-relay)
-version: 0.1.0
+version: 0.1.1
 description: Operates an HPC cluster through clio-relay's typed tool surface — builds
   and runs JARVIS pipelines, installs software via Spack, drives every submission to
   a terminal state, and retrieves execution artifacts. Any agent carrying this pack's
@@ -11,6 +11,13 @@ description: Operates an HPC cluster through clio-relay's typed tool surface —
   host-native relay/JARVIS/Spack tool clio-agent already mounts when relay is
   configured — this pack is grants + doctrine, not a new server.
 root_expert: operator
+# A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
+# agent may produce surfaces only against the catalogs listed here, in this
+# preference order (nothing is implicit, the builtins included). An older
+# runtime reads a builtins-only list as no pack catalogs and still offers its
+# builtins, so this pack needs no clio-agent floor.
+a2ui_catalogs:
+  - clio-workspace
 blueprint:
   format: agent-blueprint-v1
 experts:

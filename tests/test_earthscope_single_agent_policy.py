@@ -95,8 +95,13 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         manifest = _read("AGENT.md")
         expert = _read("experts/main.md")
 
-        self.assertIn("a2ui_catalogs:\n  earthscope-stations: catalogs/earthscope-stations", manifest)
-        self.assertIn("a2ui_catalogs:\n  - earthscope-stations", expert)
+        self.assertIn(
+            "a2ui_catalogs:\n  - clio-workspace\n"
+            "  - earthscope-stations: catalogs/earthscope-stations\n",
+            manifest,
+        )
+        self.assertIn("a2ui_catalogs:\n  - clio-workspace\n  - earthscope-stations\n", expert)
+
 
     def test_manifest_declares_a_clio_agent_floor(self) -> None:
         """Dependency-free: only that the key exists. The PEP 440 parse/semantics

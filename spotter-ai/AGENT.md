@@ -2,10 +2,17 @@
 id: spotter-ai
 title: SPOTTER AI
 display_name: SPOTTER AI (forensic watcher)
-version: 0.3.0
+version: 0.3.1
 description: Live anomaly surveillance, containment, and evidence-backed provenance investigation
   across the reference phenotype campaign, Flowcept, CMF, and native stores.
 root_expert: spotter_watcher
+# A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
+# agent may produce surfaces only against the catalogs listed here, in this
+# preference order (nothing is implicit, the builtins included). An older
+# runtime reads a builtins-only list as no pack catalogs and still offers its
+# builtins, so this pack needs no clio-agent floor.
+a2ui_catalogs:
+  - clio-workspace
 blueprint:
   format: agent-blueprint-v1
 mcp_servers:

@@ -24,6 +24,7 @@ structured_outputs:
   evidence: true
   errors: true
 a2ui_catalogs:
+  - clio-workspace
   - earthscope-stations
 tools:
   - geo_geocode

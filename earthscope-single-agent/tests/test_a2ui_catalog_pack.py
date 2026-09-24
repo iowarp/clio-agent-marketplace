@@ -253,6 +253,35 @@ def test_render_narration_over_worked_example_context(
     assert "{searchId}" not in rendered
 
 
+def test_generated_catalog_skill_states_the_catalog_json_catalog_id() -> None:
+    """The station catalog's id reaches the model through clio-agent's GENERATED
+    catalog skill (never hand-typed in ``instructions.md``): the body states
+    ``catalog.json``'s own ``catalogId``, and -- since this agent lists
+    clio-workspace first -- that the station catalog is not its default.
+
+    Deliberately NOT wrapped in a try/except-skip -- see this module's docstring.
+    """
+
+    try:
+        from clio_agent.gact.a2ui_catalogs.blueprint import load_blueprint_catalogs
+        from clio_agent.gact.a2ui_catalogs.skills import generate_catalog_skill_body
+        from clio_agent.gact.agent_blueprints import parse_agent_blueprint_root
+    except ImportError as exc:  # pragma: no cover - environment-dependent, not swallowed
+        pytest.fail(f"clio_agent is not importable in this interpreter: {exc!r}")
+        return
+
+    catalog_id = _load_json(CATALOG_DIR / "catalog.json")["catalogId"]
+    blueprint = parse_agent_blueprint_root(PACK_ROOT, scope="session")
+    (entry,) = load_blueprint_catalogs(blueprint)
+    body = generate_catalog_skill_body(entry, is_default=False)
+    assert entry.catalog_id == catalog_id
+    assert f"Catalog id: `{catalog_id}`" in body
+    assert f'catalog_id="{catalog_id}"' in body
+    assert catalog_id not in (CATALOG_DIR / "instructions.md").read_text(encoding="utf-8").split(
+        "## One complete example surface"
+    )[0], "the catalogId belongs to the generated skill, not hand-typed prose"
+
+
 def _declared_clio_agent_floor() -> str:
     """The ``requires.clio_agent`` specifier declared in ``AGENT.md``'s frontmatter."""
 
@@ -352,7 +381,9 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     policy.py`` keeps a dependency-free companion check (the key exists and is a
     non-empty string) for CI's bare no-deps job; this test is the one that proves
     the value actually parses as PEP 440 and means what the AGENT.md comment next
-    to it claims (admits the next clio-agent release, excludes today's develop).
+    to it claims (admits 0.9.4.17, the first release reading the per-agent
+    ``a2ui_catalogs`` list form, and excludes 0.9.4.16, which would silently drop
+    the pack catalog).
 
     Deliberately NOT wrapped in a try/except-skip -- see this module's docstring.
     """
@@ -375,7 +406,7 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     assert isinstance(floor, str) and floor.strip()
 
     spec = SpecifierSet(floor)
-    assert spec.contains("0.9.4.15"), f"{floor!r} should admit 0.9.4.15 (first carrying release)"
+    assert spec.contains("0.9.4.17"), f"{floor!r} should admit 0.9.4.17 (first list-form release)"
     assert spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5"
-    assert not spec.contains("0.9.4.14"), f"{floor!r} should exclude 0.9.4.14 (today's develop)"
+    assert not spec.contains("0.9.4.16"), f"{floor!r} should exclude 0.9.4.16 (drops the list form)"
     assert not spec.contains("0.9.4"), f"{floor!r} should exclude 0.9.4"
