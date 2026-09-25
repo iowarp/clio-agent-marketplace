@@ -1,0 +1,114 @@
+{
+  "catalogId": "https://iowarp.ai/a2ui/catalogs/abaqus-topology/v1",
+  "protocolVersion": "0.9.1",
+  "trust": {
+    "source": "pack"
+  },
+  "implements": {
+    "TopologyViewport": {
+      "kernel": "clio.mesh-viewport.v1"
+    },
+    "DesignMetric": {
+      "kernel": "clio.metric.v1"
+    },
+    "Text": {
+      "kernel": "Text"
+    },
+    "Column": {
+      "kernel": "Column"
+    },
+    "Row": {
+      "kernel": "Row"
+    },
+    "Button": {
+      "kernel": "Button"
+    },
+    "CheckBox": {
+      "kernel": "CheckBox"
+    },
+    "ConvergencePlot": {
+      "kernel": "clio.time-series.v1"
+    },
+    "ParameterSlider": {
+      "kernel": "clio.slider.v1"
+    }
+  },
+  "events": {
+    "abaqus.topology.reviewed": {
+      "destination": "agent",
+      "context_schema": {
+        "type": "object",
+        "required": [
+          "runId",
+          "decision"
+        ],
+        "properties": {
+          "runId": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "revise"
+            ]
+          }
+        }
+      },
+      "narration": "The scientist reviewed the before/after topology comparison for run {runId} and chose to {decision} the optimized design. On accept, continue with re-verification of the optimized geometry; on revise, ask what to change in the formulation before rerunning."
+    },
+    "abaqus.topology.figure-requested": {
+      "destination": "agent",
+      "context_schema": {
+        "type": "object",
+        "required": [
+          "runId",
+          "camera",
+          "frame",
+          "iso"
+        ],
+        "properties": {
+          "runId": {
+            "type": "string"
+          },
+          "camera": {
+            "type": "object",
+            "required": [
+              "position",
+              "target"
+            ],
+            "properties": {
+              "position": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "target": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            }
+          },
+          "frame": {
+            "type": "number",
+            "minimum": 0
+          },
+          "iso": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "narration": "The scientist wants a report figure of run {runId} exactly as shown in the design-history view: design cycle index {frame}, density threshold {iso}, camera {camera}. Render it with render_view.py from the same design mesh, register the PNG as an artifact, and cite it."
+    }
+  },
+  "instructions": "instructions.md"
+}
