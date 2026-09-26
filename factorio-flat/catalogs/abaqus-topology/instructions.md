@@ -2,11 +2,11 @@
 
 This catalog has two views of a topology optimization run, built from the
 same generic parts. `TopologyViewport` aliases the renderer's
-`clio.mesh-viewport.v1` kernel, `DesignMetric` aliases `clio.metric.v1`,
-and `ConvergencePlot` aliases `clio.time-series.v1` (see
-`catalog.clio.json`); `Text`, `ParameterSlider` aliases `clio.slider.v1` (a slider with a step, a unit,
-and a box to type an exact value); `Text`, `Column`, `Row`, `Button`, and
-`CheckBox` are the unmodified Basic components. Property shapes live in
+`clio.mesh-viewport.v1` kernel, `ParameterSlider` aliases `clio.slider.v1`
+(a slider with a step, a unit, and a box to type an exact value),
+`DesignMetric` aliases `clio.metric.v1`, and `ConvergencePlot` aliases
+`clio.time-series.v1` (see `catalog.clio.json`); `Text`, `Column`, `Row`,
+`Button`, and `CheckBox` are the unmodified Basic components. Property shapes live in
 `catalog.json`; this page is the recipe. Load the `abaqus-visualization`
 and `visualize-topology-optimization` skills for how the meshes are made.
 
