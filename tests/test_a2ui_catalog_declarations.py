@@ -60,6 +60,14 @@ FLOORED_PACKS: dict[str, str] = {
     "factorio-flat": ">=0.9.4.19",
 }
 
+#: Floors a pack carries for a reason other than a pack-local catalog. The
+#: catalog test must not mistake them for a catalog floor.
+#: spotter-ai: its MCP launcher reads ${CLIO_BLUEPRINT_DIR} and
+#: ${CLIO_PROVENANCE_CONFIG}, which clio-agent supplies from 0.9.4.19 (#1503).
+NON_CATALOG_FLOORS: dict[str, str] = {
+    "spotter-ai": ">=0.9.4.19",
+}
+
 
 def _frontmatter_lines(path: Path) -> list[str]:
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -158,6 +166,8 @@ class A2UICatalogDeclarationTests(unittest.TestCase):
                 self.assertEqual(names_pack_catalog, pack in FLOORED_PACKS)
                 if pack in FLOORED_PACKS:
                     self.assertEqual(requires, {"clio_agent": FLOORED_PACKS[pack]})
+                elif pack in NON_CATALOG_FLOORS:
+                    self.assertEqual(requires, {"clio_agent": NON_CATALOG_FLOORS[pack]})
                 else:
                     self.assertNotIn((requires or {}).get("clio_agent"), FLOORED_PACKS.values())
 

@@ -18,8 +18,9 @@ uv run spotter-mcp --clio-config /workspace/.clio/config.yaml
 ```
 
 `SPOTTER_CLIO_CONFIG` can provide the path when `--clio-config` is omitted.
-When launching through the bundled agent pack, `SPOTTER_IMPL_DIR` must be the absolute path to this
-`impl` directory.
+When launching through the bundled agent pack, clio-agent supplies both launcher inputs: the pack
+directory (`${CLIO_BLUEPRINT_DIR}`, whose `impl` project this is) and its effective provenance
+configuration as a CLIO YAML file (`${CLIO_PROVENANCE_CONFIG}`).
 
 To attach the watcher to a phenotype campaign, use the same campaign variables as the workload:
 
