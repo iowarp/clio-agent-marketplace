@@ -29,7 +29,7 @@ the experts that declare them. The runtime must expose those names during pack
 validation and execution, including on child experts. Surfaces are produced
 against the builtin `clio-workspace` catalog and the pack's own
 `abaqus-topology` catalog, the two entries in the pack's `a2ui_catalogs`
-allowlist (clio-agent 0.9.4.17 or newer). `abaqus-topology` holds two
+allowlist (clio-agent 0.9.4.19 or newer). `abaqus-topology` holds two
 topology optimization views: before and after in linked 3D viewports with a
 stress toggle, and the design history with density and cycle sliders. It adds
 no rendering of its own: `TopologyViewport` aliases the generic

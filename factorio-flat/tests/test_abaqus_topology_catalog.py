@@ -183,8 +183,37 @@ def test_pack_blueprint_validates_against_the_real_validator() -> None:
         return
     # view_image/view_pdf are registered by the live server only when the
     # configured model reads images/PDFs; pass them as such a deployment does.
+    import clio_agent
+    from packaging.specifiers import SpecifierSet
+    from packaging.version import Version
+
     result = validate_agent_blueprint_path(
         PACK_ROOT, scope="session", runtime_tool_names=("view_image", "view_pdf")
     )
-    assert result["validation_errors"] == []
-    assert result["enabled"] is True
+    # The validator accumulates every error (the floor never short-circuits the
+    # catalog/tool checks), so a clio-agent older than the pack's declared floor
+    # (e.g. develop before the release that ships clio-schemas 0.4.0) must report
+    # exactly the floor reason and nothing else; a satisfying one reports nothing.
+    floor = _declared_clio_agent_floor()
+    running = clio_agent.__version__
+    if Version(running) in SpecifierSet(floor):
+        assert result["validation_errors"] == []
+        assert result["enabled"] is True
+    else:
+        assert result["validation_errors"] == [
+            f"factorio-flat: blueprint_requires_newer_clio_agent: requires "
+            f"clio_agent{floor}, running {running}"
+        ]
+        assert result["enabled"] is False
+
+
+def _declared_clio_agent_floor() -> str:
+    """The ``requires.clio_agent`` specifier from the pack's AGENT.md frontmatter."""
+
+    import yaml
+
+    text = (PACK_ROOT / "AGENT.md").read_text(encoding="utf-8")
+    frontmatter = text.split("---", 2)[1]
+    floor = yaml.safe_load(frontmatter)["requires"]["clio_agent"]
+    assert isinstance(floor, str) and floor
+    return floor

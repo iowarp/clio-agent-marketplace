@@ -15,11 +15,20 @@ a2ui_catalogs:
   - clio-workspace
   - abaqus-topology: catalogs/abaqus-topology
 # Floor: 0.9.4.17 is the first release that reads the list form above (an
-# older runtime would drop the pack catalog). TopologyViewport also needs the
-# clio.mesh-viewport.v1 kernel from clio-schemas 0.4.0; raise this floor to
-# the first clio-agent release that pins it.
+# older runtime would drop the pack catalog). Raised to 0.9.4.19 (#78
+# follow-up): TopologyViewport (clio.mesh-viewport.v1) and ParameterSlider
+# (clio.slider.v1) need clio-schemas>=0.4.0, which 0.9.4.18 does not pin
+# (0.3.3) and 0.9.4.19 does. Below this floor, load_catalog_directory
+# refuses the abaqus-topology catalog with a typed
+# a2ui_component_unimplemented reason and the server drops it from the
+# producible set, but main/abaqus_engineer's prompts and the
+# visualize-topology-optimization skill still tell the model the views
+# exist -- raising the floor makes the default-registry installer skip the
+# whole pack update on an old server (typed
+# blueprint_requires_newer_clio_agent) instead of shipping a pack that
+# promises a view it cannot produce.
 requires:
-  clio_agent: ">=0.9.4.17"
+  clio_agent: ">=0.9.4.19"
 blueprint:
   format: agent-blueprint-v1
 # Provider selection belongs to deployment configuration. Factorio Flat's

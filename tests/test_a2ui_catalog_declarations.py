@@ -50,10 +50,15 @@ EXPECTED_CATALOGS: dict[str, list[Any]] = {
 #: The builtin catalog names clio-agent accepts in an ``a2ui_catalogs`` list.
 BUILTIN_CATALOGS = frozenset({"clio-workspace", "basic"})
 
-FLOOR = ">=0.9.4.17"
-
-#: The packs whose list names a pack-local catalog -- the only ones with a floor.
-FLOORED_PACKS = frozenset({"earthscope-single-agent", "factorio-flat"})
+#: Per-pack ``requires.clio_agent`` floor, keyed by pack name -- the only
+#: packs with a floor are the ones whose list names a pack-local catalog.
+#: Uniform ">=0.9.4.17" until factorio-flat's abaqus-topology catalog (#78)
+#: needed a higher floor: TopologyViewport/ParameterSlider need
+#: clio-schemas>=0.4.0, which only clio-agent>=0.9.4.19 pins.
+FLOORED_PACKS: dict[str, str] = {
+    "earthscope-single-agent": ">=0.9.4.17",
+    "factorio-flat": ">=0.9.4.19",
+}
 
 
 def _frontmatter_lines(path: Path) -> list[str]:
@@ -152,9 +157,9 @@ class A2UICatalogDeclarationTests(unittest.TestCase):
                 names_pack_catalog = any(isinstance(entry, dict) for entry in expected)
                 self.assertEqual(names_pack_catalog, pack in FLOORED_PACKS)
                 if pack in FLOORED_PACKS:
-                    self.assertEqual(requires, {"clio_agent": FLOOR})
+                    self.assertEqual(requires, {"clio_agent": FLOORED_PACKS[pack]})
                 else:
-                    self.assertNotEqual((requires or {}).get("clio_agent"), FLOOR)
+                    self.assertNotIn((requires or {}).get("clio_agent"), FLOORED_PACKS.values())
 
 
 if __name__ == "__main__":
