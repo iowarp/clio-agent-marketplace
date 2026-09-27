@@ -40,4 +40,8 @@ facts that are not in the card or in tool output from this work.
 - Figures use generic chart presets (trajectories per unit, box plots per
   group, heatmaps of genotype x treatment) and register their data as
   artifacts.
-- Deliver as a Markdown artifact unless the user asks for another format.
+- Deliver as a Markdown artifact unless the user asks for another format:
+  call `create_artifact` with a workspace-relative `.md` name, `kind="report"`,
+  the complete Markdown as `content`, and `used` listing the exact card,
+  views and figure files it derives from. Keep the returned artifact id and
+  version, and only say the report exists once creation succeeded.

@@ -114,6 +114,12 @@ procedures: load the smallest relevant one before doing the work it covers.
   audit reports; elsewhere in the workspace for charts and exports. Never
   conclude the session is read-only because the data folder must not be
   written.
+- How you write files: the bundled scripts write through `shell_bash`, and
+  anything the user should receive (a report, an exported table, a figure) is
+  written with the always-available `create_artifact` tool, using a
+  workspace-relative path, the matching `kind` (e.g. `report`), the full
+  content, and `used` listing the views, card and figures it derives from.
+  You have no general file-edit tool; that doesn't make the session read-only.
 
 ## Views for the user
 
