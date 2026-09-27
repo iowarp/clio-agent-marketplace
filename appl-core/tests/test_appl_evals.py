@@ -93,6 +93,25 @@ def test_unbalanced_drops_units_everywhere_and_updates_counts(
     assert len(csv_lines) - 1 == cam["row_counts"]["features"]
 
 
+def test_unbalanced_keeps_an_empty_table_with_the_unit_column(
+    bundle: Path, tmp_path: Path
+) -> None:
+    # Real exports ship zero-row tables that still carry the unit column (e.g. an
+    # empty issues table); an untyped empty mask used to crash the filter.
+    import pyarrow as pa
+
+    empty = pa.table(
+        {
+            "plant_id": pa.array([], type=pa.int64()),
+            "note": pa.array([], type=pa.string()),
+        }
+    )
+    pq.write_table(empty, bundle / "issues.parquet")
+    out = tmp_path / "unb-empty"
+    _make(bundle, out, "unbalanced", drop_fraction=0.25)
+    assert pq.read_table(out / "issues.parquet").num_rows == 0
+
+
 def test_drop_modality_removes_it(bundle: Path, tmp_path: Path) -> None:
     out = tmp_path / "drop"
     record = _make(bundle, out, "drop_modality", modality="spec")

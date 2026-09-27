@@ -455,7 +455,9 @@ def unbalanced(
             [
                 v is None or str(v) not in dropped
                 for v in table.column(column).to_pylist()
-            ]
+            ],
+            # An empty table would otherwise infer a null-typed mask, which filter rejects.
+            type=pa.bool_(),
         )
         return table.filter(keep)
 
