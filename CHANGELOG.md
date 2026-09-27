@@ -16,7 +16,9 @@
   the convergence plot. `TopologyViewport` aliases the `clio.mesh-viewport.v1`
   kernel and `ParameterSlider` the `clio.slider.v1` kernel, a slider with a
   step and a box to type an exact value (both clio-schemas 0.4.0). Factorio Flat
-  now requires clio-agent 0.9.4.17 or newer for its pack catalog.
+  now requires clio-agent 0.9.4.19 or newer for its pack catalog (raised from
+  0.9.4.17: that release reads the `a2ui_catalogs` list form but does not pin
+  clio-schemas>=0.4.0, so TopologyViewport/ParameterSlider cannot load).
 
 ## [0.6.5] - 2026-09-24
 
