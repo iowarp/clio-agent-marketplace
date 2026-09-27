@@ -6,11 +6,16 @@ version: 0.4.0
 description: Live anomaly surveillance, containment, and evidence-backed provenance investigation
   across the reference phenotype campaign, Flowcept, CMF, and native stores.
 root_expert: spotter_watcher
+# The MCP launcher reads ${CLIO_BLUEPRINT_DIR} and ${CLIO_PROVENANCE_CONFIG}, which
+# clio-agent supplies from 0.9.4.19 (#1503); an older runtime holds this pack
+# with blueprint_requires_newer_clio_agent instead of arming it half-configured.
+requires:
+  clio_agent: ">=0.9.4.19"
 # A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
 # agent may produce surfaces only against the catalogs listed here, in this
 # preference order (nothing is implicit, the builtins included). An older
 # runtime reads a builtins-only list as no pack catalogs and still offers its
-# builtins, so this pack needs no clio-agent floor.
+# builtins (the clio-agent floor below is for the MCP launcher, not catalogs).
 a2ui_catalogs:
   - clio-workspace
 blueprint:
