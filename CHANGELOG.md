@@ -4,6 +4,11 @@
 
 ### Added
 
+- Base Agent (0.2.4) can fetch web pages and files with `web_fetch` (the
+  clio-kit web MCP server, declared the same way Deep Researcher declares it)
+  and can pause to ask the user a question with the native `ask_user` tool.
+  Both work on runtimes that already run this pack, so it keeps no
+  clio-agent floor.
 - Factorio Flat (0.3.0) can show Abaqus geometry and results interactively.
   The new `abaqus-visualization` skill ships the exporter (`odb_to_glb.py` for
   ODBs, `fea_glb.py` for `.inp` meshes and Tosca STLs) that writes `.glb`
