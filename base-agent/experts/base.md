@@ -25,6 +25,8 @@ tools:
   - fs_apply_edit_write
   - view_image
   - view_pdf
+  - web_fetch
+  - ask_user
 ---
 
 # Base Agent
