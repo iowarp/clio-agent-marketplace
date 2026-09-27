@@ -35,7 +35,13 @@ BUILTIN_SKILLS = frozenset({"present-interactive-analysis"})
 #: Tools clio-agent attaches automatically. Declaring them in ``tools`` is an
 #: "unknown tool reference" validation error (they are not in TOOL_CATALOG).
 AUTO_ATTACHED = frozenset(
-    {"load_skill", "spawn_skill_task", "wait_agent_tasks", "spawn_agent_task"}
+    {
+        "load_skill",
+        "spawn_skill_task",
+        "wait_agent_tasks",
+        "spawn_agent_task",
+        "create_artifact",
+    }
 )
 #: Builtin tool names an expert may declare.
 BUILTIN_TOOLS = frozenset(
@@ -44,6 +50,8 @@ BUILTIN_TOOLS = frozenset(
         "fs_read_file",
         "fs_propose_edit",
         "fs_apply_edit_write",
+        "view_image",
+        "view_pdf",
         "ask_user",
         "create_a2ui_surface",
         "update_a2ui_components",
@@ -92,7 +100,7 @@ class ApplCoreManifestTests(unittest.TestCase):
 
     def test_clio_kit_servers_are_declared_like_the_other_packs(self) -> None:
         servers = self.manifest["mcp_servers"]
-        self.assertEqual(sorted(servers), ["pandas", "parquet", "plot"])
+        self.assertEqual(sorted(servers), ["pandas", "parquet", "plot", "web"])
         for name, server in servers.items():
             with self.subTest(server=name):
                 self.assertEqual(server["command"], "clio-kit")
@@ -124,6 +132,24 @@ class ApplCoreExpertTests(unittest.TestCase):
                     tool,
                 )
 
+    def test_tools_include_the_general_purpose_toolset(self) -> None:
+        """The pack grants base-agent's normal capabilities; clio's permission
+        system, not the tool list, decides what is actually allowed."""
+
+        self.assertLessEqual(
+            {
+                "shell_bash",
+                "fs_read_file",
+                "fs_propose_edit",
+                "fs_apply_edit_write",
+                "view_image",
+                "view_pdf",
+                "web_fetch",
+                "ask_user",
+            },
+            set(self.expert["tools"]),
+        )
+
     def test_every_declared_skill_exists_and_every_skill_is_declared(self) -> None:
         declared = self.expert["skills"]
         shipped = {path.name for path in _skill_dirs()}
@@ -144,8 +170,8 @@ class ApplCoreExpertTests(unittest.TestCase):
             "<workspace_root>/.clio/datasets/<key>/experiment-card.md", prompt
         )
         self.assertIn("--store <workspace_root>", prompt)
-        self.assertIn("never write anything under the bundle root", prompt)
-        self.assertIn("Never conclude the session is read-only", prompt)
+        self.assertIn("It is a convention, not a limit", prompt)
+        self.assertIn("if an action is denied, report that plainly", prompt)
         self.assertNotIn("<bundle_root>/.clio", prompt)
         self.assertIn(
             "do not trust the returned card until you have re-run the returned loader yourself",
@@ -155,8 +181,29 @@ class ApplCoreExpertTests(unittest.TestCase):
         self.assertIn("`[stated]`, `[checked]`, or `[inferred]`", prompt)
         self.assertIn("check `export_version` first", prompt)
 
-    def test_no_instruction_writes_into_the_bundle_root(self) -> None:
-        """Per-dataset artefacts live in the workspace store, never the export."""
+    def test_pack_does_not_impose_access_limits(self) -> None:
+        """Permissions belong to clio (approval modes, deny rules, allowed roots,
+        sandbox); the pack's docs must not declare the session or export
+        read-only or forbid writes."""
+
+        banned = re.compile(
+            r"read-only input|never write|must not be written|"
+            r"session is read-only|session as read-only",
+            re.IGNORECASE,
+        )
+        for relative in (
+            "AGENT.md",
+            "experts/main.md",
+            "skills/onboard-dataset/SKILL.md",
+            "skills/audit-dataset/SKILL.md",
+            "skills/phenotyping-onboarding-checks/SKILL.md",
+        ):
+            with self.subTest(doc=relative):
+                text = " ".join((ROOT / relative).read_text(encoding="utf-8").split())
+                self.assertIsNone(banned.search(text))
+
+    def test_docs_default_artefacts_to_the_workspace_store(self) -> None:
+        """By default per-dataset artefacts live in the workspace store."""
 
         bundle_local = re.compile(
             r"(<bundle_root>|BUNDLE_ROOT)[/\\]\.clio", re.IGNORECASE

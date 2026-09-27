@@ -45,9 +45,6 @@
       "loader": {
         "deterministic": true,
         "verified": true
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -72,8 +69,7 @@
         ]
       },
       "outcome": {
-        "children_completed": true,
-        "bundle_untouched": true
+        "children_completed": true
       },
       "card": {
         "exists": true,
@@ -102,8 +98,7 @@
         ]
       },
       "outcome": {
-        "no_reprofile": true,
-        "bundle_untouched": true
+        "no_reprofile": true
       },
       "loader": {
         "verified": true
@@ -126,8 +121,7 @@
         "verified": true
       },
       "outcome": {
-        "no_reprofile": true,
-        "bundle_untouched": true
+        "no_reprofile": true
       }
     }
   },
@@ -150,9 +144,6 @@
           "unit",
           "concentration"
         ]
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -183,9 +174,6 @@
           "unit",
           "pixel"
         ]
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -211,8 +199,7 @@
         ]
       },
       "outcome": {
-        "no_views_written": true,
-        "bundle_untouched": true
+        "no_views_written": true
       }
     }
   },
@@ -235,9 +222,6 @@
       },
       "loader": {
         "verified": true
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -260,9 +244,6 @@
       },
       "loader": {
         "verified": true
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -285,9 +266,6 @@
       },
       "loader": {
         "verified": true
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -307,9 +285,6 @@
       },
       "loader": {
         "verified": true
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -329,9 +304,6 @@
       },
       "loader": {
         "verified": true
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -353,9 +325,6 @@
         "required_scripts": [
           "validate_views.py"
         ]
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -380,9 +349,6 @@
         "required_skills": [
           "size-and-growth-traits"
         ]
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -401,9 +367,6 @@
         "required_skills": [
           "treatment-response"
         ]
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -422,9 +385,6 @@
         "required_skills": [
           "physiology-signals"
         ]
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   },
@@ -444,9 +404,6 @@
           "phenotyping-report",
           "evidence-and-claims"
         ]
-      },
-      "outcome": {
-        "bundle_untouched": true
       }
     }
   }

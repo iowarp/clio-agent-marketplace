@@ -33,6 +33,10 @@ mcp_servers:
     command: clio-kit
     args: [mcp-server, plot]
     probe_timeout_retries: 10
+  web:
+    command: clio-kit
+    args: [mcp-server, web]
+    probe_timeout_retries: 10
 experts:
   - experts/main.md
 defaults:
@@ -62,7 +66,7 @@ this.
 
 ## Where L3 artefacts live
 
-In the active workspace, never in the data folder:
+By default in the active workspace, not in the data folder:
 `<workspace_root>/.clio/datasets/<key>/`, where `<key>` is the first 16 hex
 characters of the SHA-256 of the export's manifest file (without a manifest:
 of the resolved absolute bundle path). A second session, or the same export
@@ -76,7 +80,9 @@ mounted at another path, recomputes the key and finds the same card.
 - `views/`: validated tables in the phenotyping view shapes.
 - `audit/`: JSON reports from the onboarding audit scripts.
 
-The export is read-only input and only needs to be readable (it may be a
-shared or read-only facility mount); its files are never modified. The agent
-passes the active workspace root to `card.py` as `--store`. This matches
-clio's rule that generated artifacts go inside the active workspace root.
+Keeping derived artefacts out of the export leaves the raw data pristine and
+works with shared facility mounts; it is a default, not a restriction. The
+agent passes the active workspace root to `card.py` as `--store`, and follows
+the user if they want the artefacts elsewhere. What the agent may actually
+write is decided by clio's permission system (approval modes, deny rules,
+allowed roots, sandbox), not by this pack.

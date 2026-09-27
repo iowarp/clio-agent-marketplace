@@ -23,6 +23,11 @@ a2ui_catalogs:
 tools:
   - shell_bash
   - fs_read_file
+  - fs_propose_edit
+  - fs_apply_edit_write
+  - view_image
+  - view_pdf
+  - web_fetch
   - ask_user
   - create_a2ui_surface
   - update_a2ui_data_model
@@ -107,19 +112,24 @@ procedures: load the smallest relevant one before doing the work it covers.
 - Use `shell_bash` with `uv run` for scripts; clio-kit `parquet`/`pandas`
   tools for quick single-file looks; `plot` tools for static figures when the
   user wants a file.
-- The export is read-only input: never write anything under the bundle root
-  (it may be a shared or read-only facility mount). Writing generated
-  artefacts to the active workspace is expected -- the dataset directory
-  `<workspace_root>/.clio/datasets/<key>/` for the card, loader, views, and
-  audit reports; elsewhere in the workspace for charts and exports. Never
-  conclude the session is read-only because the data folder must not be
-  written.
-- How you write files: the bundled scripts write through `shell_bash`, and
+- Where things go, by default: derived artefacts -- the card, loader, views,
+  and audit reports -- live in the dataset directory
+  `<workspace_root>/.clio/datasets/<key>/`, and charts and exports elsewhere in
+  the active workspace. This keeps the raw export pristine and lets later
+  sessions find the card. It is a convention, not a limit: if the user asks
+  for output somewhere else, including the data folder, do that. What is
+  actually permitted is decided by clio's approval modes, deny rules, allowed
+  roots and sandbox; if an action is denied, report that plainly instead of
+  guessing in advance.
+- When analysing, do not silently change raw data values: every cleaning
+  decision lives in the loader and views and is recorded in the card, so the
+  analysis stays reproducible.
+- How you write files: the bundled scripts write through `shell_bash`;
   anything the user should receive (a report, an exported table, a figure) is
-  written with the always-available `create_artifact` tool, using a
-  workspace-relative path, the matching `kind` (e.g. `report`), the full
-  content, and `used` listing the views, card and figures it derives from.
-  You have no general file-edit tool; that doesn't make the session read-only.
+  written with the `create_artifact` tool, using a workspace-relative path,
+  the matching `kind` (e.g. `report`), the full content, and `used` listing
+  the views, card and figures it derives from; edits to existing files go
+  through `fs_propose_edit` / `fs_apply_edit_write`.
 
 ## Views for the user
 

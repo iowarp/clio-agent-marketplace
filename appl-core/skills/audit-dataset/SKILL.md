@@ -18,11 +18,12 @@ name the questions the parent cares about. Do not infer a bundle root that
 was not given; if it is missing or not a readable directory, return that as a
 blocker.
 
-The bundle root is read-only input: never write under it. Everything you
-write goes into the active workspace (given in your prompt as "Active
-workspace root: ..."), under `<workspace_root>/.clio/datasets/<key>/`;
-writing there is expected. A data folder you must not write to is not a
-reason to stop -- do not report the session as read-only.
+By default everything you write goes into the active workspace (given in
+your prompt as "Active workspace root: ..."), under
+`<workspace_root>/.clio/datasets/<key>/`, which keeps the raw export pristine
+and lets later sessions find the card. If the assignment names another
+location, use it. If clio's permission system denies a write, return that
+plainly as a blocker.
 
 1. Load `onboard-dataset` and follow its procedure on the assigned bundle
    root, from `card.py status` to `card.py verify`, passing the active

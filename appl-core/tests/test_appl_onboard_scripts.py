@@ -61,7 +61,9 @@ def test_inventory_skips_a_legacy_agent_dir(bundle: Path) -> None:
 
     assert not any(t["path"].startswith(".clio") for t in report["tables"])
     assert report["legacy_agent_dir"] == {"path": ".clio", "exists": True}
-    assert any("legacy .clio" in line for line in inventory.summarize(report))
+    assert any(
+        ".clio dir in the bundle" in line for line in inventory.summarize(report)
+    )
 
 
 def test_audit_finds_sentinel_ghosts_near_duplicates_and_twins(bundle: Path) -> None:
@@ -288,15 +290,23 @@ def test_card_init_writes_only_under_the_store(
     assert written == [f".clio/datasets/{key}/experiment-card.md"]
 
 
-def test_card_refuses_a_store_inside_the_bundle(bundle: Path) -> None:
-    before = tree_hash(bundle)
+def test_card_accepts_a_store_inside_the_bundle(bundle: Path) -> None:
+    """The store location is the user's/environment's choice, not the pack's."""
 
-    report = card.init(bundle, bundle)
+    created = card.init(bundle, bundle)
 
-    assert report["ok"] is False
-    assert "read-only input" in report["reason"]
-    assert card.main(["status", str(bundle), "--store", str(bundle)]) == 2
-    assert tree_hash(bundle) == before
+    assert created["ok"] is True
+    key = card.dataset_key(bundle)[0]
+    card_path = bundle / ".clio" / "datasets" / key / "experiment-card.md"
+    assert Path(created["card"]) == card_path.resolve()
+    assert card_path.is_file()
+    assert card.main(["status", str(bundle), "--store", str(bundle)]) == 0
+    # The key is stable: the card written inside the bundle does not change it.
+    assert card.dataset_key(bundle)[0] == key
+    # Its own output is still protected from accidental overwrite.
+    again = card.init(bundle, bundle)
+    assert again["ok"] is False
+    assert "--force" in again["reason"]
 
 
 def test_card_key_falls_back_to_the_bundle_path(bundle: Path, tmp_path: Path) -> None:

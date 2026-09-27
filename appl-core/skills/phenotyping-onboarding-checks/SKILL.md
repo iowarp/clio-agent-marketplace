@@ -23,7 +23,7 @@ uv run --no-project --with "pyarrow>=15" --with "jsonschema>=4.18" python "SKILL
 `DATASET_DIR` is the dataset's directory in the active workspace,
 `<workspace_root>/.clio/datasets/<key>/`, as printed by
 `card.py status BUNDLE_ROOT --store WORKSPACE_ROOT` (`dataset_dir:`). Views
-live there, never under the export's bundle root, which is read-only input.
+live there by default, next to the card, so the raw export stays pristine.
 
 Views are named by shape prefix (`design...`, `observations...`, `spectra...`,
 `assets...`, `events...`) so the validator infers the schema; use `--kind`

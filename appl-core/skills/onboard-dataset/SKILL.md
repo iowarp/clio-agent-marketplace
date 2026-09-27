@@ -24,14 +24,16 @@ profile it again:
 Audit reports go to `<workspace_root>/.clio/datasets/<key>/audit/`. Call this
 directory `DATASET_DIR`; `card.py status` prints it (`dataset_dir:`).
 
-- **The raw export is read-only input.** Never write anything under the
-  bundle root: it may be a shared or read-only facility mount, and nothing in
-  this procedure needs it to be writable.
-- **Writing to the workspace is expected.** `WORKSPACE_ROOT` is the active
-  workspace root given in your prompt as "Active workspace root: ..."; pass it
-  to `card.py` as `--store` (the default is the current working directory).
-  A data folder you should not write to does not make the session read-only;
-  never stop or refuse onboarding for that reason.
+- **Default location: the workspace, not the export.** `WORKSPACE_ROOT` is
+  the active workspace root given in your prompt as "Active workspace root:
+  ..."; pass it to `card.py` as `--store` (the default is the current working
+  directory). Keeping derived files out of the bundle root leaves the raw
+  export pristine and lets later sessions find the card. If the user wants
+  the artefacts somewhere else (including inside the data folder), pass that
+  directory as `--store` instead. Permissions are clio's call: if a write is
+  denied, report it plainly.
+- **Analysis hygiene.** Do not change raw data values in place; every
+  cleaning decision lives in the loader and views and is recorded in the card.
 - `<key>` is the first 16 hex characters of the SHA-256 of the export's
   manifest file, so a second session, or the same export at a different path,
   finds the same card by recomputing the key. Without a manifest the key is
@@ -112,8 +114,8 @@ sample only, so say so.
    lists), applies the card's decisions, and writes the views to
    `Path(__file__).parent / "views"`. Make it deterministic: sort rows by the
    view's key, fix column order, no timestamps or random ids in outputs,
-   overwrite its own outputs. It never writes outside its own directory, and
-   never under the bundle root.
+   overwrite its own outputs. It writes only to its own directory and leaves
+   the raw files as they are.
 8. **Run the loader, validate, record.** Run it with `uv run --no-project
    DATASET_DIR/loader.py BUNDLE_ROOT` (or with `--with` flags), validate the views
    (the `phenotyping-onboarding-checks` skill has schemas and a validator for

@@ -6,8 +6,7 @@ only what an observer of a live session can see -- the public response, the
 tool trace, the runtime rows (tasks, questions, sessions) -- plus a ``bundle``
 record the capture adapter takes after the turn from the workspace store
 (``<workspace_root>/.clio/datasets/<key>/``: the card text and the view hashes
-of each loader run) and from the bundle root (which files, if any, the turn
-changed there; the export is read-only input). It asserts OUTCOMES, not
+of each loader run). It asserts OUTCOMES, not
 turn structure: no tool ordering except where the outcome IS an order (the
 parent re-runs a child's loader after collecting the child), no call caps.
 
@@ -336,23 +335,6 @@ def _check_outcome(
                 EvaluationFailure(
                     case_id,
                     "views were written for a bundle that should have been refused",
-                )
-            )
-    if expect.get("bundle_untouched"):
-        changed = result["bundle"].get("bundle_files_changed")
-        if not isinstance(changed, list):
-            failures.append(
-                EvaluationFailure(
-                    case_id,
-                    "trace lacks bundle.bundle_files_changed; cannot show the "
-                    "export was left untouched",
-                )
-            )
-        elif changed:
-            failures.append(
-                EvaluationFailure(
-                    case_id,
-                    f"the turn wrote under the read-only bundle root: {changed[:5]}",
                 )
             )
     if expect.get("children_completed") and not any(

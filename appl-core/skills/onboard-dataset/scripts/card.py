@@ -4,11 +4,12 @@
 # ///
 """Create, check, and fingerprint the experiment card for one dataset.
 
-Per-dataset (L3) artefacts live in the ACTIVE WORKSPACE, never in the data
-folder. The raw export is read-only input (it may be a shared or read-only
-facility mount); ``--store`` names the workspace root (default: the current
-working directory, which in clio is the session workspace). Each dataset gets
-its own directory there::
+Per-dataset (L3) artefacts live, by default, in the ACTIVE WORKSPACE rather
+than in the data folder, so the raw export stays pristine and later sessions
+find the card. ``--store`` names the directory to use (default: the current
+working directory, which in clio is the session workspace); any directory is
+accepted, including one inside the bundle when the user wants that. Each
+dataset gets its own directory there::
 
     <store>/.clio/datasets/<key>/
         experiment-card.md   # facts, traps, open questions, loader/view hashes
@@ -32,9 +33,9 @@ Commands::
     python card.py verify BUNDLE_ROOT [--store WS]  # exit 1 unless the card is current and
                                                     # loader/views match the recorded hashes
 
-Only the dataset directory under the store is ever written; the bundle root is
-never modified, and a store that would put the dataset directory inside the
-bundle root is refused. Uses the standard library only.
+Only the dataset directory under the store is written; the raw files are
+read, never changed. ``init`` will not overwrite an existing card without
+``--force``. Uses the standard library only.
 """
 
 from __future__ import annotations
@@ -101,7 +102,7 @@ until the data owners confirm it). Never copy a fact from another dataset's card
 
 ## Identity
 
-- [checked] bundle root when the card was created: `{bundle_root}` (read-only input)
+- [checked] bundle root when the card was created: `{bundle_root}`
 - [checked] manifest `{manifest}` sha256 `{manifest_sha256}`
 - [stated] export_version: {export_version}
 - [stated] generated_at: {generated_at}
@@ -241,18 +242,6 @@ def dataset_dir(root: Path, store: Path) -> Path:
     return (datasets_root(store) / key).resolve()
 
 
-def check_store(root: Path, store: Path) -> str | None:
-    """A reason to refuse ``store`` (dataset dir inside the bundle), or None."""
-
-    if dataset_dir(root, store).is_relative_to(root.resolve()):
-        return (
-            f"store {store} would put the dataset directory inside the bundle root "
-            f"{root}; the raw export is read-only input. Pass the active workspace "
-            "root as --store."
-        )
-    return None
-
-
 def _paths(directory: Path) -> tuple[Path, Path, Path]:
     return directory / CARD_NAME, directory / LOADER_NAME, directory / VIEWS_DIR
 
@@ -294,9 +283,6 @@ def recorded_hashes(text: str) -> dict[str, Any] | None:
 def init(root: Path, store: Path, *, force: bool = False) -> dict[str, Any]:
     """Write a fresh card under the store (refuses to overwrite without force)."""
 
-    refusal = check_store(root, store)
-    if refusal is not None:
-        return {"ok": False, "reason": refusal}
     directory = dataset_dir(root, store)
     card, _, _ = _paths(directory)
     if card.exists() and not force:
@@ -503,10 +489,6 @@ def main(argv: list[str] | None = None) -> int:
         report = init(root, store, force=args.force)
         _print(report)
         return 0 if report["ok"] else 1
-    refusal = check_store(root, store)
-    if refusal is not None:
-        print(f"error: {refusal}", file=sys.stderr)
-        return 2
     if args.command == "record":
         report = record(root, store)
         _print(report)

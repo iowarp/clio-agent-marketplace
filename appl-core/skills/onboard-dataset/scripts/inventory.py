@@ -10,12 +10,12 @@ column-catalog candidates, and -- when a ``manifest.json`` is present -- the
 manifest's SHA-256, its top-level identity keys, and any row counts it
 declares compared with the counts the files actually hold.
 
-The input directory is never modified. Agent artefacts (experiment card,
-loader, views, audit reports) live in the workspace store
-(``<workspace>/.clio/datasets/<key>/``, see ``card.py``), not in the data. A
-legacy ``.clio`` directory at the bundle root, left by older sessions, is
-reported as ``legacy_agent_dir`` and never inventoried as data; nothing relies
-on it.
+This script only reads the input directory. Agent artefacts (experiment
+card, loader, views, audit reports) live by default in the workspace store
+(``<workspace>/.clio/datasets/<key>/``, see ``card.py``). A ``.clio``
+directory at the bundle root (left by an older session, or because the user
+chose the bundle itself as the store) is reported as ``legacy_agent_dir`` and
+never inventoried as data.
 
 Usage::
 
@@ -64,7 +64,7 @@ IDENTITY_KEYS = (
     "generated_at",
     "created_at",
 )
-LEGACY_AGENT_DIR = ".clio"  # skipped at the bundle root; not read or written
+LEGACY_AGENT_DIR = ".clio"  # agent artefacts at the bundle root; skipped as data
 
 
 def norm_rel(value: str) -> str:
@@ -387,8 +387,8 @@ def summarize(report: dict[str, Any], limit: int = 8) -> list[str]:
     )
     if report["legacy_agent_dir"]["exists"]:
         lines.append(
-            "legacy .clio dir in the bundle: skipped (agent artefacts live in the "
-            "workspace store; find the card with card.py status --store WORKSPACE)"
+            ".clio dir in the bundle: skipped as agent artefacts, not data "
+            "(find the card with card.py status --store STORE)"
         )
     manifest = report.get("manifest")
     if manifest is None:

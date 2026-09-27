@@ -323,20 +323,6 @@ def test_grader_rejects_unreadable_and_noncompliant_traces() -> None:
         _case(outcome={"no_views_written": True}), legacy_views
     )
 
-    untouched = _case(outcome={"bundle_untouched": True})
-    clean = _trace("c", bundle={"card_text": None, "bundle_files_changed": []})
-    assert evaluate.evaluate_case(untouched, clean) == []
-    unknown = evaluate.evaluate_case(untouched, _trace("c", bundle={}))
-    assert any("bundle_files_changed" in f.message for f in unknown)
-    wrote_bundle = _trace(
-        "c",
-        bundle={"card_text": None, "bundle_files_changed": ["B/.clio/card.md"]},
-    )
-    assert any(
-        "read-only bundle root" in f.message
-        for f in evaluate.evaluate_case(untouched, wrote_bundle)
-    )
-
     no_rerun = _trace(
         "c", actions=[{"name": "wait_agent_tasks", "arguments": {}, "result": {}}]
     )

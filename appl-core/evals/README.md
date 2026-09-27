@@ -8,13 +8,12 @@ card for this export in the workspace store" or "a current card from
 `first_contact_onboarding`"). The adapter substitutes `{bundle_root}` in
 `user_message` with the bundle's absolute path.
 
-Per-dataset artefacts live in the session's active workspace, not in the
-export: `<workspace_root>/.clio/datasets/<key>/` holds `experiment-card.md`,
+By default, per-dataset artefacts live in the session's active workspace,
+not in the export: `<workspace_root>/.clio/datasets/<key>/` holds `experiment-card.md`,
 `loader.py`, `views/`, and `audit/`, where `<key>` is the first 16 hex
 characters of the SHA-256 of the export's manifest file (see
-`skills/onboard-dataset/scripts/card.py`). The export is read-only input;
-the adapter may mount it read-only, and every case asserts the turn left it
-untouched.
+`skills/onboard-dataset/scripts/card.py`). What the agent may write is set by
+the clio session's permissions, not by these cases.
 
 ## Producing traces
 
@@ -39,8 +38,7 @@ For each case, an external adapter:
     "card_text": "contents of <workspace_root>/.clio/datasets/<key>/experiment-card.md after the turn, or null",
     "view_hash_runs": [{"<view path>": "<sha256>"}],
     "verify_exit_codes": [0],
-    "files_written": ["absolute paths the turn created or changed (workspace store and anywhere else)"],
-    "bundle_files_changed": ["paths under the bundle root created, changed, or removed by the turn (expected: [])"]
+    "files_written": ["absolute paths the turn created or changed (workspace store and anywhere else)"]
   }
 }
 ```
@@ -51,8 +49,6 @@ loader run observed in the trace (the adapter hashes
 `<workspace_root>/.clio/datasets/<key>/views/` after
 each `loader.py` shell action, or reads the `card.py record/verify` output);
 `verify_exit_codes` holds the exit status of each `card.py verify` call.
-`bundle_files_changed` comes from comparing the bundle root's file hashes
-before and after the turn.
 
 Every top-level key is required; the grader rejects a trace it cannot read
 instead of grading it as compliant.
@@ -74,8 +70,6 @@ instead of grading it as compliant.
   suspicious size scale.
 - **Version refusal** (`refuse_export_v7`): no views are written and the
   response names the export version.
-- **Read-only export** (every case, `outcome.bundle_untouched`): nothing
-  under the bundle root was created, changed, or removed.
 - **Held-out variants**: categorical treatment, unbalanced design, sentinel
   moved to another table, dropped modality, renamed columns -- each onboarded
   with the matching trap class recorded and a verified loader.

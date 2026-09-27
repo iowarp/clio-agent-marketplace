@@ -17,9 +17,12 @@
   loader, validated views, and audit reports in the active workspace under
   `.clio/datasets/<key>/`, where `<key>` comes from the SHA-256 of the
   export's manifest (`card.py --store <workspace_root>`; it also verifies
-  loader and view hashes). The export itself is read-only input and is never
-  written, so shared or read-only data mounts work and the same export is
-  found again from another session or path. Onboarding can run in a child agent (`audit-dataset`); the
+  loader and view hashes). Keeping these out of the export by default leaves
+  the raw data pristine, works with shared data mounts, and lets another
+  session or path find the same export again; the pack sets defaults only
+  and leaves what may be written to clio's approval modes, deny rules,
+  allowed roots, and sandbox. The expert carries Base Agent's
+  general-purpose tools (file edits, `view_image`, `view_pdf`, `web_fetch`). Onboarding can run in a child agent (`audit-dataset`); the
   parent re-runs the returned loader before trusting the card. Skills carry a
   level keyword (`level:L0`/`L1`/`L2`); the L1 phenotyping skills are drafts
   with JSON Schemas and a validator for the design, observations, spectra,
