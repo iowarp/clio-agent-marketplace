@@ -140,7 +140,13 @@ class ApplCoreExpertTests(unittest.TestCase):
         prompt = " ".join(
             (ROOT / "experts" / "main.md").read_text(encoding="utf-8").split()
         )
-        self.assertIn("<bundle_root>/.clio/experiment-card.md", prompt)
+        self.assertIn(
+            "<workspace_root>/.clio/datasets/<key>/experiment-card.md", prompt
+        )
+        self.assertIn("--store <workspace_root>", prompt)
+        self.assertIn("never write anything under the bundle root", prompt)
+        self.assertIn("Never conclude the session is read-only", prompt)
+        self.assertNotIn("<bundle_root>/.clio", prompt)
         self.assertIn(
             "do not trust the returned card until you have re-run the returned loader yourself",
             prompt,
@@ -148,6 +154,29 @@ class ApplCoreExpertTests(unittest.TestCase):
         self.assertIn("ask the user (`ask_user`)", prompt)
         self.assertIn("`[stated]`, `[checked]`, or `[inferred]`", prompt)
         self.assertIn("check `export_version` first", prompt)
+
+    def test_no_instruction_writes_into_the_bundle_root(self) -> None:
+        """Per-dataset artefacts live in the workspace store, never the export."""
+
+        bundle_local = re.compile(
+            r"(<bundle_root>|BUNDLE_ROOT)[/\\]\.clio", re.IGNORECASE
+        )
+        for path in sorted(ROOT.rglob("*")):
+            if path.suffix not in {".md", ".py", ".json"} or "tests" in path.parts:
+                continue
+            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                text = path.read_text(encoding="utf-8")
+                self.assertIsNone(bundle_local.search(text))
+        for relative in (
+            "AGENT.md",
+            "experts/main.md",
+            "skills/onboard-dataset/SKILL.md",
+            "skills/audit-dataset/SKILL.md",
+            "skills/phenotyping-onboarding-checks/SKILL.md",
+        ):
+            with self.subTest(doc=relative):
+                text = " ".join((ROOT / relative).read_text(encoding="utf-8").split())
+                self.assertIn(".clio/datasets/<key>/", text)
 
 
 class ApplCoreSkillTests(unittest.TestCase):

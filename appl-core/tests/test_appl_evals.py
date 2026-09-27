@@ -228,7 +228,7 @@ def _trace(case_id: str, **overrides: object) -> dict:
             },
             {
                 "name": "shell_bash",
-                "arguments": {"command": "uv run B/.clio/loader.py"},
+                "arguments": {"command": "uv run W/.clio/datasets/k/loader.py B"},
                 "result": {},
             },
             {
@@ -309,11 +309,32 @@ def test_grader_rejects_unreadable_and_noncompliant_traces() -> None:
         bundle={
             "card_text": None,
             "view_hash_runs": [{"v": "1"}],
-            "files_written": ["B/.clio/views/x"],
+            "files_written": ["W/.clio/datasets/k/views/x"],
         },
     )
     assert evaluate.evaluate_case(
         _case(outcome={"no_views_written": True}), wrote_views
+    )
+    legacy_views = _trace(
+        "c",
+        bundle={"card_text": None, "files_written": ["B/.clio/views/x"]},
+    )
+    assert evaluate.evaluate_case(
+        _case(outcome={"no_views_written": True}), legacy_views
+    )
+
+    untouched = _case(outcome={"bundle_untouched": True})
+    clean = _trace("c", bundle={"card_text": None, "bundle_files_changed": []})
+    assert evaluate.evaluate_case(untouched, clean) == []
+    unknown = evaluate.evaluate_case(untouched, _trace("c", bundle={}))
+    assert any("bundle_files_changed" in f.message for f in unknown)
+    wrote_bundle = _trace(
+        "c",
+        bundle={"card_text": None, "bundle_files_changed": ["B/.clio/card.md"]},
+    )
+    assert any(
+        "read-only bundle root" in f.message
+        for f in evaluate.evaluate_case(untouched, wrote_bundle)
     )
 
     no_rerun = _trace(
@@ -328,7 +349,7 @@ def test_grader_rejects_unreadable_and_noncompliant_traces() -> None:
             {"name": "wait_agent_tasks", "arguments": {}, "result": {}},
             {
                 "name": "shell_bash",
-                "arguments": {"command": "uv run B/.clio/loader.py"},
+                "arguments": {"command": "uv run W/.clio/datasets/k/loader.py B"},
                 "result": {},
             },
         ],

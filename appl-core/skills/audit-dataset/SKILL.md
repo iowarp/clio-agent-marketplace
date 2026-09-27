@@ -18,8 +18,16 @@ name the questions the parent cares about. Do not infer a bundle root that
 was not given; if it is missing or not a readable directory, return that as a
 blocker.
 
+The bundle root is read-only input: never write under it. Everything you
+write goes into the active workspace (given in your prompt as "Active
+workspace root: ..."), under `<workspace_root>/.clio/datasets/<key>/`;
+writing there is expected. A data folder you must not write to is not a
+reason to stop -- do not report the session as read-only.
+
 1. Load `onboard-dataset` and follow its procedure on the assigned bundle
-   root, from `card.py status` to `card.py verify`. Load `evidence-and-claims`
+   root, from `card.py status` to `card.py verify`, passing the active
+   workspace root as `--store WORKSPACE_ROOT` on every `card.py` call and
+   writing audit reports under the `dataset_dir` it prints. Load `evidence-and-claims`
    for tagging, and, when the data is plant phenotyping,
    `phenotyping-onboarding-checks` for the view shapes. If the export declares
    a format version, apply the export skill's version check first and stop on
@@ -31,9 +39,11 @@ blocker.
 3. Do not create A2UI surfaces. The parent owns presentation.
 4. Return exactly this, as short plain text:
    - `card:` absolute path of the experiment card
+   - `dataset_dir:` absolute path of `<workspace_root>/.clio/datasets/<key>/`
    - `loader:` absolute path of the loader, and the exact command you ran it with
    - `views:` each view path with its SHA-256 as recorded by `card.py record`
-   - `verify:` the result of the final `card.py verify` (must be exit 0)
+   - `verify:` the exact final `card.py verify ... --store ...` command and its
+     result (must be exit 0)
    - `traps:` one line per trap, `[trap:<class>] <where> -- <what> -- <handling>`
    - `open questions:` one line each
    - `blockers:` anything you could not do, or `none`

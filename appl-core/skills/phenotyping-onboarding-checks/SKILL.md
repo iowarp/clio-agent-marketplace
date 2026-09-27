@@ -17,8 +17,13 @@ them; analyses read only them. Each shape has a JSON Schema in `schemas/`
 (one row per object) and `scripts/validate_views.py` checks whole tables:
 
 ```text
-uv run --no-project --with "pyarrow>=15" --with "jsonschema>=4.18" python "SKILL_ROOT/scripts/validate_views.py" BUNDLE_ROOT/.clio/views/*.parquet
+uv run --no-project --with "pyarrow>=15" --with "jsonschema>=4.18" python "SKILL_ROOT/scripts/validate_views.py" DATASET_DIR/views/*.parquet
 ```
+
+`DATASET_DIR` is the dataset's directory in the active workspace,
+`<workspace_root>/.clio/datasets/<key>/`, as printed by
+`card.py status BUNDLE_ROOT --store WORKSPACE_ROOT` (`dataset_dir:`). Views
+live there, never under the export's bundle root, which is read-only input.
 
 Views are named by shape prefix (`design...`, `observations...`, `spectra...`,
 `assets...`, `events...`) so the validator infers the schema; use `--kind`

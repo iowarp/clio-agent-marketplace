@@ -2,7 +2,7 @@
   {
     "id": "first_contact_onboarding",
     "bundle": "primary",
-    "preconditions": "no .clio directory in the bundle root",
+    "preconditions": "no experiment card for this export in the workspace store",
     "user_message": "Here is an APPL-CORE export: {bundle_root}. Onboard it and tell me what I should be careful about before analysing it.",
     "expect": {
       "response": {
@@ -45,13 +45,16 @@
       "loader": {
         "deterministic": true,
         "verified": true
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
   {
     "id": "first_contact_delegated",
     "bundle": "primary",
-    "preconditions": "no .clio directory in the bundle root",
+    "preconditions": "no experiment card for this export in the workspace store",
     "user_message": "Audit {bundle_root} in the background and give me the short version when it is done.",
     "expect": {
       "response": {
@@ -69,7 +72,8 @@
         ]
       },
       "outcome": {
-        "children_completed": true
+        "children_completed": true,
+        "bundle_untouched": true
       },
       "card": {
         "exists": true,
@@ -84,7 +88,7 @@
   {
     "id": "card_reuse_second_session",
     "bundle": "primary",
-    "preconditions": "a current card, loader, and views from first_contact_onboarding; fresh session",
+    "preconditions": "a current card, loader, and views from first_contact_onboarding in the same workspace store; fresh session",
     "user_message": "Using the export at {bundle_root}, how many plants per treatment level are there?",
     "expect": {
       "response": {
@@ -98,7 +102,8 @@
         ]
       },
       "outcome": {
-        "no_reprofile": true
+        "no_reprofile": true,
+        "bundle_untouched": true
       },
       "loader": {
         "verified": true
@@ -121,7 +126,8 @@
         "verified": true
       },
       "outcome": {
-        "no_reprofile": true
+        "no_reprofile": true,
+        "bundle_untouched": true
       }
     }
   },
@@ -144,6 +150,9 @@
           "unit",
           "concentration"
         ]
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
@@ -174,13 +183,16 @@
           "unit",
           "pixel"
         ]
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
   {
     "id": "refuse_export_v7",
     "bundle": "variant:export_v7",
-    "preconditions": "variant made by make_variants.py --variant export_v7; no .clio directory",
+    "preconditions": "variant made by make_variants.py --variant export_v7; no experiment card for this export in the workspace store",
     "user_message": "Here is an APPL-CORE export: {bundle_root}. Onboard it.",
     "expect": {
       "response": {
@@ -199,14 +211,15 @@
         ]
       },
       "outcome": {
-        "no_views_written": true
+        "no_views_written": true,
+        "bundle_untouched": true
       }
     }
   },
   {
     "id": "variant_categorical_treatment",
     "bundle": "variant:categorical_treatment",
-    "preconditions": "no .clio directory",
+    "preconditions": "no experiment card for this export in the workspace store",
     "user_message": "Onboard {bundle_root} and describe the experimental design.",
     "expect": {
       "response": {
@@ -222,13 +235,16 @@
       },
       "loader": {
         "verified": true
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
   {
     "id": "variant_unbalanced",
     "bundle": "variant:unbalanced",
-    "preconditions": "no .clio directory",
+    "preconditions": "no experiment card for this export in the workspace store",
     "user_message": "Onboard {bundle_root} and tell me whether the design is balanced.",
     "expect": {
       "response": {
@@ -244,13 +260,16 @@
       },
       "loader": {
         "verified": true
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
   {
     "id": "variant_sentinel_elsewhere",
     "bundle": "variant:sentinel_elsewhere",
-    "preconditions": "no .clio directory",
+    "preconditions": "no experiment card for this export in the workspace store",
     "user_message": "Onboard {bundle_root}.",
     "expect": {
       "response": {
@@ -266,13 +285,16 @@
       },
       "loader": {
         "verified": true
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
   {
     "id": "variant_drop_modality",
     "bundle": "variant:drop_modality",
-    "preconditions": "no .clio directory",
+    "preconditions": "no experiment card for this export in the workspace store",
     "user_message": "Onboard {bundle_root} and list which sensors it contains.",
     "expect": {
       "response": {
@@ -285,13 +307,16 @@
       },
       "loader": {
         "verified": true
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
   {
     "id": "variant_rename_columns",
     "bundle": "variant:rename_columns",
-    "preconditions": "no .clio directory",
+    "preconditions": "no experiment card for this export in the workspace store",
     "user_message": "Onboard {bundle_root}.",
     "expect": {
       "response": {
@@ -304,6 +329,9 @@
       },
       "loader": {
         "verified": true
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
@@ -325,6 +353,9 @@
         "required_scripts": [
           "validate_views.py"
         ]
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
@@ -349,6 +380,9 @@
         "required_skills": [
           "size-and-growth-traits"
         ]
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
@@ -367,6 +401,9 @@
         "required_skills": [
           "treatment-response"
         ]
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
@@ -385,6 +422,9 @@
         "required_skills": [
           "physiology-signals"
         ]
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   },
@@ -404,6 +444,9 @@
           "phenotyping-report",
           "evidence-and-claims"
         ]
+      },
+      "outcome": {
+        "bundle_untouched": true
       }
     }
   }

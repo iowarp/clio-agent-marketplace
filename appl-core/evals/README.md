@@ -3,16 +3,27 @@
 `behavioral-cases.json` holds user messages and semantic expectations for an
 activated `appl-core` session. Each case names the bundle it runs against
 (`bundle`: `primary`, or `variant:<name>` for a mutated copy made by
-`scripts/make_variants.py`) and its preconditions (for example "no `.clio`
-directory" or "a current card from `first_contact_onboarding`"). The adapter
-substitutes `{bundle_root}` in `user_message` with the bundle's absolute path.
+`scripts/make_variants.py`) and its preconditions (for example "no experiment
+card for this export in the workspace store" or "a current card from
+`first_contact_onboarding`"). The adapter substitutes `{bundle_root}` in
+`user_message` with the bundle's absolute path.
+
+Per-dataset artefacts live in the session's active workspace, not in the
+export: `<workspace_root>/.clio/datasets/<key>/` holds `experiment-card.md`,
+`loader.py`, `views/`, and `audit/`, where `<key>` is the first 16 hex
+characters of the SHA-256 of the export's manifest file (see
+`skills/onboard-dataset/scripts/card.py`). The export is read-only input;
+the adapter may mount it read-only, and every case asserts the turn left it
+untouched.
 
 ## Producing traces
 
 For each case, an external adapter:
 
-1. prepares the bundle root as the preconditions say (delete or keep
-   `<bundle_root>/.clio/`; start a fresh session when the case says so);
+1. prepares the workspace store as the preconditions say (delete or keep
+   `<workspace_root>/.clio/datasets/<key>/`; a case that reuses a card runs
+   in the same workspace; start a fresh session when the case says so) and
+   hashes every file under the bundle root;
 2. sends `user_message` to the session and waits for the turn to end;
 3. writes one normalized record per case:
 
@@ -25,19 +36,23 @@ For each case, an external adapter:
   "questions": [{"id": "...", "status": "pending", "source": "orchestrator", "prompt": "..."}],
   "sessions": [{"session_id": "...", "status": "..."}],
   "bundle": {
-    "card_text": "contents of <bundle_root>/.clio/experiment-card.md after the turn, or null",
+    "card_text": "contents of <workspace_root>/.clio/datasets/<key>/experiment-card.md after the turn, or null",
     "view_hash_runs": [{"<view path>": "<sha256>"}],
     "verify_exit_codes": [0],
-    "files_written": ["paths the turn created or changed under the bundle root"]
+    "files_written": ["absolute paths the turn created or changed (workspace store and anywhere else)"],
+    "bundle_files_changed": ["paths under the bundle root created, changed, or removed by the turn (expected: [])"]
   }
 }
 ```
 
 `tasks`, `questions`, and `sessions` keep the runtime shapes described in
 `factorio-flat/evals/README.md`. `bundle.view_hash_runs` has one entry per
-loader run observed in the trace (the adapter hashes `.clio/views/` after
+loader run observed in the trace (the adapter hashes
+`<workspace_root>/.clio/datasets/<key>/views/` after
 each `loader.py` shell action, or reads the `card.py record/verify` output);
 `verify_exit_codes` holds the exit status of each `card.py verify` call.
+`bundle_files_changed` comes from comparing the bundle root's file hashes
+before and after the turn.
 
 Every top-level key is required; the grader rejects a trace it cannot read
 instead of grading it as compliant.
@@ -59,6 +74,8 @@ instead of grading it as compliant.
   suspicious size scale.
 - **Version refusal** (`refuse_export_v7`): no views are written and the
   response names the export version.
+- **Read-only export** (every case, `outcome.bundle_untouched`): nothing
+  under the bundle root was created, changed, or removed.
 - **Held-out variants**: categorical treatment, unbalanced design, sentinel
   moved to another table, dropped modality, renamed columns -- each onboarded
   with the matching trap class recorded and a verified loader.
@@ -81,8 +98,8 @@ uv run --no-project --with "pyarrow>=15" python appl-core/evals/scripts/make_var
 ```
 
 Variants copy tables, manifest, and docs only (asset directories are skipped,
-or symlinked with `--link-assets`), never copy `.clio/`, and never write into
-the source bundle. The provenance record goes to `OUT_DIR.variant.json`,
+or symlinked with `--link-assets`), never copy a legacy bundle-local `.clio/`,
+and never write into the source bundle. The provenance record goes to `OUT_DIR.variant.json`,
 outside the variant, so the agent under test cannot read it.
 
 ## Grading

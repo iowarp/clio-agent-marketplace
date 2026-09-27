@@ -4,8 +4,10 @@
 Skeleton grader, modelled on ``scripts/evaluate_factorio_flat.py``: it reads
 only what an observer of a live session can see -- the public response, the
 tool trace, the runtime rows (tasks, questions, sessions) -- plus a ``bundle``
-record the capture adapter takes from the bundle root after the turn (the
-card text and the view hashes of each loader run). It asserts OUTCOMES, not
+record the capture adapter takes after the turn from the workspace store
+(``<workspace_root>/.clio/datasets/<key>/``: the card text and the view hashes
+of each loader run) and from the bundle root (which files, if any, the turn
+changed there; the export is read-only input). It asserts OUTCOMES, not
 turn structure: no tool ordering except where the outcome IS an order (the
 parent re-runs a child's loader after collecting the child), no call caps.
 
@@ -52,6 +54,9 @@ _TAGGED_CLAIM = re.compile(r"^\s*-\s*\[(stated|checked|inferred)\]", re.MULTILIN
 _TRAP = re.compile(r"\[trap:([a-z0-9-]+)\]")
 _SECTION = re.compile(r"^## (.+)$", re.MULTILINE)
 _COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+#: A view file in the workspace store (``.clio/datasets/<key>/views/``) or in a
+#: legacy bundle-local ``.clio/views/``.
+_VIEW_PATH = re.compile(r"/\.clio/(?:datasets/[^/]+/)?views/")
 
 
 @dataclass(frozen=True)
@@ -324,13 +329,30 @@ def _check_outcome(
         written = [
             p
             for p in result["bundle"].get("files_written", [])
-            if "/.clio/views/" in str(p).replace("\\", "/")
+            if _VIEW_PATH.search(str(p).replace("\\", "/"))
         ]
         if runs or written:
             failures.append(
                 EvaluationFailure(
                     case_id,
                     "views were written for a bundle that should have been refused",
+                )
+            )
+    if expect.get("bundle_untouched"):
+        changed = result["bundle"].get("bundle_files_changed")
+        if not isinstance(changed, list):
+            failures.append(
+                EvaluationFailure(
+                    case_id,
+                    "trace lacks bundle.bundle_files_changed; cannot show the "
+                    "export was left untouched",
+                )
+            )
+        elif changed:
+            failures.append(
+                EvaluationFailure(
+                    case_id,
+                    f"the turn wrote under the read-only bundle root: {changed[:5]}",
                 )
             )
     if expect.get("children_completed") and not any(

@@ -8,7 +8,10 @@ Run (CI form, see .github/workflows/ci.yml)::
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
+import shutil
 from pathlib import Path
 
 import pyarrow as pa
@@ -48,7 +51,8 @@ def test_inventory_compares_declared_counts_and_finds_twins(bundle: Path) -> Non
     assert images["files"] == 60
 
 
-def test_inventory_skips_agent_dir_and_reports_card(bundle: Path) -> None:
+def test_inventory_skips_a_legacy_agent_dir(bundle: Path) -> None:
+    assert inventory.inventory(bundle)["legacy_agent_dir"]["exists"] is False
     (bundle / ".clio" / "views").mkdir(parents=True)
     pq.write_table(pa.table({"x": [1]}), bundle / ".clio" / "views" / "design.parquet")
     (bundle / ".clio" / "experiment-card.md").write_text("---\n---\n", encoding="utf-8")
@@ -56,7 +60,8 @@ def test_inventory_skips_agent_dir_and_reports_card(bundle: Path) -> None:
     report = inventory.inventory(bundle)
 
     assert not any(t["path"].startswith(".clio") for t in report["tables"])
-    assert report["agent_dir"] == {"path": ".clio", "exists": True, "card_exists": True}
+    assert report["legacy_agent_dir"] == {"path": ".clio", "exists": True}
+    assert any("legacy .clio" in line for line in inventory.summarize(report))
 
 
 def test_audit_finds_sentinel_ghosts_near_duplicates_and_twins(bundle: Path) -> None:
@@ -179,13 +184,21 @@ def test_flag_check_parses_string_lists_and_zero_signal(bundle: Path) -> None:
     assert flag_check.parse_flags("[]") == frozenset()
 
 
-def test_card_lifecycle(bundle: Path) -> None:
-    created = card.init(bundle)
+def test_card_lifecycle(bundle: Path, tmp_path: Path) -> None:
+    store = tmp_path / "workspace"
+    before = tree_hash(bundle)
+    created = card.init(bundle, store)
     assert created["ok"] is True
-    text = (bundle / ".clio" / "experiment-card.md").read_text(encoding="utf-8")
+    directory = Path(created["dataset_dir"])
+    assert directory.parent == (store / ".clio" / "datasets").resolve()
+    assert directory.name == created["manifest_sha256"][:16]
+    assert created["key_source"] == "manifest"
+    text = (directory / "experiment-card.md").read_text(encoding="utf-8")
     meta = card.parse_frontmatter(text)
     assert meta["export_version"] == "6"
     assert meta["manifest_sha256"] == created["manifest_sha256"]
+    assert meta["dataset_key"] == directory.name
+    assert Path(meta["bundle_root"]) == bundle.resolve()
     for section in (
         "## Traps found",
         "## Open questions for data owners",
@@ -194,37 +207,119 @@ def test_card_lifecycle(bundle: Path) -> None:
     ):
         assert section in text
 
-    assert card.init(bundle)["ok"] is False  # never overwrite silently
-    assert card.status(bundle)["state"] == "current"
-    assert card.status(bundle)["hashes"] == "not_recorded"
+    assert card.init(bundle, store)["ok"] is False  # never overwrite silently
+    first = card.status(bundle, store)
+    assert first["state"] == "current"
+    assert first["manifest_match"] is True
+    assert first["hashes"] == "not_recorded"
+    assert first["dataset_dir"] == str(directory)
 
-    views = bundle / ".clio" / "views"
+    views = directory / "views"
     views.mkdir()
-    (bundle / ".clio" / "loader.py").write_text("print('load')\n", encoding="utf-8")
+    (directory / "loader.py").write_text("print('load')\n", encoding="utf-8")
     pq.write_table(pa.table({"unit_id": ["a"]}), views / "design.parquet")
-    card.record(bundle)
-    assert card.status(bundle)["hashes"] == "match"
-    assert card.main(["verify", str(bundle)]) == 0
+    recorded = card.record(bundle, store)
+    assert recorded["views"] == {
+        "views/design.parquet": card._sha256(views / "design.parquet")
+    }
+    assert card.status(bundle, store)["hashes"] == "match"
+    assert card.main(["verify", str(bundle), "--store", str(store)]) == 0
 
     pq.write_table(pa.table({"unit_id": ["b"]}), views / "design.parquet")
-    drift = card.status(bundle)
+    drift = card.status(bundle, store)
     assert drift["hashes"] == "drift"
-    assert drift["drifted"] == [".clio/views/design.parquet"]
-    assert card.main(["verify", str(bundle)]) == 1
+    assert drift["drifted"] == ["views/design.parquet"]
+    assert card.main(["verify", str(bundle), "--store", str(store)]) == 1
+    assert tree_hash(bundle) == before  # the export is never written
+    assert not (bundle / ".clio").exists()
 
     manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
     manifest["generated_at"] = "later"
     (bundle / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
-    assert card.status(bundle)["state"] == "stale"
+    stale = card.status(bundle, store)
+    assert stale["state"] == "stale"
+    assert stale["card_exists"] is False
+    assert stale["previous_cards"] == [str(directory / "experiment-card.md")]
 
 
-def test_card_force_replaces(bundle: Path) -> None:
-    card.init(bundle)
-    (bundle / ".clio" / "experiment-card.md").write_text("old", encoding="utf-8")
-    assert card.init(bundle, force=True)["ok"] is True
-    assert "old" != (bundle / ".clio" / "experiment-card.md").read_text(
-        encoding="utf-8"
-    )
+def test_card_force_replaces(bundle: Path, tmp_path: Path) -> None:
+    store = tmp_path / "workspace"
+    created = card.init(bundle, store)
+    path = Path(created["card"])
+    path.write_text("old", encoding="utf-8")
+    assert card.init(bundle, store)["ok"] is False
+    assert path.read_text(encoding="utf-8") == "old"
+    assert card.init(bundle, store, force=True)["ok"] is True
+    assert path.read_text(encoding="utf-8") != "old"
+
+
+def test_card_found_by_manifest_hash_from_another_path(
+    bundle: Path, tmp_path: Path
+) -> None:
+    store = tmp_path / "workspace"
+    created = card.init(bundle, store)
+    moved = tmp_path / "elsewhere" / "same-export"
+    shutil.copytree(bundle, moved)
+
+    report = card.status(moved, store)
+
+    assert report["state"] == "current"
+    assert report["manifest_match"] is True
+    assert report["card"] == created["card"]
+    assert report["dataset_key"] == created["dataset_key"]
+    assert Path(report["card_bundle_root"]) == bundle.resolve()
+
+
+def test_card_init_writes_only_under_the_store(
+    bundle: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = tmp_path / "workspace"
+    store.mkdir()
+    before = tree_hash(bundle)
+    monkeypatch.chdir(store)  # --store defaults to the working directory
+
+    assert card.main(["init", str(bundle)]) == 0
+    assert card.main(["status", str(bundle)]) == 0
+
+    assert tree_hash(bundle) == before
+    assert not (bundle / ".clio").exists()
+    written = [p.relative_to(store).as_posix() for p in store.rglob("*") if p.is_file()]
+    key = card.dataset_key(bundle)[0]
+    assert written == [f".clio/datasets/{key}/experiment-card.md"]
+
+
+def test_card_refuses_a_store_inside_the_bundle(bundle: Path) -> None:
+    before = tree_hash(bundle)
+
+    report = card.init(bundle, bundle)
+
+    assert report["ok"] is False
+    assert "read-only input" in report["reason"]
+    assert card.main(["status", str(bundle), "--store", str(bundle)]) == 2
+    assert tree_hash(bundle) == before
+
+
+def test_card_key_falls_back_to_the_bundle_path(bundle: Path, tmp_path: Path) -> None:
+    (bundle / "manifest.json").unlink()
+    store = tmp_path / "workspace"
+    before = tree_hash(bundle)
+
+    created = card.init(bundle, store)
+
+    assert created["ok"] is True
+    assert created["key_source"] == "path"
+    expected = hashlib.sha256(
+        os.path.normcase(str(bundle.resolve())).encode("utf-8")
+    ).hexdigest()[:16]
+    assert created["dataset_key"] == expected
+    assert Path(created["dataset_dir"]).name == expected
+    report = card.status(bundle, store)
+    assert report["state"] == "no_manifest"
+    assert report["card_exists"] is True
+    moved = tmp_path / "moved"
+    shutil.copytree(bundle, moved)
+    assert card.dataset_key(moved)[0] != expected  # path keys follow the path
+    assert tree_hash(bundle) == before
 
 
 def test_cli_entry_points_never_modify_inputs(

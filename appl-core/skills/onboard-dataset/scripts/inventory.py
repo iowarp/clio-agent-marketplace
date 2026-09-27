@@ -10,8 +10,12 @@ column-catalog candidates, and -- when a ``manifest.json`` is present -- the
 manifest's SHA-256, its top-level identity keys, and any row counts it
 declares compared with the counts the files actually hold.
 
-The input directory is never modified. The ``.clio`` directory (where agent
-artefacts live) is reported separately and never inventoried as data.
+The input directory is never modified. Agent artefacts (experiment card,
+loader, views, audit reports) live in the workspace store
+(``<workspace>/.clio/datasets/<key>/``, see ``card.py``), not in the data. A
+legacy ``.clio`` directory at the bundle root, left by older sessions, is
+reported as ``legacy_agent_dir`` and never inventoried as data; nothing relies
+on it.
 
 Usage::
 
@@ -60,7 +64,7 @@ IDENTITY_KEYS = (
     "generated_at",
     "created_at",
 )
-AGENT_DIR = ".clio"
+LEGACY_AGENT_DIR = ".clio"  # skipped at the bundle root; not read or written
 
 
 def norm_rel(value: str) -> str:
@@ -212,8 +216,8 @@ def inventory(root: Path, *, count_csv_rows: bool = False) -> dict[str, Any]:
     total_files = total_bytes = 0
     for dirpath, dirnames, filenames in os.walk(root):
         current = Path(dirpath)
-        if current == root and AGENT_DIR in dirnames:
-            dirnames.remove(AGENT_DIR)
+        if current == root and LEGACY_AGENT_DIR in dirnames:
+            dirnames.remove(LEGACY_AGENT_DIR)
         dirnames.sort()
         rel_dir = current.relative_to(root).as_posix() or "."
         for name in sorted(filenames):
@@ -287,10 +291,9 @@ def inventory(root: Path, *, count_csv_rows: bool = False) -> dict[str, Any]:
         "directories": directories,
         "tables": tables,
         "docs": docs,
-        "agent_dir": {
-            "path": AGENT_DIR,
-            "exists": (root / AGENT_DIR).is_dir(),
-            "card_exists": (root / AGENT_DIR / "experiment-card.md").is_file(),
+        "legacy_agent_dir": {
+            "path": LEGACY_AGENT_DIR,
+            "exists": (root / LEGACY_AGENT_DIR).is_dir(),
         },
         "manifest": _manifest_report(root, tables),
     }
@@ -382,10 +385,11 @@ def summarize(report: dict[str, Any], limit: int = 8) -> list[str]:
     lines.append(
         f"docs: {len(report['docs'])} e.g. {[d['path'] for d in report['docs'][:limit]]}"
     )
-    agent = report["agent_dir"]
-    lines.append(
-        f"existing .clio dir: {agent['exists']}  experiment card: {agent['card_exists']}"
-    )
+    if report["legacy_agent_dir"]["exists"]:
+        lines.append(
+            "legacy .clio dir in the bundle: skipped (agent artefacts live in the "
+            "workspace store; find the card with card.py status --store WORKSPACE)"
+        )
     manifest = report.get("manifest")
     if manifest is None:
         lines.append("manifest: none found at root")

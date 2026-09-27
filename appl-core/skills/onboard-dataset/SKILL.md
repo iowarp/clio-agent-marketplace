@@ -12,19 +12,32 @@ keywords:
 # Onboard a dataset
 
 Goal: turn an unfamiliar dataset directory (the *bundle root*) into three
-artefacts stored with the data, so that no later session has to profile it
-again:
+artefacts, stored in the **active workspace** so that no later session has to
+profile it again:
 
 | Artefact | Path | Content |
 | --- | --- | --- |
-| experiment card | `<bundle_root>/.clio/experiment-card.md` | facts tagged stated/checked/inferred, traps, open questions, proposed lessons, loader and view hashes |
-| loader | `<bundle_root>/.clio/loader.py` | one idempotent script that reads the raw files and applies every decision in the card |
-| views | `<bundle_root>/.clio/views/` | analysis-ready tables written by the loader (Parquet) |
+| experiment card | `<workspace_root>/.clio/datasets/<key>/experiment-card.md` | facts tagged stated/checked/inferred, traps, open questions, proposed lessons, loader and view hashes |
+| loader | `<workspace_root>/.clio/datasets/<key>/loader.py` | one idempotent script that reads the raw files and applies every decision in the card |
+| views | `<workspace_root>/.clio/datasets/<key>/views/` | analysis-ready tables written by the loader (Parquet) |
 
-The raw data is never modified. Everything you write goes under
-`<bundle_root>/.clio/` (audit reports under `.clio/audit/`). If the bundle
-root is not writable, stop and say so; do not write the artefacts somewhere
-else silently.
+Audit reports go to `<workspace_root>/.clio/datasets/<key>/audit/`. Call this
+directory `DATASET_DIR`; `card.py status` prints it (`dataset_dir:`).
+
+- **The raw export is read-only input.** Never write anything under the
+  bundle root: it may be a shared or read-only facility mount, and nothing in
+  this procedure needs it to be writable.
+- **Writing to the workspace is expected.** `WORKSPACE_ROOT` is the active
+  workspace root given in your prompt as "Active workspace root: ..."; pass it
+  to `card.py` as `--store` (the default is the current working directory).
+  A data folder you should not write to does not make the session read-only;
+  never stop or refuse onboarding for that reason.
+- `<key>` is the first 16 hex characters of the SHA-256 of the export's
+  manifest file, so a second session, or the same export at a different path,
+  finds the same card by recomputing the key. Without a manifest the key is
+  built the same way from the resolved absolute bundle path (it changes if the data
+  moves). The card's frontmatter records the absolute bundle path, the
+  manifest's SHA-256, and `export_version`.
 
 This skill deepens the generic `inspect_dataset_structure` and
 `reason_about_quality` procedures of the Data Semantics pack: same intent,
@@ -37,29 +50,33 @@ literal path in the commands below. Run through uv's shared cache, never a
 `.venv` inside the skill directory. The commands work on Windows and Linux.
 
 ```text
-uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/inventory.py" BUNDLE_ROOT --out BUNDLE_ROOT/.clio/audit/inventory.json
-uv run --no-project --with "pyarrow>=15" --with "numpy>=1.24" python "SKILL_ROOT/scripts/audit_columns.py" TABLE --out BUNDLE_ROOT/.clio/audit/columns-NAME.json
-uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/join_keys.py" TABLE_A TABLE_B --keys K1,K2 --out BUNDLE_ROOT/.clio/audit/join-NAME.json
-uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/flag_check.py" TABLE --flags FLAG_COL --signal SIGNAL_COL --out BUNDLE_ROOT/.clio/audit/flags-NAME.json
-uv run --no-project python "SKILL_ROOT/scripts/card.py" init|status|record|verify BUNDLE_ROOT
+uv run --no-project python "SKILL_ROOT/scripts/card.py" status|init|record|verify BUNDLE_ROOT --store WORKSPACE_ROOT
+uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/inventory.py" BUNDLE_ROOT --out DATASET_DIR/audit/inventory.json
+uv run --no-project --with "pyarrow>=15" --with "numpy>=1.24" python "SKILL_ROOT/scripts/audit_columns.py" TABLE --out DATASET_DIR/audit/columns-NAME.json
+uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/join_keys.py" TABLE_A TABLE_B --keys K1,K2 --out DATASET_DIR/audit/join-NAME.json
+uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/flag_check.py" TABLE --flags FLAG_COL --signal SIGNAL_COL --out DATASET_DIR/audit/flags-NAME.json
 ```
 
-Each script prints a short summary and writes the full JSON to `--out`
-(without `--out` the JSON follows the summary on stdout, which can exceed the
-shell output cap on wide tables; prefer `--out` and read the JSON with
-`fs_read_file` only where the summary points). Prefer Parquet over a CSV twin
+The audit scripts only read their inputs. Each prints a short summary and
+writes the full JSON to `--out` (always a path under `DATASET_DIR/audit/`,
+never under the bundle root). Without `--out` the JSON follows the summary
+on stdout, which can exceed the shell output cap on wide tables; prefer
+`--out` and read the JSON with `fs_read_file` only where the summary points. Prefer Parquet over a CSV twin
 of the same table: it is smaller and keeps types. `audit_columns.py --sample N`
 reads only the first N rows; a finding from a sample is `[checked]` for the
 sample only, so say so.
 
 ## Procedure
 
-1. **Is there already a card?** Run `card.py status BUNDLE_ROOT`.
+1. **Is there already a card?** Run
+   `card.py status BUNDLE_ROOT --store WORKSPACE_ROOT` and note `dataset_dir`.
    - `state: current` and `hashes: match`: reuse the card. Read it, run the
      loader once (step 8) and continue with the analysis. Do not re-profile.
-   - `state: stale` (manifest changed) or `hashes: drift`: the data or the
-     loader changed since the card was written. Re-run only the audits whose
-     tables changed, update the card, and say what changed.
+   - `state: stale` (the store has a card for this bundle path made from a
+     different manifest, listed under `previous_cards`) or `hashes: drift`:
+     the data or the loader changed since the card was written. For a stale
+     card, `init` a new one and carry over only what you re-check; re-run
+     only the audits whose tables changed, and say what changed.
    - `no_card`: continue.
 2. **Read the self-description before any profiling.** In this order: a
    manifest (`manifest.json` or similar), README files, documentation folders,
@@ -73,7 +90,8 @@ sample only, so say so.
    twins (the same table as CSV and Parquet), docs, and every
    `declared_counts` status other than `match`, every file the manifest
    references that is missing, and tables it does not reference.
-4. **Create the card** with `card.py init BUNDLE_ROOT`, then fill it as you go
+4. **Create the card** with `card.py init BUNDLE_ROOT --store WORKSPACE_ROOT`,
+   then fill it as you go
    (see `evidence-and-claims` for tagging). Never overwrite an existing card
    without `--force` and a reason.
 5. **Audit the tables** that matter for the questions at hand (all of them on
@@ -88,18 +106,21 @@ sample only, so say so.
    line. Anything whose meaning you cannot establish from the files goes to
    *Open questions for data owners* -- ask the user rather than guess (a
    treatment's meaning, a unit that looks wrong, whether zeros are real).
-7. **Write the loader** `<bundle_root>/.clio/loader.py`: a PEP 723 script
-   (`# /// script` block with pinned dependencies) that discovers files from
-   the manifest (not hard-coded lists), applies the card's decisions, and
-   writes the views. Make it deterministic: sort rows by the view's key, fix
-   column order, no timestamps or random ids in outputs, overwrite its own
-   outputs. It never writes outside `.clio/`.
+7. **Write the loader** `DATASET_DIR/loader.py`: a PEP 723 script
+   (`# /// script` block with pinned dependencies) that takes the bundle root
+   as its first argument, discovers files from the manifest (not hard-coded
+   lists), applies the card's decisions, and writes the views to
+   `Path(__file__).parent / "views"`. Make it deterministic: sort rows by the
+   view's key, fix column order, no timestamps or random ids in outputs,
+   overwrite its own outputs. It never writes outside its own directory, and
+   never under the bundle root.
 8. **Run the loader, validate, record.** Run it with `uv run --no-project
-   BUNDLE_ROOT/.clio/loader.py` (or with `--with` flags), validate the views
+   DATASET_DIR/loader.py BUNDLE_ROOT` (or with `--with` flags), validate the views
    (the `phenotyping-onboarding-checks` skill has schemas and a validator for
    phenotyping data), check row counts after every join, then
-   `card.py record BUNDLE_ROOT`. Run the loader a second time and
-   `card.py verify BUNDLE_ROOT`: identical hashes prove it is deterministic.
+   `card.py record BUNDLE_ROOT --store WORKSPACE_ROOT`. Run the loader a
+   second time and `card.py verify BUNDLE_ROOT --store WORKSPACE_ROOT`:
+   identical hashes prove it is deterministic.
    If they differ, fix the loader before anyone trusts a view.
 9. **Report** in a few lines: what the dataset is, the traps found and how
    they are handled, the open questions, and the card/loader/view paths.

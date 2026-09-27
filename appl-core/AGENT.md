@@ -54,7 +54,7 @@ never shipped here.
 | L0 | any dataset: onboarding, audits, evidence tagging, 3D conversion | skills tagged `level:L0` |
 | L1 | plant phenotyping at any facility: view shapes, growth, treatment response, physiology, reports | skills tagged `level:L1` (drafts) |
 | L2 | the APPL-CORE export format and APPL instruments | skills tagged `level:L2` (placeholders until the falsifier experiment decides their content) |
-| L3 | one experiment | **not in this pack**: the experiment card, loader, and views stored with the data |
+| L3 | one experiment | **not in this pack**: the experiment card, loader, and views stored in the active workspace |
 
 Skills hold checks and methods; facts about one experiment belong in its
 card. `.lint-l3` and `lint-denylist.txt` let the marketplace linter enforce
@@ -62,14 +62,21 @@ this.
 
 ## Where L3 artefacts live
 
-Next to the data, under the export's root:
+In the active workspace, never in the data folder:
+`<workspace_root>/.clio/datasets/<key>/`, where `<key>` is the first 16 hex
+characters of the SHA-256 of the export's manifest file (without a manifest:
+of the resolved absolute bundle path). A second session, or the same export
+mounted at another path, recomputes the key and finds the same card.
 
-- `.clio/experiment-card.md`: facts tagged stated/checked/inferred, traps,
-  open questions, proposed lessons; keyed by the manifest's SHA-256 and
-  export version.
-- `.clio/loader.py`: an idempotent PEP 723 script that reads the raw files
-  and writes the views.
-- `.clio/views/`: validated tables in the phenotyping view shapes.
+- `experiment-card.md`: facts tagged stated/checked/inferred, traps, open
+  questions, proposed lessons; its frontmatter records the absolute bundle
+  path, the manifest's SHA-256, and the export version.
+- `loader.py`: an idempotent PEP 723 script that reads the raw files from the
+  bundle root given as its argument and writes the views next to itself.
+- `views/`: validated tables in the phenotyping view shapes.
+- `audit/`: JSON reports from the onboarding audit scripts.
 
-The export root must be writable and inside the session's allowed roots. The
-raw export files are never modified.
+The export is read-only input and only needs to be readable (it may be a
+shared or read-only facility mount); its files are never modified. The agent
+passes the active workspace root to `card.py` as `--store`. This matches
+clio's rule that generated artifacts go inside the active workspace root.

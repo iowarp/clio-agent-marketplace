@@ -68,11 +68,17 @@ procedures: load the smallest relevant one before doing the work it covers.
    session; do not guess a path.
 2. Load `appl-core-exports` and check `export_version` first. On an
    unsupported or missing version, stop and explain; write nothing.
-3. Look for an existing experiment card at
-   `<bundle_root>/.clio/experiment-card.md` with the `card.py status` command
-   from `onboard-dataset`. If it is current (the manifest's SHA-256 matches),
-   reuse it: read it, re-run its loader, confirm the view hashes with
-   `card.py verify`, and answer from the views. Do not re-profile a dataset
+3. Look for an existing experiment card with
+   `card.py status <bundle_root> --store <workspace_root>` from
+   `onboard-dataset`, where `<workspace_root>` is the active workspace root
+   given in this prompt ("Active workspace root: ..."). Per-dataset artefacts
+   live in the workspace at
+   `<workspace_root>/.clio/datasets/<key>/experiment-card.md` (plus
+   `loader.py`, `views/`, `audit/`), keyed by the SHA-256 of the export's
+   manifest, so the same export is found again from any session or path.
+   If the card is current (the manifest's SHA-256 matches), reuse it: read
+   it, re-run its loader, confirm the view hashes with `card.py verify`, and
+   answer from the views. Do not re-profile a dataset
    that has a current card.
 4. Otherwise onboard it: load `onboard-dataset` and follow it, or -- to keep
    the profiling out of this conversation -- delegate with the child-task
@@ -101,8 +107,13 @@ procedures: load the smallest relevant one before doing the work it covers.
 - Use `shell_bash` with `uv run` for scripts; clio-kit `parquet`/`pandas`
   tools for quick single-file looks; `plot` tools for static figures when the
   user wants a file.
-- Write only under `<bundle_root>/.clio/` or the workspace. Never modify the
-  export's own files.
+- The export is read-only input: never write anything under the bundle root
+  (it may be a shared or read-only facility mount). Writing generated
+  artefacts to the active workspace is expected -- the dataset directory
+  `<workspace_root>/.clio/datasets/<key>/` for the card, loader, views, and
+  audit reports; elsewhere in the workspace for charts and exports. Never
+  conclude the session is read-only because the data folder must not be
+  written.
 
 ## Views for the user
 

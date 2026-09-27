@@ -8,7 +8,8 @@
 
 Copies the bundle's tables (Parquet/CSV/TSV/JSON), manifest, and docs into
 OUT_DIR, WITHOUT the heavy asset directories (images, masks, geometry,
-viewer files) and without any ``.clio`` agent artefacts, then applies one
+viewer files) and without any legacy bundle-local ``.clio`` directory
+(agent artefacts belong in the workspace store), then applies one
 mutation:
 
 * ``categorical_treatment``: numeric treatment/dose columns become labels
