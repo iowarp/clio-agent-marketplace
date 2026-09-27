@@ -9,6 +9,11 @@
   and can pause to ask the user a question with the native `ask_user` tool.
   Both work on runtimes that already run this pack, so it keeps no
   clio-agent floor.
+- CI rejects dataset-specific literals in pack prompts
+  (`scripts/check_skill_literals.py`). A pack's `lint-denylist.txt` literals
+  always fail; the generic rules (ISO dates, measured magnitudes such as
+  `~40×`, sample keys, concrete dataset file names) apply to packs that add a
+  `.lint-l3` marker. See CONTRIBUTING.md.
 - Factorio Flat (0.3.0) can show Abaqus geometry and results interactively.
   The new `abaqus-visualization` skill ships the exporter (`odb_to_glb.py` for
   ODBs, `fea_glb.py` for `.inp` meshes and Tosca STLs) that writes `.glb`
