@@ -5,15 +5,23 @@ from pathlib import Path
 import yaml
 
 
-def test_pack_launches_prepared_environment_without_mutating_it() -> None:
-    """A sandboxed CLIO child must not ask uv to rewrite Spotter's environment."""
+def test_pack_launcher_needs_no_deployment_variables() -> None:
+    """Every launcher input is clio-supplied, so a normal install arms with none set."""
     manifest = Path(__file__).parents[2] / "AGENT.md"
     frontmatter = manifest.read_text(encoding="utf-8").split("---", 2)[1]
     document = yaml.safe_load(frontmatter)
 
-    args = document["mcp_servers"]["spotter"]["args"]
+    spec = document["mcp_servers"]["spotter"]
 
-    assert args[:4] == ["run", "--project", "${SPOTTER_IMPL_DIR}", "--no-sync"]
+    assert spec["command"] == "uv"
+    assert spec["args"] == [
+        "run",
+        "--project",
+        "${CLIO_BLUEPRINT_DIR}/impl",
+        "spotter-mcp",
+        "--clio-config",
+        "${CLIO_PROVENANCE_CONFIG}",
+    ]
 
 
 def test_watcher_declares_forensic_and_provider_aware_tools() -> None:

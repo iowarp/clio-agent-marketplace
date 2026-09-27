@@ -2,7 +2,7 @@
 id: spotter-ai
 title: SPOTTER AI
 display_name: SPOTTER AI (forensic watcher)
-version: 0.3.1
+version: 0.4.0
 description: Live anomaly surveillance, containment, and evidence-backed provenance investigation
   across the reference phenotype campaign, Flowcept, CMF, and native stores.
 root_expert: spotter_watcher
@@ -21,10 +21,10 @@ mcp_servers:
     args:
       - run
       - --project
-      - ${SPOTTER_IMPL_DIR}
+      - ${CLIO_BLUEPRINT_DIR}/impl
       - spotter-mcp
       - --clio-config
-      - ${SPOTTER_CLIO_CONFIG}
+      - ${CLIO_PROVENANCE_CONFIG}
 experts:
   - experts/spotter_watcher.md
 ---
@@ -32,8 +32,8 @@ experts:
 # SPOTTER AI — forensic watcher and provider-aware provenance investigator
 
 SPOTTER investigates agentic execution and artifact provenance without calling back into
-clio-agent. Its MCP reads the explicit CLIO YAML path in `SPOTTER_CLIO_CONFIG`, uses that file to
-select the active agentic and artifact providers, and connects directly to their query stores.
+clio-agent. Its MCP reads one explicit CLIO YAML file (`--clio-config`), uses that file to select
+the active agentic and artifact providers, and connects directly to their query stores.
 
 For the reference phenotype workload, the same MCP also reads the campaign SQLite store selected
 by `SPOTTER_DB`, shares the campaign identity and data directory from `SPOTTER_CAMPAIGN` and
@@ -53,5 +53,9 @@ This pack is an agent-facing MCP integration. gact-tui does not use it: the UI c
 the stable clio-agent REST resources, and clio-agent queries its configured providers for those
 views.
 
-Set `SPOTTER_IMPL_DIR` to this pack's absolute `impl` directory and `SPOTTER_CLIO_CONFIG` to the
-CLIO YAML file. Both are explicit deployment inputs, so the same pack works on Windows and Linux.
+Both launcher inputs are supplied by clio-agent, so the pack arms on a normal install on Windows
+and Linux with no deployment variables: `${CLIO_BLUEPRINT_DIR}` is this pack's installed directory
+(the launcher runs its `impl` project), and `${CLIO_PROVENANCE_CONFIG}` is a CLIO YAML file carrying
+clio-agent's effective provenance configuration (native journal by default; Flowcept and CMF when
+configured). When that configuration gives SPOTTER no store to read, clio-agent refuses to arm it
+and says what to enable.
