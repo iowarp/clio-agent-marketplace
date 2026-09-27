@@ -26,6 +26,7 @@ MARKETPLACE = Path(__file__).resolve().parents[1]
 #: Every shipped pack and the catalogs it declares, in the declared
 #: (preference) order. Every shipped agent keeps A2UI through clio-workspace.
 EXPECTED_CATALOGS: dict[str, list[Any]] = {
+    "appl-core": ["clio-workspace"],
     "base-agent": ["clio-workspace"],
     "cluster-operator": ["clio-workspace"],
     "data-semantics": ["clio-workspace"],
@@ -65,6 +66,9 @@ FLOORED_PACKS: dict[str, str] = {
 #: spotter-ai: its MCP launcher reads ${CLIO_BLUEPRINT_DIR} and
 #: ${CLIO_PROVENANCE_CONFIG}, which clio-agent supplies from 0.9.4.19 (#1503).
 NON_CATALOG_FLOORS: dict[str, str] = {
+    # appl-core: its geometry-to-glb skill targets the builtin
+    # clio.mesh-viewport.v1, which needs clio-schemas>=0.4.0 (clio-agent 0.9.4.19).
+    "appl-core": ">=0.9.4.19",
     "spotter-ai": ">=0.9.4.19",
 }
 

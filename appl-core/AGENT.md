@@ -1,0 +1,75 @@
+---
+id: appl-core
+title: APPL-CORE Analyst
+display_name: APPL-CORE Analyst
+version: 0.1.0
+description: Onboards and analyses any APPL-CORE plant-phenotyping export (an L2 agent for one export format) - reads the export's self-description, catches its data traps, records an experiment card and a saved loader next to the data, and answers phenotyping questions with evidence tagged stated, checked, or inferred.
+root_expert: main
+# Floor: the geometry-to-glb skill targets clio.mesh-viewport.v1 in the builtin
+# clio-workspace catalog, which needs clio-schemas>=0.4.0; clio-agent 0.9.4.19
+# is the first release that pins it. Older runtimes hold the pack with a typed
+# blueprint_requires_newer_clio_agent instead of offering a viewport they
+# cannot render.
+requires:
+  clio_agent: ">=0.9.4.19"
+# A2UI catalogs are a per-agent allowlist: builtin catalogs only. The level
+# contract keeps UI generic -- this pack contributes no catalog of its own.
+a2ui_catalogs:
+  - clio-workspace
+blueprint:
+  format: agent-blueprint-v1
+# clio-kit is provisioned once via `uv tool install clio-kit` (see clio-agent
+# install/doctor). Declaration is the enablement for these tool namespaces.
+mcp_servers:
+  pandas:
+    command: clio-kit
+    args: [mcp-server, pandas]
+    probe_timeout_retries: 10
+  parquet:
+    command: clio-kit
+    args: [mcp-server, parquet]
+    probe_timeout_retries: 10
+  plot:
+    command: clio-kit
+    args: [mcp-server, plot]
+    probe_timeout_retries: 10
+experts:
+  - experts/main.md
+defaults:
+  prompt_profile: heavy
+---
+
+# APPL-CORE Analyst
+
+An analyst for exports of APPL-CORE, the processing pipeline of an automated
+plant-phenotyping facility. It works on **any** APPL-CORE export within the
+supported format version, with no pack changes: per-experiment knowledge is
+discovered from the export, asked of the data owners, or recorded at runtime,
+never shipped here.
+
+## Level contract
+
+| Level | Scope | Where it lives |
+| --- | --- | --- |
+| L0 | any dataset: onboarding, audits, evidence tagging, 3D conversion | skills tagged `level:L0` |
+| L1 | plant phenotyping at any facility: view shapes, growth, treatment response, physiology, reports | skills tagged `level:L1` (drafts) |
+| L2 | the APPL-CORE export format and APPL instruments | skills tagged `level:L2` (placeholders until the falsifier experiment decides their content) |
+| L3 | one experiment | **not in this pack**: the experiment card, loader, and views stored with the data |
+
+Skills hold checks and methods; facts about one experiment belong in its
+card. `.lint-l3` and `lint-denylist.txt` let the marketplace linter enforce
+this.
+
+## Where L3 artefacts live
+
+Next to the data, under the export's root:
+
+- `.clio/experiment-card.md`: facts tagged stated/checked/inferred, traps,
+  open questions, proposed lessons; keyed by the manifest's SHA-256 and
+  export version.
+- `.clio/loader.py`: an idempotent PEP 723 script that reads the raw files
+  and writes the views.
+- `.clio/views/`: validated tables in the phenotyping view shapes.
+
+The export root must be writable and inside the session's allowed roots. The
+raw export files are never modified.

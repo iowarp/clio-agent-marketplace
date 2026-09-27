@@ -1,0 +1,11 @@
+# Literals from one experiment (L3) that must never appear in this pack's
+# skills, experts, or AGENT.md. Read by the marketplace skill-literal linter
+# (scripts/check_skill_literals.py, added on a separate branch). One literal
+# per line; blank lines and lines starting with '#' are ignored.
+Weston
+2026.04.09
+OPAL.0002
+28773
+29014
+5577
+Thalpsi
