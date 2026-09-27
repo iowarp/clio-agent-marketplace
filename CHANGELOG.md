@@ -9,6 +9,25 @@
   and can pause to ask the user a question with the native `ask_user` tool.
   Both work on runtimes that already run this pack, so it keeps no
   clio-agent floor.
+- APPL-CORE Analyst (`appl-core`, 0.1.0), an analyst for any APPL-CORE
+  plant-phenotyping export (an L2 agent: one export format, any experiment,
+  no pack changes). On first contact it reads the export's self-description,
+  runs bundled audit scripts (`inventory.py`, `audit_columns.py`,
+  `join_keys.py`, `flag_check.py`), and records an experiment card, a saved
+  loader, and validated views under the export's `.clio/` directory
+  (`card.py` keys the card by the manifest's SHA-256 and verifies loader and
+  view hashes). Onboarding can run in a child agent (`audit-dataset`); the
+  parent re-runs the returned loader before trusting the card. Skills carry a
+  level keyword (`level:L0`/`L1`/`L2`); the L1 phenotyping skills are drafts
+  with JSON Schemas and a validator for the design, observations, spectra,
+  assets, and events views; the L2 skills are placeholders until the
+  falsifier experiment decides their content. `geometry-to-glb` converts
+  vertices/faces/colours text, PLY, and point clouds into viewport meshes.
+  The pack ships `.lint-l3` and `lint-denylist.txt` for the skill-literal
+  linter, black-box eval cases with a grader and a held-out variant maker,
+  and requires clio-agent 0.9.4.19 or newer (for `clio.mesh-viewport.v1`).
+  CI runs its tests in a new `appl-core-pack` job.
+
 - Factorio Flat (0.3.0) can show Abaqus geometry and results interactively.
   The new `abaqus-visualization` skill ships the exporter (`odb_to_glb.py` for
   ODBs, `fea_glb.py` for `.inp` meshes and Tosca STLs) that writes `.glb`
