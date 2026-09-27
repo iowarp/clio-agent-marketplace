@@ -27,8 +27,19 @@ parallelism, and task continuity without matching exact prose.
 `ask_user` and `create_a2ui_surface` are explicit runtime tool dependencies for
 the experts that declare them. The runtime must expose those names during pack
 validation and execution, including on child experts. Surfaces are produced
-against the builtin `clio-workspace` catalog, the only entry in the pack's
-`a2ui_catalogs` allowlist (clio-agent 0.9.4.17 or newer). `create_artifact` remains
+against the builtin `clio-workspace` catalog and the pack's own
+`abaqus-topology` catalog, the two entries in the pack's `a2ui_catalogs`
+allowlist (clio-agent 0.9.4.17 or newer). `abaqus-topology` holds two
+topology optimization views: before and after in linked 3D viewports with a
+stress toggle, and the design history with density and cycle sliders. It adds
+no rendering of its own: `TopologyViewport` aliases the generic
+`clio.mesh-viewport.v1` kernel and `ParameterSlider` the generic
+`clio.slider.v1` (both clio-schemas 0.4.0), bound to the viewport's threshold
+and frame. The
+`abaqus-visualization` skill ships the exporter (`odb_to_glb.py`,
+`fea_glb.py`) that turns ODB, `.inp`, and Tosca STL output into the `.glb`
+meshes the viewport reads, plus `render_view.py` for report figures; the
+`visualize-topology-optimization` skill builds the two views on top of it. `create_artifact` remains
 an auto-attached ReAct lifecycle tool, so a skill can use it for durable
 deliverables without adding it to curated expert allowlists.
 

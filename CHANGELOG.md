@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### Added
+
+- Factorio Flat (0.3.0) can show Abaqus geometry and results interactively.
+  The new `abaqus-visualization` skill ships the exporter (`odb_to_glb.py` for
+  ODBs, `fea_glb.py` for `.inp` meshes and Tosca STLs) that writes `.glb`
+  meshes with node and cell fields over frames, and `render_view.py`, which
+  draws report figures from the same files and the camera the scientist
+  chose. The new `visualize-topology-optimization` skill and `abaqus-topology`
+  pack catalog show a topology run two ways: before and after in two linked
+  3D viewports with a von Mises stress toggle on one shared scale, and the
+  design history with a density threshold slider, a design-cycle slider, and
+  the convergence plot. `TopologyViewport` aliases the `clio.mesh-viewport.v1`
+  kernel and `ParameterSlider` the `clio.slider.v1` kernel, a slider with a
+  step and a box to type an exact value (both clio-schemas 0.4.0). Factorio Flat
+  now requires clio-agent 0.9.4.17 or newer for its pack catalog.
+
 ## [0.6.5] - 2026-09-24
 
 ### Changed

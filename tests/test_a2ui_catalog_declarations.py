@@ -34,7 +34,10 @@ EXPECTED_CATALOGS: dict[str, list[Any]] = {
     "earthscope-flat": ["clio-workspace"],
     "earthscope-gnss-region": ["clio-workspace"],
     "factorio": ["clio-workspace"],
-    "factorio-flat": ["clio-workspace"],
+    "factorio-flat": [
+        "clio-workspace",
+        {"abaqus-topology": "catalogs/abaqus-topology"},
+    ],
     "phenotype": ["clio-workspace"],
     "spotter-ai": ["clio-workspace"],
     "wildfire-smoke-impact-review": ["clio-workspace"],
@@ -50,7 +53,7 @@ BUILTIN_CATALOGS = frozenset({"clio-workspace", "basic"})
 FLOOR = ">=0.9.4.17"
 
 #: The packs whose list names a pack-local catalog -- the only ones with a floor.
-FLOORED_PACKS = frozenset({"earthscope-single-agent"})
+FLOORED_PACKS = frozenset({"earthscope-single-agent", "factorio-flat"})
 
 
 def _frontmatter_lines(path: Path) -> list[str]:

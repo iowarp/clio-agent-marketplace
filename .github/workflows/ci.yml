@@ -40,4 +40,5 @@ jobs:
           uv run --prerelease=allow \
             --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
             --with pytest \
-            pytest earthscope-single-agent/tests/test_a2ui_catalog_pack.py -v
+            pytest earthscope-single-agent/tests/test_a2ui_catalog_pack.py \
+              factorio-flat/tests -v

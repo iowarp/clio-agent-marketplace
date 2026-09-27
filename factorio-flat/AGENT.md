@@ -2,16 +2,24 @@
 id: factorio-flat
 title: Factorio Flat
 display_name: Factorio Flat
-version: 0.2.1
+version: 0.3.0
 description: A scientist-facing research partner spanning research framing, evidence coordination, simulation, and adversarial review, extended with materials science, manufacturing, characterization, mechanical testing, fatigue/failure, and data analysis specialists.
 root_expert: main
 # A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
 # agent may produce surfaces only against the catalogs listed here, in this
-# preference order (nothing is implicit, the builtins included). An older
-# runtime reads a builtins-only list as no pack catalogs and still offers its
-# builtins, so this pack needs no clio-agent floor.
+# preference order (nothing is implicit, the builtins included). clio-workspace
+# stays the default for tables, charts, and metrics; the pack's own
+# abaqus-topology catalog carries the before/after topology comparison, whose
+# TopologyViewport aliases the clio.mesh-viewport.v1 kernel.
 a2ui_catalogs:
   - clio-workspace
+  - abaqus-topology: catalogs/abaqus-topology
+# Floor: 0.9.4.17 is the first release that reads the list form above (an
+# older runtime would drop the pack catalog). TopologyViewport also needs the
+# clio.mesh-viewport.v1 kernel from clio-schemas 0.4.0; raise this floor to
+# the first clio-agent release that pins it.
+requires:
+  clio_agent: ">=0.9.4.17"
 blueprint:
   format: agent-blueprint-v1
 # Provider selection belongs to deployment configuration. Factorio Flat's
