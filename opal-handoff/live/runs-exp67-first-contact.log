@@ -1,0 +1,20 @@
+[
+ {
+  "prompt": "D:\\Libraries\\Documents\\projects\\OPAL\\67_2026.04.09_OPAL.0002_Weston_PC\\67_2026.04.09_OPAL.0002_Weston_PC\n\nwhat is this data?",
+  "elapsed_s": 2347.7,
+  "stop_reason": "end_turn",
+  "error_info": null
+ },
+ {
+  "prompt": "does the nickel hurt growth?",
+  "elapsed_s": 427.1,
+  "stop_reason": "end_turn",
+  "error_info": null
+ },
+ {
+  "prompt": "show me the growth curves",
+  "elapsed_s": 308.0,
+  "stop_reason": "end_turn",
+  "error_info": null
+ }
+]

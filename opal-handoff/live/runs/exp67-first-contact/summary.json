@@ -1,0 +1,123 @@
+{
+ "session_id": "sess_5528aa58f585",
+ "turns": [
+  {
+   "prompt": "D:\\Libraries\\Documents\\projects\\OPAL\\67_2026.04.09_OPAL.0002_Weston_PC\\67_2026.04.09_OPAL.0002_Weston_PC\n\nwhat is this data?",
+   "elapsed_s": 2347.7,
+   "stop_reason": "end_turn",
+   "error_info": null
+  },
+  {
+   "prompt": "does the nickel hurt growth?",
+   "elapsed_s": 427.1,
+   "stop_reason": "end_turn",
+   "error_info": null
+  },
+  {
+   "prompt": "show me the growth curves",
+   "elapsed_s": 308.0,
+   "stop_reason": "end_turn",
+   "error_info": null
+  }
+ ],
+ "artifacts": {
+  "artifacts": [
+   {
+    "workspace_id": "ws_5edbed86ab65",
+    "name": "rgb2_growth_curves_apr14_27.csv",
+    "kind": "dataset",
+    "latest_version": 1,
+    "head_artifact_id": "artifact_e5c265a9257c494ca845df8a3b1ea6ee",
+    "aliases": {
+     "latest": 1
+    },
+    "versions": [
+     {
+      "artifact_id": "artifact_e5c265a9257c494ca845df8a3b1ea6ee",
+      "workspace_id": "ws_5edbed86ab65",
+      "name": "rgb2_growth_curves_apr14_27.csv",
+      "version": 1,
+      "kind": "dataset",
+      "custody": "cas",
+      "mechanism": "model",
+      "evidence_class": "hashed-at-use",
+      "sha256": "a1fb93660b3b3f26a4064a5d1bf90dab7209d6b8f26e6f1c70ac3aa2ab86eab5",
+      "size_bytes": 3541,
+      "authority": "",
+      "path": "D:\\Libraries\\Documents\\projects\\opal-work\\live\\ws\\rgb2_growth_curves_apr14_27.csv",
+      "created_at": "2026-09-28T00:42:31.470789+00:00",
+      "annotation": "Daily treatment-group medians, quartiles, and plant counts underlying the figure.",
+      "producer": {
+       "designation": "agent-proposed",
+       "session_id": "sess_5528aa58f585",
+       "turn_id": "msg_user_bee8466da90f",
+       "agent_id": "main",
+       "tool": "create_artifact",
+       "call_id": "call_95c86866d48a"
+      },
+      "prior_version": null,
+      "prior_sha256": null,
+      "kind_warning": "",
+      "custody_gap": null,
+      "uri": "artifact://ws_5edbed86ab65/rgb2_growth_curves_apr14_27.csv@v1",
+      "fetch_url": "/v1/artifacts/artifact_e5c265a9257c494ca845df8a3b1ea6ee/bytes"
+     }
+    ],
+    "producing_session_ids": [
+     "sess_5528aa58f585"
+    ]
+   },
+   {
+    "workspace_id": "ws_5edbed86ab65",
+    "name": "rgb2_growth_curves_apr14_27.png",
+    "kind": "image",
+    "latest_version": 1,
+    "head_artifact_id": "artifact_d90be8a031084db698be514874489260",
+    "aliases": {
+     "latest": 1
+    },
+    "versions": [
+     {
+      "artifact_id": "artifact_d90be8a031084db698be514874489260",
+      "workspace_id": "ws_5edbed86ab65",
+      "name": "rgb2_growth_curves_apr14_27.png",
+      "version": 1,
+      "kind": "image",
+      "custody": "cas",
+      "mechanism": "model",
+      "evidence_class": "hashed-at-use",
+      "sha256": "6678408c3b944bdaece3d1b7d41779d484d1420e4e5ff9ac5c11d02bc18842d3",
+      "size_bytes": 270571,
+      "authority": "",
+      "path": "D:\\Libraries\\Documents\\projects\\opal-work\\live\\ws\\rgb2_growth_curves_apr14_27.png",
+      "created_at": "2026-09-28T00:42:31.400750+00:00",
+      "annotation": "Growth curves by treatment label, with interquartile bands and daily plant counts.",
+      "producer": {
+       "designation": "agent-proposed",
+       "session_id": "sess_5528aa58f585",
+       "turn_id": "msg_user_bee8466da90f",
+       "agent_id": "main",
+       "tool": "create_artifact",
+       "call_id": "call_95c86866d48a"
+      },
+      "prior_version": null,
+      "prior_sha256": null,
+      "kind_warning": "",
+      "custody_gap": null,
+      "uri": "artifact://ws_5edbed86ab65/rgb2_growth_curves_apr14_27.png@v1",
+      "fetch_url": "/v1/artifacts/artifact_d90be8a031084db698be514874489260/bytes"
+     }
+    ],
+    "producing_session_ids": [
+     "sess_5528aa58f585"
+    ]
+   }
+  ],
+  "count": 2,
+  "next_cursor": null,
+  "include_children": true,
+  "child_session_ids": [
+   "sess_41f60613ed7a"
+  ]
+ }
+}
