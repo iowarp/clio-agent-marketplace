@@ -57,9 +57,17 @@ semantic correctly.
   `docs/author-agent-pack-skill`; clio-schemas `feat/chart-kernel`; gact-tui `feat/chart-kernel`;
   clio-agent-marketplace `feat/appl-core-pack` (APPL-CORE blueprint), `feat/skill-literal-lint`,
   `wip/opal-handoff` (this material).
-- Live harness: `opal-handoff/live/serve.sh` + `drive.py` (isolated instance, `CLIO_USER_DIR`
-  set, Codex SDK). Baseline evidence: `opal-handoff/live/runs/exp67-first-contact`.
-- OPAL dataset (exp67) lives outside git (owner's data); if absent, ask the owner for its path.
+- Live verification material (no private data needed):
+  - clio-agent `scripts/live_verification/` (read `RUNBOOK.md`): preflight, `leg_c_synthetic_session.py`,
+    `leg_compaction.py`, `leg_goal_judge.py`, `leg_b_web_fetch.py`, `leg_bd_stress.py`,
+    `run_with_private_cte.py`, deep-researcher leg; and the repo's `grind-clio-case` skill.
+  - clio-agent-marketplace packs: `earthscope-single-agent` (NDP single agent), `factorio-flat`
+    with its black-box behavioral evals (`factorio-flat/evals/behavioral-cases.json`,
+    `scripts/evaluate_factorio_flat.py`, `tests/test_factorio_flat_black_box_evals.py`),
+    `deep-researcher`, `data-semantics`, `base-agent`, and the marketplace `tests/`.
+  - Isolated-instance pattern: `opal-handoff/live/serve.sh` + `drive.py` (always set
+    `CLIO_USER_DIR`; Codex SDK). The OPAL exp67 run (`live/runs/exp67-first-contact`: 39 min,
+    79 steps, 9.87M input tokens) is the motivating evidence only — optional to rerun.
 
 ## Work — phases (each its own branch off develop, in a worktree; detail sub-plan at start)
 0. Environment: fresh clones/worktrees, `uv sync --extra dev`, clio-core daemon working (the full
@@ -98,13 +106,14 @@ semantic correctly.
 2. New tests: ClioReAct differential test; projection prefix-stability test (render(n) is a
    prefix of render(n+1) unless an op landed); UI-vs-agent projection test; fix-recorded-and-told
    test; Codex stateful tests (exist).
-3. Live (isolated instance, Codex SDK, realistic short human prompts via `drive.py`):
-   `"<exp67 path> what is this data?"`, `"does the nickel hurt growth?"`,
-   `"show me the growth curves"`. Baseline: 39 / 7 / 5 min, 79 steps, 9.87M input tokens.
-   Report per turn: wall time, steps, input/cached/output tokens, full vs delta sends, one thread
-   per conversation. Must be clearly faster with high cached share, and answer quality unchanged
-   (still catches: DBL_MAX sentinel, ghost string band columns, unflagged empty rows, RGB2 mm
-   scale, canopy clipping, MSC1 invalid source).
+3. Live (isolated instance, Codex SDK, realistic short human prompts): FIRST measure a baseline
+   on unmodified `develop` for each case, then rerun the same cases after each phase. Cases: the
+   `scripts/live_verification` legs (synthetic session, compaction, goal judge, web fetch,
+   stress, deep researcher), `earthscope-single-agent` multi-turn session, `factorio-flat`
+   behavioral evals via its evaluator, `deep-researcher`, `data-semantics`. Report per turn: wall
+   time, steps, input/cached/output tokens, full vs delta sends, one provider thread per
+   conversation. Must be clearly faster with a high cached share and NO quality regression
+   (eval scores / leg verdicts equal or better than baseline).
 4. gact-tui web UI verified in a real browser (drive it; screenshots/GIF): thinking streams live;
    tool calls + results render (concurrent calls too); injections, compaction checkpoints, edits
    and fixes are visible as such; a mid-turn steer lands as a user message; cancel stops a running
