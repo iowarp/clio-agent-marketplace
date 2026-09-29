@@ -8,7 +8,7 @@ Non-git working material preserved before a machine clean (2026-09-28).
   (`runs/exp67-first-contact` is the 39-min Codex-SDK baseline).
 - `dspy34-spike/` — DSPy 3.4.0 spike scripts (findings in the Obsidian doc
   "LM Transport Statefulness and DSPy", section 8).
-- `clio-loop-rebuild-plan.md` — approved plan: approach B (ClioReAct on DSPy 3.4,
+- `clio-loop-rebuild-plan.md` — earlier plan snapshot. The campaign now lives in clio-agent `docs/design/agent-loop-rebuild-2026-09.md` (branch `docs/agent-loop-rebuild`); OPAL was only the originating evidence.
   clio-core as the context system); Phase 1 = clio-agent `feat/codex-sdk-stateful`.
 
 Pushed work branches: clio-agent `feat/codex-sdk-stateful`, `docs/chart-presentation-skill`,
