@@ -25,6 +25,21 @@
   0.9.4.17: that release reads the `a2ui_catalogs` list form but does not pin
   clio-schemas>=0.4.0, so TopologyViewport/ParameterSlider cannot load).
 
+### Changed
+
+- `clio.time-series.v1` is removed upstream in favor of one Altair/Vega-Lite
+  chart layer (`clio.chart.v1`, clio-schemas 0.5.1); the two packs that used
+  it move over (#1533). Factorio Flat's `abaqus-topology` catalog
+  re-expresses `ConvergencePlot`'s `xKey`/`yKeys`/`series` as the
+  `trajectories` preset's `xField`/`yField`/`entityField` over inline `data`
+  (or `dataUri`). EarthScope Skills' `visualize-earthscope-gnss` primary plot
+  moves to `clio.chart.v1` with a Vega-Lite `spec` authored through
+  `present-interactive-analysis`'s Altair support, folding the confirmed
+  `east`/`north`/`up` columns into one line per component (no named preset
+  reshapes a wide table that way). Both packs' `requires.clio_agent` floor is
+  raised to `>=0.9.4.23`, a PLACEHOLDER for the first clio-agent release that
+  pins clio-schemas>=0.5.1 -- confirm the exact version at release.
+
 ## [0.6.5] - 2026-09-24
 
 ### Changed
