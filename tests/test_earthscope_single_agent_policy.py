@@ -129,7 +129,7 @@ class EarthScopeSingleAgentPolicyTests(unittest.TestCase):
         visualize = _prose("skills/visualize-earthscope-gnss/SKILL.md")
 
         self.assertIn("The primary plot is a live, data-backed A2UI chart", visualize)
-        self.assertIn("using exactly one primary `clio.time-series.v1`", visualize)
+        self.assertIn("using exactly one primary `clio.chart.v1`", visualize)
         self.assertIn("Generate a static PNG only when the user explicitly asks", visualize)
         self.assertIn(
             "Never place the static image below, beside, or inside the interactive chart",

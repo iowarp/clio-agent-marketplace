@@ -381,9 +381,11 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     policy.py`` keeps a dependency-free companion check (the key exists and is a
     non-empty string) for CI's bare no-deps job; this test is the one that proves
     the value actually parses as PEP 440 and means what the AGENT.md comment next
-    to it claims (admits 0.9.4.17, the first release reading the per-agent
-    ``a2ui_catalogs`` list form, and excludes 0.9.4.16, which would silently drop
-    the pack catalog).
+    to it claims. Raised past the original 0.9.4.17 list-form floor (#1533):
+    ``visualize-earthscope-gnss`` now builds its primary chart on
+    ``clio.chart.v1``, which needs clio-schemas>=0.5.1 -- AGENT.md's own
+    PLACEHOLDER comment carries the exact boundary this test checks, so keep
+    the two in sync when the owner confirms the real release at merge time.
 
     Deliberately NOT wrapped in a try/except-skip -- see this module's docstring.
     """
@@ -405,8 +407,11 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     floor = requires.get("clio_agent")
     assert isinstance(floor, str) and floor.strip()
 
+    # PLACEHOLDER: 0.9.4.23 mirrors AGENT.md's own placeholder floor -- the
+    # first clio-agent release expected to pin clio-schemas>=0.5.1. Update
+    # both together once the owner confirms the real release version.
     spec = SpecifierSet(floor)
-    assert spec.contains("0.9.4.17"), f"{floor!r} should admit 0.9.4.17 (first list-form release)"
+    assert spec.contains("0.9.4.23"), f"{floor!r} should admit 0.9.4.23 (the declared floor)"
     assert spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5"
-    assert not spec.contains("0.9.4.16"), f"{floor!r} should exclude 0.9.4.16 (drops the list form)"
-    assert not spec.contains("0.9.4"), f"{floor!r} should exclude 0.9.4"
+    assert not spec.contains("0.9.4.22"), f"{floor!r} should exclude 0.9.4.22 (no clio.chart.v1)"
+    assert not spec.contains("0.9.4.17"), f"{floor!r} should exclude 0.9.4.17 (no clio.chart.v1)"

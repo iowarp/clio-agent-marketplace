@@ -409,57 +409,83 @@
         },
         {
           "properties": {
+            "colorField": {
+              "$ref": "#/$defs/FieldName"
+            },
             "component": {
               "const": "ConvergencePlot"
             },
-            "dataUri": {
-              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
-              "type": "string"
-            },
-            "series": {
+            "data": {
+              "description": "Inline rows (at most 10000); use dataUri for more.",
               "items": {
                 "additionalProperties": {
                   "type": [
                     "string",
                     "number",
+                    "boolean",
                     "null"
                   ]
                 },
                 "type": "object"
               },
               "maxItems": 10000,
-              "minItems": 1,
               "type": "array"
+            },
+            "dataUri": {
+              "description": "A registered artifact reference (artifact://...); never a raw path.",
+              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "entityField": {
+              "$ref": "#/$defs/FieldName"
+            },
+            "facetField": {
+              "$ref": "#/$defs/FieldName"
+            },
+            "height": {
+              "maximum": 2000,
+              "minimum": 80,
+              "type": "number"
+            },
+            "preset": {
+              "enum": [
+                "trajectories",
+                "heatmap",
+                "spectra",
+                "boxplot",
+                "scatter"
+              ],
+              "type": "string"
             },
             "title": {
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             },
-            "xKey": {
-              "minLength": 1,
-              "pattern": "\\S",
+            "xField": {
+              "$ref": "#/$defs/FieldName"
+            },
+            "xType": {
+              "enum": [
+                "temporal",
+                "quantitative",
+                "ordinal"
+              ],
               "type": "string"
             },
-            "yKeys": {
-              "items": {
-                "minLength": 1,
-                "pattern": "\\S",
-                "type": "string"
-              },
-              "maxItems": 5,
-              "minItems": 1,
-              "type": "array",
-              "uniqueItems": true
+            "yField": {
+              "$ref": "#/$defs/FieldName"
             }
           },
           "required": [
             "component",
-            "xKey",
-            "yKeys"
+            "preset",
+            "xField",
+            "yField",
+            "entityField"
           ],
           "type": "object"
         },
         {
-          "description": "Exactly one of series or dataUri is required.",
+          "description": "Exactly one of data or dataUri is required.",
           "oneOf": [
             {
               "not": {
@@ -468,13 +494,13 @@
                 ]
               },
               "required": [
-                "series"
+                "data"
               ]
             },
             {
               "not": {
                 "required": [
-                  "series"
+                  "data"
                 ]
               },
               "required": [
@@ -482,9 +508,56 @@
               ]
             }
           ]
+        },
+        {
+          "description": "Fields used by the heatmap preset.",
+          "if": {
+            "properties": {
+              "preset": {
+                "const": "heatmap"
+              }
+            },
+            "required": [
+              "preset"
+            ]
+          },
+          "then": {
+            "required": [
+              "colorField"
+            ]
+          }
+        },
+        {
+          "description": "The boxplot preset forbids facetField and xType.",
+          "if": {
+            "properties": {
+              "preset": {
+                "const": "boxplot"
+              }
+            },
+            "required": [
+              "preset"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "facetField"
+                  ]
+                },
+                {
+                  "required": [
+                    "xType"
+                  ]
+                }
+              ]
+            }
+          }
         }
       ],
-      "description": "Objective and constraint history per design cycle, from Tosca's optimization_report.csv.",
+      "description": "Objective and constraint history per design cycle, from Tosca's optimization_report.csv, as an Altair/Vega-Lite chart. Defaults to the trajectories preset: one line per metric (entityField), yField over xField.",
       "type": "object",
       "unevaluatedProperties": false
     }
@@ -1021,6 +1094,11 @@
           "description": "The relative weight of this component within a Row or Column. This is similar to the CSS 'flex-grow' property. Note: this may ONLY be set when the component is a direct descendant of a Row or Column."
         }
       }
+    },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
     },
     "theme": {
       "type": "object",

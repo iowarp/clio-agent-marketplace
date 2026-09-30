@@ -27,7 +27,7 @@
       "kernel": "CheckBox"
     },
     "ConvergencePlot": {
-      "kernel": "clio.time-series.v1"
+      "kernel": "clio.chart.v1"
     },
     "ParameterSlider": {
       "kernel": "clio.slider.v1"

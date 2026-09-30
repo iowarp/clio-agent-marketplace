@@ -67,7 +67,7 @@ def test_sidecar_aliases_the_mesh_viewport_kernel(sidecar: CatalogSidecar) -> No
     assert sidecar.trust.source == "pack"
     assert sidecar.implements["TopologyViewport"].kernel == "clio.mesh-viewport.v1"
     assert sidecar.implements["DesignMetric"].kernel == "clio.metric.v1"
-    assert sidecar.implements["ConvergencePlot"].kernel == "clio.time-series.v1"
+    assert sidecar.implements["ConvergencePlot"].kernel == "clio.chart.v1"
     assert sidecar.implements["ParameterSlider"].kernel == "clio.slider.v1"
     assert set(sidecar.events) == {REVIEWED, FIGURE}
     assert all(route.destination == "agent" for route in sidecar.events.values())
@@ -84,23 +84,47 @@ def test_every_kernel_is_a_builtin_component(sidecar: CatalogSidecar) -> None:
     assert not missing, f"kernels not implemented by Basic or clio-workspace: {missing}"
 
 
+def _component_props(component: dict[str, Any]) -> dict[str, Any]:
+    """The flat, non-conditional property shapes one component's alias-vs-kernel props()."""
+
+    entry = next(part for part in component["allOf"] if "properties" in part)
+    return {
+        name: {k: v for k, v in value.items() if k != "description"}
+        for name, value in entry["properties"].items()
+        if name != "component"
+    }
+
+
 def test_viewport_shape_matches_its_kernel(catalog_file: dict[str, Any]) -> None:
     """The alias carries the kernel's exact property contract, only renamed."""
 
     root = Path(str(importlib.resources.files("clio_schemas") / "schemas" / "a2ui"))
     workspace = _load(root / "catalogs" / "clio-workspace" / "v1" / "catalog.json")
 
-    def props(component: dict[str, Any]) -> dict[str, Any]:
-        entry = next(part for part in component["allOf"] if "properties" in part)
-        return {
-            name: {k: v for k, v in value.items() if k != "description"}
-            for name, value in entry["properties"].items()
-            if name != "component"
-        }
-
     alias = catalog_file["components"]["TopologyViewport"]
     kernel = workspace["components"]["clio.mesh-viewport.v1"]
-    assert props(alias) == props(kernel)
+    assert _component_props(alias) == _component_props(kernel)
+
+
+def test_convergence_plot_shape_matches_its_chart_kernel(catalog_file: dict[str, Any]) -> None:
+    """ConvergencePlot is a curated subset of clio.chart.v1's fields, each one verbatim.
+
+    Unlike TopologyViewport (which mirrors clio.mesh-viewport.v1 exactly),
+    ConvergencePlot deliberately drops the kernel's raw ``spec`` escape hatch
+    and its ``dataQuery``/``selection``/``selectionField``/``selectionParam``
+    cross-linking machinery -- this pack has no multi-view selection to wire
+    up. Every field it DOES expose must carry the kernel's exact shape so the
+    renderer, which dispatches by kernel, reads them the same way.
+    """
+
+    root = Path(str(importlib.resources.files("clio_schemas") / "schemas" / "a2ui"))
+    workspace = _load(root / "catalogs" / "clio-workspace" / "v1" / "catalog.json")
+
+    alias = _component_props(catalog_file["components"]["ConvergencePlot"])
+    kernel = _component_props(workspace["components"]["clio.chart.v1"])
+    assert set(alias) <= set(kernel), f"fields not in clio.chart.v1: {set(alias) - set(kernel)}"
+    mismatched = {name: (shape, kernel[name]) for name, shape in alias.items() if shape != kernel[name]}
+    assert not mismatched, f"fields whose shape drifted from clio.chart.v1: {mismatched}"
 
 
 def _validate_view(catalog_file: dict[str, Any], blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:

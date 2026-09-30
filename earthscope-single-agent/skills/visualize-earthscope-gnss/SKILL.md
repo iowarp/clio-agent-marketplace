@@ -8,13 +8,20 @@ Use this skill only when the user requests a plot or when a plot materially help
 answer the current question. Confirm the exact time and displacement column names
 from the profile. The primary plot is a live, data-backed A2UI chart, not a PNG.
 
-First load `present-interactive-analysis`. Reuse the registered staged CSV artifact
-from `workflow_state` when it already exists; do not register the same CSV again.
-Then create or update `earthscope-timeseries` using exactly one primary
-`clio.time-series.v1`, the registered staged CSV artifact URI as `dataUri`, the
-confirmed time column as `xKey`, and the confirmed displacement columns as
-`yKeys`. Require `rendered=true` and `state=ready` before moving on or saying the
-plot is available. Call these tools one at a time in causal order; do not batch a
+First load `present-interactive-analysis`, which covers writing a custom
+Vega-Lite spec with Altair for a chart no named preset fits. Reuse the
+registered staged CSV artifact from `workflow_state` when it already exists;
+do not register the same CSV again. Then create or update `earthscope-timeseries`
+using exactly one primary `clio.chart.v1`, the registered staged CSV artifact
+URI as `dataUri`, and a `spec` built on `alt.NamedData("source")` that
+`transform_fold`s the confirmed displacement columns (`east`, `north`, and
+`up` when all are present) into one `component`/`displacement` pair and draws
+one line per component: the confirmed time column on `x`, `displacement` on
+`y`, `component` on `color`. No preset reshapes a wide table this way, so
+author the spec directly with `present-interactive-analysis`'s script and let
+its guard check pass before calling `create_a2ui_surface`. Require
+`rendered=true` and `state=ready` before moving on or saying the plot is
+available. Call these tools one at a time in causal order; do not batch a
 skill load, artifact registration, or surface creation into one model response.
 
 For the normal request to "plot" or "show" the series, stop after the interactive
