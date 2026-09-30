@@ -416,7 +416,7 @@
               "const": "ConvergencePlot"
             },
             "data": {
-              "description": "Inline rows (at most 10000); use dataUri for more.",
+              "description": "Inline rows (at most 10000) — this array rides the surface's own wire message, so it is capped for transfer size; for a larger or growing dataset use dataUri instead, unbounded and paged/downsampled by the viewer.",
               "items": {
                 "additionalProperties": {
                   "type": [
@@ -432,7 +432,10 @@
               "type": "array"
             },
             "dataUri": {
-              "description": "A registered artifact reference (artifact://...); never a raw path.",
+              "description": "A workspace file path or artifact:// reference; CLIO registers a path as an artifact before validation.",
+              "not": {
+                "pattern": "\\s"
+              },
               "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
               "type": "string"
             },
