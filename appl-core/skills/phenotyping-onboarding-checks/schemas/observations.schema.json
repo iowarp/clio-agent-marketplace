@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clio-phenotyping-views/observations.schema.json",
+  "type": "object",
+  "title": "observations",
+  "description": "Long-format scalar observations. MIAPPE observed variable = trait + method + scale. One row per unit x time x variable.",
+  "x-primary-key": [
+    "unit_id",
+    "time",
+    "trait",
+    "method",
+    "scale"
+  ],
+  "required": [
+    "unit_id",
+    "time",
+    "trait",
+    "method",
+    "scale",
+    "value"
+  ],
+  "properties": {
+    "unit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp (state the timezone assumption in the card if none is given)."
+    },
+    "event_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Imaging round / session the value came from."
+    },
+    "trait": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What is measured (e.g. projected leaf area)."
+    },
+    "method": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How: sensor + algorithm + mask/source choice."
+    },
+    "scale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unit or scale of value (e.g. 'px', 'mm2', 'ratio', 'a.u.')."
+    },
+    "value": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The value; null for missing (never a sentinel code)."
+    },
+    "sensor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "qc": {
+      "type": [
+        "string",
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "description": "QC flags as a list or a ;-joined string."
+    },
+    "source_table": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Raw table (relative to the bundle root) the row came from."
+    },
+    "source_row_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Key of the raw row, for tracing back."
+    }
+  },
+  "additionalProperties": true
+}

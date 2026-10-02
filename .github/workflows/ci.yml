@@ -42,3 +42,21 @@ jobs:
             --with pytest \
             pytest earthscope-single-agent/tests/test_a2ui_catalog_pack.py \
               factorio-flat/tests -v
+
+  appl-core-pack:
+    # The APPL-CORE Analyst pack's own tests: its bundled skill scripts
+    # (inventory, column/key/flag audits, experiment card, glb conversion,
+    # view validation), its eval tooling (variant maker, grader), and the real
+    # clio-agent blueprint validator. Needs pyarrow/numpy/jsonschema/trimesh
+    # and clio-agent, none of which the dependency-free policy job carries.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Run the APPL-CORE pack tests
+        run: |
+          uv run --prerelease=allow \
+            --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
+            --with "numpy>=1.24" --with "jsonschema>=4.18" --with trimesh \
+            --with pytest \
+            pytest appl-core/tests -v

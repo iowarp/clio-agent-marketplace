@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clio-phenotyping-views/assets.schema.json",
+  "type": "object",
+  "title": "assets",
+  "description": "Files that belong to a unit at a time: images, masks, point clouds, meshes. Paths are relative to the bundle root.",
+  "x-primary-key": [
+    "unit_id",
+    "time",
+    "kind",
+    "path"
+  ],
+  "required": [
+    "unit_id",
+    "time",
+    "kind",
+    "path"
+  ],
+  "properties": {
+    "unit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp (state the timezone assumption in the card if none is given)."
+    },
+    "event_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sensor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "minLength": 1,
+      "description": "image | mask | thumbnail | point_cloud | mesh | other"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "shared_frame": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "True when the file shows several units (crop it)."
+    },
+    "crop_x0": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "crop_y0": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "crop_x1": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "crop_y1": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "source_table": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Raw table (relative to the bundle root) the row came from."
+    },
+    "source_row_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Key of the raw row, for tracing back."
+    }
+  },
+  "additionalProperties": true
+}

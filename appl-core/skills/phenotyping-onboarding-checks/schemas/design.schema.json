@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clio-phenotyping-views/design.schema.json",
+  "type": "object",
+  "title": "design",
+  "description": "One row per observation unit (plant, pot, plot): its experimental factors. MIAPPE: observation unit + factor values. Treatment meaning, units, and dose-vs-category encoding come from the data owners, never from a guess.",
+  "x-primary-key": [
+    "unit_id"
+  ],
+  "required": [
+    "unit_id"
+  ],
+  "properties": {
+    "unit_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable observation-unit id used by every other view."
+    },
+    "genotype": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Genotype / accession / line label as given."
+    },
+    "species": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "treatment": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Treatment level as a categorical label (always a string, even for doses)."
+    },
+    "treatment_value": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Numeric dose, only when the owners confirm it is a dose."
+    },
+    "treatment_unit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Unit of treatment_value; null when unknown (then ask)."
+    },
+    "replicate": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "block": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Blocking factor if the design has one."
+    },
+    "position": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Physical position (tray, slot, row, column) if recorded."
+    },
+    "source_table": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Raw table (relative to the bundle root) the row came from."
+    },
+    "source_row_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Key of the raw row, for tracing back."
+    }
+  },
+  "additionalProperties": true
+}

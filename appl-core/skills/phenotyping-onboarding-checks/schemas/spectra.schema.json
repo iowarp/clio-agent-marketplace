@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clio-phenotyping-views/spectra.schema.json",
+  "type": "object",
+  "title": "spectra",
+  "description": "Long-format spectra: one row per unit x time x sensor x wavelength.",
+  "x-primary-key": [
+    "unit_id",
+    "time",
+    "sensor",
+    "wavelength_nm"
+  ],
+  "required": [
+    "unit_id",
+    "time",
+    "sensor",
+    "wavelength_nm",
+    "value",
+    "quantity"
+  ],
+  "properties": {
+    "unit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp (state the timezone assumption in the card if none is given)."
+    },
+    "event_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sensor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "wavelength_nm": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Band centre wavelength in nanometres (parsed from metadata or column names)."
+    },
+    "value": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "quantity": {
+      "type": "string",
+      "minLength": 1,
+      "description": "e.g. 'reflectance', 'radiance', 'relative'."
+    },
+    "aggregation": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "How pixels were summarised (median over mask, mean, ...)."
+    },
+    "source_table": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Raw table (relative to the bundle root) the row came from."
+    },
+    "source_row_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Key of the raw row, for tracing back."
+    }
+  },
+  "additionalProperties": true
+}
