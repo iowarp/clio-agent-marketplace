@@ -50,6 +50,31 @@
   0.9.4.17: that release reads the `a2ui_catalogs` list form but does not pin
   clio-schemas>=0.4.0, so TopologyViewport/ParameterSlider cannot load).
 
+- The domain agents are now supersets of the standard agent (Base Agent):
+  APPL-CORE Analyst (0.2.0), Factorio Flat (0.4.0) and EarthScope Skills
+  (0.4.0) each have everything Base Agent has, plus their own domain.
+  - Tools: the root expert declares all of Base Agent's tools (`shell_bash`,
+    file read and edits, `view_image`, `view_pdf`, `web_fetch`, `ask_user`).
+    EarthScope Skills gains all of them and the clio-kit web server;
+    Factorio Flat gains file read/edit and `web_fetch`.
+  - Skills: each declares clio's built-in `work-with-pdfs`, `planning`,
+    `update-models` and `present-interactive-analysis`, which Base Agent gets
+    automatically, and ships `create-pdf-report`. Factorio Flat drops its own
+    copy of `work-with-pdfs` (identical to clio's) and uses the built-in.
+  - A2UI tools come from each agent's declared catalogs, as Base Agent's do,
+    instead of a partial explicit list.
+  - Prompts: Base Agent's working principles are now a `## Working principles`
+    section (stay grounded in inspected content, smallest tool sequence,
+    report failures plainly, verify edits, and when to read or write a PDF),
+    carried word for word by each domain agent.
+  - Base Agent (0.2.5) ships `create-pdf-report`, so writing a PDF on request
+    is part of the standard agent.
+  - A new test, `tests/test_standard_agent_superset.py`, reads Base Agent as
+    the source and fails if a domain agent lacks any of its tools, MCP
+    servers, catalogs, skills or principles.
+  - APPL-CORE Analyst requires clio-agent 0.9.4.23 or newer, the first release
+    whose catalog has the `clio.chart.v1` presets its views use.
+
 ### Changed
 
 - `clio.time-series.v1` is removed upstream in favor of one Altair/Vega-Lite
@@ -62,8 +87,8 @@
   `present-interactive-analysis`'s Altair support, folding the confirmed
   `east`/`north`/`up` columns into one line per component (no named preset
   reshapes a wide table that way). Both packs' `requires.clio_agent` floor is
-  raised to `>=0.9.4.23`, a PLACEHOLDER for the first clio-agent release that
-  pins clio-schemas>=0.5.1 -- confirm the exact version at release.
+  raised to `>=0.9.4.23`, the first clio-agent release that pins
+  clio-schemas>=0.5.1.
 
 ## [0.6.5] - 2026-09-24
 
