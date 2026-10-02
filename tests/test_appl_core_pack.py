@@ -22,6 +22,7 @@ EXPECTED_LEVELS: dict[str, str] = {
     "audit-dataset": "L0",
     "evidence-and-claims": "L0",
     "geometry-to-glb": "L0",
+    "create-pdf-report": "L0",
     "phenotyping-onboarding-checks": "L1",
     "size-and-growth-traits": "L1",
     "treatment-response": "L1",
@@ -31,7 +32,21 @@ EXPECTED_LEVELS: dict[str, str] = {
     "appl-instruments": "L2",
 }
 #: clio-agent builtin skills the expert may declare without shipping them.
-BUILTIN_SKILLS = frozenset({"present-interactive-analysis"})
+BUILTIN_SKILLS = frozenset(
+    {"present-interactive-analysis", "work-with-pdfs", "planning", "update-models"}
+)
+#: The built-in skills clio auto-declares on the default agent (Base Agent);
+#: a non-default pack only gets them by declaring them.
+DEFAULT_AGENT_BUILTIN_SKILLS = frozenset({"work-with-pdfs", "planning", "update-models"})
+#: A root expert with a declared catalog gets all four A2UI producer tools.
+A2UI_PRODUCER_TOOLS = frozenset(
+    {
+        "create_a2ui_surface",
+        "update_a2ui_components",
+        "update_a2ui_data_model",
+        "delete_a2ui_surface",
+    }
+)
 #: Tools clio-agent attaches automatically. Declaring them in ``tools`` is an
 #: "unknown tool reference" validation error (they are not in TOOL_CATALOG).
 AUTO_ATTACHED = frozenset(
@@ -96,7 +111,7 @@ class ApplCoreManifestTests(unittest.TestCase):
 
     def test_builtin_catalog_only_and_a_floor(self) -> None:
         self.assertEqual(self.manifest["a2ui_catalogs"], ["clio-workspace"])
-        self.assertEqual(self.manifest["requires"], {"clio_agent": ">=0.9.4.19"})
+        self.assertEqual(self.manifest["requires"], {"clio_agent": ">=0.9.4.23"})
 
     def test_clio_kit_servers_are_declared_like_the_other_packs(self) -> None:
         servers = self.manifest["mcp_servers"]
@@ -161,6 +176,22 @@ class ApplCoreExpertTests(unittest.TestCase):
         self.assertLess(
             declared.index("onboard-dataset"), declared.index("audit-dataset")
         )
+
+    def test_declares_the_builtin_skills_the_default_agent_gets(self) -> None:
+        self.assertLessEqual(DEFAULT_AGENT_BUILTIN_SKILLS, set(self.expert["skills"]))
+
+    def test_a2ui_tools_come_from_the_catalog_like_base_agent(self) -> None:
+        self.assertEqual(set(self.expert["tools"]) & A2UI_PRODUCER_TOOLS, set())
+        self.assertEqual(self.expert["a2ui_catalogs"], ["clio-workspace"])
+
+    def test_prompt_carries_base_agent_working_principles(self) -> None:
+        prompt = " ".join(
+            (ROOT / "experts" / "main.md").read_text(encoding="utf-8").split()
+        )
+        self.assertIn("Never infer a file's contents from its name", prompt)
+        self.assertIn("never claim the task succeeded", prompt)
+        self.assertIn("load `work-with-pdfs`", prompt)
+        self.assertIn("`create-pdf-report`; otherwise reports are Markdown", prompt)
 
     def test_prompt_states_the_card_first_contract(self) -> None:
         prompt = " ".join(

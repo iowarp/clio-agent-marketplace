@@ -2,7 +2,7 @@
 id: earthscope-single-agent
 title: EarthScope Skills
 display_name: EarthScope Skills
-version: 0.3.1
+version: 0.4.0
 description: An EarthScope GNSS scientist that loads focused procedures on demand, presents grounded interactive views when useful, and may fan out independent regional work into temporary child turns.
 root_expert: main
 # A2UI catalogs are a per-agent allowlist, in preference order: this agent
@@ -20,9 +20,8 @@ a2ui_catalogs:
 # silently drop the pack catalog.
 # Raised (#1533): visualize-earthscope-gnss now builds its primary plot on
 # clio.chart.v1 instead of the removed clio.time-series.v1, which needs
-# clio-schemas>=0.5.1. PLACEHOLDER floor -- 0.9.4.23 is a guess at the first
-# clio-agent release that pins it; confirm the exact version against that
-# release's pyproject.toml before this lands. Enforced as a typed
+# clio-schemas>=0.5.1; clio-agent 0.9.4.23 is the first release that pins it
+# (checked against its pyproject.toml). Enforced as a typed
 # blueprint_requires_newer_clio_agent at validate/activation/install.
 requires:
   clio_agent: ">=0.9.4.23"
@@ -33,6 +32,10 @@ blueprint:
 # uv cache (truncated pyvenv.cfg -> dead transport -> _UnsupportedSessionAgent), and
 # `uv cache prune/clean` deletes ephemeral envs under RUNNING servers (astral-sh/uv#11694).
 mcp_servers:
+  web:
+    command: clio-kit
+    args: [mcp-server, web]
+    probe_timeout_retries: 10
   ndp:
     command: clio-kit
     args: [mcp-server, ndp]

@@ -14,14 +14,16 @@ loudly instead of yielding a partial mapping that makes an assertion vacuous.
 
 from __future__ import annotations
 
-import importlib.util
 import re
-import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
 
 from tests.test_base_agent_policy import parse_frontmatter
+from tests.test_standard_agent_superset import DEFAULT_AGENT_BUILTIN_SKILLS
+
+#: clio built-in skills: declared, never shipped by the pack.
+CLIO_BUILTIN_SKILLS = DEFAULT_AGENT_BUILTIN_SKILLS
 
 ROOT = Path(__file__).resolve().parents[1] / "factorio-flat"
 
@@ -280,10 +282,20 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
             self.assertTrue(body.strip(), f"{expert_id} ships an empty prompt body")
 
     def test_tools_are_explicitly_least_privilege(self) -> None:
-        """Interactive, presentation, and web tools stay with their owners."""
+        """The root carries the standard agent's tools (its A2UI tools come from its
+        declared catalogs); specialists keep only what their role needs."""
 
         expected = {
-            "main": ["ask_user", "create_a2ui_surface", "shell_bash", "view_image", "view_pdf"],
+            "main": [
+                "shell_bash",
+                "fs_read_file",
+                "fs_propose_edit",
+                "fs_apply_edit_write",
+                "view_image",
+                "view_pdf",
+                "web_fetch",
+                "ask_user",
+            ],
             "research_methodologist": ["ask_user"],
             "virtual_lab": ["ask_user", "create_a2ui_surface"],
             "evidence_researcher": ["ask_user"],
@@ -328,7 +340,8 @@ class FactorioFlatSkillWiringTests(unittest.TestCase):
         self.experts = _load_experts()
 
     def test_every_declared_skill_ships_in_the_pack(self) -> None:
-        """A declared skill id the pack does not ship never loads at runtime."""
+        """A declared skill is shipped by the pack or is a clio built-in; every
+        shipped skill is declared."""
 
         declared: set[str] = set()
         for parsed in self.experts.values():
@@ -336,7 +349,7 @@ class FactorioFlatSkillWiringTests(unittest.TestCase):
         bundled = {path.parent.name for path in ROOT.glob("skills/*/SKILL.md")}
 
         self.assertTrue(declared)
-        self.assertEqual(declared, bundled)
+        self.assertEqual(declared - CLIO_BUILTIN_SKILLS, bundled)
 
     def test_every_skill_declares_the_name_its_directory_claims(self) -> None:
         """``load_skill`` addresses a skill by id, so the two must agree."""
@@ -380,18 +393,10 @@ class FactorioFlatSkillWiringTests(unittest.TestCase):
 
 
 class FactorioFlatPdfSkillTests(unittest.TestCase):
-    """The PDF skill must be wired and its preparation helper must be functional."""
+    """PDF reading is clio's built-in ``work-with-pdfs`` (its helper is tested in
+    clio-agent); PDF authoring is the pack's ``create-pdf-report``."""
 
-    def setUp(self) -> None:
-        script_path = ROOT / "skills" / "work-with-pdfs" / "scripts" / "prepare_pdf.py"
-        spec = importlib.util.spec_from_file_location("factorio_flat_prepare_pdf", script_path)
-        if spec is None or spec.loader is None:
-            self.fail(f"cannot import {script_path}")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        self.helper = module
-
-    def test_root_expert_can_load_the_pdf_skill(self) -> None:
+    def test_root_expert_can_load_the_pdf_skills(self) -> None:
         """PDF work starts at the scientist-facing root and loads on demand."""
 
         main = parse_frontmatter(ROOT / "experts" / "main.md")
@@ -399,125 +404,17 @@ class FactorioFlatPdfSkillTests(unittest.TestCase):
         self.assertIn("work-with-pdfs", main["skills"])
         self.assertIn("create-pdf-report", main["skills"])
 
-    def test_pdf_reading_and_authoring_are_distinct_skills(self) -> None:
+    def test_pdf_reading_is_the_clio_builtin_not_a_pack_copy(self) -> None:
+        """A pack copy of a built-in drifts from clio's; the pack declares it instead."""
+
+        self.assertFalse((ROOT / "skills" / "work-with-pdfs").exists())
+
+    def test_pdf_authoring_activates_only_on_request(self) -> None:
         """An ordinary PDF question never pulls in the report-authoring workflow."""
 
-        reading = parse_frontmatter(ROOT / "skills" / "work-with-pdfs" / "SKILL.md")
         authoring = parse_frontmatter(ROOT / "skills" / "create-pdf-report" / "SKILL.md")
 
-        self.assertIn("existing PDFs", reading["description"])
         self.assertIn("explicitly requests a PDF", authoring["description"])
-
-    def test_pdf_skill_requires_pixels_for_engineering_drawing_geometry(self) -> None:
-        """Detached text labels cannot prove drawing geometry or units."""
-
-        body = (ROOT / "skills" / "work-with-pdfs" / "SKILL.md").read_text(encoding="utf-8")
-
-        self.assertIn("always layout-dependent", body)
-        self.assertIn("call `view_image` before answering", body)
-        self.assertIn("Do not infer drawing units", body)
-
-    def test_helper_records_real_outputs_from_both_stages(self) -> None:
-        """A successful preparation records concrete text and page artifacts."""
-
-        def converter(source: Path, markdown: Path, structured: Path, max_pages: int) -> None:
-            self.assertEqual(max_pages, 5)
-            markdown.write_text("# Converted\n", encoding="utf-8")
-            structured.write_text("{}\n", encoding="utf-8")
-
-        def renderer(source: Path, pages: Path, max_pages: int, dpi: int) -> list[Path]:
-            self.assertEqual((max_pages, dpi), (5, 96))
-            pages.mkdir(parents=True)
-            rendered = [pages / "page-0001.png", pages / "page-0002.png"]
-            for path in rendered:
-                path.write_bytes(b"png")
-            return rendered
-
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = root / "paper.pdf"
-            source.write_bytes(b"%PDF-1.7\n")
-            result = self.helper.prepare_pdf(
-                source,
-                root / "prepared",
-                max_pages=5,
-                dpi=96,
-                converter=converter,
-                renderer=renderer,
-            )
-
-            manifest = Path(result["manifest"])
-            recorded = __import__("json").loads(manifest.read_text(encoding="utf-8"))
-            self.assertEqual(result["status"], "complete")
-            self.assertEqual(recorded["docling"]["status"], "complete")
-            self.assertEqual(recorded["pages"]["count"], 2)
-
-    def test_helper_preserves_a_docling_failure_when_pages_render(self) -> None:
-        """A fallback image set is useful without hiding the failed text conversion."""
-
-        def converter(source: Path, markdown: Path, structured: Path, max_pages: int) -> None:
-            raise RuntimeError("conversion unavailable")
-
-        def renderer(source: Path, pages: Path, max_pages: int, dpi: int) -> list[Path]:
-            pages.mkdir(parents=True)
-            rendered = pages / "page-0001.png"
-            rendered.write_bytes(b"png")
-            return [rendered]
-
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = root / "scan.pdf"
-            source.write_bytes(b"%PDF-1.7\n")
-            result = self.helper.prepare_pdf(
-                source,
-                root / "prepared",
-                converter=converter,
-                renderer=renderer,
-            )
-
-            self.assertEqual(result["status"], "partial")
-            self.assertEqual(result["docling"]["status"], "failed")
-            self.assertEqual(result["pages"]["status"], "complete")
-
-    def test_visual_only_renders_without_calling_docling(self) -> None:
-        """Drawing questions can reach pixels without waiting for conversion."""
-
-        def converter(source: Path, markdown: Path, structured: Path, max_pages: int) -> None:
-            self.fail("visual-only preparation must not call Docling")
-
-        def renderer(source: Path, pages: Path, max_pages: int, dpi: int) -> list[Path]:
-            pages.mkdir(parents=True)
-            rendered = pages / "page-0001.png"
-            rendered.write_bytes(b"png")
-            return [rendered]
-
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = root / "drawing.pdf"
-            source.write_bytes(b"%PDF-1.7\n")
-            result = self.helper.prepare_pdf(
-                source,
-                root / "prepared",
-                visual_only=True,
-                converter=converter,
-                renderer=renderer,
-            )
-
-            self.assertEqual(result["status"], "complete")
-            self.assertEqual(result["docling"], {"status": "skipped", "reason": "visual_only"})
-            self.assertEqual(result["pages"]["count"], 1)
-
-    def test_helper_rejects_non_pdf_inputs_before_running_stages(self) -> None:
-        """The script must not send an arbitrary workspace file into PDF tooling."""
-
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = root / "notes.txt"
-            source.write_text("not a pdf", encoding="utf-8")
-
-            with self.assertRaisesRegex(ValueError, "existing .pdf"):
-                self.helper.prepare_pdf(source, root / "prepared")
-
 
 if __name__ == "__main__":
     unittest.main()

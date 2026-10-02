@@ -2,7 +2,7 @@
 id: factorio-flat
 title: Factorio Flat
 display_name: Factorio Flat
-version: 0.3.0
+version: 0.4.0
 description: A scientist-facing research partner spanning research framing, evidence coordination, simulation, and adversarial review, extended with materials science, manufacturing, characterization, mechanical testing, fatigue/failure, and data analysis specialists.
 root_expert: main
 # A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
@@ -20,10 +20,9 @@ a2ui_catalogs:
 # (clio.slider.v1) need clio-schemas>=0.4.0, which 0.9.4.18 does not pin
 # (0.3.3) and 0.9.4.19 does.
 # Raised again (#1533): ConvergencePlot now aliases clio.chart.v1 instead of
-# the removed clio.time-series.v1, which needs clio-schemas>=0.5.1. PLACEHOLDER
-# floor -- 0.9.4.23 is a guess at the first clio-agent release that pins it;
-# confirm the exact version against that release's pyproject.toml before this
-# lands. Below this floor, load_catalog_directory refuses the abaqus-topology
+# the removed clio.time-series.v1, which needs clio-schemas>=0.5.1; clio-agent
+# 0.9.4.23 is the first release that pins it (checked against its
+# pyproject.toml). Below this floor, load_catalog_directory refuses the abaqus-topology
 # catalog with a typed a2ui_component_unimplemented reason and the server
 # drops it from the producible set, but main/abaqus_engineer's prompts and the
 # visualize-topology-optimization skill still tell the model the views
