@@ -416,14 +416,21 @@
               "const": "ConvergencePlot"
             },
             "data": {
-              "description": "Inline rows (at most 10000) — this array rides the surface's own wire message, so it is capped for transfer size; for a larger or growing dataset use dataUri instead, unbounded and paged/downsampled by the viewer.",
+              "description": "Inline rows (at most 10000) â€” this array rides the surface's own wire message, so it is capped for transfer size; for a larger or growing dataset use dataUri instead, unbounded and paged/downsampled by the viewer.",
               "items": {
                 "additionalProperties": {
-                  "type": [
-                    "string",
-                    "number",
-                    "boolean",
-                    "null"
+                  "anyOf": [
+                    {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    {
+                      "$ref": "#/$defs/GeoJsonGeometry"
+                    }
                   ]
                 },
                 "type": "object"
@@ -1202,6 +1209,188 @@
           "$ref": "#/functions/not"
         }
       ]
+    },
+    "GeoJsonGeometry": {
+      "description": "A GeoJSON Geometry object (RFC 7946 §3.1), strictly shaped: Point/MultiPoint/LineString/MultiLineString/Polygon/MultiPolygon carry coordinates; GeometryCollection carries geometries. Never a Feature/FeatureCollection, never a bare coordinate array.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 3,
+              "minItems": 2,
+              "type": "array"
+            },
+            "type": {
+              "const": "Point"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 2,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "MultiPoint"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 2,
+                "type": "array"
+              },
+              "minItems": 2,
+              "type": "array"
+            },
+            "type": {
+              "const": "LineString"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "maxItems": 3,
+                  "minItems": 2,
+                  "type": "array"
+                },
+                "minItems": 2,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "MultiLineString"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "maxItems": 3,
+                  "minItems": 2,
+                  "type": "array"
+                },
+                "minItems": 4,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "Polygon"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "items": {
+                    "items": {
+                      "type": "number"
+                    },
+                    "maxItems": 3,
+                    "minItems": 2,
+                    "type": "array"
+                  },
+                  "minItems": 4,
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "MultiPolygon"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "geometries": {
+              "items": {
+                "$ref": "#/$defs/GeoJsonGeometry"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "GeometryCollection"
+            }
+          },
+          "required": [
+            "type",
+            "geometries"
+          ],
+          "type": "object"
+        }
+      ],
+      "type": "object"
     }
   }
 }
