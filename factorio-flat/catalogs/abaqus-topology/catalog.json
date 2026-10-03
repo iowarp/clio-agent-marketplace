@@ -416,7 +416,7 @@
               "const": "ConvergencePlot"
             },
             "data": {
-              "description": "Inline rows (at most 10000) â€” this array rides the surface's own wire message, so it is capped for transfer size; for a larger or growing dataset use dataUri instead, unbounded and paged/downsampled by the viewer.",
+              "description": "Inline rows (at most 10000) — this array rides the surface's own wire message, so it is capped for transfer size; for a larger or growing dataset use dataUri instead, unbounded and paged/downsampled by the viewer.",
               "items": {
                 "additionalProperties": {
                   "anyOf": [
