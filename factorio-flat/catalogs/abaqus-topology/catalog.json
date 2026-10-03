@@ -345,6 +345,25 @@
               ],
               "type": "string",
               "description": "Model axis that points up on screen (Abaqus models are usually y-up)."
+            },
+            "format": {
+              "enum": [
+                "glb",
+                "gltf",
+                "obj",
+                "stl",
+                "ply",
+                "fbx",
+                "3mf",
+                "vtk",
+                "vtp",
+                "drc"
+              ],
+              "type": "string"
+            },
+            "materialUri": {
+              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
+              "type": "string"
             }
           },
           "required": [
