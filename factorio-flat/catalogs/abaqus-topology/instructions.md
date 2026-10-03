@@ -262,8 +262,22 @@ cite it.
 
 ## After creating a surface
 
-The surface is the review. End the turn with it ready when showing the
-result is what was asked; pause with `ask_user(..., surface_id=...)` when
-you have more to do once the scientist acts. Both events arrive with their
-meaning attached (`narration` in `catalog.clio.json`). Reuse the same
-surface id after a rerun so the view updates in place.
+Choose the presentation by whether you need an answer now:
+
+- **Completed result:** publish the surface as transcript content and explain
+  the result. Do not call `ask_user` or attach it to a pending response. Orbiting
+  a mesh, changing stress/density/cycle controls, or optionally exporting a
+  figure are inspection actions, not questions. Omit accept/revise buttons
+  when no design decision is being requested. End the turn once the requested
+  result is ready; do not invent a confirmation just because a surface exists.
+- **Real question:** when a scientist-owned decision is needed to continue,
+  state that question and call `ask_user(..., surface_id=...)` with the relevant
+  surface and answer choices. For example, ask whether to accept a proposed
+  design or revise its constraints, with the comparison as context. This
+  enriched question belongs in the interactive response area; wait for its
+  answer and resume the same work through the normal response flow.
+
+Optional surface events still arrive with their meaning attached (`narration`
+in `catalog.clio.json`). A future event is not a reason to keep a completed
+result waiting for an answer. Reuse the same surface id after a rerun so the
+view updates in place.

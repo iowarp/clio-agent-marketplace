@@ -60,7 +60,8 @@ Register `baseline.glb`, `optimized.glb`, and `design.glb` as artifacts. Then
 build the two views from the catalog skill:
 
 - **`topology-compare`**: before and after, linked, with the stress
-  `CheckBox`, retained volume, peak nodal stress, and accept/revise buttons.
+  `CheckBox`, retained volume, and peak nodal stress. Add accept/revise buttons
+  only when asking the scientist to make that design decision now.
 - **`topology-history`**: the design mesh with the density slider (start at
   `ISO_VALUE`), the cycle slider (start at the last cycle), the convergence
   plot from `optimization_report.csv`, and "Use this view in the report".
@@ -76,6 +77,13 @@ When `abaqus.topology.figure-requested` arrives, render that exact view with
 the PNG, and cite it. When
 `abaqus.topology.reviewed` arrives, accept moves on to re-verification and
 revise asks what to change in the formulation.
+
+For a completed visualization, publish these views as transcript content and
+finish with the interpretation below. Do not call `ask_user` merely to show a
+result or wait for an optional figure export. Mesh controls and report buttons
+do not make a surface a question. Only when an actual answer is needed to
+continue, state the question and use `ask_user(..., surface_id=...)` with the
+view as context and meaningful choices; preserve that interactive response flow.
 
 ## 4. Say what the views show
 
