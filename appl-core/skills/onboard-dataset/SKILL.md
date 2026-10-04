@@ -17,21 +17,21 @@ profile it again:
 
 | Artefact | Path | Content |
 | --- | --- | --- |
-| experiment card | `<workspace_root>/.clio/datasets/<key>/experiment-card.md` | facts tagged stated/checked/inferred, traps, open questions, proposed lessons, loader and view hashes |
-| loader | `<workspace_root>/.clio/datasets/<key>/loader.py` | one idempotent script that reads the raw files and applies every decision in the card |
-| views | `<workspace_root>/.clio/datasets/<key>/views/` | analysis-ready tables written by the loader (Parquet) |
+| experiment card | `<workspace_state>/datasets/<key>/experiment-card.md` | facts tagged stated/checked/inferred, traps, open questions, proposed lessons, loader and view hashes |
+| loader | `<workspace_state>/datasets/<key>/loader.py` | one idempotent script that reads the raw files and applies every decision in the card |
+| views | `<workspace_state>/datasets/<key>/views/` | analysis-ready tables written by the loader (Parquet) |
 
-Audit reports go to `<workspace_root>/.clio/datasets/<key>/audit/`. Call this
+Audit reports go to `<workspace_state>/datasets/<key>/audit/`. Call this
 directory `DATASET_DIR`; `card.py status` prints it (`dataset_dir:`).
 
-- **Default location: the workspace, not the export.** `WORKSPACE_ROOT` is
-  the active workspace root given in your prompt as "Active workspace root:
-  ..."; pass it to `card.py` as `--store` (the default is the current working
-  directory). Keeping derived files out of the bundle root leaves the raw
-  export pristine and lets later sessions find the card. If the user wants
-  the artefacts somewhere else (including inside the data folder), pass that
-  directory as `--store` instead. Permissions are clio's call: if a write is
-  denied, report it plainly.
+- **Default location: Agent workspace state.** CLIO's shell supplies the absolute
+  `CLIO_AGENT_WORKSPACE_STATE_DIR` from its canonical resolver on the execution host.
+  Run `card.py` without `--store`; it uses this value, independent of the command's
+  working directory. The returned `dataset_dir` is authoritative. A standalone
+  invocation requires an explicit absolute `--store` state directory. Never guess
+  a home directory or recreate workspace `.clio`; report missing configuration.
+  Keep old `.clio` cards untouched until the user explicitly migrates them.
+  Permissions remain CLIO's decision: report denied writes plainly.
 - **Analysis hygiene.** Do not change raw data values in place; every
   cleaning decision lives in the loader and views and is recorded in the card.
 - `<key>` is the first 16 hex characters of the SHA-256 of the export's
@@ -52,7 +52,7 @@ literal path in the commands below. Run through uv's shared cache, never a
 `.venv` inside the skill directory. The commands work on Windows and Linux.
 
 ```text
-uv run --no-project python "SKILL_ROOT/scripts/card.py" status|init|record|verify BUNDLE_ROOT --store WORKSPACE_ROOT
+uv run --no-project python "SKILL_ROOT/scripts/card.py" status|init|record|verify BUNDLE_ROOT
 uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/inventory.py" BUNDLE_ROOT --out DATASET_DIR/audit/inventory.json
 uv run --no-project --with "pyarrow>=15" --with "numpy>=1.24" python "SKILL_ROOT/scripts/audit_columns.py" TABLE --out DATASET_DIR/audit/columns-NAME.json
 uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/join_keys.py" TABLE_A TABLE_B --keys K1,K2 --out DATASET_DIR/audit/join-NAME.json
@@ -71,7 +71,7 @@ sample only, so say so.
 ## Procedure
 
 1. **Is there already a card?** Run
-   `card.py status BUNDLE_ROOT --store WORKSPACE_ROOT` and note `dataset_dir`.
+   `card.py status BUNDLE_ROOT ` and note `dataset_dir`.
    - `state: current` and `hashes: match`: reuse the card. Read it, run the
      loader once (step 8) and continue with the analysis. Do not re-profile.
    - `state: stale` (the store has a card for this bundle path made from a
@@ -92,7 +92,7 @@ sample only, so say so.
    twins (the same table as CSV and Parquet), docs, and every
    `declared_counts` status other than `match`, every file the manifest
    references that is missing, and tables it does not reference.
-4. **Create the card** with `card.py init BUNDLE_ROOT --store WORKSPACE_ROOT`,
+4. **Create the card** with `card.py init BUNDLE_ROOT `,
    then fill it as you go
    (see `evidence-and-claims` for tagging). Never overwrite an existing card
    without `--force` and a reason.
@@ -120,8 +120,8 @@ sample only, so say so.
    DATASET_DIR/loader.py BUNDLE_ROOT` (or with `--with` flags), validate the views
    (the `phenotyping-onboarding-checks` skill has schemas and a validator for
    phenotyping data), check row counts after every join, then
-   `card.py record BUNDLE_ROOT --store WORKSPACE_ROOT`. Run the loader a
-   second time and `card.py verify BUNDLE_ROOT --store WORKSPACE_ROOT`:
+   `card.py record BUNDLE_ROOT `. Run the loader a
+   second time and `card.py verify BUNDLE_ROOT `:
    identical hashes prove it is deterministic.
    If they differ, fix the loader before anyone trusts a view.
 9. **Report** in a few lines: what the dataset is, the traps found and how

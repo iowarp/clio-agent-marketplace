@@ -61,15 +61,11 @@ def test_inventory_skips_a_legacy_agent_dir(bundle: Path) -> None:
 
     assert not any(t["path"].startswith(".clio") for t in report["tables"])
     assert report["legacy_agent_dir"] == {"path": ".clio", "exists": True}
-    assert any(
-        ".clio dir in the bundle" in line for line in inventory.summarize(report)
-    )
+    assert any(".clio dir in the bundle" in line for line in inventory.summarize(report))
 
 
 def test_audit_finds_sentinel_ghosts_near_duplicates_and_twins(bundle: Path) -> None:
-    features = audit_columns.audit(
-        pq.read_table(bundle / "cam" / "cam-features.parquet")
-    )
+    features = audit_columns.audit(pq.read_table(bundle / "cam" / "cam-features.parquet"))
     f = features["findings"]
     sentinel = next(item for item in f["sentinel_columns"] if item["name"] == "score")
     assert sentinel["candidates"][0]["values"][0]["value"] == FLOAT_MAX
@@ -77,16 +73,10 @@ def test_audit_finds_sentinel_ghosts_near_duplicates_and_twins(bundle: Path) -> 
     assert "experiment_id" in f["constant_columns"]
     assert "qc_flags" in f["list_like_columns"]
 
-    signatures = audit_columns.audit(
-        pq.read_table(bundle / "spec" / "spec-signatures.parquet")
-    )
+    signatures = audit_columns.audit(pq.read_table(bundle / "spec" / "spec-signatures.parquet"))
     s = signatures["findings"]
     assert set(s["all_empty_columns"]) == {"band_001_400p01nm", "band_002_401p16nm"}
-    pairs = {
-        (p["a"], p["b"]): p
-        for p in s["near_duplicate_names"]
-        if p["kind"] == "rounding"
-    }
+    pairs = {(p["a"], p["b"]): p for p in s["near_duplicate_names"] if p["kind"] == "rounding"}
     assert ("band_001_400p00nm", "band_001_400p01nm") in pairs
     assert pairs[("band_001_400p00nm", "band_001_400p01nm")]["b_empty"] is True
     assert ("band_002_401p15nm", "band_002_401p16nm") in pairs
@@ -115,11 +105,7 @@ def test_audit_detects_zero_as_missing_and_codes() -> None:
     report = audit_columns.audit(table)
 
     assert report["findings"]["zero_as_missing_candidates"] == ["weight"]
-    codes = next(
-        item
-        for item in report["findings"]["sentinel_columns"]
-        if item["name"] == "code"
-    )
+    codes = next(item for item in report["findings"]["sentinel_columns"] if item["name"] == "code")
     assert {"kind": "code", "value": -9999.0, "count": 3} in codes["candidates"]
 
 
@@ -168,9 +154,7 @@ def test_flag_check_finds_universal_and_unflagged_missing(bundle: Path) -> None:
 def test_flag_check_parses_string_lists_and_zero_signal(bundle: Path) -> None:
     table = flag_check.read_table(bundle / "cam" / "cam-features.csv")
 
-    report = flag_check.check(
-        table, "qc_flags", ["mask_coverage_pct"], zero_is_missing=True
-    )
+    report = flag_check.check(table, "qc_flags", ["mask_coverage_pct"], zero_is_missing=True)
 
     assert report["universal_flags"] == ["low_mask_coverage"]
     assert (
@@ -192,7 +176,7 @@ def test_card_lifecycle(bundle: Path, tmp_path: Path) -> None:
     created = card.init(bundle, store)
     assert created["ok"] is True
     directory = Path(created["dataset_dir"])
-    assert directory.parent == (store / ".clio" / "datasets").resolve()
+    assert directory.parent == (store / "datasets").resolve()
     assert directory.name == created["manifest_sha256"][:16]
     assert created["key_source"] == "manifest"
     text = (directory / "experiment-card.md").read_text(encoding="utf-8")
@@ -221,9 +205,7 @@ def test_card_lifecycle(bundle: Path, tmp_path: Path) -> None:
     (directory / "loader.py").write_text("print('load')\n", encoding="utf-8")
     pq.write_table(pa.table({"unit_id": ["a"]}), views / "design.parquet")
     recorded = card.record(bundle, store)
-    assert recorded["views"] == {
-        "views/design.parquet": card._sha256(views / "design.parquet")
-    }
+    assert recorded["views"] == {"views/design.parquet": card._sha256(views / "design.parquet")}
     assert card.status(bundle, store)["hashes"] == "match"
     assert card.main(["verify", str(bundle), "--store", str(store)]) == 0
 
@@ -255,9 +237,7 @@ def test_card_force_replaces(bundle: Path, tmp_path: Path) -> None:
     assert path.read_text(encoding="utf-8") != "old"
 
 
-def test_card_found_by_manifest_hash_from_another_path(
-    bundle: Path, tmp_path: Path
-) -> None:
+def test_card_found_by_manifest_hash_from_another_path(bundle: Path, tmp_path: Path) -> None:
     store = tmp_path / "workspace"
     created = card.init(bundle, store)
     moved = tmp_path / "elsewhere" / "same-export"
@@ -275,10 +255,11 @@ def test_card_found_by_manifest_hash_from_another_path(
 def test_card_init_writes_only_under_the_store(
     bundle: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    store = tmp_path / "workspace"
-    store.mkdir()
+    store = tmp_path / "agent-state/workspaces/key"
+    store.mkdir(parents=True)
     before = tree_hash(bundle)
-    monkeypatch.chdir(store)  # --store defaults to the working directory
+    monkeypatch.chdir(store)
+    monkeypatch.setenv("CLIO_AGENT_WORKSPACE_STATE_DIR", str(store))
 
     assert card.main(["init", str(bundle)]) == 0
     assert card.main(["status", str(bundle)]) == 0
@@ -287,7 +268,30 @@ def test_card_init_writes_only_under_the_store(
     assert not (bundle / ".clio").exists()
     written = [p.relative_to(store).as_posix() for p in store.rglob("*") if p.is_file()]
     key = card.dataset_key(bundle)[0]
-    assert written == [f".clio/datasets/{key}/experiment-card.md"]
+    assert written == [f"datasets/{key}/experiment-card.md"]
+
+
+def test_card_never_defaults_to_cwd_or_migrates_legacy_files(
+    bundle: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Missing host context is an error; old cards stay untouched."""
+    legacy = tmp_path / "workspace/.clio/datasets/existing/experiment-card.md"
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text("retain this user's evidence")
+    monkeypatch.chdir(tmp_path / "workspace")
+    monkeypatch.delenv("CLIO_AGENT_WORKSPACE_STATE_DIR", raising=False)
+    with pytest.raises(SystemExit, match="2"):
+        card.main(["init", str(bundle)])
+    monkeypatch.setenv("CLIO_AGENT_WORKSPACE_STATE_DIR", "relative-state")
+    with pytest.raises(SystemExit, match="2"):
+        card.main(["init", str(bundle)])
+    assert legacy.read_text() == "retain this user's evidence"
+    assert list((tmp_path / "workspace").iterdir()) == [tmp_path / "workspace/.clio"]
+    state = tmp_path / "agent-state"
+    monkeypatch.setenv("CLIO_AGENT_WORKSPACE_STATE_DIR", str(state))
+    assert card.main(["init", str(bundle)]) == 0
+    assert Path(card.status(bundle, state)["card"]).is_relative_to(state)
+    assert legacy.read_text() == "retain this user's evidence"
 
 
 def test_card_accepts_a_store_inside_the_bundle(bundle: Path) -> None:
@@ -297,7 +301,7 @@ def test_card_accepts_a_store_inside_the_bundle(bundle: Path) -> None:
 
     assert created["ok"] is True
     key = card.dataset_key(bundle)[0]
-    card_path = bundle / ".clio" / "datasets" / key / "experiment-card.md"
+    card_path = bundle / "datasets" / key / "experiment-card.md"
     assert Path(created["card"]) == card_path.resolve()
     assert card_path.is_file()
     assert card.main(["status", str(bundle), "--store", str(bundle)]) == 0
@@ -318,9 +322,9 @@ def test_card_key_falls_back_to_the_bundle_path(bundle: Path, tmp_path: Path) ->
 
     assert created["ok"] is True
     assert created["key_source"] == "path"
-    expected = hashlib.sha256(
-        os.path.normcase(str(bundle.resolve())).encode("utf-8")
-    ).hexdigest()[:16]
+    expected = hashlib.sha256(os.path.normcase(str(bundle.resolve())).encode("utf-8")).hexdigest()[
+        :16
+    ]
     assert created["dataset_key"] == expected
     assert Path(created["dataset_dir"]).name == expected
     report = card.status(bundle, store)

@@ -20,14 +20,14 @@ blocker.
 
 By default everything you write goes into the active workspace (given in
 your prompt as "Active workspace root: ..."), under
-`<workspace_root>/.clio/datasets/<key>/`, which keeps the raw export pristine
+`<workspace_state>/datasets/<key>/`, which keeps the raw export pristine
 and lets later sessions find the card. If the assignment names another
 location, use it. If clio's permission system denies a write, return that
 plainly as a blocker.
 
 1. Load `onboard-dataset` and follow its procedure on the assigned bundle
    root, from `card.py status` to `card.py verify`, passing the active
-   workspace root as `--store WORKSPACE_ROOT` on every `card.py` call and
+   workspace root as `` on every `card.py` call and
    writing audit reports under the `dataset_dir` it prints. Load `evidence-and-claims`
    for tagging, and, when the data is plant phenotyping,
    `phenotyping-onboarding-checks` for the view shapes. If the export declares
@@ -40,7 +40,7 @@ plainly as a blocker.
 3. Do not create A2UI surfaces. The parent owns presentation.
 4. Return exactly this, as short plain text:
    - `card:` absolute path of the experiment card
-   - `dataset_dir:` absolute path of `<workspace_root>/.clio/datasets/<key>/`
+   - `dataset_dir:` absolute path of `<workspace_state>/datasets/<key>/`
    - `loader:` absolute path of the loader, and the exact command you ran it with
    - `views:` each view path with its SHA-256 as recorded by `card.py record`
    - `verify:` the exact final `card.py verify ... --store ...` command and its

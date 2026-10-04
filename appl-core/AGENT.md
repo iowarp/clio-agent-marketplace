@@ -2,8 +2,8 @@
 id: appl-core
 title: APPL-CORE Analyst
 display_name: APPL-CORE Analyst
-version: 0.2.0
-description: Onboards and analyses any APPL-CORE plant-phenotyping export (an L2 agent for one export format) - reads the export's self-description, catches its data traps, records an experiment card and a saved loader next to the data, and answers phenotyping questions with evidence tagged stated, checked, or inferred.
+version: 0.2.1
+description: Onboards and analyses any APPL-CORE plant-phenotyping export (an L2 agent for one export format) - reads the export's self-description, catches its data traps, records an experiment card and loader in the workspace's Agent state, and answers phenotyping questions with evidence tagged stated, checked, or inferred.
 root_expert: main
 # Floor: views use the clio-workspace catalog's clio.chart.v1 presets
 # (trajectories, box plots, heatmaps) and geometry-to-glb's
@@ -67,8 +67,8 @@ this.
 
 ## Where L3 artefacts live
 
-By default in the active workspace, not in the data folder:
-`<workspace_root>/.clio/datasets/<key>/`, where `<key>` is the first 16 hex
+In the active workspace's namespaced Agent state, outside the data folder:
+`<workspace_state>/datasets/<key>/`, where `<key>` is the first 16 hex
 characters of the SHA-256 of the export's manifest file (without a manifest:
 of the resolved absolute bundle path). A second session, or the same export
 mounted at another path, recomputes the key and finds the same card.
@@ -83,7 +83,9 @@ mounted at another path, recomputes the key and finds the same card.
 
 Keeping derived artefacts out of the export leaves the raw data pristine and
 works with shared facility mounts; it is a default, not a restriction. The
-agent passes the active workspace root to `card.py` as `--store`, and follows
-the user if they want the artefacts elsewhere. What the agent may actually
+shell supplies `CLIO_AGENT_WORKSPACE_STATE_DIR` from the owning CLIO's path resolver;
+`card.py` uses that automatically even when its working directory changes.
+Standalone callers may explicitly supply an absolute state directory with `--store`.
+Never create workspace `.clio` or automatically move legacy cards. What the agent may actually
 write is decided by clio's permission system (approval modes, deny rules,
 allowed roots, sandbox), not by this pack.

@@ -12,7 +12,7 @@ declares compared with the counts the files actually hold.
 
 This script only reads the input directory. Agent artefacts (experiment
 card, loader, views, audit reports) live by default in the workspace store
-(``<workspace>/.clio/datasets/<key>/``, see ``card.py``). A ``.clio``
+(``<workspace_state>/datasets/<key>/``, see ``card.py``). A ``.clio``
 directory at the bundle root (left by an older session, or because the user
 chose the bundle itself as the store) is reported as ``legacy_agent_dir`` and
 never inventoried as data.

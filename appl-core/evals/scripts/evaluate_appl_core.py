@@ -5,7 +5,7 @@ Skeleton grader, modelled on ``scripts/evaluate_factorio_flat.py``: it reads
 only what an observer of a live session can see -- the public response, the
 tool trace, the runtime rows (tasks, questions, sessions) -- plus a ``bundle``
 record the capture adapter takes after the turn from the workspace store
-(``<workspace_root>/.clio/datasets/<key>/``: the card text and the view hashes
+(``<workspace_state>/datasets/<key>/``: the card text and the view hashes
 of each loader run). It asserts OUTCOMES, not
 turn structure: no tool ordering except where the outcome IS an order (the
 parent re-runs a child's loader after collecting the child), no call caps.
@@ -53,9 +53,8 @@ _TAGGED_CLAIM = re.compile(r"^\s*-\s*\[(stated|checked|inferred)\]", re.MULTILIN
 _TRAP = re.compile(r"\[trap:([a-z0-9-]+)\]")
 _SECTION = re.compile(r"^## (.+)$", re.MULTILINE)
 _COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
-#: A view file in the workspace store (``.clio/datasets/<key>/views/``) or in a
-#: legacy bundle-local ``.clio/views/``.
-_VIEW_PATH = re.compile(r"/\.clio/(?:datasets/[^/]+/)?views/")
+#: Namespaced dataset views, including legacy traces retained for comparison.
+_VIEW_PATH = re.compile(r"/(?:datasets/[^/]+|\.clio(?:/datasets/[^/]+)?)/views/")
 
 
 @dataclass(frozen=True)
@@ -70,11 +69,7 @@ def trap_classes() -> frozenset[str]:
     """The card vocabulary, read from the onboard-dataset card script."""
 
     path = (
-        Path(__file__).resolve().parents[2]
-        / "skills"
-        / "onboard-dataset"
-        / "scripts"
-        / "card.py"
+        Path(__file__).resolve().parents[2] / "skills" / "onboard-dataset" / "scripts" / "card.py"
     )
     spec = importlib.util.spec_from_file_location("appl_core_card", path)
     if spec is None or spec.loader is None:
@@ -85,11 +80,7 @@ def trap_classes() -> frozenset[str]:
 
 
 def _rows(value: Any) -> list[dict[str, Any]]:
-    return (
-        [row for row in value if isinstance(row, dict)]
-        if isinstance(value, list)
-        else []
-    )
+    return [row for row in value if isinstance(row, dict)] if isinstance(value, list) else []
 
 
 def _commands(result: dict[str, Any]) -> list[tuple[int, str]]:
@@ -97,9 +88,7 @@ def _commands(result: dict[str, Any]) -> list[tuple[int, str]]:
 
     out = []
     for index, action in enumerate(_rows(result.get("actions"))):
-        if action.get("name") == "shell_bash" and isinstance(
-            action.get("arguments"), dict
-        ):
+        if action.get("name") == "shell_bash" and isinstance(action.get("arguments"), dict):
             out.append((index, str(action["arguments"].get("command", ""))))
     return out
 
@@ -134,9 +123,7 @@ def _check_shape(case_id: str, result: dict[str, Any]) -> list[EvaluationFailure
     for key, kind in REQUIRED_KEYS.items():
         if not isinstance(result.get(key), kind):
             failures.append(
-                EvaluationFailure(
-                    case_id, f"trace key {key!r} missing or not a {kind.__name__}"
-                )
+                EvaluationFailure(case_id, f"trace key {key!r} missing or not a {kind.__name__}")
             )
     if failures:
         return failures
@@ -177,21 +164,15 @@ def _check_response(
         failures.append(EvaluationFailure(case_id, "empty response"))
     if words < int(expect.get("min_words", 0)):
         failures.append(
-            EvaluationFailure(
-                case_id, f"response has {words} words, below {expect['min_words']}"
-            )
+            EvaluationFailure(case_id, f"response has {words} words, below {expect['min_words']}")
         )
     if "max_words" in expect and words > int(expect["max_words"]):
         failures.append(
-            EvaluationFailure(
-                case_id, f"response has {words} words, above {expect['max_words']}"
-            )
+            EvaluationFailure(case_id, f"response has {words} words, above {expect['max_words']}")
         )
     terms = [str(t).lower() for t in expect.get("terms_any", [])]
     if terms and not any(term in response.lower() for term in terms):
-        failures.append(
-            EvaluationFailure(case_id, f"response mentions none of {terms}")
-        )
+        failures.append(EvaluationFailure(case_id, f"response mentions none of {terms}"))
     return failures
 
 
@@ -202,16 +183,12 @@ def _check_actions(
     names = {str(a.get("name")) for a in _rows(result["actions"])}
     for name in expect.get("required", []):
         if name not in names:
-            failures.append(
-                EvaluationFailure(case_id, f"required action {name!r} never ran")
-            )
+            failures.append(EvaluationFailure(case_id, f"required action {name!r} never ran"))
     used = _skills_used(result)
     for skill in expect.get("required_skills", []):
         if skill not in used:
             failures.append(
-                EvaluationFailure(
-                    case_id, f"skill {skill!r} was never loaded or spawned"
-                )
+                EvaluationFailure(case_id, f"skill {skill!r} was never loaded or spawned")
             )
     commands = " ".join(command for _, command in _commands(result))
     for script in expect.get("required_scripts", []):
@@ -251,9 +228,7 @@ def _check_card(
         )
     for trap in expect.get("required_trap_classes", []):
         if trap not in found:
-            failures.append(
-                EvaluationFailure(case_id, f"card records no [trap:{trap}]")
-            )
+            failures.append(EvaluationFailure(case_id, f"card records no [trap:{trap}]"))
     sections = card_sections(card)
     questions = [
         line
@@ -294,9 +269,7 @@ def _check_loader(
             failures.append(EvaluationFailure(case_id, "card.py verify never passed"))
     if expect.get("parent_reran_after_child"):
         waits = [
-            i
-            for i, a in enumerate(_rows(result["actions"]))
-            if a.get("name") == "wait_agent_tasks"
+            i for i, a in enumerate(_rows(result["actions"])) if a.get("name") == "wait_agent_tasks"
         ]
         reruns = [i for i, c in _commands(result) if "loader.py" in c]
         if not waits or not any(i > waits[0] for i in reruns):
@@ -355,21 +328,15 @@ def _check_question(
     ]
     if len(asked) < int(expect.get("min_count", 0)):
         failures.append(
-            EvaluationFailure(
-                case_id, f"{len(asked)} questions asked, below {expect['min_count']}"
-            )
+            EvaluationFailure(case_id, f"{len(asked)} questions asked, below {expect['min_count']}")
         )
     terms = [str(t).lower() for t in expect.get("terms_any", [])]
     if (
         terms
         and asked
-        and not any(
-            term in str(q.get("prompt", "")).lower() for q in asked for term in terms
-        )
+        and not any(term in str(q.get("prompt", "")).lower() for q in asked for term in terms)
     ):
-        failures.append(
-            EvaluationFailure(case_id, f"no question mentions any of {terms}")
-        )
+        failures.append(EvaluationFailure(case_id, f"no question mentions any of {terms}"))
     return failures
 
 
@@ -411,13 +378,9 @@ def validate_cases(
     vocabulary = vocabulary if vocabulary is not None else trap_classes()
     problems = []
     ids = [str(case.get("id")) for case in cases]
-    problems.extend(
-        f"duplicate case id {i}" for i in sorted({i for i in ids if ids.count(i) > 1})
-    )
+    problems.extend(f"duplicate case id {i}" for i in sorted({i for i in ids if ids.count(i) > 1}))
     for case in cases:
-        for trap in (
-            case.get("expect", {}).get("card", {}).get("required_trap_classes", [])
-        ):
+        for trap in case.get("expect", {}).get("card", {}).get("required_trap_classes", []):
             if trap not in vocabulary:
                 problems.append(f"{case.get('id')}: unknown trap class {trap}")
     return problems
@@ -432,8 +395,7 @@ def evaluate_files(cases_path: Path, results_path: Path) -> list[EvaluationFailu
         raise TypeError("cases and results must each be a JSON array")
     vocabulary = trap_classes()
     failures = [
-        EvaluationFailure("<cases>", problem)
-        for problem in validate_cases(cases, vocabulary)
+        EvaluationFailure("<cases>", problem) for problem in validate_cases(cases, vocabulary)
     ]
     by_id = {str(r.get("case_id")): r for r in results if isinstance(r, dict)}
     for case in cases:

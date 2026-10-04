@@ -9,7 +9,7 @@ card for this export in the workspace store" or "a current card from
 `user_message` with the bundle's absolute path.
 
 By default, per-dataset artefacts live in the session's active workspace,
-not in the export: `<workspace_root>/.clio/datasets/<key>/` holds `experiment-card.md`,
+not in the export: `<workspace_state>/datasets/<key>/` holds `experiment-card.md`,
 `loader.py`, `views/`, and `audit/`, where `<key>` is the first 16 hex
 characters of the SHA-256 of the export's manifest file (see
 `skills/onboard-dataset/scripts/card.py`). What the agent may write is set by
@@ -20,7 +20,7 @@ the clio session's permissions, not by these cases.
 For each case, an external adapter:
 
 1. prepares the workspace store as the preconditions say (delete or keep
-   `<workspace_root>/.clio/datasets/<key>/`; a case that reuses a card runs
+   `<workspace_state>/datasets/<key>/`; a case that reuses a card runs
    in the same workspace; start a fresh session when the case says so) and
    hashes every file under the bundle root;
 2. sends `user_message` to the session and waits for the turn to end;
@@ -35,7 +35,7 @@ For each case, an external adapter:
   "questions": [{"id": "...", "status": "pending", "source": "orchestrator", "prompt": "..."}],
   "sessions": [{"session_id": "...", "status": "..."}],
   "bundle": {
-    "card_text": "contents of <workspace_root>/.clio/datasets/<key>/experiment-card.md after the turn, or null",
+    "card_text": "contents of <workspace_state>/datasets/<key>/experiment-card.md after the turn, or null",
     "view_hash_runs": [{"<view path>": "<sha256>"}],
     "verify_exit_codes": [0],
     "files_written": ["absolute paths the turn created or changed (workspace store and anywhere else)"]
@@ -46,7 +46,7 @@ For each case, an external adapter:
 `tasks`, `questions`, and `sessions` keep the runtime shapes described in
 `factorio-flat/evals/README.md`. `bundle.view_hash_runs` has one entry per
 loader run observed in the trace (the adapter hashes
-`<workspace_root>/.clio/datasets/<key>/views/` after
+`<workspace_state>/datasets/<key>/views/` after
 each `loader.py` shell action, or reads the `card.py record/verify` output);
 `verify_exit_codes` holds the exit status of each `card.py verify` call.
 
