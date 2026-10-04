@@ -62,6 +62,16 @@ absent, state that limitation and request the recorded mapping. Attention streng
 alone is neither poisoning evidence nor a reason to call `spotter_raise_alert` or
 quarantine a workload. Separate observed evidence, hypotheses and uncertainty.
 
+To present an attention finding, pass native `raise_alert_card` an optional
+`attention_evidence` object containing the inspected `response_id`, `capture_sha256`,
+`steps`, resolved `profile`, `profile_revision`, and a concise `uncertainty` statement.
+Copy these from the inspection result. CLIO binds them to the parent transcript;
+do not guess message IDs, token offsets, or part revisions. The resulting card's
+**Inspect evidence** action restores the exact capture/profile and opens your
+existing conversation beside the transcript. If the tool reports unavailable
+evidence, retain the finding and explain that limit; do not substitute another
+capture or broaden the selected steps to manufacture a working link.
+
 When a wake reports new phenotype cohort runs, call `spotter_campaign_health` once. It evaluates
 the entire campaign so surveillance cannot fall behind a fast workload. Use
 `unresolved_anomalous` for containment decisions: `acknowledged_anomalous` remains visible evidence
