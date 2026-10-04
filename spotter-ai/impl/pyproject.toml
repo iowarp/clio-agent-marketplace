@@ -10,6 +10,9 @@ dependencies = [
     "httpx>=0.27",
     "pymongo>=4.8",
     "pyyaml>=6.0",
+    "numpy>=1.26",
+    "safetensors>=0.5",
+    "clio-schemas @ git+https://github.com/iowarp/clio-schemas.git@fb1b8cbe686984d96d25bfd32f47eed70f9d021e",
 ]
 
 [project.optional-dependencies]
@@ -29,6 +32,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spotter_ai"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.ruff]
 target-version = "py312"
