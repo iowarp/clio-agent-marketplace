@@ -12,7 +12,7 @@ dependencies = [
     "pyyaml>=6.0",
     "numpy>=1.26",
     "safetensors>=0.5",
-    "clio-schemas @ git+https://github.com/iowarp/clio-schemas.git@fb1b8cbe686984d96d25bfd32f47eed70f9d021e",
+    "clio-schemas @ git+https://github.com/iowarp/clio-schemas.git@fdba1f98b0c15130608e524406d762f2ca7db295",
 ]
 
 [project.optional-dependencies]

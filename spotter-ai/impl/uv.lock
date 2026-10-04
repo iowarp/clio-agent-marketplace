@@ -233,8 +233,8 @@ wheels = [
 
 [[package]]
 name = "clio-schemas"
-version = "0.6.0b1"
-source = { git = "https://github.com/iowarp/clio-schemas.git?rev=fb1b8cbe686984d96d25bfd32f47eed70f9d021e#fb1b8cbe686984d96d25bfd32f47eed70f9d021e" }
+version = "0.6.0b2"
+source = { git = "https://github.com/iowarp/clio-schemas.git?rev=fdba1f98b0c15130608e524406d762f2ca7db295#fdba1f98b0c15130608e524406d762f2ca7db295" }
 dependencies = [
     { name = "annotated-types" },
     { name = "jsonschema", extra = ["format"] },
@@ -1480,7 +1480,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "clio-schemas", git = "https://github.com/iowarp/clio-schemas.git?rev=fb1b8cbe686984d96d25bfd32f47eed70f9d021e" },
+    { name = "clio-schemas", git = "https://github.com/iowarp/clio-schemas.git?rev=fdba1f98b0c15130608e524406d762f2ca7db295" },
     { name = "fastmcp", specifier = ">=3.2.4" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "numpy", specifier = ">=1.26" },
