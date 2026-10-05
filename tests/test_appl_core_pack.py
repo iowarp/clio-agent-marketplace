@@ -198,9 +198,10 @@ class ApplCoreExpertTests(unittest.TestCase):
             (ROOT / "experts" / "main.md").read_text(encoding="utf-8").split()
         )
         self.assertIn(
-            "<workspace_root>/.clio/datasets/<key>/experiment-card.md", prompt
+            "<workspace_state>/datasets/<key>/experiment-card.md", prompt
         )
-        self.assertIn("--store <workspace_root>", prompt)
+        self.assertIn("CLIO_AGENT_WORKSPACE_STATE_DIR", prompt)
+        self.assertNotIn("--store <workspace_root>", prompt)
         self.assertIn("It is a convention, not a limit", prompt)
         self.assertIn("if an action is denied, report that plainly", prompt)
         self.assertNotIn("<bundle_root>/.clio", prompt)
@@ -254,7 +255,8 @@ class ApplCoreExpertTests(unittest.TestCase):
         ):
             with self.subTest(doc=relative):
                 text = " ".join((ROOT / relative).read_text(encoding="utf-8").split())
-                self.assertIn(".clio/datasets/<key>/", text)
+                self.assertIn("<workspace_state>/datasets/<key>/", text)
+                self.assertNotIn(".clio/datasets/<key>/", text)
 
 
 class ApplCoreSkillTests(unittest.TestCase):
