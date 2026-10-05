@@ -15,11 +15,7 @@ from conftest import PACK
 def _floor() -> str:
     from clio_agent.gact.agent_blueprints import parse_agent_blueprint_root
 
-    return str(
-        parse_agent_blueprint_root(PACK, scope="session").metadata["requires"][
-            "clio_agent"
-        ]
-    )
+    return str(parse_agent_blueprint_root(PACK, scope="session").metadata["requires"]["clio_agent"])
 
 
 def test_pack_blueprint_validates_against_the_real_validator() -> None:
@@ -44,6 +40,10 @@ def test_pack_blueprint_validates_against_the_real_validator() -> None:
 
 
 def test_every_declared_skill_resolves_and_the_spawn_effect_parses() -> None:
+    from packaging.specifiers import SpecifierSet
+    from packaging.version import Version
+
+    import clio_agent
     from clio_agent.gact.agent_blueprints import load_agent_blueprint_path
     from clio_agent.gact.agents.skill_effects import (
         EFFECT_SPAWN_SUBAGENT,
@@ -52,11 +52,15 @@ def test_every_declared_skill_resolves_and_the_spawn_effect_parses() -> None:
     from clio_agent.gact.skills import _parse_skill_frontmatter
 
     (main,) = [row for row in load_agent_blueprint_path(PACK) if row.id == "main"]
-    assert main.enabled, main.validation_errors
+    supported = Version(clio_agent.__version__) in SpecifierSet(_floor())
+    assert main.enabled == supported
+    # The parent blueprint carries a version refusal; the expert's parsed body
+    # still has no errors and every declared skill must resolve.
+    assert main.validation_errors == []
     resolution = main.metadata["skill_resolution"]
-    assert {skill: row["status"] for skill, row in resolution.items()} == {
-        skill: "resolved" for skill in main.skills
-    }
+    assert {skill: row["status"] for skill, row in resolution.items()} == dict.fromkeys(
+        main.skills, "resolved"
+    )
 
     for skill_md in sorted((PACK / "skills").glob("*/SKILL.md")):
         meta, body = _parse_skill_frontmatter(skill_md.read_text(encoding="utf-8"))
@@ -74,7 +78,4 @@ def test_every_declared_skill_resolves_and_the_spawn_effect_parses() -> None:
 def test_validation_has_no_warnings() -> None:
     from clio_agent.gact.agent_blueprints import validate_agent_blueprint_path
 
-    assert (
-        validate_agent_blueprint_path(PACK, scope="session")["validation_warnings"]
-        == []
-    )
+    assert validate_agent_blueprint_path(PACK, scope="session")["validation_warnings"] == []
