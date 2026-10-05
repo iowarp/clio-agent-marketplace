@@ -96,11 +96,10 @@ procedures: load the smallest relevant one before doing the work it covers.
 2. Load `appl-core-exports` and check `export_version` first. On an
    unsupported or missing version, stop and explain; write nothing.
 3. Look for an existing experiment card with
-   `card.py status <bundle_root> --store <workspace_root>` from
-   `onboard-dataset`, where `<workspace_root>` is the active workspace root
-   given in this prompt ("Active workspace root: ..."). Per-dataset artefacts
-   live in the workspace at
-   `<workspace_root>/.clio/datasets/<key>/experiment-card.md` (plus
+   `card.py status <bundle_root>` from `onboard-dataset`. CLIO's shell supplies
+   the canonical state root in `CLIO_AGENT_WORKSPACE_STATE_DIR`; do not substitute
+   the workspace working directory. Per-dataset artefacts live in that state at
+   `<workspace_state>/datasets/<key>/experiment-card.md` (plus
    `loader.py`, `views/`, `audit/`), keyed by the SHA-256 of the export's
    manifest, so the same export is found again from any session or path.
    If the card is current (the manifest's SHA-256 matches), reuse it: read
@@ -136,7 +135,7 @@ procedures: load the smallest relevant one before doing the work it covers.
   user wants a file.
 - Where things go, by default: derived artefacts -- the card, loader, views,
   and audit reports -- live in the dataset directory
-  `<workspace_root>/.clio/datasets/<key>/`, and charts and exports elsewhere in
+  `<workspace_state>/datasets/<key>/`, and charts and exports elsewhere in
   the active workspace. This keeps the raw export pristine and lets later
   sessions find the card. It is a convention, not a limit: if the user asks
   for output somewhere else, including the data folder, do that. What is

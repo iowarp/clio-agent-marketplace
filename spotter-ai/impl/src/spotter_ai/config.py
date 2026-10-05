@@ -51,6 +51,7 @@ class SpotterConfig:
     flowcept: FlowceptQueryConfig | None = None
     cmf: CMFQueryConfig | None = None
     native: NativeQueryConfig | None = None
+    attention_files_dir: Path | None = None
 
 
 def load_config(path: str | Path | None = None) -> SpotterConfig:
@@ -90,7 +91,16 @@ def load_config(path: str | Path | None = None) -> SpotterConfig:
     if artifact_provider not in {"native", "cmf"}:
         raise SpotterConfigurationError(f"unsupported artifact query provider: {artifact_provider}")
 
-    flowcept = _flowcept_config(document, source) if query_default == "flowcept" else None
+    attention_root = str(_value(document, "provenance.attention.files_dir", "")).strip()
+    if attention_root and "flowcept" not in providers:
+        raise SpotterConfigurationError(
+            "attention queries require Flowcept among enabled providers"
+        )
+    flowcept = (
+        _flowcept_config(document, source)
+        if query_default == "flowcept" or attention_root
+        else None
+    )
     cmf = _cmf_config(document) if artifact_provider == "cmf" else None
     native = (
         _native_config(document, source)
@@ -104,6 +114,9 @@ def load_config(path: str | Path | None = None) -> SpotterConfig:
         flowcept=flowcept,
         cmf=cmf,
         native=native,
+        attention_files_dir=_resolved_path(attention_root, source.parent)
+        if attention_root
+        else None,
     )
 
 

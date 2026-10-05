@@ -99,6 +99,8 @@ async def test_exposes_purpose_specific_tools_without_provider_arguments(native_
     names = {tool.name for tool in tools}
     assert names == {
         "capabilities",
+        "list_attention_calls",
+        "inspect_attention",
         "list_campaigns",
         "list_workflows",
         "list_agents",

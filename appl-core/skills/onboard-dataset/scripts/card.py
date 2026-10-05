@@ -4,14 +4,13 @@
 # ///
 """Create, check, and fingerprint the experiment card for one dataset.
 
-Per-dataset (L3) artefacts live, by default, in the ACTIVE WORKSPACE rather
-than in the data folder, so the raw export stays pristine and later sessions
-find the card. ``--store`` names the directory to use (default: the current
-working directory, which in clio is the session workspace); any directory is
-accepted, including one inside the bundle when the user wants that. Each
-dataset gets its own directory there::
+Per-dataset (L3) artefacts live in CLIO Agent's namespaced workspace state.
+CLIO's shell supplies the canonical CLIO_AGENT_WORKSPACE_STATE_DIR for the
+bound workspace, including on a remote host. Standalone callers must pass
+an explicit absolute --store. Neither lookup nor writing creates .clio.
+Each dataset gets its own directory there::
 
-    <store>/.clio/datasets/<key>/
+    <store>/datasets/<key>/
         experiment-card.md   # facts, traps, open questions, loader/view hashes
         loader.py            # reads BUNDLE_ROOT, writes ./views/
         views/               # validated tables written by the loader
@@ -51,7 +50,6 @@ from pathlib import Path
 from typing import Any
 
 CARD_FORMAT = "clio-experiment-card/1"
-STORE_DIR = ".clio"
 DATASETS_DIR = "datasets"
 KEY_LENGTH = 16
 CARD_NAME = "experiment-card.md"
@@ -165,9 +163,7 @@ def _sha256(path: Path) -> str:
 def find_manifest(root: Path) -> Path | None:
     """The bundle's manifest file, if it has one."""
 
-    return next(
-        (root / name for name in MANIFEST_NAMES if (root / name).is_file()), None
-    )
+    return next((root / name for name in MANIFEST_NAMES if (root / name).is_file()), None)
 
 
 def manifest_identity(root: Path) -> dict[str, Any]:
@@ -230,13 +226,15 @@ def dataset_key(root: Path) -> tuple[str, str]:
 
 
 def datasets_root(store: Path) -> Path:
-    """``<store>/.clio/datasets``: the parent of every dataset directory."""
+    """Return generated dataset storage below an explicitly resolved state root."""
 
-    return store / STORE_DIR / DATASETS_DIR
+    if not store.is_absolute():
+        raise ValueError("Dataset state storage must be an absolute path")
+    return store / DATASETS_DIR
 
 
 def dataset_dir(root: Path, store: Path) -> Path:
-    """Absolute ``<store>/.clio/datasets/<key>/`` for the bundle at ``root``."""
+    """Absolute ``<store>/datasets/<key>/`` for the bundle at ``root``."""
 
     key, _ = dataset_key(root)
     return (datasets_root(store) / key).resolve()
@@ -310,9 +308,7 @@ def init(root: Path, store: Path, *, force: bool = False) -> dict[str, Any]:
         trap_classes=", ".join(TRAP_CLASSES),
         loader=LOADER_NAME,
         views=VIEWS_DIR,
-        hashes=json.dumps(
-            {"loader": LOADER_NAME, "loader_sha256": None, "views": {}}, indent=2
-        ),
+        hashes=json.dumps({"loader": LOADER_NAME, "loader_sha256": None, "views": {}}, indent=2),
     )
     directory.mkdir(parents=True, exist_ok=True)
     card.write_text(text, encoding="utf-8", newline="\n")
@@ -401,9 +397,7 @@ def status(root: Path, store: Path) -> dict[str, Any]:
         report["state"] = "stale"
     recorded = recorded_hashes(text)
     now = current_hashes(directory)
-    if recorded is None or (
-        recorded.get("loader_sha256") is None and not recorded.get("views")
-    ):
+    if recorded is None or (recorded.get("loader_sha256") is None and not recorded.get("views")):
         report["hashes"] = "not_recorded"
     else:
         drift = []
@@ -429,16 +423,9 @@ def record(root: Path, store: Path) -> dict[str, Any]:
     hashes = current_hashes(directory)
     rendered = json.dumps(hashes, indent=2)
     if _HASH_BLOCK.search(text):
-        text = _HASH_BLOCK.sub(
-            lambda m: m.group(1) + rendered + m.group(3), text, count=1
-        )
+        text = _HASH_BLOCK.sub(lambda m: m.group(1) + rendered + m.group(3), text, count=1)
     else:
-        text = (
-            text.rstrip("\n")
-            + "\n\n## Loader and views\n\n```json\n"
-            + rendered
-            + "\n```\n"
-        )
+        text = text.rstrip("\n") + "\n\n## Loader and views\n\n```json\n" + rendered + "\n```\n"
     card.write_text(text, encoding="utf-8", newline="\n")
     return {"ok": True, "card": str(card), **hashes}
 
@@ -472,16 +459,17 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         help=(
-            "workspace root that holds .clio/datasets/<key>/ (pass the active "
-            "workspace root; default: the current working directory)"
+            "absolute state root that holds datasets/<key>/; defaults to "
+            "CLIO_AGENT_WORKSPACE_STATE_DIR supplied by CLIO's shell"
         ),
     )
-    parser.add_argument(
-        "--force", action="store_true", help="init: replace an existing card"
-    )
+    parser.add_argument("--force", action="store_true", help="init: replace an existing card")
     args = parser.parse_args(argv)
     root = args.bundle_root
-    store = args.store if args.store is not None else Path.cwd()
+    configured = os.environ.get("CLIO_AGENT_WORKSPACE_STATE_DIR", "").strip()
+    store = args.store if args.store is not None else Path(configured) if configured else None
+    if store is None or not store.is_absolute():
+        parser.error("Run inside CLIO's shell or pass an explicit absolute --store state directory")
     if not root.is_dir():
         print(f"error: not a directory: {root}", file=sys.stderr)
         return 2
