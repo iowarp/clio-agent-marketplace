@@ -54,14 +54,9 @@ def test_every_declared_skill_resolves_and_the_spawn_effect_parses() -> None:
     (main,) = [row for row in load_agent_blueprint_path(PACK) if row.id == "main"]
     supported = Version(clio_agent.__version__) in SpecifierSet(_floor())
     assert main.enabled == supported
-    assert main.validation_errors == (
-        []
-        if supported
-        else [
-            "appl-core: blueprint_requires_newer_clio_agent: "
-            f"requires clio_agent{_floor()}, running {clio_agent.__version__}"
-        ]
-    )
+    # The parent blueprint carries a version refusal; the expert's parsed body
+    # still has no errors and every declared skill must resolve.
+    assert main.validation_errors == []
     resolution = main.metadata["skill_resolution"]
     assert {skill: row["status"] for skill, row in resolution.items()} == dict.fromkeys(
         main.skills, "resolved"
