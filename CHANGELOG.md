@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [0.6.11] - 2026-10-05
+
+### Added
+
+- SPOTTER reads configured Flowcept attention captures with CLIO's shared profile
+  reducer and attaches capture references and uncertainty to reviewed findings.
+  Partial, ambiguous, mismatched and out-of-root captures produce explicit errors.
+
+### Changed
+
+- APPL-CORE keeps generated cards, loaders, audits and views in the owning
+  workspace's Agent state, using the canonical directory supplied by CLIO.
+- Marketplace qualification uses Python 3.13, matching CLIO's managed runtimes.
+
+The beta-3 integration has source and recorded-capture validation. Fresh Delta
+inference and both OPAL demonstrations remain separate live acceptance work.
+
+## [0.6.10] - 2026-10-02
+
 ### Added
 
 - Base Agent (0.2.4) can fetch web pages and files with `web_fetch` (the
