@@ -15,6 +15,8 @@
 - APPL-CORE keeps generated cards, loaders, audits and views in the owning
   workspace's Agent state, using the canonical directory supplied by CLIO.
 - Marketplace qualification uses Python 3.13, matching CLIO's managed runtimes.
+- APPL-CORE and SPOTTER require CLIO 0.9.5b3 for their workspace-state and
+  attention handoffs; older runtimes hold the packs with an explicit version error.
 
 The beta-3 integration has source and recorded-capture validation. Fresh Delta
 inference and both OPAL demonstrations remain separate live acceptance work.

@@ -68,13 +68,10 @@ FLOORED_PACKS: dict[str, str] = {
 
 #: Floors a pack carries for a reason other than a pack-local catalog. The
 #: catalog test must not mistake them for a catalog floor.
-#: spotter-ai: its MCP launcher reads ${CLIO_BLUEPRINT_DIR} and
-#: ${CLIO_PROVENANCE_CONFIG}, which clio-agent supplies from 0.9.4.19 (#1503).
+#: Beta 3 supplies APPL-CORE's workspace-state and SPOTTER's attention handoffs.
 NON_CATALOG_FLOORS: dict[str, str] = {
-    # appl-core: its views use the builtin clio.chart.v1 presets and
-    # clio.mesh-viewport.v1, which need clio-schemas>=0.5.1 (clio-agent 0.9.4.23).
-    "appl-core": ">=0.9.4.23",
-    "spotter-ai": ">=0.9.4.19",
+    "appl-core": ">=0.9.5b3",
+    "spotter-ai": ">=0.9.5b3",
 }
 
 

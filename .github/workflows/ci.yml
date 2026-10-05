@@ -60,3 +60,16 @@ jobs:
             --with "numpy>=1.24" --with "jsonschema>=4.18" --with trimesh \
             --with pytest \
             pytest appl-core/tests -v
+
+  spotter-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --project spotter-ai/impl --python 3.13 --frozen --extra dev
+      - run: uv run --no-sync ruff check src tests
+        working-directory: spotter-ai/impl
+      - run: uv run --no-sync pyright
+        working-directory: spotter-ai/impl
+      - run: uv run --no-sync pytest tests -q
+        working-directory: spotter-ai/impl

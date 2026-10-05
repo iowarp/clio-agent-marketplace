@@ -111,7 +111,7 @@ class ApplCoreManifestTests(unittest.TestCase):
 
     def test_builtin_catalog_only_and_a_floor(self) -> None:
         self.assertEqual(self.manifest["a2ui_catalogs"], ["clio-workspace"])
-        self.assertEqual(self.manifest["requires"], {"clio_agent": ">=0.9.4.23"})
+        self.assertEqual(self.manifest["requires"], {"clio_agent": ">=0.9.5b3"})
 
     def test_clio_kit_servers_are_declared_like_the_other_packs(self) -> None:
         servers = self.manifest["mcp_servers"]

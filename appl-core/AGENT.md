@@ -5,14 +5,12 @@ display_name: APPL-CORE Analyst
 version: 0.2.1
 description: Onboards and analyses any APPL-CORE plant-phenotyping export (an L2 agent for one export format) - reads the export's self-description, catches its data traps, records an experiment card and loader in the workspace's Agent state, and answers phenotyping questions with evidence tagged stated, checked, or inferred.
 root_expert: main
-# Floor: views use the clio-workspace catalog's clio.chart.v1 presets
-# (trajectories, box plots, heatmaps) and geometry-to-glb's
-# clio.mesh-viewport.v1, which need clio-schemas>=0.5.1; clio-agent 0.9.4.23 is
-# the first release that pins it. Older runtimes hold the pack with a typed
-# blueprint_requires_newer_clio_agent instead of offering views they cannot
-# render.
+# CLIO beta 3 supplies the canonical workspace-state directory used by this
+# pack's generated cards, loaders, audits and views. Older runtimes hold the
+# pack with blueprint_requires_newer_clio_agent instead of starting without
+# that required workspace handoff.
 requires:
-  clio_agent: ">=0.9.4.23"
+  clio_agent: ">=0.9.5b3"
 # A2UI catalogs are a per-agent allowlist: builtin catalogs only. The level
 # contract keeps UI generic -- this pack contributes no catalog of its own.
 a2ui_catalogs:
