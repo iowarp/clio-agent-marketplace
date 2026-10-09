@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in skill literal checks reject dataset-specific facts in reusable pack prompts.
+  Packs can supply a denylist, enable generic checks, and mark deliberate examples.
+
 ## [0.6.11] - 2026-10-05
 
 ### Added
