@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from spotter_ai.config import SpotterConfigurationError, load_config
 
@@ -75,3 +76,29 @@ def test_native_requires_explicit_jsonl_location(tmp_path: Path) -> None:
 
     with pytest.raises(SpotterConfigurationError, match="explicit.*jsonl.path"):
         load_config(config)
+
+
+def test_attention_can_use_flowcept_without_changing_native_query_default(tmp_path: Path) -> None:
+    """Attention and general provenance query routing are independently configured."""
+    settings = tmp_path / "flowcept.yaml"
+    settings.write_text(
+        yaml.safe_dump({"databases": {"mongodb": {"enabled": True}}}), encoding="utf-8"
+    )
+    config = tmp_path / "clio.yaml"
+    config.write_text(
+        yaml.safe_dump(
+            {
+                "provenance.agentic.providers": ["jsonl", "flowcept"],
+                "provenance.agentic.query_default": "jsonl",
+                "provenance.agentic.flowcept.settings_path": "flowcept.yaml",
+                "provenance.agentic.jsonl.path": "events.jsonl",
+                "provenance.artifacts.native.workspace_root": ".",
+                "provenance.attention.files_dir": "attention",
+            }
+        ),
+        encoding="utf-8",
+    )
+    resolved = load_config(config)
+    assert resolved.agentic_provider == "jsonl"
+    assert resolved.flowcept is not None
+    assert resolved.attention_files_dir == tmp_path / "attention"

@@ -76,6 +76,16 @@ class FlowceptProvider:
     def _collection(self, name: str) -> Collection[dict[str, Any]]:
         return self._database[name]
 
+    def query_attention_tasks(self, match: dict[str, Any], limit: int) -> list[dict[str, Any]]:
+        """Read bounded capture descriptors or model-call identities for the attention reader.
+
+        This internal method does not expose raw Mongo filters as an MCP tool.
+        The attention service returns only its explicit evidence fields.
+        """
+        return self._guard(
+            "attention", lambda: list(self._collection("tasks").find(match).limit(limit))
+        )
+
     def _guard(self, operation: str, callback: Any) -> Any:
         try:
             return callback()

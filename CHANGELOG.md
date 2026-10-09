@@ -4,16 +4,62 @@
 
 ### Added
 
+- Opt-in skill literal checks reject dataset-specific facts in reusable pack prompts.
+  Packs can supply a denylist, enable generic checks, and mark deliberate examples.
+
+## [0.6.11] - 2026-10-05
+
+### Added
+
+- SPOTTER reads configured Flowcept attention captures with CLIO's shared profile
+  reducer and attaches capture references and uncertainty to reviewed findings.
+  Partial, ambiguous, mismatched and out-of-root captures produce explicit errors.
+
+### Changed
+
+- APPL-CORE keeps generated cards, loaders, audits and views in the owning
+  workspace's Agent state, using the canonical directory supplied by CLIO.
+- Marketplace qualification uses Python 3.13, matching CLIO's managed runtimes.
+- APPL-CORE and SPOTTER require CLIO 0.9.5b3 for their workspace-state and
+  attention handoffs; older runtimes hold the packs with an explicit version error.
+
+The beta-3 integration has source and recorded-capture validation. Fresh Delta
+inference and both OPAL demonstrations remain separate live acceptance work.
+
+## [0.6.10] - 2026-10-02
+
+### Added
+
 - Base Agent (0.2.4) can fetch web pages and files with `web_fetch` (the
   clio-kit web MCP server, declared the same way Deep Researcher declares it)
   and can pause to ask the user a question with the native `ask_user` tool.
   Both work on runtimes that already run this pack, so it keeps no
   clio-agent floor.
-- CI rejects dataset-specific literals in pack prompts
-  (`scripts/check_skill_literals.py`). A pack's `lint-denylist.txt` literals
-  always fail; the generic rules (ISO dates, measured magnitudes such as
-  `~40×`, sample keys, concrete dataset file names) apply to packs that add a
-  `.lint-l3` marker. See CONTRIBUTING.md.
+- APPL-CORE Analyst (`appl-core`, 0.1.0), an analyst for any APPL-CORE
+  plant-phenotyping export (an L2 agent: one export format, any experiment,
+  no pack changes). On first contact it reads the export's self-description,
+  runs bundled audit scripts (`inventory.py`, `audit_columns.py`,
+  `join_keys.py`, `flag_check.py`), and records an experiment card, a saved
+  loader, validated views, and audit reports in the active workspace under
+  `.clio/datasets/<key>/`, where `<key>` comes from the SHA-256 of the
+  export's manifest (`card.py --store <workspace_root>`; it also verifies
+  loader and view hashes). Keeping these out of the export by default leaves
+  the raw data pristine, works with shared data mounts, and lets another
+  session or path find the same export again; the pack sets defaults only
+  and leaves what may be written to clio's approval modes, deny rules,
+  allowed roots, and sandbox. The expert carries Base Agent's
+  general-purpose tools (file edits, `view_image`, `view_pdf`, `web_fetch`). Onboarding can run in a child agent (`audit-dataset`); the
+  parent re-runs the returned loader before trusting the card. Skills carry a
+  level keyword (`level:L0`/`L1`/`L2`); the L1 phenotyping skills are drafts
+  with JSON Schemas and a validator for the design, observations, spectra,
+  assets, and events views; the L2 skills are placeholders until the
+  falsifier experiment decides their content. `geometry-to-glb` converts
+  vertices/faces/colours text, PLY, and point clouds into viewport meshes.
+  The pack ships `.lint-l3` and `lint-denylist.txt` for the skill-literal
+  linter, black-box eval cases with a grader and a held-out variant maker,
+  and requires clio-agent 0.9.4.19 or newer (for `clio.mesh-viewport.v1`).
+  CI runs its tests in a new `appl-core-pack` job.
+
 - Factorio Flat (0.3.0) can show Abaqus geometry and results interactively.
   The new `abaqus-visualization` skill ships the exporter (`odb_to_glb.py` for
   ODBs, `fea_glb.py` for `.inp` meshes and Tosca STLs) that writes `.glb`
@@ -29,6 +75,46 @@
   now requires clio-agent 0.9.4.19 or newer for its pack catalog (raised from
   0.9.4.17: that release reads the `a2ui_catalogs` list form but does not pin
   clio-schemas>=0.4.0, so TopologyViewport/ParameterSlider cannot load).
+
+- The domain agents are now supersets of the standard agent (Base Agent):
+  APPL-CORE Analyst (0.2.0), Factorio Flat (0.4.0) and EarthScope Skills
+  (0.4.0) each have everything Base Agent has, plus their own domain.
+  - Tools: the root expert declares all of Base Agent's tools (`shell_bash`,
+    file read and edits, `view_image`, `view_pdf`, `web_fetch`, `ask_user`).
+    EarthScope Skills gains all of them and the clio-kit web server;
+    Factorio Flat gains file read/edit and `web_fetch`.
+  - Skills: each declares clio's built-in `work-with-pdfs`, `planning`,
+    `update-models` and `present-interactive-analysis`, which Base Agent gets
+    automatically, and ships `create-pdf-report`. Factorio Flat drops its own
+    copy of `work-with-pdfs` (identical to clio's) and uses the built-in.
+  - A2UI tools come from each agent's declared catalogs, as Base Agent's do,
+    instead of a partial explicit list.
+  - Prompts: Base Agent's working principles are now a `## Working principles`
+    section (stay grounded in inspected content, smallest tool sequence,
+    report failures plainly, verify edits, and when to read or write a PDF),
+    carried word for word by each domain agent.
+  - Base Agent (0.2.5) ships `create-pdf-report`, so writing a PDF on request
+    is part of the standard agent.
+  - A new test, `tests/test_standard_agent_superset.py`, reads Base Agent as
+    the source and fails if a domain agent lacks any of its tools, MCP
+    servers, catalogs, skills or principles.
+  - APPL-CORE Analyst requires clio-agent 0.9.4.23 or newer, the first release
+    whose catalog has the `clio.chart.v1` presets its views use.
+
+### Changed
+
+- `clio.time-series.v1` is removed upstream in favor of one Altair/Vega-Lite
+  chart layer (`clio.chart.v1`, clio-schemas 0.5.1); the two packs that used
+  it move over (#1533). Factorio Flat's `abaqus-topology` catalog
+  re-expresses `ConvergencePlot`'s `xKey`/`yKeys`/`series` as the
+  `trajectories` preset's `xField`/`yField`/`entityField` over inline `data`
+  (or `dataUri`). EarthScope Skills' `visualize-earthscope-gnss` primary plot
+  moves to `clio.chart.v1` with a Vega-Lite `spec` authored through
+  `present-interactive-analysis`'s Altair support, folding the confirmed
+  `east`/`north`/`up` columns into one line per component (no named preset
+  reshapes a wide table that way). Both packs' `requires.clio_agent` floor is
+  raised to `>=0.9.4.23`, the first clio-agent release that pins
+  clio-schemas>=0.5.1.
 
 ## [0.6.5] - 2026-09-24
 

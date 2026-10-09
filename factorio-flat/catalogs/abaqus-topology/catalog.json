@@ -345,6 +345,25 @@
               ],
               "type": "string",
               "description": "Model axis that points up on screen (Abaqus models are usually y-up)."
+            },
+            "format": {
+              "enum": [
+                "glb",
+                "gltf",
+                "obj",
+                "stl",
+                "ply",
+                "fbx",
+                "3mf",
+                "vtk",
+                "vtp",
+                "drc"
+              ],
+              "type": "string"
+            },
+            "materialUri": {
+              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
+              "type": "string"
             }
           },
           "required": [
@@ -409,57 +428,93 @@
         },
         {
           "properties": {
+            "colorField": {
+              "$ref": "#/$defs/FieldName"
+            },
             "component": {
               "const": "ConvergencePlot"
             },
-            "dataUri": {
-              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
-              "type": "string"
-            },
-            "series": {
+            "data": {
+              "description": "Inline rows (at most 10000) — this array rides the surface's own wire message, so it is capped for transfer size; for a larger or growing dataset use dataUri instead, unbounded and paged/downsampled by the viewer.",
               "items": {
                 "additionalProperties": {
-                  "type": [
-                    "string",
-                    "number",
-                    "null"
+                  "anyOf": [
+                    {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    {
+                      "$ref": "#/$defs/GeoJsonGeometry"
+                    }
                   ]
                 },
                 "type": "object"
               },
               "maxItems": 10000,
-              "minItems": 1,
               "type": "array"
+            },
+            "dataUri": {
+              "description": "A workspace file path or artifact:// reference; CLIO registers a path as an artifact before validation.",
+              "not": {
+                "pattern": "\\s"
+              },
+              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
+              "type": "string"
+            },
+            "entityField": {
+              "$ref": "#/$defs/FieldName"
+            },
+            "facetField": {
+              "$ref": "#/$defs/FieldName"
+            },
+            "height": {
+              "maximum": 2000,
+              "minimum": 80,
+              "type": "number"
+            },
+            "preset": {
+              "enum": [
+                "trajectories",
+                "heatmap",
+                "spectra",
+                "boxplot",
+                "scatter"
+              ],
+              "type": "string"
             },
             "title": {
               "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             },
-            "xKey": {
-              "minLength": 1,
-              "pattern": "\\S",
+            "xField": {
+              "$ref": "#/$defs/FieldName"
+            },
+            "xType": {
+              "enum": [
+                "temporal",
+                "quantitative",
+                "ordinal"
+              ],
               "type": "string"
             },
-            "yKeys": {
-              "items": {
-                "minLength": 1,
-                "pattern": "\\S",
-                "type": "string"
-              },
-              "maxItems": 5,
-              "minItems": 1,
-              "type": "array",
-              "uniqueItems": true
+            "yField": {
+              "$ref": "#/$defs/FieldName"
             }
           },
           "required": [
             "component",
-            "xKey",
-            "yKeys"
+            "preset",
+            "xField",
+            "yField",
+            "entityField"
           ],
           "type": "object"
         },
         {
-          "description": "Exactly one of series or dataUri is required.",
+          "description": "Exactly one of data or dataUri is required.",
           "oneOf": [
             {
               "not": {
@@ -468,13 +523,13 @@
                 ]
               },
               "required": [
-                "series"
+                "data"
               ]
             },
             {
               "not": {
                 "required": [
-                  "series"
+                  "data"
                 ]
               },
               "required": [
@@ -482,9 +537,56 @@
               ]
             }
           ]
+        },
+        {
+          "description": "Fields used by the heatmap preset.",
+          "if": {
+            "properties": {
+              "preset": {
+                "const": "heatmap"
+              }
+            },
+            "required": [
+              "preset"
+            ]
+          },
+          "then": {
+            "required": [
+              "colorField"
+            ]
+          }
+        },
+        {
+          "description": "The boxplot preset forbids facetField and xType.",
+          "if": {
+            "properties": {
+              "preset": {
+                "const": "boxplot"
+              }
+            },
+            "required": [
+              "preset"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "facetField"
+                  ]
+                },
+                {
+                  "required": [
+                    "xType"
+                  ]
+                }
+              ]
+            }
+          }
         }
       ],
-      "description": "Objective and constraint history per design cycle, from Tosca's optimization_report.csv.",
+      "description": "Objective and constraint history per design cycle, from Tosca's optimization_report.csv, as an Altair/Vega-Lite chart. Defaults to the trajectories preset: one line per metric (entityField), yField over xField.",
       "type": "object",
       "unevaluatedProperties": false
     }
@@ -1022,6 +1124,11 @@
         }
       }
     },
+    "FieldName": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
     "theme": {
       "type": "object",
       "properties": {
@@ -1121,6 +1228,188 @@
           "$ref": "#/functions/not"
         }
       ]
+    },
+    "GeoJsonGeometry": {
+      "description": "A GeoJSON Geometry object (RFC 7946 §3.1), strictly shaped: Point/MultiPoint/LineString/MultiLineString/Polygon/MultiPolygon carry coordinates; GeometryCollection carries geometries. Never a Feature/FeatureCollection, never a bare coordinate array.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 3,
+              "minItems": 2,
+              "type": "array"
+            },
+            "type": {
+              "const": "Point"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 2,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "MultiPoint"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "maxItems": 3,
+                "minItems": 2,
+                "type": "array"
+              },
+              "minItems": 2,
+              "type": "array"
+            },
+            "type": {
+              "const": "LineString"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "maxItems": 3,
+                  "minItems": 2,
+                  "type": "array"
+                },
+                "minItems": 2,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "MultiLineString"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "maxItems": 3,
+                  "minItems": 2,
+                  "type": "array"
+                },
+                "minItems": 4,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "Polygon"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinates": {
+              "items": {
+                "items": {
+                  "items": {
+                    "items": {
+                      "type": "number"
+                    },
+                    "maxItems": 3,
+                    "minItems": 2,
+                    "type": "array"
+                  },
+                  "minItems": 4,
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "MultiPolygon"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "geometries": {
+              "items": {
+                "$ref": "#/$defs/GeoJsonGeometry"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "GeometryCollection"
+            }
+          },
+          "required": [
+            "type",
+            "geometries"
+          ],
+          "type": "object"
+        }
+      ],
+      "type": "object"
     }
   }
 }

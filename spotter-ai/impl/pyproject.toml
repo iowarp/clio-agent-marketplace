@@ -1,6 +1,6 @@
 [project]
 name = "spotter-ai"
-version = "0.3.0"
+version = "0.4.0"
 description = "Forensic campaign watcher and provider-aware provenance MCP"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,6 +10,9 @@ dependencies = [
     "httpx>=0.27",
     "pymongo>=4.8",
     "pyyaml>=6.0",
+    "numpy>=1.26",
+    "safetensors>=0.5",
+    "clio-schemas @ git+https://github.com/iowarp/clio-schemas.git@a64ae3beabb6e57e3d0dc0b674405ac471a76761",
 ]
 
 [project.optional-dependencies]
@@ -29,6 +32,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spotter_ai"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.ruff]
 target-version = "py312"

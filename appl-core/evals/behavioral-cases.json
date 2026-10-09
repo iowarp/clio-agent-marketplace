@@ -1,0 +1,410 @@
+[
+  {
+    "id": "first_contact_onboarding",
+    "bundle": "primary",
+    "preconditions": "no experiment card for this export in the workspace store",
+    "user_message": "Here is an APPL-CORE export: {bundle_root}. Onboard it and tell me what I should be careful about before analysing it.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 60,
+        "max_words": 400
+      },
+      "actions": {
+        "required_skills": [
+          "appl-core-exports",
+          "onboard-dataset",
+          "evidence-and-claims"
+        ],
+        "required_scripts": [
+          "inventory.py",
+          "audit_columns.py",
+          "flag_check.py",
+          "join_keys.py",
+          "card.py"
+        ]
+      },
+      "card": {
+        "exists": true,
+        "min_tagged_claims": 10,
+        "min_open_questions": 2,
+        "required_trap_classes": [
+          "sentinel-values",
+          "ghost-columns",
+          "near-duplicate-columns",
+          "unflagged-missing",
+          "universal-flag",
+          "key-format-mismatch",
+          "unit-scale-suspect",
+          "saturation-clipping",
+          "duplicate-measures",
+          "declared-vs-actual",
+          "irregular-sampling"
+        ]
+      },
+      "loader": {
+        "deterministic": true,
+        "verified": true
+      }
+    }
+  },
+  {
+    "id": "first_contact_delegated",
+    "bundle": "primary",
+    "preconditions": "no experiment card for this export in the workspace store",
+    "user_message": "Audit {bundle_root} in the background and give me the short version when it is done.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 40,
+        "max_words": 300
+      },
+      "actions": {
+        "required": [
+          "spawn_skill_task",
+          "wait_agent_tasks"
+        ],
+        "required_skills": [
+          "audit-dataset"
+        ]
+      },
+      "outcome": {
+        "children_completed": true
+      },
+      "card": {
+        "exists": true,
+        "min_tagged_claims": 10
+      },
+      "loader": {
+        "parent_reran_after_child": true,
+        "verified": true
+      }
+    }
+  },
+  {
+    "id": "card_reuse_second_session",
+    "bundle": "primary",
+    "preconditions": "a current card, loader, and views from first_contact_onboarding in the same workspace store; fresh session",
+    "user_message": "Using the export at {bundle_root}, how many plants per treatment level are there?",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 15,
+        "max_words": 200
+      },
+      "actions": {
+        "required_scripts": [
+          "card.py"
+        ]
+      },
+      "outcome": {
+        "no_reprofile": true
+      },
+      "loader": {
+        "verified": true
+      }
+    }
+  },
+  {
+    "id": "loader_determinism",
+    "bundle": "primary",
+    "preconditions": "a current card and loader",
+    "user_message": "Re-run the saved loader for {bundle_root} twice and confirm the views are identical.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 10,
+        "max_words": 150
+      },
+      "loader": {
+        "deterministic": true,
+        "verified": true
+      },
+      "outcome": {
+        "no_reprofile": true
+      }
+    }
+  },
+  {
+    "id": "ask_treatment_meaning",
+    "bundle": "primary",
+    "preconditions": "a current card",
+    "user_message": "For {bundle_root}: fit a dose-response curve of final plant size against the treatment.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 20,
+        "max_words": 300
+      },
+      "question": {
+        "min_count": 1,
+        "terms_any": [
+          "treatment",
+          "dose",
+          "unit",
+          "concentration"
+        ]
+      }
+    }
+  },
+  {
+    "id": "ask_unit_scale",
+    "bundle": "primary",
+    "preconditions": "a current card",
+    "user_message": "For {bundle_root}: what is the mean top-view leaf area in square millimetres on the last imaging day?",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 20,
+        "max_words": 300,
+        "terms_any": [
+          "scale",
+          "calibrat",
+          "pixel",
+          "px",
+          "unit"
+        ]
+      },
+      "question": {
+        "min_count": 1,
+        "terms_any": [
+          "mm",
+          "scale",
+          "calibrat",
+          "unit",
+          "pixel"
+        ]
+      }
+    }
+  },
+  {
+    "id": "refuse_export_v7",
+    "bundle": "variant:export_v7",
+    "preconditions": "variant made by make_variants.py --variant export_v7; no experiment card for this export in the workspace store",
+    "user_message": "Here is an APPL-CORE export: {bundle_root}. Onboard it.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 15,
+        "max_words": 200,
+        "terms_any": [
+          "export_version",
+          "export version",
+          "version 7"
+        ]
+      },
+      "actions": {
+        "required_skills": [
+          "appl-core-exports"
+        ]
+      },
+      "outcome": {
+        "no_views_written": true
+      }
+    }
+  },
+  {
+    "id": "variant_categorical_treatment",
+    "bundle": "variant:categorical_treatment",
+    "preconditions": "no experiment card for this export in the workspace store",
+    "user_message": "Onboard {bundle_root} and describe the experimental design.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 30,
+        "max_words": 300
+      },
+      "card": {
+        "exists": true,
+        "required_trap_classes": [
+          "design-encoding"
+        ]
+      },
+      "loader": {
+        "verified": true
+      }
+    }
+  },
+  {
+    "id": "variant_unbalanced",
+    "bundle": "variant:unbalanced",
+    "preconditions": "no experiment card for this export in the workspace store",
+    "user_message": "Onboard {bundle_root} and tell me whether the design is balanced.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 30,
+        "max_words": 300
+      },
+      "card": {
+        "exists": true,
+        "required_trap_classes": [
+          "design-encoding"
+        ]
+      },
+      "loader": {
+        "verified": true
+      }
+    }
+  },
+  {
+    "id": "variant_sentinel_elsewhere",
+    "bundle": "variant:sentinel_elsewhere",
+    "preconditions": "no experiment card for this export in the workspace store",
+    "user_message": "Onboard {bundle_root}.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 30,
+        "max_words": 400
+      },
+      "card": {
+        "exists": true,
+        "required_trap_classes": [
+          "sentinel-values"
+        ]
+      },
+      "loader": {
+        "verified": true
+      }
+    }
+  },
+  {
+    "id": "variant_drop_modality",
+    "bundle": "variant:drop_modality",
+    "preconditions": "no experiment card for this export in the workspace store",
+    "user_message": "Onboard {bundle_root} and list which sensors it contains.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 20,
+        "max_words": 300
+      },
+      "card": {
+        "exists": true
+      },
+      "loader": {
+        "verified": true
+      }
+    }
+  },
+  {
+    "id": "variant_rename_columns",
+    "bundle": "variant:rename_columns",
+    "preconditions": "no experiment card for this export in the workspace store",
+    "user_message": "Onboard {bundle_root}.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 30,
+        "max_words": 400
+      },
+      "card": {
+        "exists": true
+      },
+      "loader": {
+        "verified": true
+      }
+    }
+  },
+  {
+    "id": "l1_views_and_design",
+    "bundle": "primary",
+    "preconditions": "a current card",
+    "user_message": "Build validated design and observation views for {bundle_root} and show me the design balance.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 30,
+        "max_words": 300
+      },
+      "actions": {
+        "required_skills": [
+          "phenotyping-onboarding-checks"
+        ],
+        "required_scripts": [
+          "validate_views.py"
+        ]
+      }
+    }
+  },
+  {
+    "id": "l1_growth",
+    "bundle": "primary",
+    "preconditions": "a current card",
+    "user_message": "Which genotypes grow fastest in {bundle_root}? Use whatever size trait is most trustworthy.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 40,
+        "max_words": 350,
+        "terms_any": [
+          "clip",
+          "saturat",
+          "plateau",
+          "edge"
+        ]
+      },
+      "actions": {
+        "required_skills": [
+          "size-and-growth-traits"
+        ]
+      }
+    }
+  },
+  {
+    "id": "l1_treatment_response",
+    "bundle": "primary",
+    "preconditions": "a current card; the treatment's meaning answered by the user in this session",
+    "user_message": "Is there a genotype by treatment interaction on growth in {bundle_root}?",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 40,
+        "max_words": 350
+      },
+      "actions": {
+        "required_skills": [
+          "treatment-response"
+        ]
+      }
+    }
+  },
+  {
+    "id": "l1_physiology",
+    "bundle": "primary",
+    "preconditions": "a current card",
+    "user_message": "Does the treatment affect photosynthetic efficiency in {bundle_root}?",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 40,
+        "max_words": 350
+      },
+      "actions": {
+        "required_skills": [
+          "physiology-signals"
+        ]
+      }
+    }
+  },
+  {
+    "id": "l1_report",
+    "bundle": "primary",
+    "preconditions": "a current card",
+    "user_message": "Write a short report on {bundle_root}: design, data quality, and the main treatment effects.",
+    "expect": {
+      "response": {
+        "nonempty": true,
+        "min_words": 40,
+        "max_words": 400
+      },
+      "actions": {
+        "required_skills": [
+          "phenotyping-report",
+          "evidence-and-claims"
+        ]
+      }
+    }
+  }
+]

@@ -76,6 +76,11 @@ clio-workspace catalog (its catalog skill has the property reference):
 For topology optimization results, use `visualize-topology-optimization`
 instead; it builds on this skill with ready-made views.
 
+A completed mesh or result belongs in the transcript, with no pending question.
+Use `ask_user(..., surface_id=...)` only for a real user decision or answer;
+plots, images, and mesh views may enrich that question. Inspection controls
+alone never require an answer or a pause.
+
 ## Report figures
 
 The viewport's own "Save image" button gives the scientist a PNG of what they

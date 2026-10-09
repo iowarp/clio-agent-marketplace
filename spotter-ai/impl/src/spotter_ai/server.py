@@ -8,12 +8,15 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from clio_schemas.attention import AttentionProfile
 from fastmcp import FastMCP
 
+from spotter_ai.attention import AttentionEvidence
 from spotter_ai.campaign import CampaignForensics, stable_tool_annotations, validate_reason
 from spotter_ai.config import SpotterConfig, load_config
 from spotter_ai.errors import ProvenanceError
 from spotter_ai.providers.factory import create_providers
+from spotter_ai.providers.flowcept import FlowceptProvider
 from spotter_ai.service import ProvenanceService
 
 _READ_ONLY_ANNOTATIONS = {
@@ -37,11 +40,21 @@ def create_server(
     *,
     service: ProvenanceService | None = None,
     campaign: CampaignForensics | None = None,
+    attention: AttentionEvidence | None = None,
 ) -> FastMCP:
     """Build provider-aware and campaign-forensic Spotter tools in one server."""
+    resolved = (
+        config
+        if isinstance(config, SpotterConfig)
+        else (load_config(config) if config or service is None else None)
+    )
     if service is None:
-        resolved = config if isinstance(config, SpotterConfig) else load_config(config)
+        assert resolved is not None
         service = ProvenanceService(*create_providers(resolved))
+    if attention is None and resolved and resolved.attention_files_dir and resolved.flowcept:
+        reader = FlowceptProvider(resolved.flowcept)
+        atexit.register(reader.close)
+        attention = AttentionEvidence(reader, resolved.attention_files_dir)
     active = service
     active_campaign = campaign or CampaignForensics()
     mcp = FastMCP("spotter")
@@ -49,7 +62,42 @@ def create_server(
     @mcp.tool(title="Inspect provenance capabilities", annotations=_READ_ONLY_ANNOTATIONS)
     def capabilities() -> dict[str, Any]:
         """Report active agentic/artifact providers, health, and exact operations."""
-        return {**active.capabilities(), "campaign_forensics": active_campaign.capabilities()}
+        return {
+            **active.capabilities(),
+            "campaign_forensics": active_campaign.capabilities(),
+            "attention": {
+                "configured": attention is not None,
+                "verified": False,
+                "requires": "Flowcept and an explicit local capture directory",
+            },
+        }
+
+    def require_attention() -> AttentionEvidence:
+        if attention is None:
+            raise ProvenanceError(
+                "attention_not_configured", "Configure Flowcept and provenance.attention.files_dir"
+            )
+        return attention
+
+    @mcp.tool(title="List captured model-call identities", annotations=_READ_ONLY_ANNOTATIONS)
+    def list_attention_calls(session_id: str, limit: int = 100) -> dict[str, Any]:
+        """Find model response IDs in the configured store; listing does not verify a capture."""
+        return _invoke(lambda: require_attention().list_calls(session_id, limit))
+
+    @mcp.tool(title="Inspect captured attention", annotations=_READ_ONLY_ANNOTATIONS)
+    def inspect_attention(
+        response_id: str,
+        steps: list[int],
+        profile: AttentionProfile | None = None,
+    ) -> dict[str, Any]:
+        """Read verified local capture rows with CLIO's versioned profile semantics.
+
+        Supply recorded decode-step indices, never estimated character or image
+        coordinates. Returns evidence, coverage and uncertainty; does not quarantine.
+        """
+        return _invoke(
+            lambda: require_attention().inspect(response_id, steps, profile or AttentionProfile())
+        )
 
     @mcp.tool(title="List campaign runs", annotations=stable_tool_annotations(read_only=True))
     def list_runs() -> dict[str, Any]:

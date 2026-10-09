@@ -26,6 +26,7 @@ MARKETPLACE = Path(__file__).resolve().parents[1]
 #: Every shipped pack and the catalogs it declares, in the declared
 #: (preference) order. Every shipped agent keeps A2UI through clio-workspace.
 EXPECTED_CATALOGS: dict[str, list[Any]] = {
+    "appl-core": ["clio-workspace"],
     "base-agent": ["clio-workspace"],
     "cluster-operator": ["clio-workspace"],
     "data-semantics": ["clio-workspace"],
@@ -54,18 +55,23 @@ BUILTIN_CATALOGS = frozenset({"clio-workspace", "basic"})
 #: packs with a floor are the ones whose list names a pack-local catalog.
 #: Uniform ">=0.9.4.17" until factorio-flat's abaqus-topology catalog (#78)
 #: needed a higher floor: TopologyViewport/ParameterSlider need
-#: clio-schemas>=0.4.0, which only clio-agent>=0.9.4.19 pins.
+#: clio-schemas>=0.4.0, which only clio-agent>=0.9.4.19 pins. Both packs
+#: raised again (#1533) to a PLACEHOLDER ">=0.9.4.23": ConvergencePlot and
+#: visualize-earthscope-gnss's primary chart both move off the removed
+#: clio.time-series.v1 onto clio.chart.v1, which needs clio-schemas>=0.5.1.
+#: 0.9.4.23 is a guess at the first clio-agent release pinning it -- confirm
+#: the exact version against that release's pyproject.toml.
 FLOORED_PACKS: dict[str, str] = {
-    "earthscope-single-agent": ">=0.9.4.17",
-    "factorio-flat": ">=0.9.4.19",
+    "earthscope-single-agent": ">=0.9.4.23",
+    "factorio-flat": ">=0.9.4.23",
 }
 
 #: Floors a pack carries for a reason other than a pack-local catalog. The
 #: catalog test must not mistake them for a catalog floor.
-#: spotter-ai: its MCP launcher reads ${CLIO_BLUEPRINT_DIR} and
-#: ${CLIO_PROVENANCE_CONFIG}, which clio-agent supplies from 0.9.4.19 (#1503).
+#: Beta 3 supplies APPL-CORE's workspace-state and SPOTTER's attention handoffs.
 NON_CATALOG_FLOORS: dict[str, str] = {
-    "spotter-ai": ">=0.9.4.19",
+    "appl-core": ">=0.9.5b3",
+    "spotter-ai": ">=0.9.5b3",
 }
 
 

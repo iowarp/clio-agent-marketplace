@@ -1,0 +1,4 @@
+# Marker: this pack is held to the level contract. Skills, experts, and
+# AGENT.md must contain no experiment-level (L3) facts: no experiment, plant,
+# or round identifiers, dates, measured magnitudes, row counts, or concrete
+# dataset file names. See lint-denylist.txt for the known literals.

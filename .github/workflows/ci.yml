@@ -3,7 +3,7 @@ name: Marketplace policy
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -15,11 +15,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: Test policy checker
-        run: uv run --no-project python -m unittest discover -s tests -v
+        run: uv run --no-project --python 3.13 python -m unittest discover -s tests -v
       - name: Reject undocumented model pins
-        run: uv run --no-project python scripts/check_model_pins.py .
+        run: uv run --no-project --python 3.13 python scripts/check_model_pins.py .
       - name: Reject dataset-specific literals in pack prompts
-        run: uv run --no-project python scripts/check_skill_literals.py .
+        run: uv run --no-project --python 3.13 python scripts/check_skill_literals.py .
 
   a2ui-catalog-pack:
     # Composability proof for the earthscope-stations A2UI catalog
@@ -39,8 +39,39 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Run the A2UI catalog composability tests
         run: |
-          uv run --prerelease=allow \
+          uv run --python 3.13 --prerelease=allow \
             --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
             --with pytest \
             pytest earthscope-single-agent/tests/test_a2ui_catalog_pack.py \
               factorio-flat/tests -v
+
+  appl-core-pack:
+    # The APPL-CORE Analyst pack's own tests: its bundled skill scripts
+    # (inventory, column/key/flag audits, experiment card, glb conversion,
+    # view validation), its eval tooling (variant maker, grader), and the real
+    # clio-agent blueprint validator. Needs pyarrow/numpy/jsonschema/trimesh
+    # and clio-agent, none of which the dependency-free policy job carries.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Run the APPL-CORE pack tests
+        run: |
+          uv run --python 3.13 --prerelease=allow \
+            --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
+            --with "numpy>=1.24" --with "jsonschema>=4.18" --with trimesh \
+            --with pytest \
+            pytest appl-core/tests -v
+
+  spotter-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --project spotter-ai/impl --python 3.13 --frozen --extra dev
+      - run: uv run --no-sync ruff check src tests
+        working-directory: spotter-ai/impl
+      - run: uv run --no-sync pyright
+        working-directory: spotter-ai/impl
+      - run: uv run --no-sync pytest tests -q
+        working-directory: spotter-ai/impl

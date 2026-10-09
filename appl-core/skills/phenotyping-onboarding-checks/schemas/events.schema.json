@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clio-phenotyping-views/events.schema.json",
+  "type": "object",
+  "title": "events",
+  "description": "Imaging rounds, treatments, waterings and other timed events.",
+  "x-primary-key": [
+    "event_id"
+  ],
+  "required": [
+    "event_id",
+    "kind",
+    "start_time"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "minLength": 1,
+      "description": "imaging_round | treatment | watering | weighing | other"
+    },
+    "start_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp (state the timezone assumption in the card if none is given)."
+    },
+    "end_time": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "As recorded (completed, aborted, warning, ...)."
+    },
+    "sensors": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Sensors that ran, ;-joined."
+    },
+    "n_units": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "source_table": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Raw table (relative to the bundle root) the row came from."
+    },
+    "source_row_key": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Key of the raw row, for tracing back."
+    }
+  },
+  "additionalProperties": true
+}

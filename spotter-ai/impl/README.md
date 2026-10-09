@@ -14,7 +14,7 @@ explicit alert and quarantine tools mutate their bounded sentinel files.
 
 ```console
 uv sync --extra dev
-uv run spotter-mcp --clio-config /workspace/.clio/config.yaml
+uv run spotter-mcp --clio-config /path/to/clio-provenance-handoff.yaml
 ```
 
 `SPOTTER_CLIO_CONFIG` can provide the path when `--clio-config` is omitted.
@@ -36,6 +36,29 @@ The watcher can then perform one health sweep, inspect a suspicious run, raise t
 quarantine further batches, and lift quarantine only after an explicit human resolution.
 
 ## Provider configuration
+
+### Captured attention
+
+`list_attention_calls(session_id)` lists recorded response identities.
+`inspect_attention(response_id, steps, profile)` verifies the descriptor's local
+SafeTensors file, then reduces the selected decode-step rows with the same pinned
+`clio-schemas` implementation as CLIO. Overlapping steps count once. Profile heat
+and uniform mean attention mass are separate, and every response carries the
+resolved profile and its revision hash.
+
+Enable Flowcept among the provenance providers and set the explicit local capture
+root using the dotted YAML key `provenance.attention.files_dir: /data/clio/attention`.
+This works even when general provenance queries default to native JSONL. CLIO's
+effective handoff supplies the root when attention capture is enabled. An explicitly
+staged local mirror may retain the connector's `<workflow>/<filename>` layout;
+SPOTTER never fetches capture files over SSH or reads outside the configured root.
+
+The tool returns captured token coordinates and coverage, not guessed transcript
+or image coordinates. Use recorded decode-step mappings; do not estimate them from
+character offsets. Missing sparse values are unretained, not measured zero.
+Attention strength alone is not evidence of poisoning. These tools never invoke
+the campaign alert or quarantine actions. Delta fresh-inference and reviewer demo
+qualification remain required before publication.
 
 ```yaml
 provenance:

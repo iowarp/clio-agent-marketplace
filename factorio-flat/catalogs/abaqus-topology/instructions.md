@@ -5,8 +5,10 @@ same generic parts. `TopologyViewport` aliases the renderer's
 `clio.mesh-viewport.v1` kernel, `ParameterSlider` aliases `clio.slider.v1`
 (a slider with a step, a unit, and a box to type an exact value),
 `DesignMetric` aliases `clio.metric.v1`, and `ConvergencePlot` aliases
-`clio.time-series.v1` (see `catalog.clio.json`); `Text`, `Column`, `Row`,
-`Button`, and `CheckBox` are the unmodified Basic components. Property shapes live in
+`clio.chart.v1` (see `catalog.clio.json`), curated to the `trajectories`,
+`heatmap`, `spectra`, `boxplot`, and `scatter` presets over inline `data`
+or a `dataUri` artifact; `Text`, `Column`, `Row`, `Button`, and `CheckBox`
+are the unmodified Basic components. Property shapes live in
 `catalog.json`; this page is the recipe. Load the `abaqus-visualization`
 and `visualize-topology-optimization` skills for how the meshes are made.
 
@@ -140,8 +142,11 @@ exact value:
   at the last cycle.
 
 Hovering shows the density of the element under the cursor. Beside the
-view, a `ConvergencePlot` shows `optimization_report.csv` per cycle as inline
-`series` (one row per cycle). Plot each quantity divided by the report's
+view, a `ConvergencePlot` shows `optimization_report.csv` as inline `data`,
+one row per cycle per quantity (long format), using the `trajectories`
+preset: `xField: "cycle"`, `yField: "value"`, `entityField: "metric"` draws
+one line per quantity, colored automatically by `metric` since no
+`colorField` is given. Plot each quantity divided by the report's
 `Norm-Values` row, as Tosca's own report does: volume against the starting
 volume and peak stress against the stress limit put both near 1, where one
 axis can show them. Raw volume and stress differ by orders of magnitude and
@@ -195,14 +200,22 @@ same figure with `render_view.py`.
         "id": "convergence",
         "component": "ConvergencePlot",
         "title": "Volume and peak stress, relative to start and limit",
-        "xKey": "cycle",
-        "yKeys": ["volumeRatio", "stressRatio"],
-        "series": [
-          {"cycle": 0, "volumeRatio": 1.0, "stressRatio": 1.672},
-          {"cycle": 1, "volumeRatio": 1.017, "stressRatio": 1.024},
-          {"cycle": 2, "volumeRatio": 0.988, "stressRatio": 0.887},
-          {"cycle": 3, "volumeRatio": 0.961, "stressRatio": 0.970},
-          {"cycle": 4, "volumeRatio": 0.928, "stressRatio": 0.917}
+        "preset": "trajectories",
+        "xField": "cycle",
+        "xType": "quantitative",
+        "yField": "value",
+        "entityField": "metric",
+        "data": [
+          {"cycle": 0, "metric": "volumeRatio", "value": 1.0},
+          {"cycle": 0, "metric": "stressRatio", "value": 1.672},
+          {"cycle": 1, "metric": "volumeRatio", "value": 1.017},
+          {"cycle": 1, "metric": "stressRatio", "value": 1.024},
+          {"cycle": 2, "metric": "volumeRatio", "value": 0.988},
+          {"cycle": 2, "metric": "stressRatio", "value": 0.887},
+          {"cycle": 3, "metric": "volumeRatio", "value": 0.961},
+          {"cycle": 3, "metric": "stressRatio", "value": 0.970},
+          {"cycle": 4, "metric": "volumeRatio", "value": 0.928},
+          {"cycle": 4, "metric": "stressRatio", "value": 0.917}
         ]
       },
       {
@@ -249,8 +262,22 @@ cite it.
 
 ## After creating a surface
 
-The surface is the review. End the turn with it ready when showing the
-result is what was asked; pause with `ask_user(..., surface_id=...)` when
-you have more to do once the scientist acts. Both events arrive with their
-meaning attached (`narration` in `catalog.clio.json`). Reuse the same
-surface id after a rerun so the view updates in place.
+Choose the presentation by whether you need an answer now:
+
+- **Completed result:** publish the surface as transcript content and explain
+  the result. Do not call `ask_user` or attach it to a pending response. Orbiting
+  a mesh, changing stress/density/cycle controls, or optionally exporting a
+  figure are inspection actions, not questions. Omit accept/revise buttons
+  when no design decision is being requested. End the turn once the requested
+  result is ready; do not invent a confirmation just because a surface exists.
+- **Real question:** when a scientist-owned decision is needed to continue,
+  state that question and call `ask_user(..., surface_id=...)` with the relevant
+  surface and answer choices. For example, ask whether to accept a proposed
+  design or revise its constraints, with the comparison as context. This
+  enriched question belongs in the interactive response area; wait for its
+  answer and resume the same work through the normal response flow.
+
+Optional surface events still arrive with their meaning attached (`narration`
+in `catalog.clio.json`). A future event is not a reason to keep a completed
+result waiting for an answer. Reuse the same surface id after a rerun so the
+view updates in place.
