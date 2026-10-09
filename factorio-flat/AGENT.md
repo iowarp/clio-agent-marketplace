@@ -2,7 +2,7 @@
 id: factorio-flat
 title: Factorio Flat
 display_name: Factorio Flat
-version: 0.4.0
+version: 0.4.1
 description: A scientist-facing research partner spanning research framing, evidence coordination, simulation, and adversarial review, extended with materials science, manufacturing, characterization, mechanical testing, fatigue/failure, and data analysis specialists.
 root_expert: main
 # A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
