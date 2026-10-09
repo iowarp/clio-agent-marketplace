@@ -62,8 +62,15 @@ def create_server(
     @mcp.tool(title="Inspect provenance capabilities", annotations=_READ_ONLY_ANNOTATIONS)
     def capabilities() -> dict[str, Any]:
         """Report active agentic/artifact providers, health, and exact operations."""
+        described = active.capabilities()
+        if resolved is not None:  # say how the query lane was chosen, never silently
+            described["agentic"] = {
+                **described["agentic"],
+                "selected_by": resolved.agentic_selected_by,
+                "enabled_not_queried": list(resolved.agentic_alternatives),
+            }
         return {
-            **active.capabilities(),
+            **described,
             "campaign_forensics": active_campaign.capabilities(),
             "attention": {
                 "configured": attention is not None,
