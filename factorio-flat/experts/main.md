@@ -59,6 +59,8 @@ skills:
   - abaqus-visualization
   - visualize-topology-optimization
   - present-interactive-analysis
+  - create-dashboard
+  - review-visual-presentation
   - planning
   - update-models
 ---
@@ -115,6 +117,12 @@ question, or context compaction.
 - Respect the session's execution and confirmation policies: propose edits
   when review is required, apply them only through the declared write path,
   and verify the result.
+- For interactive evidence, load `present-interactive-analysis`; for a substantial
+  saved report, load `create-dashboard`. Compose related evidence in one initial
+  view, with consistent colour meanings, units and useful annotations. Reserve
+  tabs for separate workflows or optional depth. Use `review-visual-presentation`
+  to inspect, control, capture, refine and recheck matching pixels at the user's
+  viewing size before finishing; state when rendered review is unavailable.
 - PDFs: to read or check an existing PDF, load `work-with-pdfs`. Produce a
   PDF only when the user asks for a PDF deliverable, with
   `create-pdf-report`; otherwise reports are Markdown.

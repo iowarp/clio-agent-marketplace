@@ -55,6 +55,8 @@ skills:
   - appl-instruments
   - geometry-to-glb
   - present-interactive-analysis
+  - create-dashboard
+  - review-visual-presentation
   - work-with-pdfs
   - create-pdf-report
   - planning
@@ -85,6 +87,12 @@ procedures: load the smallest relevant one before doing the work it covers.
 - Respect the session's execution and confirmation policies: propose edits
   when review is required, apply them only through the declared write path,
   and verify the result.
+- For interactive evidence, load `present-interactive-analysis`; for a substantial
+  saved report, load `create-dashboard`. Compose related evidence in one initial
+  view, with consistent colour meanings, units and useful annotations. Reserve
+  tabs for separate workflows or optional depth. Use `review-visual-presentation`
+  to inspect, control, capture, refine and recheck matching pixels at the user's
+  viewing size before finishing; state when rendered review is unavailable.
 - PDFs: to read or check an existing PDF, load `work-with-pdfs`. Produce a
   PDF only when the user asks for a PDF deliverable, with
   `create-pdf-report`; otherwise reports are Markdown.
@@ -155,8 +163,9 @@ procedures: load the smallest relevant one before doing the work it covers.
 ## Views for the user
 
 When a view helps more than prose, load `present-interactive-analysis` and
-use the generic components of the clio-workspace catalog, preferring their
-presets (trajectories, box plots, heatmaps, tables) over custom specs; 3D
+use the generic components of the clio-workspace catalog. Use a preset when it
+explains the question; use a guarded authored spec when labels, reference bands,
+layers or semantic colour improve the explanation. Follow the active schema; 3D
 surfaces go through `geometry-to-glb` and the mesh viewport. A view shows
 observed data only; it never replaces the numbers or the caveats.
 

@@ -25,7 +25,14 @@ SUPERSET_PACKS = ("appl-core", "factorio-flat", "earthscope-single-agent")
 #: clio built-in skills the default agent's root expert gets automatically
 #: (clio-agent ``effective_declared_skills``); any other pack must declare them.
 DEFAULT_AGENT_BUILTIN_SKILLS = frozenset(
-    {"work-with-pdfs", "planning", "update-models", "present-interactive-analysis"}
+    {
+        "work-with-pdfs",
+        "planning",
+        "update-models",
+        "present-interactive-analysis",
+        "create-dashboard",
+        "review-visual-presentation",
+    }
 )
 
 #: A root expert with a declared A2UI catalog gets these four tools automatically,
@@ -109,9 +116,7 @@ class StandardAgentSupersetTests(unittest.TestCase):
                 servers = parse_frontmatter(REPO / name / "AGENT.md").get("mcp_servers", {})
                 for server, declaration in self.base_manifest["mcp_servers"].items():
                     self.assertIn(server, servers)
-                    self.assertEqual(
-                        _server_command(servers[server]), _server_command(declaration)
-                    )
+                    self.assertEqual(_server_command(servers[server]), _server_command(declaration))
 
     def test_a2ui_catalogs(self) -> None:
         base = _catalog_ids(self.base_manifest["a2ui_catalogs"])
@@ -136,6 +141,14 @@ class StandardAgentSupersetTests(unittest.TestCase):
 
     def test_working_principles(self) -> None:
         base = _principles(_root_prompt(BASE))
+        for requirement in (
+            "create-dashboard",
+            "review-visual-presentation",
+            "one initial view",
+            "recheck matching pixels",
+            "rendered review is unavailable",
+        ):
+            self.assertIn(requirement, base)
         for name in SUPERSET_PACKS:
             with self.subTest(pack=name):
                 self.assertEqual(_principles(_root_prompt(REPO / name)), base)
