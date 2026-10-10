@@ -17,9 +17,7 @@ def _model_instruction_files() -> list[Path]:
     )
 
 
-def test_model_instructions_do_not_reference_removed_or_bounded_task_collection() -> (
-    None
-):
+def test_model_instructions_do_not_reference_removed_or_bounded_task_collection() -> None:
     violations: list[str] = []
     for path in _model_instruction_files():
         text = path.read_text(encoding="utf-8")
@@ -29,8 +27,6 @@ def test_model_instructions_do_not_reference_removed_or_bounded_task_collection(
             if legacy in text:
                 violations.append(f"{path.relative_to(ROOT)} references legacy {legacy}")
         if re.search(r"wait_agent_tasks[^\n]{0,120}timeout_s", text):
-            violations.append(
-                f"{path.relative_to(ROOT)} gives wait_agent_tasks a timeout"
-            )
+            violations.append(f"{path.relative_to(ROOT)} gives wait_agent_tasks a timeout")
 
     assert violations == []
