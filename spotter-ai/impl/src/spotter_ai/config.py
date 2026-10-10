@@ -52,6 +52,11 @@ class SpotterConfig:
     cmf: CMFQueryConfig | None = None
     native: NativeQueryConfig | None = None
     attention_files_dir: Path | None = None
+    #: How the agentic query lane was chosen: ``configured`` (query_default set),
+    #: ``only_enabled`` (the single enabled provider) or ``default_jsonl`` (several
+    #: enabled, none chosen: the native journal answers, ``alternatives`` do not).
+    agentic_selected_by: str = "configured"
+    agentic_alternatives: tuple[str, ...] = ()
 
 
 def load_config(path: str | Path | None = None) -> SpotterConfig:
@@ -76,8 +81,10 @@ def load_config(path: str | Path | None = None) -> SpotterConfig:
     query_default = str(_value(document, "provenance.agentic.query_default", "")).strip().lower()
     if query_default in {"native", "file"}:
         query_default = "jsonl"
+    selected_by = "configured"
     if not query_default:
         query_default = providers[0] if len(providers) == 1 else "jsonl"
+        selected_by = "only_enabled" if len(providers) == 1 else "default_jsonl"
     if query_default not in providers:
         raise SpotterConfigurationError(
             f"agentic query provider {query_default!r} is not enabled in {providers!r}"
@@ -111,6 +118,8 @@ def load_config(path: str | Path | None = None) -> SpotterConfig:
         source_path=source,
         agentic_provider=query_default,
         artifact_provider=artifact_provider,
+        agentic_selected_by=selected_by,
+        agentic_alternatives=tuple(name for name in providers if name != query_default),
         flowcept=flowcept,
         cmf=cmf,
         native=native,
