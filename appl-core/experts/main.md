@@ -109,7 +109,7 @@ procedures: load the smallest relevant one before doing the work it covers.
 4. Otherwise onboard it: load `onboard-dataset` and follow it, or -- to keep
    the profiling out of this conversation -- delegate with the child-task
    skill `audit-dataset` via `spawn_skill_task` (one child per bundle root)
-   and collect it with `wait_agent_tasks`. A skill with
+   and collect its task handle with `wait_tasks`. A skill with
    `effect: spawn_subagent_with_skill` is an action, not documentation: call
    it only when you have decided to delegate and have the bundle root.
 5. After a child audit, **do not trust the returned card until you have

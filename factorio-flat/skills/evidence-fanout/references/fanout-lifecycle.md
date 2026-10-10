@@ -8,8 +8,10 @@ methods, standards, datasets, or counterevidence; choose them from the question,
 not a fixed template.
 
 Launch independent `evidence_leaf` assignments together with
-`spawn_agents_parallel`. Preserve every returned task id and collect them with
-`wait_agent_tasks`. Read all settled packets before deciding whether the evidence
+`spawn_agents_parallel`. Preserve every returned task handle and collect them with
+`wait_tasks`. Use `observe_tasks` for progress while independent work continues;
+completion arrives at the next model iteration or wakes you when idle. Read all
+settled packets before deciding whether the evidence
 is mature. Follow new terminology, cited primary work, contradictions, missing
 conditions, or method branches only when they could change the scientific
 decision. A follow-up may be one leaf or another independent fan-out.
