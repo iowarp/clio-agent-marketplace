@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- Base Agent, APPL-CORE, Factorio Flat and EarthScope declare the shared managed
+  execution/document tools. Discovery is optional for standalone paths/import
+  checks; document work requests converter/font preparation separately. Pack
+  versions advance and require CLIO beta 3 or later for these native tools.
+- Opt-in skill literal checks reject dataset-specific facts in reusable pack prompts.
+  Packs can supply a denylist, enable generic checks, and mark deliberate examples.
+
 ## [0.6.11] - 2026-10-05
 
 ### Added

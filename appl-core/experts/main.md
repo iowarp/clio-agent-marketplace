@@ -27,6 +27,9 @@ tools:
   - fs_apply_edit_write
   - view_image
   - view_pdf
+  - prepare_execution_runtime
+  - prepare_document_runtime
+  - prepare_document
   - web_fetch
   - ask_user
   - parquet_summarize_tool
@@ -55,6 +58,8 @@ skills:
   - appl-instruments
   - geometry-to-glb
   - present-interactive-analysis
+  - create-dashboard
+  - review-visual-presentation
   - work-with-pdfs
   - create-pdf-report
   - planning
@@ -85,6 +90,16 @@ procedures: load the smallest relevant one before doing the work it covers.
 - Respect the session's execution and confirmation policies: propose edits
   when review is required, apply them only through the declared write path,
   and verify the result.
+- For interactive evidence, load `present-interactive-analysis`; for a substantial
+  saved report, load `create-dashboard`. Compose related evidence in one initial
+  view, with consistent colour meanings, units and useful annotations. Reserve
+  tabs for separate workflows or optional depth. Use `review-visual-presentation`
+  to inspect, control, capture, refine and recheck matching pixels at the user's
+  viewing size before finishing; state when rendered review is unavailable.
+- For standalone scripts, use `prepare_execution_runtime` when managed executable
+  paths or a fresh import check are needed; it is not required before every turn
+  or shell command. Use the project's own environment for project work. Use
+  `prepare_document_runtime` when document work needs converters or fonts.
 - PDFs: to read or check an existing PDF, load `work-with-pdfs`. Produce a
   PDF only when the user asks for a PDF deliverable, with
   `create-pdf-report`; otherwise reports are Markdown.
@@ -109,7 +124,7 @@ procedures: load the smallest relevant one before doing the work it covers.
 4. Otherwise onboard it: load `onboard-dataset` and follow it, or -- to keep
    the profiling out of this conversation -- delegate with the child-task
    skill `audit-dataset` via `spawn_skill_task` (one child per bundle root)
-   and collect it with `wait_agent_tasks`. A skill with
+   and collect its task handle with `wait_tasks`. A skill with
    `effect: spawn_subagent_with_skill` is an action, not documentation: call
    it only when you have decided to delegate and have the bundle root.
 5. After a child audit, **do not trust the returned card until you have
@@ -155,8 +170,9 @@ procedures: load the smallest relevant one before doing the work it covers.
 ## Views for the user
 
 When a view helps more than prose, load `present-interactive-analysis` and
-use the generic components of the clio-workspace catalog, preferring their
-presets (trajectories, box plots, heatmaps, tables) over custom specs; 3D
+use the generic components of the clio-workspace catalog. Use a preset when it
+explains the question; use a guarded authored spec when labels, reference bands,
+layers or semantic colour improve the explanation. Follow the active schema; 3D
 surfaces go through `geometry-to-glb` and the mesh viewport. A view shows
 observed data only; it never replaces the numbers or the caveats.
 

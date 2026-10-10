@@ -2,7 +2,7 @@
 id: appl-core
 title: APPL-CORE Analyst
 display_name: APPL-CORE Analyst
-version: 0.2.1
+version: 0.2.3
 description: Onboards and analyses any APPL-CORE plant-phenotyping export (an L2 agent for one export format) - reads the export's self-description, catches its data traps, records an experiment card and loader in the workspace's Agent state, and answers phenotyping questions with evidence tagged stated, checked, or inferred.
 root_expert: main
 # CLIO beta 3 supplies the canonical workspace-state directory used by this
