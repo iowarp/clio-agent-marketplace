@@ -110,6 +110,16 @@ class StandardAgentSupersetTests(unittest.TestCase):
                 self.assertLessEqual(set(self.base_expert["tools"]), tools)
                 self.assertEqual(tools & A2UI_PRODUCER_TOOLS, set())
 
+    def test_managed_runtime_tools_and_guidance_reach_every_shipped_root(self) -> None:
+        """Shared procedures must name tools each root can actually call."""
+        required = {"prepare_execution_runtime", "prepare_document_runtime", "prepare_document"}
+        for pack in (BASE, *(REPO / name for name in SUPERSET_PACKS)):
+            with self.subTest(pack=pack.name):
+                self.assertLessEqual(required, set(_root_expert(pack)["tools"]))
+                prompt = _root_prompt(pack)
+                self.assertIn("not required before every turn", prompt)
+                self.assertIn("prepare_document_runtime", prompt)
+
     def test_mcp_servers(self) -> None:
         for name in SUPERSET_PACKS:
             with self.subTest(pack=name):
