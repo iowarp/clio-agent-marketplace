@@ -3,10 +3,11 @@
 clio-agent 0.9.4.17 makes an agent's ``a2ui_catalogs`` the COMPLETE list of
 catalogs it may produce against, in preference order: nothing is implicit,
 the builtin ``clio-workspace`` and ``basic`` catalogs included. A pack must
-therefore list what it uses. Only a pack whose list names a PACK-LOCAL catalog
-needs the ``requires.clio_agent`` floor: an older runtime reads the list form
+therefore list what it uses. A pack whose list names a PACK-LOCAL catalog
+needs a ``requires.clio_agent`` floor: an older runtime reads the list form
 as no pack catalogs, which drops that catalog, while a builtins-only list
-still gets the builtins an older runtime always offered.
+still gets the builtins an older runtime always offered. Native managed tools
+and workspace handoffs can independently require a newer runtime.
 
 Dependency-free (runs under CI's bare ``model-inheritance`` interpreter): it
 reads only the ``a2ui_catalogs`` and ``requires`` blocks with the strict
@@ -51,25 +52,17 @@ EXPECTED_CATALOGS: dict[str, list[Any]] = {
 #: The builtin catalog names clio-agent accepts in an ``a2ui_catalogs`` list.
 BUILTIN_CATALOGS = frozenset({"clio-workspace", "basic"})
 
-#: Per-pack ``requires.clio_agent`` floor, keyed by pack name -- the only
-#: packs with a floor are the ones whose list names a pack-local catalog.
-#: Uniform ">=0.9.4.17" until factorio-flat's abaqus-topology catalog (#78)
-#: needed a higher floor: TopologyViewport/ParameterSlider need
-#: clio-schemas>=0.4.0, which only clio-agent>=0.9.4.19 pins. Both packs
-#: raised again (#1533) to a PLACEHOLDER ">=0.9.4.23": ConvergencePlot and
-#: visualize-earthscope-gnss's primary chart both move off the removed
-#: clio.time-series.v1 onto clio.chart.v1, which needs clio-schemas>=0.5.1.
-#: 0.9.4.23 is a guess at the first clio-agent release pinning it -- confirm
-#: the exact version against that release's pyproject.toml.
+#: Catalog-owning packs also require beta 3 for their declared managed tools.
 FLOORED_PACKS: dict[str, str] = {
-    "earthscope-single-agent": ">=0.9.4.23",
-    "factorio-flat": ">=0.9.4.23",
+    "earthscope-single-agent": ">=0.9.5b3",
+    "factorio-flat": ">=0.9.5b3",
 }
 
 #: Floors a pack carries for a reason other than a pack-local catalog. The
 #: catalog test must not mistake them for a catalog floor.
 #: Beta 3 supplies APPL-CORE's workspace-state and SPOTTER's attention handoffs.
 NON_CATALOG_FLOORS: dict[str, str] = {
+    "base-agent": ">=0.9.5b3",
     "appl-core": ">=0.9.5b3",
     "spotter-ai": ">=0.9.5b3",
 }
@@ -164,7 +157,7 @@ class A2UICatalogDeclarationTests(unittest.TestCase):
                 declared = _top_level_block(MARKETPLACE / pack / "AGENT.md", "a2ui_catalogs")
                 self.assertNotIn("basic", declared)
 
-    def test_only_packs_declaring_a_pack_catalog_carry_the_floor(self) -> None:
+    def test_declared_catalog_and_native_tool_floors_match_their_contracts(self) -> None:
         for pack, expected in EXPECTED_CATALOGS.items():
             with self.subTest(pack=pack):
                 requires = _top_level_block(MARKETPLACE / pack / "AGENT.md", "requires")
