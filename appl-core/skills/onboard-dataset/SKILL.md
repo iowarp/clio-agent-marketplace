@@ -80,6 +80,11 @@ sample only, so say so.
      card, `init` a new one and carry over only what you re-check; re-run
      only the audits whose tables changed, and say what changed.
    - `no_card`: continue.
+   - A draft card without completed validation, absent loader/view hashes, failed validation, or a partial
+     loader output means onboarding is unfinished. Inspect the saved decisions
+     and complete the missing steps from the raw export; do not use failed or
+     unverified views as prepared data. Reuse successful audits only when their
+     source tables and scope still match, and explicitly state what remains.
 2. **Read the self-description before any profiling.** In this order: a
    manifest (`manifest.json` or similar), README files, documentation folders,
    column catalogs / data dictionaries / codebooks, and any machine-readable
@@ -116,6 +121,21 @@ sample only, so say so.
    view's key, fix column order, no timestamps or random ids in outputs,
    overwrite its own outputs. It writes only to its own directory and leaves
    the raw files as they are.
+   Inspect the audited Arrow schemas before converting values. List-valued
+   flags and traits are not scalars: do not evaluate `pandas.isna(array)` as
+   a boolean. Normalize documented empty-string and sentinel encodings before
+   numeric conversion; count and record invalid values rather than silently
+   swallowing conversion failures. Use bounded Arrow batches and an explicit
+   output schema for long observations and wide spectra; never accumulate
+   the expanded dataset in Python lists. Close writers on failure and publish
+   completed views atomically so a failed run cannot look like a valid view.
+   For wide spectra, normalize row identities once and convert each band with
+   vectorized operations or Arrow batches; do not nest row-by-row iteration
+   inside the wavelength loop. Inspect metadata and a bounded batch before
+   expanding a wide table, and keep missing bands distinguishable from usable
+   measurements.
+   Select timestamp and key columns from the actual schema, with explicit
+   null handling. Do not assume every table has every alternative key column.
 8. **Run the loader, validate, record.** Run it with `uv run --no-project
    DATASET_DIR/loader.py BUNDLE_ROOT` (or with `--with` flags), validate the views
    (the `phenotyping-onboarding-checks` skill has schemas and a validator for
@@ -124,6 +144,21 @@ sample only, so say so.
    second time and `card.py verify BUNDLE_ROOT `:
    identical hashes prove it is deterministic.
    If they differ, fix the loader before anyone trusts a view.
+   Record the validator's scope and result and the repeat-run verification under
+   Checked facts. Once both pass, set the card's frontmatter `status: prepared`;
+   this means the documented views are mechanically validated, not that open
+   scientific questions or inferred interpretations have been confirmed.
+   Inspect each execution's exit status and diagnostic output before the next
+   command. An accepted background handle is not a successful loader run.
+   Collect it with `wait_tasks` and inspect its result before recording hashes.
+   Use tracked background execution for conversions likely to outlast a
+   foreground tool call. After a timeout or unknown outcome, reconcile the
+   original task/process and inspect its files before retrying: an absent
+   Parquet footer is an incomplete output, and an accepted handle may still
+   own a running writer. Never start a second writer against the same views.
+   Finish these steps in the current assignment; a draft card or finished child
+   turn is not completed onboarding. If blocked, identify the specific blocker
+   and remaining work without reporting the dataset ready for analysis.
 9. **Report** in a few lines: what the dataset is, the traps found and how
    they are handled, the open questions, and the card/loader/view paths.
 
