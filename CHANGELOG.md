@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Factorio Flat (0.5.0) runs non-interactive HPC simulation tasks with less
+  model output. `main` now carries `hpc-batch-jobs`, `morphorm`,
+  `topology_optimization` and `meshing` itself, since it often runs a
+  self-contained simulation task without delegating. A packet mode for
+  self-contained tasks with no scientist available keeps step text short,
+  logs facts as it goes, writes required reports once, and adds tool-call
+  formatting rules (JSON escaping, the command-length limit, patching instead
+  of re-sending a file). Interactive behaviour is unchanged.
+- The `morphorm` skill describes the Cubit → input deck → XMLGenerator →
+  Slurm workflow, how to confirm that generated XML carries each declared
+  setting (re-translating once with the manual's equivalent keyword form when
+  it does not), and how to pick and check the saved state for a restart.
+
+### Added
+
+- Bundled checks so the agent does not write one-off verification programs:
+  `morphorm/scripts/exo_summary.py` (Exodus mesh/output summary with
+  `--expect` checks), `xml_params.py` (settings XMLGenerator actually wrote)
+  and `diag_summary.py` (optimizer diagnostics, restart objective check).
+- `hpc-batch-jobs` skill with `scripts/wait_job.sh`: bounded Slurm waits that
+  print one status line and finish only on a final `sacct` state.
+- Tests for the bundled scripts (`factorio-flat/tests/test_hpc_skill_scripts.py`).
+
 ## [0.6.11] - 2026-10-05
 
 ### Added

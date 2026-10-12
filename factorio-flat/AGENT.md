@@ -2,7 +2,7 @@
 id: factorio-flat
 title: Factorio Flat
 display_name: Factorio Flat
-version: 0.4.0
+version: 0.5.0
 description: A scientist-facing research partner spanning research framing, evidence coordination, simulation, and adversarial review, extended with materials science, manufacturing, characterization, mechanical testing, fatigue/failure, and data analysis specialists.
 root_expert: main
 # A2UI catalogs are a per-agent allowlist: from clio-agent 0.9.4.17 this
@@ -90,6 +90,16 @@ original expert's role too closely, the skill went to the original expert
 instead of a new one — `simulation_methodologist` and `abaqus_engineer` carry
 the FEA/topology-optimization and Abaqus/Tosca/Morphorm skills, and
 `evidence_researcher` carries the literature-search/synthesis skills.
+
+`main` also carries the simulation-running skills directly (`hpc-batch-jobs`,
+`morphorm`, `topology_optimization`, `meshing`), because it often runs a
+self-contained simulation task itself instead of delegating. For
+non-interactive packet runs (a self-contained task with required outputs and
+no scientist available) `main` works directly with little narration, keeps a
+facts log, writes required reports once, and uses the bundled checks of
+`morphorm` (`exo_summary.py`, `xml_params.py`, `diag_summary.py`) and
+`hpc-batch-jobs` (`wait_job.sh`, bounded Slurm waits) instead of writing
+one-off verification programs.
 
 Skills are the reusable procedures each expert loads on demand; a skill can be
 shared by more than one expert (for example `heat_treatment` is used by both
