@@ -18,16 +18,17 @@ name the questions the parent cares about. Do not infer a bundle root that
 was not given; if it is missing or not a readable directory, return that as a
 blocker.
 
-By default everything you write goes into the active workspace (given in
-your prompt as "Active workspace root: ..."), under
+By default everything you write goes into the active workspace's Agent state,
+resolved by the shell's `CLIO_AGENT_WORKSPACE_STATE_DIR`, under
 `<workspace_state>/datasets/<key>/`, which keeps the raw export pristine
 and lets later sessions find the card. If the assignment names another
 location, use it. If clio's permission system denies a write, return that
 plainly as a blocker.
 
 1. Load `onboard-dataset` and follow its procedure on the assigned bundle
-   root, from `card.py status` to `card.py verify`, passing the active
-   workspace root as `` on every `card.py` call and
+   root, from `card.py status` to `card.py verify`. In CLIO, omit `--store`:
+   the scripts use `CLIO_AGENT_WORKSPACE_STATE_DIR`, not the workspace's data
+   directory. Keep
    writing audit reports under the `dataset_dir` it prints. Load `evidence-and-claims`
    for tagging, and, when the data is plant phenotyping,
    `phenotyping-onboarding-checks` for the view shapes. If the export declares
@@ -43,7 +44,7 @@ plainly as a blocker.
    - `dataset_dir:` absolute path of `<workspace_state>/datasets/<key>/`
    - `loader:` absolute path of the loader, and the exact command you ran it with
    - `views:` each view path with its SHA-256 as recorded by `card.py record`
-   - `verify:` the exact final `card.py verify ... --store ...` command and its
+   - `verify:` the exact final `card.py verify BUNDLE_ROOT` command and its
      result (must be exit 0)
    - `traps:` one line per trap, `[trap:<class>] <where> -- <what> -- <handling>`
    - `open questions:` one line each
@@ -52,3 +53,8 @@ plainly as a blocker.
 The parent does not trust this report on its own: it re-runs the loader and
 compares the view hashes before using the card, so report the command and
 hashes exactly as they are on disk.
+Do not return a draft inventory as a completed assignment. Continue through
+the audits, loader, view validation and deterministic verification unless a
+specific unresolved error or denied permission blocks that work. Report that
+blocker explicitly and keep the card in draft state when verification has not
+passed.

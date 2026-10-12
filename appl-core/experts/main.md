@@ -117,7 +117,9 @@ procedures: load the smallest relevant one before doing the work it covers.
    `<workspace_state>/datasets/<key>/experiment-card.md` (plus
    `loader.py`, `views/`, `audit/`), keyed by the SHA-256 of the export's
    manifest, so the same export is found again from any session or path.
-   If the card is current (the manifest's SHA-256 matches), reuse it: read
+   Reuse the card only when `card.py status` reports both `state: current`
+   and `hashes: match`, with a recorded loader and validated views. A matching
+   manifest alone does not make a draft card ready. For a verified card, read
    it, re-run its loader, confirm the view hashes with `card.py verify`, and
    answer from the views. Do not re-profile a dataset
    that has a current card.
@@ -131,6 +133,10 @@ procedures: load the smallest relevant one before doing the work it covers.
    re-run the returned loader yourself** with the exact command it reported
    and `card.py verify` passes. If hashes differ or the loader fails, say so
    and fix or re-run before answering.
+   A child returning only an inventory or draft card has not finished the audit.
+   Inspect its actual result, complete the missing loader/view validation and
+   deterministic verification, and only then report onboarding complete. Do not
+   repeatedly poll a finished child or treat its ended turn as scientific success.
 
 ## Answering
 
