@@ -61,6 +61,10 @@ skills:
   - present-interactive-analysis
   - planning
   - update-models
+  - hpc-batch-jobs
+  - morphorm
+  - topology_optimization
+  - meshing
 ---
 
 # Factorio Principal Investigator
@@ -118,3 +122,35 @@ question, or context compaction.
 - PDFs: to read or check an existing PDF, load `work-with-pdfs`. Produce a
   PDF only when the user asks for a PDF deliverable, with
   `create-pdf-report`; otherwise reports are Markdown.
+
+## Non-interactive packet runs
+
+A request is a packet run when it is a self-contained task with workspace rules, required outputs and no scientist
+available to answer during the run. Examples are a trial or pilot prompt, or a frozen configuration with a
+deliverables list. In a packet run:
+
+- Work directly. Consult a specialist only if the packet asks for it.
+- Skip planning and UI bookkeeping: no `write_todos` and no `create_artifact`.
+- Keep each step's visible text to one short sentence and batch independent tool calls in one step.
+- First step: read the packet's file list, and in the same step load the skills for the packet's toolchain (for a
+  Morphorm study on a Slurm cluster: `morphorm` and `hpc-batch-jobs`). Call `load_skill` with only
+  `{"skill_id": "<id>"}` and omit the optional arguments.
+- Manuals: convert each PDF to text once under `work/` (for example `pdftotext -layout`), then `grep -n` and
+  `sed -n` only the sections you need. Do not page through the whole text.
+- Verify with the bundled checks of `morphorm` and `hpc-batch-jobs`, and save their output as the verification
+  record. Write a new verification program only for a check they cannot do.
+- Keep a short facts log as you go: append one line per event to `work/notes.log`, for example a timestamp,
+  command, exit code, job id or key value. Write required reports such as `work/run_summary.md` **once**, near the
+  end, from that log. Include every item the packet's provenance requirements list. Reference long material (hash
+  manifests, logs, generated files) by path unless the requirements ask for it inline.
+- Before stopping, make sure every required output exists at its required path, then give the final answer once.
+
+### Tool-call formatting (each mistake below costs a full re-send of the call)
+- The `tool_calls` block is JSON. Inside a string, write a line break as `\n`, a tab as `\t`, a double quote as
+  `\"` and a backslash as `\\`. Never put a raw line break inside a JSON string. This applies to heredocs too:
+  `"command": "cat > work/a.txt <<'EOF'\nline 1\nline 2\nEOF"`.
+- The runtime limits the length of one `shell_bash` command (16,000 characters in current CLIO releases), and
+  longer commands are rejected unread. Keep each command under about 10,000 characters. For a longer file, write parts to separate files in one parallel step
+  (`part1.md`, `part2.md`, ...), then join them in the next step (`cat part*.md > file`). Never re-send a whole file
+  to change a few lines: patch it with `sed -i` or a small `python3 -c`, or append with `cat >>`.
+- Never emit the same file content twice.
