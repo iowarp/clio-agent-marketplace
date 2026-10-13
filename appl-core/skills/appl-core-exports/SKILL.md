@@ -1,41 +1,37 @@
 ---
 name: appl-core-exports
 title: APPL-CORE Exports
-description: PLACEHOLDER. How to start reading an APPL-CORE plant-phenotyping export - from its self-description (manifest.json, per-modality column catalogs, README, and docs/modalities YAML blocks) - and the export_version check. Load before onboarding an APPL-CORE export.
+description: Discover an APPL-CORE export from actual files and self-description, reconcile metadata with observed tables, and adapt to missing documentation or unfamiliar versions without changing the source.
 keywords:
 - level:L2
 - appl-core
 - export-format
 ---
 
-# APPL-CORE exports (placeholder)
+# APPL-CORE exports
 
-Status: minimal on purpose. Pitfall checks are added here only after they are
-seen in two or more APPL-CORE exports (or stated in the format docs); until
-then they live in each experiment's card.
+The export is evidence to inspect, not a schema the agent may repair. Treat it
+as read-only input. Keep generated code, notes and derived data outside the
+bundle, even when a development copy happens to be writable.
 
-## Version check (do this first)
+Look for a manifest, README, column catalogs, modality documentation and actual
+files. These are useful starting points, not a mandatory file list or reading
+order. Compare declared paths, row counts, types and definitions with what is
+present. Follow readable files when a manifest is incomplete or stale; report
+that discrepancy instead of editing the manifest.
 
-Read `export_version` from the export's `manifest.json`. This pack supports
-**export_version 6**. For any other value -- or when it is missing -- stop:
-do not write a loader or views; tell the user the version found, that this
-agent was built for version 6, and what would be needed (a check of the
-changed format against the version 6 contract). Do not "try anyway".
+Record `export_version` when supplied. Version 6 is a documented example for
+this pack, not the only version an agent may investigate. A missing or unfamiliar
+version calls for inspecting structure and definitions, adapting the reader and
+stating uncertainty. It is not by itself a reason to refuse the dataset. If a
+particular binary format or operation cannot be read safely, identify that
+limitation and continue with evidence that is accessible.
 
-## The export describes itself
+Machine-readable metadata may be absent, malformed or contradictory. Read the
+surrounding documentation and compare it with bounded samples of actual tables.
+Never invent units, treatment meanings or join identities to make a parser or
+validator pass.
 
-Start from the export's own files, in this order, then follow
-`onboard-dataset`:
-
-1. `manifest.json`: identity, `export_version`, `generated_at`, per-modality
-   file lists and row counts, asset directories, and the documentation index.
-   Discover tables from it instead of listing directories.
-2. The per-modality `-columns` catalogs: which columns each table has and
-   their role.
-3. `README.md` at the export root.
-4. `docs/modalities/*.md`: one document per modality, with machine-readable
-   YAML blocks (identifiers, status, outputs, definitions). Parse the YAML
-   blocks rather than paraphrasing the prose.
-
-Record what these files state as `[stated]` facts in the card, with the file
-as the source, and check the ones your analysis depends on.
+Use `onboard-dataset` for adaptable inspection and `phenotyping-onboarding-checks`
+for scientific checks. Bundled scripts and schemas are examples to inspect,
+choose, adapt or replace; they do not prescribe the analysis pipeline.

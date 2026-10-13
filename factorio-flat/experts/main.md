@@ -42,6 +42,9 @@ tools:
   - fs_apply_edit_write
   - view_image
   - view_pdf
+  - prepare_execution_runtime
+  - prepare_document_runtime
+  - prepare_document
   - web_fetch
   - ask_user
 skills:
@@ -59,6 +62,8 @@ skills:
   - abaqus-visualization
   - visualize-topology-optimization
   - present-interactive-analysis
+  - create-dashboard
+  - review-visual-presentation
   - planning
   - update-models
 ---
@@ -115,6 +120,16 @@ question, or context compaction.
 - Respect the session's execution and confirmation policies: propose edits
   when review is required, apply them only through the declared write path,
   and verify the result.
+- For interactive evidence, load `present-interactive-analysis`; for a substantial
+  saved report, load `create-dashboard`. Compose related evidence in one initial
+  view, with consistent colour meanings, units and useful annotations. Reserve
+  tabs for separate workflows or optional depth. Use `review-visual-presentation`
+  to inspect, control, capture, refine and recheck matching pixels at the user's
+  viewing size before finishing; state when rendered review is unavailable.
+- For standalone scripts, use `prepare_execution_runtime` when managed executable
+  paths or a fresh import check are needed; it is not required before every turn
+  or shell command. Use the project's own environment for project work. Use
+  `prepare_document_runtime` when document work needs converters or fonts.
 - PDFs: to read or check an existing PDF, load `work-with-pdfs`. Produce a
   PDF only when the user asks for a PDF deliverable, with
   `create-pdf-report`; otherwise reports are Markdown.

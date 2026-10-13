@@ -58,9 +58,7 @@ from clio_schemas.a2ui.validation import catalog_validators, message_validator
 PACK_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_DIR = PACK_ROOT / "catalogs" / "earthscope-stations"
 
-_EXPECTED_COMPONENTS = frozenset(
-    {"Text", "Column", "Row", "Button", "StationMap", "StationPicker"}
-)
+_EXPECTED_COMPONENTS = frozenset({"Text", "Column", "Row", "Button", "StationMap", "StationPicker"})
 #: Fenced ```json blocks may be indented (they sit inside a numbered list in
 #: instructions.md), so both fence delimiters tolerate leading whitespace;
 #: the captured JSON body itself may stay indented -- JSON whitespace outside
@@ -134,7 +132,9 @@ def test_every_implements_kernel_names_a_basic_or_workspace_component(
     sidecar = CatalogSidecar.model_validate(sidecar_raw)
     builtin_names = _builtin_component_names()
     unimplemented = {
-        name: impl.kernel for name, impl in sidecar.implements.items() if impl.kernel not in builtin_names
+        name: impl.kernel
+        for name, impl in sidecar.implements.items()
+        if impl.kernel not in builtin_names
     }
     assert not unimplemented, f"kernels not implemented by Basic or clio-workspace: {unimplemented}"
 
@@ -144,7 +144,9 @@ def test_station_picker_variant_is_locked_to_multiple_selection(
 ) -> None:
     """The preset in the sidecar must match a real ``const`` in the component shape."""
 
-    variant_schema = catalog_file["components"]["StationPicker"]["allOf"][-1]["properties"]["variant"]
+    variant_schema = catalog_file["components"]["StationPicker"]["allOf"][-1]["properties"][
+        "variant"
+    ]
     assert variant_schema.get("const") == "multipleSelection"
 
 
@@ -277,9 +279,12 @@ def test_generated_catalog_skill_states_the_catalog_json_catalog_id() -> None:
     assert entry.catalog_id == catalog_id
     assert f"Catalog id: `{catalog_id}`" in body
     assert f'catalog_id="{catalog_id}"' in body
-    assert catalog_id not in (CATALOG_DIR / "instructions.md").read_text(encoding="utf-8").split(
-        "## One complete example surface"
-    )[0], "the catalogId belongs to the generated skill, not hand-typed prose"
+    assert (
+        catalog_id
+        not in (CATALOG_DIR / "instructions.md")
+        .read_text(encoding="utf-8")
+        .split("## One complete example surface")[0]
+    ), "the catalogId belongs to the generated skill, not hand-typed prose"
 
 
 def _declared_clio_agent_floor() -> str:
@@ -332,9 +337,10 @@ def test_pack_blueprint_validates_against_the_real_validator() -> None:
     try:
         import importlib.util
 
+        from packaging.specifiers import SpecifierSet
+
         from clio_agent import __version__ as clio_agent_version
         from clio_agent.gact.agent_blueprints import validate_agent_blueprint_path
-        from packaging.specifiers import SpecifierSet
     except ImportError as exc:  # pragma: no cover - environment-dependent, not swallowed
         pytest.fail(
             "clio_agent is not importable in this interpreter -- this test requires a "
@@ -381,18 +387,16 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     policy.py`` keeps a dependency-free companion check (the key exists and is a
     non-empty string) for CI's bare no-deps job; this test is the one that proves
     the value actually parses as PEP 440 and means what the AGENT.md comment next
-    to it claims. Raised past the original 0.9.4.17 list-form floor (#1533):
-    ``visualize-earthscope-gnss`` now builds its primary chart on
-    ``clio.chart.v1``, which needs clio-schemas>=0.5.1 -- AGENT.md's own
-    PLACEHOLDER comment carries the exact boundary this test checks, so keep
-    the two in sync when the owner confirms the real release at merge time.
+    to it claims. Beta 3 includes the catalog vocabulary and the managed
+    execution/document tools declared by this root.
 
     Deliberately NOT wrapped in a try/except-skip -- see this module's docstring.
     """
 
     try:
-        from clio_agent.gact.agent_blueprints import parse_agent_blueprint_root
         from packaging.specifiers import SpecifierSet
+
+        from clio_agent.gact.agent_blueprints import parse_agent_blueprint_root
     except ImportError as exc:  # pragma: no cover - environment-dependent, not swallowed
         pytest.fail(
             "clio_agent/packaging are not importable in this interpreter -- this "
@@ -407,11 +411,12 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     floor = requires.get("clio_agent")
     assert isinstance(floor, str) and floor.strip()
 
-    # PLACEHOLDER: 0.9.4.23 mirrors AGENT.md's own placeholder floor -- the
-    # first clio-agent release expected to pin clio-schemas>=0.5.1. Update
-    # both together once the owner confirms the real release version.
     spec = SpecifierSet(floor)
-    assert spec.contains("0.9.4.23"), f"{floor!r} should admit 0.9.4.23 (the declared floor)"
+    assert spec.contains("0.9.5b3"), f"{floor!r} should admit beta 3 (the declared floor)"
     assert spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5"
+    assert not spec.contains("0.9.5b2"), (
+        f"{floor!r} should exclude beta 2 (no released managed tools)"
+    )
+    assert not spec.contains("0.9.4.23"), f"{floor!r} should exclude 0.9.4.23 (no managed tools)"
     assert not spec.contains("0.9.4.22"), f"{floor!r} should exclude 0.9.4.22 (no clio.chart.v1)"
     assert not spec.contains("0.9.4.17"), f"{floor!r} should exclude 0.9.4.17 (no clio.chart.v1)"

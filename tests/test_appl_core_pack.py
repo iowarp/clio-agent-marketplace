@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from tests.test_base_agent_policy import parse_frontmatter
+from tests.test_standard_agent_superset import DEFAULT_AGENT_BUILTIN_SKILLS
 
 ROOT = Path(__file__).resolve().parents[1] / "appl-core"
 
@@ -32,12 +33,7 @@ EXPECTED_LEVELS: dict[str, str] = {
     "appl-instruments": "L2",
 }
 #: clio-agent builtin skills the expert may declare without shipping them.
-BUILTIN_SKILLS = frozenset(
-    {"present-interactive-analysis", "work-with-pdfs", "planning", "update-models"}
-)
-#: The built-in skills clio auto-declares on the default agent (Base Agent);
-#: a non-default pack only gets them by declaring them.
-DEFAULT_AGENT_BUILTIN_SKILLS = frozenset({"work-with-pdfs", "planning", "update-models"})
+BUILTIN_SKILLS = DEFAULT_AGENT_BUILTIN_SKILLS
 #: A root expert with a declared catalog gets all four A2UI producer tools.
 A2UI_PRODUCER_TOOLS = frozenset(
     {
@@ -67,6 +63,9 @@ BUILTIN_TOOLS = frozenset(
         "fs_apply_edit_write",
         "view_image",
         "view_pdf",
+        "prepare_execution_runtime",
+        "prepare_document_runtime",
+        "prepare_document",
         "ask_user",
         "create_a2ui_surface",
         "update_a2ui_components",
@@ -173,9 +172,7 @@ class ApplCoreExpertTests(unittest.TestCase):
             with self.subTest(skill=skill):
                 self.assertTrue(skill in shipped or skill in BUILTIN_SKILLS, skill)
         self.assertEqual(shipped - set(declared), set())
-        self.assertLess(
-            declared.index("onboard-dataset"), declared.index("audit-dataset")
-        )
+        self.assertLess(declared.index("onboard-dataset"), declared.index("audit-dataset"))
 
     def test_declares_the_builtin_skills_the_default_agent_gets(self) -> None:
         self.assertLessEqual(DEFAULT_AGENT_BUILTIN_SKILLS, set(self.expert["skills"]))
@@ -185,61 +182,48 @@ class ApplCoreExpertTests(unittest.TestCase):
         self.assertEqual(self.expert["a2ui_catalogs"], ["clio-workspace"])
 
     def test_prompt_carries_base_agent_working_principles(self) -> None:
-        prompt = " ".join(
-            (ROOT / "experts" / "main.md").read_text(encoding="utf-8").split()
-        )
+        prompt = " ".join((ROOT / "experts" / "main.md").read_text(encoding="utf-8").split())
         self.assertIn("Never infer a file's contents from its name", prompt)
         self.assertIn("never claim the task succeeded", prompt)
         self.assertIn("load `work-with-pdfs`", prompt)
         self.assertIn("`create-pdf-report`; otherwise reports are Markdown", prompt)
 
-    def test_prompt_states_the_card_first_contract(self) -> None:
-        prompt = " ".join(
-            (ROOT / "experts" / "main.md").read_text(encoding="utf-8").split()
-        )
-        self.assertIn(
-            "<workspace_state>/datasets/<key>/experiment-card.md", prompt
-        )
+    def test_prompt_supports_source_first_adaptation(self) -> None:
+        prompt = " ".join((ROOT / "experts" / "main.md").read_text(encoding="utf-8").split())
+        self.assertIn("<workspace_state>/datasets/<key>/experiment-card.md", prompt)
         self.assertIn("CLIO_AGENT_WORKSPACE_STATE_DIR", prompt)
         self.assertNotIn("--store <workspace_root>", prompt)
-        self.assertIn("It is a convention, not a limit", prompt)
         self.assertIn("if an action is denied, report that plainly", prompt)
         self.assertNotIn("<bundle_root>/.clio", prompt)
-        self.assertIn(
-            "do not trust the returned card until you have re-run the returned loader yourself",
-            prompt,
-        )
+        self.assertIn("Treat it as read-only input", prompt)
+        self.assertIn("No fixed five-table schema", prompt)
+        self.assertIn("Bundled scripts and schemas are examples", prompt)
+        self.assertIn("investigation and adaptation, not blanket refusal", prompt)
+        self.assertIn("does not prove unchanged inputs", prompt)
         self.assertIn("ask the user (`ask_user`)", prompt)
-        self.assertIn("`[stated]`, `[checked]`, or `[inferred]`", prompt)
-        self.assertIn("check `export_version` first", prompt)
+        self.assertIn("Explain evidence in ordinary language", prompt)
+        self.assertIn("Do not prefix claims with bracketed status tags", prompt)
+        self.assertIn("unfinished audit is work status", prompt)
 
-    def test_pack_does_not_impose_access_limits(self) -> None:
-        """Permissions belong to clio (approval modes, deny rules, allowed roots,
-        sandbox); the pack's docs must not declare the session or export
-        read-only or forbid writes."""
-
-        banned = re.compile(
-            r"read-only input|never write|must not be written|"
-            r"session is read-only|session as read-only",
-            re.IGNORECASE,
-        )
+    def test_analysis_preserves_source_even_when_copy_is_writable(self) -> None:
+        """Analysis guidance must preserve source while allowing derived outputs."""
         for relative in (
             "AGENT.md",
             "experts/main.md",
             "skills/onboard-dataset/SKILL.md",
             "skills/audit-dataset/SKILL.md",
             "skills/phenotyping-onboarding-checks/SKILL.md",
+            "skills/appl-core-exports/SKILL.md",
         ):
             with self.subTest(doc=relative):
                 text = " ".join((ROOT / relative).read_text(encoding="utf-8").split())
-                self.assertIsNone(banned.search(text))
+                self.assertIn("read-only input", text)
+                self.assertRegex(text, r"outside (?:it|the (?:source|bundle|export))")
 
     def test_docs_default_artefacts_to_the_workspace_store(self) -> None:
         """By default per-dataset artefacts live in the workspace store."""
 
-        bundle_local = re.compile(
-            r"(<bundle_root>|BUNDLE_ROOT)[/\\]\.clio", re.IGNORECASE
-        )
+        bundle_local = re.compile(r"(<bundle_root>|BUNDLE_ROOT)[/\\]\.clio", re.IGNORECASE)
         for path in sorted(ROOT.rglob("*")):
             if path.suffix not in {".md", ".py", ".json"} or "tests" in path.parts:
                 continue
@@ -282,11 +266,7 @@ class ApplCoreSkillTests(unittest.TestCase):
 
         for skill_dir in _skill_dirs():
             with self.subTest(skill=skill_dir.name):
-                head = (
-                    (skill_dir / "SKILL.md")
-                    .read_text(encoding="utf-8")
-                    .split("---", 2)[1]
-                )
+                head = (skill_dir / "SKILL.md").read_text(encoding="utf-8").split("---", 2)[1]
                 self.assertIsNone(re.search(r"^[ \t]+-[ \t]", head, re.MULTILINE))
                 self.assertRegex(head, r"(?m)^- level:L[0-2]$")
 
@@ -295,20 +275,14 @@ class ApplCoreSkillTests(unittest.TestCase):
             with self.subTest(skill=skill_dir.name):
                 effect = parse_frontmatter(skill_dir / "SKILL.md").get("effect")
                 expected = (
-                    "spawn_subagent_with_skill"
-                    if skill_dir.name == "audit-dataset"
-                    else None
+                    "spawn_subagent_with_skill" if skill_dir.name == "audit-dataset" else None
                 )
                 self.assertEqual(effect, expected)
         audit = " ".join(
-            (ROOT / "skills" / "audit-dataset" / "SKILL.md")
-            .read_text(encoding="utf-8")
-            .split()
+            (ROOT / "skills" / "audit-dataset" / "SKILL.md").read_text(encoding="utf-8").split()
         )
-        self.assertIn(
-            "You are already running this skill in the delegated child", audit
-        )
-        self.assertIn("re-runs the loader and compares the view hashes", audit)
+        self.assertIn("You are already running this skill in the delegated child", audit)
+        self.assertIn("A mandatory second execution of the entire pipeline is not required", audit)
 
     def test_script_skills_ship_their_scripts(self) -> None:
         for relative in (
@@ -323,9 +297,7 @@ class ApplCoreSkillTests(unittest.TestCase):
             with self.subTest(script=relative):
                 path = ROOT / "skills" / relative
                 self.assertTrue(path.is_file())
-                self.assertTrue(
-                    path.read_text(encoding="utf-8").startswith("# /// script\n")
-                )
+                self.assertTrue(path.read_text(encoding="utf-8").startswith("# /// script\n"))
                 skill = (path.parents[1] / "SKILL.md").read_text(encoding="utf-8")
                 self.assertIn(f'"SKILL_ROOT/scripts/{path.name}"', skill)
         for kind in ("design", "observations", "spectra", "assets", "events"):
@@ -347,9 +319,7 @@ class ApplCoreLevelContractTests(unittest.TestCase):
         self.assertTrue((ROOT / ".lint-l3").is_file())
         literals = [
             line.strip()
-            for line in (ROOT / "lint-denylist.txt")
-            .read_text(encoding="utf-8")
-            .splitlines()
+            for line in (ROOT / "lint-denylist.txt").read_text(encoding="utf-8").splitlines()
             if line.strip() and not line.strip().startswith("#")
         ]
         self.assertEqual(sorted(literals), sorted(L3_LITERALS))
@@ -358,9 +328,7 @@ class ApplCoreLevelContractTests(unittest.TestCase):
         for path in _shipped_text_files():
             text = path.read_text(encoding="utf-8", errors="replace").casefold()
             for literal in L3_LITERALS:
-                with self.subTest(
-                    path=path.relative_to(ROOT).as_posix(), literal=literal
-                ):
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), literal=literal):
                     self.assertNotIn(literal.casefold(), text)
 
 

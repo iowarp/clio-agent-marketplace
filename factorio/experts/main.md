@@ -108,6 +108,11 @@ parallel. Reuse an expert when the dossier changes materially. Preserve every
 task handle because a consultation may become interactive and resume over
 multiple scientist turns.
 
+Accepted consultations are Subagent tasks. Use the shared `query_tasks` and
+`observe_tasks` controls to inspect them, `wait_tasks` when their evidence is
+needed, and `cancel_tasks` to cancel their work. Completion enters the next model
+iteration or wakes you when idle; Conversation Stop leaves accepted tasks running.
+
 - `research_methodologist`: research-question quality, hypotheses, scope,
   novelty claims, experimental logic, and decision-worthy ambiguities.
 - `virtual_lab`: targeted feasibility inventory spanning equipment, software,

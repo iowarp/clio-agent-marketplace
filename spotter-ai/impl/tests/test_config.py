@@ -102,3 +102,31 @@ def test_attention_can_use_flowcept_without_changing_native_query_default(tmp_pa
     assert resolved.agentic_provider == "jsonl"
     assert resolved.flowcept is not None
     assert resolved.attention_files_dir == tmp_path / "attention"
+
+
+def test_reports_how_the_agentic_query_lane_was_chosen(tmp_path: Path) -> None:
+    """A defaulted lane is reported, not silent: Flowcept enabled but not queried."""
+    (tmp_path / "flowcept.yaml").write_text(
+        yaml.safe_dump({"databases": {"mongodb": {"enabled": True}}}), encoding="utf-8"
+    )
+    base = {
+        "provenance.agentic.providers": ["jsonl", "flowcept"],
+        "provenance.agentic.flowcept.settings_path": "flowcept.yaml",
+        "provenance.agentic.jsonl.path": "events.jsonl",
+        "provenance.artifacts.native.workspace_root": ".",
+    }
+    config = tmp_path / "clio.yaml"
+    config.write_text(yaml.safe_dump(base), encoding="utf-8")
+    defaulted = load_config(config)
+    assert defaulted.agentic_provider == "jsonl"
+    assert defaulted.agentic_selected_by == "default_jsonl"
+    assert defaulted.agentic_alternatives == ("flowcept",)
+
+    config.write_text(
+        yaml.safe_dump({**base, "provenance.agentic.query_default": "flowcept"}), encoding="utf-8"
+    )
+    configured = load_config(config)
+    assert (configured.agentic_provider, configured.agentic_selected_by) == (
+        "flowcept",
+        "configured",
+    )

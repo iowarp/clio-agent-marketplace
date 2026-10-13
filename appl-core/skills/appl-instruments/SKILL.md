@@ -10,15 +10,16 @@ keywords:
 
 # APPL instruments (placeholder)
 
-Sensors are documented per export in `docs/modalities/` (one document per
-modality, with YAML blocks). Read the documents of the modalities your
-question touches at runtime, every time: they can change between exports.
-Record what they state in the experiment card as `[stated]`, with the file.
+Look for sensor documentation in the supplied export. `docs/modalities/`
+(one document per modality, with YAML blocks) is an example convention, not
+a required layout. Inspect documentation relevant to the question and check
+saved evidence against the actual source. Record stated definitions with their
+source references in useful workspace notes; an experiment card is optional.
 For the physics of a sensor class (fluorescence, reflectance, 3D scanning),
 use the L1 skill `physiology-signals` and `size-and-growth-traits`.
 
 When the docs do not say something your analysis needs, ask the data owners
-and record the question in the card; do not fill the gap from memory.
+and retain the unresolved question with the analysis; do not fill the gap from memory.
 
 ## Inferred -- to confirm with APPL
 

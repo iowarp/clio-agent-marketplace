@@ -9,7 +9,7 @@ from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
 from spotter_ai.campaign import CampaignConfig, CampaignForensics
-from spotter_ai.config import NativeQueryConfig
+from spotter_ai.config import NativeQueryConfig, SpotterConfig
 from spotter_ai.providers.jsonl import JsonlProvider
 from spotter_ai.server import create_server
 from spotter_ai.service import ProvenanceService
@@ -204,3 +204,63 @@ async def test_cross_domain_correlation_uses_same_native_evidence_once(native_se
     assert result.data["agentic"]["count"] == 1
     assert result.data["artifact"]["count"] == 1
     assert result.data["agentic"]["items"] == result.data["artifact"]["items"]
+
+
+async def test_capabilities_say_how_the_query_lane_was_chosen(tmp_path: Path) -> None:
+    """A defaulted native lane names the enabled provider it does not query."""
+    journal = tmp_path / "events.jsonl"
+    journal.write_text("", encoding="utf-8")
+    provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
+    config = SpotterConfig(
+        source_path=tmp_path / "clio.yaml",
+        agentic_provider="jsonl",
+        artifact_provider="native",
+        agentic_selected_by="default_jsonl",
+        agentic_alternatives=("flowcept",),
+    )
+    database = tmp_path / "campaign.sqlite"
+    _seed_campaign(database)
+    server = create_server(
+        config,
+        service=ProvenanceService(provider, provider),
+        campaign=CampaignForensics(CampaignConfig("phenotype-2026", database, tmp_path / "d")),
+    )
+    async with Client(server) as client:
+        result = await client.call_tool("capabilities", {})
+
+    assert result.data["agentic"]["selected_by"] == "default_jsonl"
+    assert result.data["agentic"]["enabled_not_queried"] == ["flowcept"]
+
+
+async def test_every_query_result_names_its_lane(tmp_path: Path) -> None:
+    """A defaulted native lane that finds nothing says which enabled provider it skipped."""
+    journal = tmp_path / "events.jsonl"
+    journal.write_text("", encoding="utf-8")
+    provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
+    config = SpotterConfig(
+        source_path=tmp_path / "clio.yaml",
+        agentic_provider="jsonl",
+        artifact_provider="native",
+        agentic_selected_by="default_jsonl",
+        agentic_alternatives=("flowcept",),
+    )
+    server = create_server(config, service=ProvenanceService(provider, provider))
+    async with Client(server) as client:
+        tasks = await client.call_tool("query_tasks", {})
+        artifacts = await client.call_tool("list_artifacts", {})
+
+    assert tasks.data["count"] == 0
+    assert tasks.data["lane"]["domain"] == "agentic"
+    assert tasks.data["lane"]["provider"] == "native"
+    assert tasks.data["lane"]["selected_by"] == "default_jsonl"
+    assert tasks.data["lane"]["hint"].startswith("lane_defaulted: flowcept is enabled")
+    assert artifacts.data["lane"] == {"domain": "artifact", "provider": "native"}
+
+
+async def test_a_configured_lane_gives_no_defaulted_hint(native_server) -> None:
+    """Results from the configured lane carry the lane without a hint."""
+    async with Client(native_server) as client:
+        result = await client.call_tool("query_tasks", {"limit": 1})
+
+    assert result.data["lane"]["provider"] == "native"
+    assert "hint" not in result.data["lane"]

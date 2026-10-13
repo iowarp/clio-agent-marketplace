@@ -181,6 +181,9 @@ def test_card_lifecycle(bundle: Path, tmp_path: Path) -> None:
     assert created["key_source"] == "manifest"
     text = (directory / "experiment-card.md").read_text(encoding="utf-8")
     meta = card.parse_frontmatter(text)
+    assert not any(tag in text for tag in ("[stated]", "[checked]", "[inferred]"))
+    assert str(bundle.resolve() / "manifest.json") in text
+    assert "does not establish scientific correctness" in " ".join(text.split())
     assert meta["export_version"] == "6"
     assert meta["manifest_sha256"] == created["manifest_sha256"]
     assert meta["dataset_key"] == directory.name
