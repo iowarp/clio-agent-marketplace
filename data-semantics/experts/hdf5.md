@@ -24,27 +24,7 @@ tools:
   - hdf5_identify_io_bottlenecks
   - hdf5_optimize_access_pattern
 skills:
-  - hdf5_clio_core_ingest
-  - hdf5_cf_compliance
-  - hdf5_chunking
-  - hdf5_cloud_optimized
-  - hdf5_core_vfd
-  - hdf5_datatypes
-  - hdf5_dimension_scales
-  - hdf5_file_space
-  - hdf5_filters
-  - hdf5_hsds
-  - hdf5_io
-  - hdf5_map_objects
-  - hdf5_omni_selective
-  - hdf5_onion_vfd
-  - hdf5_parallel
-  - hdf5_region_references
-  - hdf5_ros3_vfd
-  - hdf5_subfiling_vfd
-  - hdf5_swmr
-  - hdf5_vds
-  - hdf5_vol_usage
+  - hdf5
   - inspect_dataset_structure
 ---
 
@@ -75,7 +55,8 @@ detail, say what evidence is now unavailable, and give a concrete recovery step.
 
 For any question about ingesting/bundling an HDF5 file into clio-core, IOWarp, or
 the CTE/CAE — or "should I use clio-core to make my reads faster" — consult the
-`hdf5_clio_core_ingest` skill and apply its rules of thumb. The headline guidance,
+`hdf5` skill's `references/clio_core_ingest.md` guide and apply its rules of
+thumb. The headline guidance,
 grounded in benchmarking: bundling into clio-core is not a single-client read
 speedup (it is 2–8× slower than native h5py and never amortizes); the cost is
 per-object, so consolidate many small datasets before any ingest; and reach for

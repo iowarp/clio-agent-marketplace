@@ -83,44 +83,31 @@ def test_hdf5_expert_uses_current_clio_kit_tool_contract() -> None:
     assert "recommendations, not a\nbenchmark" in prompt
 
 
-def test_every_bundled_hdf5_skill_is_declared_and_loadable() -> None:
-    """The expert declaration and bundled HDF5 skill directories stay in lockstep."""
+def test_hdf5_guidance_comes_from_the_builtin_skill() -> None:
+    """HDF5 guidance ships as clio-agent's built-in `hdf5` skill, not pack copies."""
 
-    expert, _ = _document(HDF5_EXPERT_PATH)
-    declared = {str(skill) for skill in expert["skills"] if str(skill).startswith("hdf5_")}
+    expert, prompt = _document(HDF5_EXPERT_PATH)
+    skills = {str(skill) for skill in expert["skills"]}
     bundled = {
         path.name
         for path in (PACK_ROOT / "skills").iterdir()
-        if path.is_dir() and path.name.startswith("hdf5_")
+        if path.is_dir() and path.name.startswith("hdf5")
     }
 
-    assert declared == bundled
-    assert len(declared) == 21
-    for skill_id in sorted(declared):
-        metadata, body = _document(PACK_ROOT / "skills" / skill_id / "SKILL.md")
-        assert metadata["name"] == skill_id
-        assert str(metadata.get("title") or "").strip()
-        assert str(metadata.get("description") or "").strip()
-        assert body
+    assert "hdf5" in skills
+    assert not {skill for skill in skills if skill.startswith("hdf5_")}
+    assert not bundled, "per-topic HDF5 skills moved to clio-agent's built-in `hdf5`"
+    assert "references/clio_core_ingest.md" in prompt
 
 
-def test_cross_skill_references_resolve_to_bundled_ids() -> None:
-    """Skill prose must not route the agent to retired or absent skill IDs."""
+def test_pack_documents_do_not_reference_retired_hdf5_skill_ids() -> None:
+    """No pack document routes the agent to a retired per-topic HDF5 skill."""
 
-    bundled = {
-        path.name
-        for path in (PACK_ROOT / "skills").iterdir()
-        if path.is_dir() and path.name.startswith("hdf5_")
-    }
-    references: set[str] = set()
-    legacy_references: set[str] = set()
-    for skill_id in sorted(bundled):
-        text = (PACK_ROOT / "skills" / skill_id / "SKILL.md").read_text(encoding="utf-8")
-        references.update(re.findall(r"`(hdf5_[a-z0-9_]+)`", text))
-        legacy_references.update(re.findall(r"`(hdf5-[a-z0-9-]+)`", text))
+    retired: set[str] = set()
+    for path in PACK_ROOT.rglob("*.md"):
+        retired.update(re.findall(r"`(hdf5_(?!list|open|close|get|read|visit|analyze|identify|optimize)[a-z0-9_]+)`", path.read_text(encoding="utf-8")))
 
-    assert not legacy_references
-    assert references <= bundled
+    assert not retired
 
 
 def test_hdf5_expert_requires_bounded_evidence_and_descriptive_failures() -> None:
