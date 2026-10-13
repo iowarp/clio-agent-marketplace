@@ -1,7 +1,7 @@
 ---
 name: phenotyping-report
 title: Phenotyping Report
-description: DRAFT. Structure a phenotyping analysis report with evidence and caveats - experiment identity, design, data quality, methods, results with tagged claims, and open questions. Use when the user asks for a report, summary, or write-up of a phenotyping analysis.
+description: DRAFT. Structure a phenotyping analysis report with evidence and caveats - experiment identity, design, data quality, methods, results with specific supporting references, and open questions. Use when the user asks for a report, summary, or write-up of a phenotyping analysis.
 keywords:
 - level:L1
 - phenotyping
