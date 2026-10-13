@@ -1,7 +1,7 @@
 ---
 name: onboard-dataset
 title: Onboard a Dataset
-description: First contact with any tabular dataset directory - read its self-description, inventory it, audit columns/keys/flags with bundled scripts, record facts and traps in an experiment card, save a loader, and produce validated views. Use before analysing a dataset that has no current experiment card.
+description: Inspect unfamiliar data for the user's question, adapt checks and code to its actual files and environment, and preserve evidence and unresolved meaning without changing the source. Scripts and cards are optional aids.
 keywords:
 - level:L0
 - data-onboarding
@@ -11,247 +11,117 @@ keywords:
 
 # Onboard a dataset
 
-Goal: turn an unfamiliar dataset directory (the *bundle root*) into three
-artefacts, stored in the **active workspace** so that no later session has to
-profile it again:
+Learn enough about the supplied data to answer the user's question accurately,
+explain the limits, and leave useful evidence for later work. Adapt the analysis
+to the files and environment. A fixed loader, table schema, output format or
+full-dataset conversion is not a prerequisite for useful analysis.
 
-| Artefact | Path | Content |
-| --- | --- | --- |
-| experiment card | `<workspace_state>/datasets/<key>/experiment-card.md` | facts tagged stated/checked/inferred, traps, open questions, proposed lessons, loader and view hashes |
-| loader | `<workspace_state>/datasets/<key>/loader.py` | one idempotent script that reads the raw files and applies every decision in the card |
-| views | `<workspace_state>/datasets/<key>/views/` | analysis-ready tables written by the loader (Parquet) |
+## Preserve the source and adapt the analysis
 
-Audit reports go to `<workspace_state>/datasets/<key>/audit/`. Call this
-directory `DATASET_DIR`; `card.py status` prints it (`dataset_dir:`).
+- Treat the supplied bundle as read-only input, even when a development copy is
+  writable. Do not fix source files, edit its manifest or rewrite metadata to
+  make a script pass. Data editing is a separate task requiring explicit
+  authorization; it is not implied by exploration or analysis.
+- Select queries, libraries and representations from the observed structure.
+  Inspect helper assumptions; adapt or replace a helper that does not fit.
+  Missing columns, unknown versions, nested values and inconsistent descriptions
+  are findings to work with, not reasons to demand a cleaned export.
+- Keep derived outputs outside the bundle. CLIO supplies
+  `CLIO_AGENT_WORKSPACE_STATE_DIR`; a useful default is
+  `<workspace_state>/datasets/<key>/`. If this helper convention is unavailable,
+  use an actually permitted workspace output location or ask for one. Source
+  inspection can continue without creating an experiment card.
+- Preserve the distinction between observed values and analytical decisions.
+  Record source references, mappings, exclusions and affected counts. Derived
+  representations do not change what the original data says.
 
-- **Default location: Agent workspace state.** CLIO's shell supplies the absolute
-  `CLIO_AGENT_WORKSPACE_STATE_DIR` from its canonical resolver on the execution host.
-  Run `card.py` without `--store`; it uses this value, independent of the command's
-  working directory. The returned `dataset_dir` is authoritative. A standalone
-  invocation requires an explicit absolute `--store` state directory. Never guess
-  a home directory or recreate workspace `.clio`; report missing configuration.
-  Keep old `.clio` cards untouched until the user explicitly migrates them.
-  Permissions remain CLIO's decision: report denied writes plainly.
-- **Analysis hygiene.** Do not change raw data values in place; every
-  cleaning decision lives in the loader and views and is recorded in the card.
-- `<key>` is the first 16 hex characters of the SHA-256 of the export's
-  manifest file, so a second session, or the same export at a different path,
-  finds the same card by recomputing the key. Without a manifest the key is
-  built the same way from the resolved absolute bundle path (it changes if the data
-  moves). The card's frontmatter records the absolute bundle path, the
-  manifest's SHA-256, and `export_version`.
+## Work from the question
 
-This skill deepens the generic `inspect_dataset_structure` and
-`reason_about_quality` procedures of the Data Semantics pack: same intent,
-but every check here has a script and ends up in the card.
+1. **Establish the scope.** Locate the source and inspect actual files, access,
+   formats and sizes. Read relevant manifests, documentation and column catalogs
+   when available, and compare their claims with the data. An unfamiliar or
+   missing version calls for investigation rather than blanket refusal.
+2. **Reuse evidence critically.** An existing card, notebook or report can help.
+   Check the source identity and the files, assumptions and results the current
+   answer depends on. A matching manifest does not establish unchanged data.
+   Reinspect changed or uncertain parts; do not blindly trust a cached card or
+   rerun every old conversion by default.
+3. **Inspect relevant data.** Start with schemas and bounded samples, then check
+   full counts or distributions when the answer needs them. Discover actual keys,
+   values, types, units, flags, missingness and coverage. Limit sample findings to
+   the sample. Do not expand a wide table just to match an example shape.
+4. **Resolve computational obstacles.** Adjust column selection, joins, parsing,
+   batching and output layout using observed evidence. A missing helper or an
+   unsupported example schema calls for another justified approach. Keep the
+   source unchanged and explain material adaptations.
+5. **Handle uncertain meaning.** Ask about treatment definitions, units, time
+   zones, ambiguous identifiers or competing interpretations when they affect
+   the result. Keep unknown values unknown and continue independent work. Do not
+   force a numeric dose or physical unit from a label.
+6. **Compute and check.** Use direct queries or task-specific code as appropriate.
+   Check join cardinality, retained and excluded counts, missingness, units and
+   selected calculations against the source. Materialize only useful outputs.
+   When reusable code is valuable, record dependencies, invocation, decisions
+   and relevant input fingerprints. Repeat expensive work when verification,
+   a change or the user requires it, not as an unconditional ritual.
+7. **Explain the result.** State the inspected scope, supported answer, evidence,
+   limits and questions. Link saved artifacts. An incomplete modality limits
+   that claim; it does not invalidate unrelated evidence or require source repair.
 
-## Running the bundled scripts
+## Optional helpers and records
 
-`load_skill` reported this skill's directory as `SKILL_ROOT`; substitute that
-literal path in the commands below. Run through uv's shared cache, never a
-`.venv` inside the skill directory. The commands work on Windows and Linux.
+`load_skill` reports this skill's directory as `SKILL_ROOT`. These are examples,
+not a mandatory sequence. They read source inputs and write any reports to a
+separate output location:
 
 ```text
+uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/inventory.py" BUNDLE_ROOT --out OUTPUT_DIR/inventory.json
+uv run --no-project --with "pyarrow>=15" --with "numpy>=1.24" python "SKILL_ROOT/scripts/audit_columns.py" TABLE --out OUTPUT_DIR/columns.json
+uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/join_keys.py" TABLE_A TABLE_B --keys OBSERVED_KEYS --out OUTPUT_DIR/join.json
+uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/flag_check.py" TABLE --flags OBSERVED_FLAG --signal OBSERVED_SIGNAL --out OUTPUT_DIR/flags.json
 uv run --no-project python "SKILL_ROOT/scripts/card.py" status|init|record|verify BUNDLE_ROOT
-uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/inventory.py" BUNDLE_ROOT --out DATASET_DIR/audit/inventory.json
-uv run --no-project --with "pyarrow>=15" --with "numpy>=1.24" python "SKILL_ROOT/scripts/audit_columns.py" TABLE --out DATASET_DIR/audit/columns-NAME.json
-uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/join_keys.py" TABLE_A TABLE_B --keys K1,K2 --out DATASET_DIR/audit/join-NAME.json
-uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/flag_check.py" TABLE --flags FLAG_COL --signal SIGNAL_COL --out DATASET_DIR/audit/flags-NAME.json
 ```
 
-The audit scripts only read their inputs. Each prints a short summary and
-writes the full JSON to `--out` (always a path under `DATASET_DIR/audit/`,
-never under the bundle root). Without `--out` the JSON follows the summary
-on stdout, which can exceed the shell output cap on wide tables; prefer
-`--out` and read the JSON with `fs_read_file` only where the summary points. Prefer Parquet over a CSV twin
-of the same table: it is smaller and keeps types. `audit_columns.py --sample N`
-reads only the first N rows; a finding from a sample is `[checked]` for the
-sample only, so say so.
+Use `uv` with the project's environment or the example's declared dependencies.
+The optional card helper uses `CLIO_AGENT_WORKSPACE_STATE_DIR`, or an explicit
+absolute `--store` for standalone use. Its manifest hash identifies a record;
+its loader/view checks verify the files it records. They are not a universal
+readiness test, scientific validation or a complete source fingerprint.
+Keep legacy cards intact unless a separate migration is requested.
 
-## Procedure
+A Markdown card, notebook, task-specific script or another record can document
+this work. `loader.py`, Parquet views, `prepared` status and the example
+phenotyping schemas are optional choices. Do not fabricate them to satisfy a
+checklist. Save user deliverables through `create_artifact` with their actual
+input references so the result remains available with provenance.
 
-1. **Is there already a card?** Run
-   `card.py status BUNDLE_ROOT ` and note `dataset_dir`.
-   - `state: current` and `hashes: match`: reuse the card. Read it, run the
-     loader once (step 8) and continue with the analysis. Do not re-profile.
-   - `state: stale` (the store has a card for this bundle path made from a
-     different manifest, listed under `previous_cards`) or `hashes: drift`:
-     the data or the loader changed since the card was written. For a stale
-     card, `init` a new one and carry over only what you re-check; re-run
-     only the audits whose tables changed, and say what changed.
-   - `no_card`: continue.
-   - A draft card without completed validation, absent loader/view hashes, failed validation, or a partial
-     loader output means onboarding is unfinished. Inspect the saved decisions
-     and complete the missing steps from the raw export; do not use failed or
-     unverified views as prepared data. Reuse successful audits only when their
-     source tables and scope still match, and explicitly state what remains.
-2. **Read the self-description before any profiling.** In this order: a
-   manifest (`manifest.json` or similar), README files, documentation folders,
-   column catalogs / data dictionaries / codebooks, and any machine-readable
-   blocks inside the docs (YAML or JSON front matter). Record what they
-   *state* (identity, version, table list, units, definitions, warnings) as
-   `[stated]` with the source file. If the export declares a format or version
-   and a loaded skill says which versions are supported, check it now and stop
-   on an unsupported one.
-3. **Inventory.** Run `inventory.py`. Note table sizes, row counts, schemas,
-   twins (the same table as CSV and Parquet), docs, and every
-   `declared_counts` status other than `match`, every file the manifest
-   references that is missing, and tables it does not reference.
-4. **Create the card** with `card.py init BUNDLE_ROOT `,
-   then fill it as you go
-   (see `evidence-and-claims` for tagging). Never overwrite an existing card
-   without `--force` and a reason.
-5. **Audit the tables** that matter for the questions at hand (all of them on
-   a first full onboarding; start with the smallest of each kind, then the
-   long/wide measurement tables): `audit_columns.py` per table,
-   `join_keys.py` for every join you intend to make, `flag_check.py` for every
-   QC/flag column against the signal it is supposed to describe. Work through
-   the checklist below; each confirmed problem becomes one
-   `- [trap:<class>] ...` line in the card.
-6. **Decide, per trap, what the loader does** (drop, null-out, choose one
-   source, rename, keep with a caveat) and write the decision on the trap's
-   line. Anything whose meaning you cannot establish from the files goes to
-   *Open questions for data owners* -- ask the user rather than guess (a
-   treatment's meaning, a unit that looks wrong, whether zeros are real).
-7. **Write the loader** `DATASET_DIR/loader.py`: a PEP 723 script
-   (`# /// script` block with pinned dependencies) that takes the bundle root
-   as its first argument, discovers files from the manifest (not hard-coded
-   lists), applies the card's decisions, and writes the views to
-   `Path(__file__).parent / "views"`. Make it deterministic: sort rows by the
-   view's key, fix column order, no timestamps or random ids in outputs,
-   overwrite its own outputs. It writes only to its own directory and leaves
-   the raw files as they are.
-   Inspect the audited Arrow schemas before converting values. List-valued
-   flags and traits are not scalars: do not evaluate `pandas.isna(array)` as
-   a boolean. Normalize documented empty-string and sentinel encodings before
-   numeric conversion; count and record invalid values rather than silently
-   swallowing conversion failures. Use bounded Arrow batches and an explicit
-   output schema for long observations and wide spectra; never accumulate
-   the expanded dataset in Python lists. Close writers on failure and publish
-   completed views atomically so a failed run cannot look like a valid view.
-   For wide spectra, normalize row identities once and convert each band with
-   vectorized operations or Arrow batches; do not nest row-by-row iteration
-   inside the wavelength loop. Inspect metadata and a bounded batch before
-   expanding a wide table, and keep missing bands distinguishable from usable
-   measurements.
-   Select timestamp and key columns from the actual schema, with explicit
-   null handling. Do not assume every table has every alternative key column.
-8. **Run the loader, validate, record.** Run it with `uv run --no-project
-   DATASET_DIR/loader.py BUNDLE_ROOT` (or with `--with` flags), validate the views
-   (the `phenotyping-onboarding-checks` skill has schemas and a validator for
-   phenotyping data), check row counts after every join, then
-   `card.py record BUNDLE_ROOT `. Run the loader a
-   second time and `card.py verify BUNDLE_ROOT `:
-   identical hashes prove it is deterministic.
-   If they differ, fix the loader before anyone trusts a view.
-   Record the validator's scope and result and the repeat-run verification under
-   Checked facts. Once both pass, set the card's frontmatter `status: prepared`;
-   this means the documented views are mechanically validated, not that open
-   scientific questions or inferred interpretations have been confirmed.
-   Inspect each execution's exit status and diagnostic output before the next
-   command. An accepted background handle is not a successful loader run.
-   Collect it with `wait_tasks` and inspect its result before recording hashes.
-   Use tracked background execution for conversions likely to outlast a
-   foreground tool call. After a timeout or unknown outcome, reconcile the
-   original task/process and inspect its files before retrying: an absent
-   Parquet footer is an incomplete output, and an accepted handle may still
-   own a running writer. Never start a second writer against the same views.
-   Finish these steps in the current assignment; a draft card or finished child
-   turn is not completed onboarding. If blocked, identify the specific blocker
-   and remaining work without reporting the dataset ready for analysis.
-9. **Report** in a few lines: what the dataset is, the traps found and how
-   they are handled, the open questions, and the card/loader/view paths.
+## Checks to select when relevant
 
-## Checklist (phrased as checks; apply to every table)
+- **Missingness and suspicious values.** Inspect nulls, empty strings, nested
+  values and possible sentinels such as extreme floats or repeated codes. Compare
+  metadata and surrounding observations before interpreting them. Flag uncertain
+  encodings; do not automatically null every unusual value.
+- **Duplicate or empty columns.** Compare content, types, coverage and definitions
+  before selecting a candidate. Similar names or nearby wavelengths may represent
+  distinct measurements. Retain unresolved alternatives with clear labels.
+- **Flags and signal.** Check quality flags against the measurements they describe.
+  A universal flag, missing flag or empty issue table does not establish that the
+  measurements should all be accepted or discarded.
+- **Keys and joins.** Establish identity and cardinality from the actual tables.
+  Count unmatched and multiplied rows. Normalize only evidence-backed mappings,
+  preserving original identifiers and ambiguous cases.
+- **Units and plausibility.** Inspect scales, calibration, protocols and
+  cross-sensor differences. Suspicious magnitudes call for investigation, not an
+  invented conversion. State which comparisons are supported.
+- **Timing and design.** Inspect repeated observations, gaps, partial rounds,
+  group sizes and confounding. Choose aggregation and models for the actual
+  design; do not silently treat repeated images as independent plants.
 
-**Missing-value encodings**
-- Check numeric columns for sentinel codes: values at or near the float
-  maximum (|x| >= 1e300), the float32 maximum, and codes such as -9999, -999,
-  9999. A value repeated exactly many times far outside the bulk is a code,
-  not a measurement. Null it in the loader.
-- Check for impossible zeros: zeros in a column that is otherwise strictly
-  positive (sizes, weights, counts of a present object) may mean "not
-  measured". Check whether zeros coincide with other signs of absence.
-- Check string columns for empty strings and whitespace; an empty string is a
-  missing value that a null count does not see.
+The card helper offers example `[trap:<class>]` tags such as `sentinel-values`,
+`key-format-mismatch`, `declared-vs-actual` and `unit-scale-suspect`. Use them when
+helpful, and describe findings outside that vocabulary as well. Do not discard a
+new finding because an example taxonomy omitted it.
 
-**Empty and duplicated columns**
-- Check for all-empty columns, especially string-typed columns whose
-  non-empty fraction is zero ("ghost" columns). They often sit next to a real
-  numeric twin.
-- Check for near-duplicate names that differ only by rounding of an embedded
-  number (for example two wavelength labels 0.01 apart) or by case and
-  punctuation. Keep the populated, correctly typed member; record the pair.
-- Check for columns with identical content under different names (factor
-  columns repeated) and pick one canonical name.
-
-**Flags versus data**
-- Check that each QC flag agrees with the data it describes (`flag_check.py`).
-  A flag on (almost) every row is noise, not a filter. Flags can also miss real
-  problems: count rows with no signal that carry no specific flag. Filter on
-  the signal itself when the flags do not track it.
-- Check that an issues/QC table that claims "no problems" is consistent with
-  what the audits found; an empty issue log is not evidence of clean data.
-
-**Keys and joins**
-- Check key formats across tables before joining: case, separators, number of
-  components, prefix/suffix tokens, and storage type ('1' is not 1). Where a
-  combined key string does not match, join on its component columns instead.
-- Check key uniqueness on both sides; many-to-many joins multiply rows.
-- After every join, compare row counts before and after and against the
-  number of expected units x times. Use outer joins deliberately and count the
-  unmatched rows on each side.
-
-**Units and physical plausibility**
-- Check that units (declared, or implied by name suffixes) give physically
-  plausible magnitudes: object sizes against the documented frame or
-  container size, ratios within their possible range, values of the same
-  quantity from two instruments against each other. A disagreement by a large
-  factor is a unit or calibration problem until shown otherwise; ask.
-- Check whether a quantity is absolute or relative (arbitrary units, vendor
-  ratios, indices with non-standard formulas) before comparing across
-  instruments or datasets.
-
-**Signals over time**
-- Check growth-like signals for saturation or clipping: a plateau that
-  coincides with objects touching the edge of their crop or frame, or with a
-  sensor's maximum, is a measurement limit, not biology.
-- Check sampling: gaps, split or aborted sessions, sessions with fewer units
-  than usual, and several observations per unit per period. Choose an
-  aggregation (one fixed session per period, or a daily summary) before
-  comparing sensors or computing rates, and record it.
-- Check the same quantity delivered by two sources or methods (vendor value vs
-  recomputed value); they can disagree. Pick one consistently and say which.
-
-**Design**
-- Check design balance: count units per factor combination; note empty or
-  unequal cells.
-- Check factor encoding: is a treatment a numeric dose or a category? Are
-  labels consistent (spelling, case)? Is the same factor stored in several
-  columns, or also encoded inside another label?
-- Check that the design table and the measurement tables cover the same
-  units, and which units are missing from which sensor.
-
-**Structure**
-- Check for lists or JSON stored inside string cells and parse them once in
-  the loader.
-- Check dates/times stored as strings, their timezone (usually unstated --
-  record the assumption), and numbers stored as strings.
-- Check declared counts and table lists (manifest, docs) against the files:
-  missing tables, stale extra files, row-count mismatches.
-
-## Trap classes for the card
-
-Tag each trap line with exactly one class so later sessions and graders can
-read the card: `sentinel-values`, `ghost-columns`, `near-duplicate-columns`,
-`unflagged-missing`, `universal-flag`, `key-format-mismatch`,
-`declared-vs-actual`, `unit-scale-suspect`, `saturation-clipping`,
-`irregular-sampling`, `design-encoding`, `duplicate-measures`,
-`impossible-values`, `list-in-string`, `label-inconsistency`.
-
-## Proposed lessons
-
-When you find something the checklist above did not make you look for, add a
-line under *Proposed lessons* phrased as a check that would apply to any
-dataset ("check whether ..."). Do not edit skills; lessons are promoted by
-people after a second dataset shows the same problem.
+Keep dataset-specific facts and decisions in workspace records. General lessons
+may be proposed separately. Analysing data does not authorize changing installed
+shared skills or the original dataset.

@@ -1,107 +1,99 @@
-# APPL-CORE Analyst black-box evals
+# APPL-CORE Analyst acceptance cases
 
-`behavioral-cases.json` holds user messages and semantic expectations for an
-activated `appl-core` session. Each case names the bundle it runs against
-(`bundle`: `primary`, or `variant:<name>` for a mutated copy made by
-`scripts/make_variants.py`) and its preconditions (for example "no experiment
-card for this export in the workspace store" or "a current card from
-`first_contact_onboarding`"). The adapter substitutes `{bundle_root}` in
-`user_message` with the bundle's absolute path.
+These cases assess whether an agent can investigate messy, read-only data and
+answer the question using evidence. They do not prescribe a loader, five table
+shapes, a card filename, a sequence of scripts or a cleaned source copy.
+`behavioral-cases.json` contains ordinary requests and operator-only expectations.
+Keep expected answers, variant provenance and evaluator records outside the
+agent's accessible inputs.
 
-By default, per-dataset artefacts live in the session's active workspace,
-not in the export: `<workspace_state>/datasets/<key>/` holds `experiment-card.md`,
-`loader.py`, `views/`, and `audit/`, where `<key>` is the first 16 hex
-characters of the SHA-256 of the export's manifest file (see
-`skills/onboard-dataset/scripts/card.py`). What the agent may write is set by
-the clio session's permissions, not by these cases.
+## Source and environment
 
-## Producing traces
+Expose the source through verified read-only access. A writable test copy is not
+the demo contract: use the actual source-access policy or a read-only mount and
+retain its access receipt. Put the workspace state and output directory elsewhere.
+Do not repair the source between turns to let a fixed pipeline pass.
 
-For each case, an external adapter:
+Held-out variants can be created by an operator with `scripts/make_variants.py`.
+It writes a separate fixture, never the original bundle. Expose that fixture
+read-only to the tested agent as well. Variants change columns, modalities, factor
+encodings, balance, sentinels and version metadata. The unavailable-helper case
+also changes an environment assumption while retaining an accessible data reader.
+The agent must inspect and adapt, not receive an answer key or required repair.
 
-1. prepares the workspace store as the preconditions say (delete or keep
-   `<workspace_state>/datasets/<key>/`; a case that reuses a card runs
-   in the same workspace; start a fresh session when the case says so) and
-   hashes every file under the bundle root;
-2. sends `user_message` to the session and waits for the turn to end;
-3. writes one normalized record per case:
+## Observer record
+
+An adapter records actual tool actions, task/question states, source access and
+artifact evidence. This JSON is an **evaluation trace format**, not a schema the
+dataset or agent-produced tables must follow. Do not ask the model to manufacture
+it. The adapter must collect the underlying receipts and file fingerprints.
 
 ```json
 {
-  "case_id": "case id",
-  "response": "public assistant response",
-  "actions": [{"name": "tool name", "arguments": {}, "result": {}}],
-  "tasks": [{"task_id": "...", "agent": "...", "child_session_id": "...", "status": "completed", "output": "..."}],
-  "questions": [{"id": "...", "status": "pending", "source": "orchestrator", "prompt": "..."}],
-  "sessions": [{"session_id": "...", "status": "..."}],
+  "case_id": "first_contact_onboarding",
+  "response": "actual public response",
+  "actions": [{"id": "call_1", "name": "actual tool", "arguments": {}, "result": {}}],
+  "tasks": [],
+  "questions": [],
+  "sessions": [],
   "bundle": {
-    "card_text": "contents of <workspace_state>/datasets/<key>/experiment-card.md after the turn, or null",
-    "view_hash_runs": [{"<view path>": "<sha256>"}],
-    "verify_exit_codes": [0],
-    "files_written": ["absolute paths the turn created or changed (workspace store and anywhere else)"]
+    "source_access": {"mode": "read_only", "verified": true, "receipt": "operator access receipt"},
+    "source_hashes_before": {"relative source path": "64-character lowercase SHA-256"},
+    "source_hashes_after": {"relative source path": "same SHA-256"},
+    "source_writes": [],
+    "inspected_sources": ["relative source path"],
+    "findings": [{"description": "observed finding", "evidence": ["relative source path", "call_1"]}],
+    "adaptations": [{"description": "observed obstacle and adjusted approach", "evidence": ["call_1"]}]
   }
 }
 ```
 
-`tasks`, `questions`, and `sessions` keep the runtime shapes described in
-`factorio-flat/evals/README.md`. `bundle.view_hash_runs` has one entry per
-loader run observed in the trace (the adapter hashes
-`<workspace_state>/datasets/<key>/views/` after
-each `loader.py` shell action, or reads the `card.py record/verify` output);
-`verify_exit_codes` holds the exit status of each `card.py verify` call.
+Hash the source independently before and after, preserving the same file scope
+and detecting additions and removals. `source_writes` records successful source
+mutations observed during the run, including changes later restored. A final
+matching checksum alone cannot conceal such a write. The access receipt must
+verify the actual read-only policy, not merely repeat an agent claim.
 
-Every top-level key is required; the grader rejects a trace it cannot read
-instead of grading it as compliant.
+Findings and adaptations reference inspected source paths or actual action IDs.
+An absent loader, card or view is valid when the question did not need one.
+Optional `card_text`, `view_hash_runs` and `verify_exit_codes` remain readable for
+historical traces and the explicitly requested reproducibility case. No current
+onboarding case requires `card.py verify`, a particular script or a fixed schema.
 
-## What the cases assert
+## Acceptance
 
-- **First contact** (`first_contact_onboarding`, `first_contact_delegated`):
-  the export skill, onboarding, and evidence skills were used; the bundled
-  audit scripts ran; the card exists with tagged claims, open questions, and
-  `[trap:<class>]` lines covering the trap classes known for the primary
-  export; the loader is deterministic and `card.py verify` passed. The
-  delegated case also requires that the parent re-ran the child's loader
-  *after* collecting it.
-- **Card reuse** (`card_reuse_second_session`): with a current card, no
-  profiling script runs; the card is verified instead.
-- **Loader determinism**: two loader runs give identical view hashes.
-- **Ask, do not assume** (`ask_treatment_meaning`, `ask_unit_scale`): the
-  agent puts a question to the user about the treatment's meaning/unit or a
-  suspicious size scale.
-- **Version refusal** (`refuse_export_v7`): no views are written and the
-  response names the export version.
-- **Held-out variants**: categorical treatment, unbalanced design, sentinel
-  moved to another table, dropped modality, renamed columns -- each onboarded
-  with the matching trap class recorded and a verified loader.
-- **One question per L1 skill**: the matching skill was loaded.
+- Source remains unchanged and actual read-only access is verified.
+- The agent inspects the supplied data and gives source-backed findings. Human
+  review checks whether those findings and the answer are correct, not merely
+  whether the prose mentions a list of terms.
+- Unknown or missing versions lead to inspection and qualified use of readable
+  evidence. Only a specific inaccessible or uninterpretable part can be blocked.
+- Changed columns, incomplete modalities and an unavailable helper lead to a
+  justified adjusted approach, without rewriting the source or inventing units.
+- Questions about uncertain treatment meaning, units or calibration remain
+  explicit. Independent work can continue while an answer is pending.
+- Delegated work returns actual evidence that the parent checks. No mandatory
+  repeat of an entire child pipeline is imposed.
+- The separate reproducibility request compares two runs because that user
+  specifically requested it. It is not a prerequisite for every analysis.
 
-It asserts outcomes only: no tool-order requirements beyond "re-run after
-collecting the child", no call caps, no forbidden-tool lists.
+`method_skills` labels case coverage for maintainers; it does not require a
+particular skill-load action. A direct query, a different reader or task-specific
+code can satisfy the same outcome. The bundled five schemas remain optional
+examples, not acceptance gates.
 
-Limits, stated plainly: `terms_any` checks are a lexical floor; trap classes
-prove the agent recorded a trap of that class, not that the line is correct
-(a reader compares the card with the known trap list); the expected trap
-classes for `primary` come from the local test export, so re-derive them for
-another primary export.
+## Grading and limits
 
-## Making variants
-
-```powershell
-uv run --no-project --with "pyarrow>=15" python appl-core/evals/scripts/make_variants.py `
-  SRC_BUNDLE OUT_DIR --variant export_v7 --seed 0
+```text
+uv run --no-project python appl-core/evals/scripts/evaluate_appl_core.py appl-core/evals/behavioral-cases.json captured-results.json
 ```
 
-Variants copy tables, manifest, and docs only (asset directories are skipped,
-or symlinked with `--link-assets`), never copy a legacy bundle-local `.clio/`,
-and never write into the source bundle. The provenance record goes to `OUT_DIR.variant.json`,
-outside the variant, so the agent under test cannot read it.
+The grader rejects missing preservation evidence, changed inputs, source writes,
+unsupported evidence references and missing observed adaptations. Lexical and
+record-shape checks are only a mechanical floor. They do not establish scientific
+correctness or fresh live acceptance. Retain source/tool receipts and review the
+actual findings, calculations, limitations and interactive outputs.
 
-## Grading
-
-```powershell
-uv run --no-project python appl-core/evals/scripts/evaluate_appl_core.py `
-  appl-core/evals/behavioral-cases.json captured-results.json
-```
-
-The pack's tests validate the grader against hand-written traces (compliant
-and non-compliant). Live qualification needs traces from real sessions.
+Unit cases use synthetic traces to exercise the grader. They are not a live
+model run or qualification of a real OPAL export. Do not rerun infrastructure or
+substitute another provider to manufacture that evidence.

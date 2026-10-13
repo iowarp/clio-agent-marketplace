@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Changed
+
+- APPL-CORE 0.2.4 investigates messy read-only source data with adaptable queries
+  and code. Cards, loaders, repeat execution and the five bundled view schemas
+  are optional aids. Missing or unfamiliar export versions trigger inspection
+  instead of blanket refusal. Acceptance cases now require source preservation
+  and grounded findings/adaptations rather than a prescribed script pipeline.
+- Shared Data Semantics inspection and quality guidance preserves source data
+  and distinguishes uncertain meaning from computational obstacles.
+
 ### Added
 
 - Base Agent, APPL-CORE, Factorio Flat and EarthScope declare the shared managed
