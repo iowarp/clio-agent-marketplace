@@ -49,7 +49,6 @@ PROFILING_SCRIPTS = (
     "join_keys.py",
     "flag_check.py",
 )
-_TAGGED_CLAIM = re.compile(r"^\s*-\s*\[(stated|checked|inferred)\]", re.MULTILINE)
 _TRAP = re.compile(r"\[trap:([a-z0-9-]+)\]")
 _SECTION = re.compile(r"^## (.+)$", re.MULTILINE)
 _COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -209,14 +208,6 @@ def _check_card(
         return [EvaluationFailure(case_id, "no experiment card was written")]
     if not isinstance(card, str):
         return failures
-    claims = len(_TAGGED_CLAIM.findall(_COMMENT.sub("", card)))
-    if claims < int(expect.get("min_tagged_claims", 0)):
-        failures.append(
-            EvaluationFailure(
-                case_id,
-                f"card has {claims} tagged claims, below {expect['min_tagged_claims']}",
-            )
-        )
     found = set(_TRAP.findall(_COMMENT.sub("", card)))
     # New observations need not fit the example card helper's taxonomy.
     for trap in expect.get("required_trap_classes", []):

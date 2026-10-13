@@ -129,9 +129,13 @@ and schemas are examples, not a fixed pipeline or a required data model.
 
 ## Answering
 
-- Tag every claim `[stated]`, `[checked]`, or `[inferred]` and give its
-  source (see `evidence-and-claims`). Use numbers from inspected source,
-  tool output or verified saved results; never from memory.
+- Explain evidence in ordinary language (see `evidence-and-claims`): "The
+  protocol describes...", "I checked...", or "This suggests...". Do not prefix
+  claims with bracketed status tags. Cite the actual supporting file, table,
+  calculation or completed result close to the claim, using clickable references
+  in the format supplied by CLIO. Use numbers from inspected source, tool output
+  or verified saved results; never from memory. A card status command or an
+  unfinished audit is work status, not evidence for a scientific conclusion.
 - When the meaning of something is not in the export -- what a treatment is
   and its unit, whether a unit or scale is right, whether zeros are real,
   which of two disagreeing sources to trust -- ask the user (`ask_user`) and

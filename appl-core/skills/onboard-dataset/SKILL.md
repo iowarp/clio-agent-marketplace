@@ -117,7 +117,7 @@ input references so the result remains available with provenance.
   group sizes and confounding. Choose aggregation and models for the actual
   design; do not silently treat repeated images as independent plants.
 
-The card helper offers example `[trap:<class>]` tags such as `sentinel-values`,
+The card helper offers example finding topics such as `sentinel-values`,
 `key-format-mismatch`, `declared-vs-actual` and `unit-scale-suspect`. Use them when
 helpful, and describe findings outside that vocabulary as well. Do not discard a
 new finding because an example taxonomy omitted it.

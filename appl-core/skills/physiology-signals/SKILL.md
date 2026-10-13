@@ -22,7 +22,7 @@ keywords:
   operating efficiency and quenching parameters (PhiPSII / QY at a step, NPQ,
   qP, qN, qL, Y(NPQ), Y(NO)). Values depend on the light step; compare the
   same step across plants. Step names usually encode the light level or the
-  recovery phase -- read the protocol docs; mark your reading `[inferred]` if
+  recovery phase -- read the protocol docs; describe your reading as uncertain if
   the export does not define them.
 - **Raw fluorescence levels** (Fo, Fm, Ft) are in arbitrary units that depend
   on camera gain and leaf area; use ratios for comparisons.

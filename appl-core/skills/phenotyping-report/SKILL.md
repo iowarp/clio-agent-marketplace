@@ -28,8 +28,8 @@ the inspected files, recorded user answers or tool output.
    analysis-code or query references and relevant input/output fingerprints.
    A fixed loader or materialized views are not required.
 5. **Results**: tables and figures, each with n, units, and uncertainty.
-   Every claim tagged `[stated]`, `[checked]`, or `[inferred]` (see
-   `evidence-and-claims`).
+   Explain what was observed, calculated and interpreted in ordinary language,
+   with clickable supporting references near the claim (see `evidence-and-claims`).
 6. **Caveats and open questions**: what the analysis assumed, and the
    questions for the data owners that would change the result.
 
