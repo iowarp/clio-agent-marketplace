@@ -65,7 +65,10 @@ onboarding case requires `card.py verify`, a particular script or a fixed schema
 - Source remains unchanged and actual read-only access is verified.
 - The agent inspects the supplied data and gives source-backed findings. Human
   review checks whether those findings and the answer are correct, not merely
-  whether the prose mentions a list of terms.
+whether the prose mentions a list of terms.
+  Status receipts, pending audits and unrelated manifest/README references do not
+  support scientific findings. Review the cited content and calculation, not
+  merely whether a reference exists. Natural prose is accepted without claim tags.
 - Unknown or missing versions lead to inspection and qualified use of readable
   evidence. Only a specific inaccessible or uninterpretable part can be blocked.
 - Changed columns, incomplete modalities and an unavailable helper lead to a

@@ -4,6 +4,9 @@
 
 ### Changed
 
+- APPL-CORE presents evidence in natural prose with specific clickable references.
+  Bracketed claim tags are no longer required or rewarded by the grader. Status
+  commands and pending audits cannot substantiate scientific findings.
 - APPL-CORE 0.2.4 investigates messy read-only source data with adaptable queries
   and code. Cards, loaders, repeat execution and the five bundled view schemas
   are optional aids. Missing or unfamiliar export versions trigger inspection

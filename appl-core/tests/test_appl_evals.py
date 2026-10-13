@@ -241,13 +241,25 @@ def test_grader_accepts_a_compliant_trace() -> None:
         },
         card={
             "exists": True,
-            "min_tagged_claims": 2,
             "required_trap_classes": ["sentinel-values"],
             "min_open_questions": 1,
         },
         loader={"deterministic": True, "verified": True},
     )
     assert evaluate.evaluate_case(case, _trace("c")) == []
+
+
+def test_grader_accepts_natural_claims_without_status_tags() -> None:
+    trace = _trace("c")
+    trace["response"] = (
+        "I checked the recorded measurements and found sentinel values in the signal column. "
+        "The calculation and its input table are retained with the analysis."
+    )
+    trace["bundle"]["card_text"] = (
+        "# Analysis notes\n\nI checked the signal column; sentinel values are present.\n"
+        "The protocol describes the reported signal units, which still need calibration.\n"
+    )
+    assert evaluate.evaluate_case(_case(card={"exists": True}), trace) == []
 
 
 def test_grader_rejects_unreadable_and_noncompliant_traces() -> None:

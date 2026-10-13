@@ -201,7 +201,9 @@ class ApplCoreExpertTests(unittest.TestCase):
         self.assertIn("investigation and adaptation, not blanket refusal", prompt)
         self.assertIn("does not prove unchanged inputs", prompt)
         self.assertIn("ask the user (`ask_user`)", prompt)
-        self.assertIn("`[stated]`, `[checked]`, or `[inferred]`", prompt)
+        self.assertIn("Explain evidence in ordinary language", prompt)
+        self.assertIn("Do not prefix claims with bracketed status tags", prompt)
+        self.assertIn("unfinished audit is work status", prompt)
 
     def test_analysis_preserves_source_even_when_copy_is_writable(self) -> None:
         """Analysis guidance must preserve source while allowing derived outputs."""
