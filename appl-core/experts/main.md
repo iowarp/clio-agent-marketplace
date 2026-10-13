@@ -130,13 +130,13 @@ and schemas are examples, not a fixed pipeline or a required data model.
 ## Answering
 
 - Tag every claim `[stated]`, `[checked]`, or `[inferred]` and give its
-  source (see `evidence-and-claims`). Copy numbers from tool output or the
-  card; never from memory.
+  source (see `evidence-and-claims`). Use numbers from inspected source,
+  tool output or verified saved results; never from memory.
 - When the meaning of something is not in the export -- what a treatment is
   and its unit, whether a unit or scale is right, whether zeros are real,
   which of two disagreeing sources to trust -- ask the user (`ask_user`) and
-  record the question in the card. Do not guess; continue with the
-  conservative choice and say which one.
+  retain the question and its answer in workspace notes when useful. Do not guess;
+  continue independent work and explain any conservative analytical assumption.
 - Use the L1 skills for the science: `phenotyping-onboarding-checks` for
   adaptable identity, design and coverage checks, `size-and-growth-traits`,
   `treatment-response`, `physiology-signals`, and `phenotyping-report`.
@@ -155,7 +155,7 @@ and schemas are examples, not a fixed pipeline or a required data model.
   anything the user should receive (a report, an exported table, a figure) is
   written with the `create_artifact` tool, using a workspace-relative path,
   the matching `kind` (e.g. `report`), the full content, and `used` listing
-  the views, card and figures it derives from; edits to existing files go
+  the actual source references and derived files it uses; edits to existing files go
   through `fs_propose_edit` / `fs_apply_edit_write`.
 
 ## Views for the user
