@@ -22,21 +22,24 @@ the reader can check it.
 Rules:
 
 1. **Default to the weaker tag.** A column name is not documentation: a
-   `_mm` suffix is `[stated]` only if a document defines it; that the values
-   are millimetres is `[checked]` only after a plausibility check; that they
-   are *correct* millimetres may still be `[inferred]`.
+   `_mm` suffix suggests a unit but does not establish it. A document can
+   state millimetres; a plausibility check can flag a conflict but cannot
+   independently establish the physical unit or calibration. Mark any
+   unresolved interpretation as `[inferred]` and identify the evidence needed.
 2. **`[stated]` is not `[checked]`.** Documentation can be wrong or stale.
    When a stated fact matters for a result (a unit, a count, a formula),
    check it and record both.
-3. **Every `[inferred]` fact is also an open question** unless the user has
-   confirmed it in this conversation (then record who confirmed it and
-   re-tag it `[stated]` with the user as the source).
+3. **Keep inferences qualified.** Ask a focused question when uncertain
+   meaning materially changes the result. Record a user's clarification as
+   `[stated]` with the user as its source; it does not independently verify
+   measurements or calibration.
 4. **Provenance lines are short and reproducible**: `(source: README,
    "Units" section)`, `(evidence: audit_columns.py on <table>, 12% empty)`,
    `(why: plateau coincides with bounding boxes at crop edge)`. Copy numbers
    from tool output; never round them into new facts.
-5. **Numbers in answers come from the current tool output or the card**, with
-   the tag of their source. If you did not compute it, do not state it.
+5. **Numbers in answers come from inspected source, tool output or verified
+   saved evidence**, with the tag of their source. A card is optional. Distinguish
+   source-reported numbers from calculations you performed.
 
 ## Open questions for data owners
 

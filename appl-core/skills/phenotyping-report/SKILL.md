@@ -18,9 +18,10 @@ the inspected files, recorded user answers or tool output.
 
 1. **Summary** (3-5 sentences): the question, the main result with its effect
    size and uncertainty, and the most important caveat.
-2. **Experiment**: identity from the card (dataset name and version as the
-   export states them, manifest hash), species, design (factors, levels,
-   replicates, balance table), period and sessions used.
+2. **Experiment**: identity and any version actually stated by the source,
+   relevant input fingerprints, species, observed design (factors, levels,
+   replicates, balance), period and sessions used. Identify missing metadata
+   rather than inventing it or requiring a card.
 3. **Data and quality**: sensors and traits used (trait / method / scale),
    the traps found and how each was handled, exclusions with counts.
 4. **Methods**: aggregation over sessions, models and tests, software and
@@ -44,6 +45,6 @@ the inspected files, recorded user answers or tool output.
   artifacts.
 - Deliver as a Markdown artifact unless the user asks for another format:
   call `create_artifact` with a workspace-relative `.md` name, `kind="report"`,
-  the complete Markdown as `content`, and `used` listing the exact card,
-  views and figure files it derives from. Keep the returned artifact id and
+  the complete Markdown as `content`, and `used` listing the actual source
+  references and derived files it uses. Keep the returned artifact id and
   version, and only say the report exists once creation succeeded.

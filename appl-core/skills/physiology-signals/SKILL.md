@@ -41,7 +41,8 @@ keywords:
   and 1940 nm). A spectrum without these is not vegetation or not reflectance.
 - **Indices** (NDVI, PRI, PSRI, SIPI, MCARI, OSAVI and variants) differ
   between implementations: check the formula and the exact bands in the docs
-  before comparing to literature values. Record the formula in the card.
+  before comparing to literature values. Record the formula and source references
+  with the analysis; a card is optional.
 - **Wavelength labels**: parse wavelengths from metadata or column names; look
   for near-duplicate band columns (see `onboard-dataset`).
 - **Water signals** from a few bands (ratios of reflectance near 950-970 nm
