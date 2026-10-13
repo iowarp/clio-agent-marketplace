@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """Evaluate normalized APPL-CORE Analyst black-box traces against semantic cases.
 
-Skeleton grader, modelled on ``scripts/evaluate_factorio_flat.py``: it reads
-only what an observer of a live session can see -- the public response, the
-tool trace, the runtime rows (tasks, questions, sessions) -- plus a ``bundle``
-record the capture adapter takes after the turn from the workspace store
-(``<workspace_state>/datasets/<key>/``: the card text and the view hashes
-of each loader run). It asserts OUTCOMES, not
-turn structure: no tool ordering except where the outcome IS an order (the
-parent re-runs a child's loader after collecting the child), no call caps.
+The grader reads observed responses, tool actions, runtime rows and an
+operator-captured bundle record with access receipts, source fingerprints,
+inspected paths and evidence references. It asserts outcomes, not turn
+structure. The current cases check read-only source preservation and
+source-backed findings, allowing different tools, code and representations.
+Legacy loader assertions remain available only for an explicitly requested
+loader-reproduction case; they are not generic onboarding requirements.
 
 Known limits, stated plainly:
 
 * ``terms_any`` checks on the response and on questions are a lexical floor
   (any listed term appears, case-insensitive). They reject answers that never
   mention the subject; they cannot tell a good explanation from a bad one.
-* Trap classes are read from the card's ``[trap:<class>]`` tags. The grader
-  checks that the agent recorded a trap of that class, not that the line is
-  right; a reader compares cards against the known trap list.
+* Evidence references establish that a cited source/action was recorded; a
+  human reviewer still checks whether findings and adaptations are correct.
+* Legacy card checks can read ``[trap:<class>]`` tags without requiring every
+  new finding to fit the helper's taxonomy.
 * Everything is validated against hand-written fixtures in the pack's tests;
   qualification needs traces from live sessions.
 """
@@ -49,7 +49,6 @@ PROFILING_SCRIPTS = (
     "join_keys.py",
     "flag_check.py",
 )
-_TAGGED_CLAIM = re.compile(r"^\s*-\s*\[(stated|checked|inferred)\]", re.MULTILINE)
 _TRAP = re.compile(r"\[trap:([a-z0-9-]+)\]")
 _SECTION = re.compile(r"^## (.+)$", re.MULTILINE)
 _COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -119,7 +118,7 @@ def card_sections(card_text: str) -> dict[str, str]:
 
 
 def _check_shape(case_id: str, result: dict[str, Any]) -> list[EvaluationFailure]:
-    failures = []
+    failures: list[EvaluationFailure] = []
     for key, kind in REQUIRED_KEYS.items():
         if not isinstance(result.get(key), kind):
             failures.append(
@@ -201,31 +200,16 @@ def _check_card(
     case_id: str,
     expect: dict[str, Any],
     result: dict[str, Any],
-    vocabulary: frozenset[str],
+    _vocabulary: frozenset[str],
 ) -> list[EvaluationFailure]:
-    failures = []
+    failures: list[EvaluationFailure] = []
     card = result["bundle"].get("card_text")
     if expect.get("exists") and not isinstance(card, str):
         return [EvaluationFailure(case_id, "no experiment card was written")]
     if not isinstance(card, str):
         return failures
-    claims = len(_TAGGED_CLAIM.findall(_COMMENT.sub("", card)))
-    if claims < int(expect.get("min_tagged_claims", 0)):
-        failures.append(
-            EvaluationFailure(
-                case_id,
-                f"card has {claims} tagged claims, below {expect['min_tagged_claims']}",
-            )
-        )
     found = set(_TRAP.findall(_COMMENT.sub("", card)))
-    unknown = found - vocabulary
-    if unknown:
-        failures.append(
-            EvaluationFailure(
-                case_id,
-                f"card uses trap classes outside the vocabulary: {sorted(unknown)}",
-            )
-        )
+    # New observations need not fit the example card helper's taxonomy.
     for trap in expect.get("required_trap_classes", []):
         if trap not in found:
             failures.append(EvaluationFailure(case_id, f"card records no [trap:{trap}]"))
@@ -317,6 +301,88 @@ def _check_outcome(
     return failures
 
 
+def _valid_fingerprints(value: Any) -> bool:
+    """Recognize nonempty observer-generated file fingerprint maps."""
+    return (
+        isinstance(value, dict)
+        and bool(value)
+        and all(
+            isinstance(path, str)
+            and bool(path)
+            and isinstance(digest, str)
+            and re.fullmatch(r"[0-9a-f]{64}", digest) is not None
+            for path, digest in value.items()
+        )
+    )
+
+
+def _check_source(
+    case_id: str, expect: dict[str, Any], result: dict[str, Any]
+) -> list[EvaluationFailure]:
+    """Check observer evidence of source access and preservation, not table shape."""
+    failures: list[EvaluationFailure] = []
+    bundle = result["bundle"]
+    if expect.get("read_only"):
+        access = bundle.get("source_access", {})
+        if (
+            not isinstance(access, dict)
+            or access.get("mode") != "read_only"
+            or access.get("verified") is not True
+            or not access.get("receipt")
+        ):
+            failures.append(EvaluationFailure(case_id, "verified read-only access receipt missing"))
+    if expect.get("unchanged"):
+        before = bundle.get("source_hashes_before")
+        after = bundle.get("source_hashes_after")
+        if not _valid_fingerprints(before) or not _valid_fingerprints(after):
+            failures.append(EvaluationFailure(case_id, "complete source fingerprints missing"))
+        elif before != after:
+            failures.append(EvaluationFailure(case_id, "source files changed during analysis"))
+        writes = bundle.get("source_writes")
+        if not isinstance(writes, list) or writes:
+            failures.append(EvaluationFailure(case_id, "source-write evidence missing or nonempty"))
+    return failures
+
+
+def _check_analysis(
+    case_id: str, expect: dict[str, Any], result: dict[str, Any]
+) -> list[EvaluationFailure]:
+    """Require observed findings and adaptations without prescribing a pipeline."""
+    failures: list[EvaluationFailure] = []
+    bundle = result["bundle"]
+    inspected = bundle.get("inspected_sources", [])
+    if not isinstance(inspected, list) or len(
+        {path for path in inspected if isinstance(path, str) and path.strip()}
+    ) < int(expect.get("min_inspected_sources", 0)):
+        failures.append(EvaluationFailure(case_id, "insufficient inspected source evidence"))
+    references = (
+        {path for path in inspected if isinstance(path, str) and path.strip()}
+        if isinstance(inspected, list)
+        else set()
+    )
+    references.update(
+        str(action["id"])
+        for action in _rows(result.get("actions"))
+        if isinstance(action.get("id"), str) and action["id"].strip()
+    )
+    for key in ("findings", "adaptations"):
+        minimum = int(expect.get(f"min_{key}", 0))
+        rows = _rows(bundle.get(key))
+        supported = [
+            row
+            for row in rows
+            if isinstance(row.get("description"), str)
+            and row["description"].strip()
+            and isinstance(row.get("evidence"), list)
+            and any(isinstance(ref, str) and ref in references for ref in row["evidence"])
+        ]
+        if len(supported) < minimum:
+            failures.append(
+                EvaluationFailure(case_id, f"{key} need {minimum} source-backed record(s)")
+            )
+    return failures
+
+
 def _check_question(
     case_id: str, expect: dict[str, Any], result: dict[str, Any]
 ) -> list[EvaluationFailure]:
@@ -361,6 +427,8 @@ def evaluate_case(
         "loader": _check_loader,
         "outcome": _check_outcome,
         "question": _check_question,
+        "source": _check_source,
+        "analysis": _check_analysis,
     }
     for key, check in checks.items():
         if isinstance(expect.get(key), dict):
@@ -376,7 +444,7 @@ def validate_cases(
     """Static checks on the case file itself (unique ids, known trap classes)."""
 
     vocabulary = vocabulary if vocabulary is not None else trap_classes()
-    problems = []
+    problems: list[str] = []
     ids = [str(case.get("id")) for case in cases]
     problems.extend(f"duplicate case id {i}" for i in sorted({i for i in ids if ids.count(i) > 1}))
     for case in cases:

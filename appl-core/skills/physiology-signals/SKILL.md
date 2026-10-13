@@ -22,7 +22,7 @@ keywords:
   operating efficiency and quenching parameters (PhiPSII / QY at a step, NPQ,
   qP, qN, qL, Y(NPQ), Y(NO)). Values depend on the light step; compare the
   same step across plants. Step names usually encode the light level or the
-  recovery phase -- read the protocol docs; mark your reading `[inferred]` if
+  recovery phase -- read the protocol docs; describe your reading as uncertain if
   the export does not define them.
 - **Raw fluorescence levels** (Fo, Fm, Ft) are in arbitrary units that depend
   on camera gain and leaf area; use ratios for comparisons.
@@ -41,7 +41,8 @@ keywords:
   and 1940 nm). A spectrum without these is not vegetation or not reflectance.
 - **Indices** (NDVI, PRI, PSRI, SIPI, MCARI, OSAVI and variants) differ
   between implementations: check the formula and the exact bands in the docs
-  before comparing to literature values. Record the formula in the card.
+  before comparing to literature values. Record the formula and source references
+  with the analysis; a card is optional.
 - **Wavelength labels**: parse wavelengths from metadata or column names; look
   for near-duplicate band columns (see `onboard-dataset`).
 - **Water signals** from a few bands (ratios of reflectance near 950-970 nm
@@ -54,4 +55,5 @@ keywords:
   within one instrument, protocol, and session; do not compare magnitudes
   across instruments or facilities.
 - Report the method (sensor, protocol step, mask, aggregation) with every
-  value, in the `observations` view's `method` column.
+  result using the available metadata or analysis notes. An `observations`
+  table or a column named `method` is not required.

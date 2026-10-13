@@ -188,42 +188,37 @@ class ApplCoreExpertTests(unittest.TestCase):
         self.assertIn("load `work-with-pdfs`", prompt)
         self.assertIn("`create-pdf-report`; otherwise reports are Markdown", prompt)
 
-    def test_prompt_states_the_card_first_contract(self) -> None:
+    def test_prompt_supports_source_first_adaptation(self) -> None:
         prompt = " ".join((ROOT / "experts" / "main.md").read_text(encoding="utf-8").split())
         self.assertIn("<workspace_state>/datasets/<key>/experiment-card.md", prompt)
         self.assertIn("CLIO_AGENT_WORKSPACE_STATE_DIR", prompt)
         self.assertNotIn("--store <workspace_root>", prompt)
-        self.assertIn("It is a convention, not a limit", prompt)
         self.assertIn("if an action is denied, report that plainly", prompt)
         self.assertNotIn("<bundle_root>/.clio", prompt)
-        self.assertIn(
-            "do not trust the returned card until you have re-run the returned loader yourself",
-            prompt,
-        )
+        self.assertIn("Treat it as read-only input", prompt)
+        self.assertIn("No fixed five-table schema", prompt)
+        self.assertIn("Bundled scripts and schemas are examples", prompt)
+        self.assertIn("investigation and adaptation, not blanket refusal", prompt)
+        self.assertIn("does not prove unchanged inputs", prompt)
         self.assertIn("ask the user (`ask_user`)", prompt)
-        self.assertIn("`[stated]`, `[checked]`, or `[inferred]`", prompt)
-        self.assertIn("check `export_version` first", prompt)
+        self.assertIn("Explain evidence in ordinary language", prompt)
+        self.assertIn("Do not prefix claims with bracketed status tags", prompt)
+        self.assertIn("unfinished audit is work status", prompt)
 
-    def test_pack_does_not_impose_access_limits(self) -> None:
-        """Permissions belong to clio (approval modes, deny rules, allowed roots,
-        sandbox); the pack's docs must not declare the session or export
-        read-only or forbid writes."""
-
-        banned = re.compile(
-            r"read-only input|never write|must not be written|"
-            r"session is read-only|session as read-only",
-            re.IGNORECASE,
-        )
+    def test_analysis_preserves_source_even_when_copy_is_writable(self) -> None:
+        """Analysis guidance must preserve source while allowing derived outputs."""
         for relative in (
             "AGENT.md",
             "experts/main.md",
             "skills/onboard-dataset/SKILL.md",
             "skills/audit-dataset/SKILL.md",
             "skills/phenotyping-onboarding-checks/SKILL.md",
+            "skills/appl-core-exports/SKILL.md",
         ):
             with self.subTest(doc=relative):
                 text = " ".join((ROOT / relative).read_text(encoding="utf-8").split())
-                self.assertIsNone(banned.search(text))
+                self.assertIn("read-only input", text)
+                self.assertRegex(text, r"outside (?:it|the (?:source|bundle|export))")
 
     def test_docs_default_artefacts_to_the_workspace_store(self) -> None:
         """By default per-dataset artefacts live in the workspace store."""
@@ -287,7 +282,7 @@ class ApplCoreSkillTests(unittest.TestCase):
             (ROOT / "skills" / "audit-dataset" / "SKILL.md").read_text(encoding="utf-8").split()
         )
         self.assertIn("You are already running this skill in the delegated child", audit)
-        self.assertIn("re-runs the loader and compares the view hashes", audit)
+        self.assertIn("A mandatory second execution of the entire pipeline is not required", audit)
 
     def test_script_skills_ship_their_scripts(self) -> None:
         for relative in (
