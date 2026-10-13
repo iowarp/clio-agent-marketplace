@@ -1,7 +1,7 @@
 ---
 name: phenotyping-onboarding-checks
 title: Phenotyping Onboarding Checks
-description: DRAFT. Turn any plant-phenotyping export into the five validated view shapes (design, observations, spectra, assets, events) using MIAPPE trait/method/scale vocabulary, check design balance and factor encoding, and list what is missing. Use after onboard-dataset on phenotyping data.
+description: Inspect actual design, identities, methods, units, coverage and timing in phenotyping data. Adapt checks and derived representations to the supplied files and question; bundled schemas are optional examples.
 keywords:
 - level:L1
 - phenotyping
@@ -9,67 +9,75 @@ keywords:
 - views
 ---
 
-# Phenotyping onboarding checks (draft)
+# Phenotyping onboarding checks
 
-The seam between facility-specific exports and phenotyping analysis is a set
-of five table shapes. The loader written during `onboard-dataset` produces
-them; analyses read only them. Each shape has a JSON Schema in `schemas/`
-(one row per object) and `scripts/validate_views.py` checks whole tables:
+Start from the files and the user's question. Wide tables, nested values,
+partial modalities, conflicting metadata and unfamiliar identifiers are ordinary
+inputs. They do not need to fit a predetermined schema before useful analysis.
+
+Treat the source export as read-only input, even when its mount allows writes.
+Adapt queries, code and derived outputs; do not repair the export to satisfy a
+validator. Keep outputs outside it, usually under
+`<workspace_state>/datasets/<key>/` or another permitted workspace location.
+
+## Establish the meaning needed for the question
+
+- **Observation identity.** Determine what a row represents and how plants, pots,
+  plots, scans, sessions and repeated measurements are identified. Test candidate
+  joins and report unmatched or multiplied rows. Do not invent `unit_id` just to
+  satisfy an example schema.
+- **Design.** Inspect factor labels, replication, blocks and position effects.
+  Count actual groups, including missing or unequal cells. Digits in a treatment
+  label do not establish a numeric dose.
+- **Trait, method and scale.** MIAPPE's distinction is useful vocabulary: what
+  was measured, how, and its unit or scale. Map those concepts to the available
+  evidence; they need not be three named columns. Keep different methods
+  distinguishable and leave unknown units unknown.
+- **Coverage and time.** Establish which units, sensors and periods are present.
+  Account for partial rounds, gaps, repeats and uncertain time zones. Preserve
+  recorded times when converting them would require a guess.
+- **Quality and uncertainty.** Check the values and flags relevant to the answer.
+  An empty issues table does not prove clean data. A suspicious value is a finding
+  to investigate, not automatic permission to exclude or replace it.
+
+Record mappings, source references, limitations and transformations. Ask about
+meaning that materially changes the answer while continuing independent work.
+When a comparison cannot be identified, explain the limit and provide the
+supported descriptive result.
+
+## Choose a useful representation
+
+Direct queries, a task-specific table, notebook or small script can all be
+appropriate. Materialize derived views when they help the requested analysis,
+performance or reproducibility. Select columns, keys, types and layout from the
+observed data and the consumer's needs. Preserve original values or source
+references alongside material normalization.
+
+The five schemas in `schemas/` are **optional examples**, not an export contract:
+
+| Example | Possible use |
+| --- | --- |
+| `design` | One row per experimental unit when that unit is identifiable. |
+| `observations` | Long measurements when trait, method and scale are established. |
+| `spectra` | Wavelength measurements with known band identities and units. |
+| `assets` | Actual images, masks or scans and their associated units. |
+| `events` | Recorded imaging, treatment or watering events. |
+
+Use only examples that fit. Do not create empty placeholder tables, force all
+spectra into long form, or stop a valid analysis because an example field is
+absent. When deliberately choosing an example, this optional helper checks that
+chosen output:
 
 ```text
-uv run --no-project --with "pyarrow>=15" --with "jsonschema>=4.18" python "SKILL_ROOT/scripts/validate_views.py" DATASET_DIR/views/*.parquet
+uv run --no-project --with "pyarrow>=15" --with "jsonschema>=4.18" python "SKILL_ROOT/scripts/validate_views.py" DERIVED_TABLE --kind CHOSEN_EXAMPLE
 ```
 
-`DATASET_DIR` is the dataset's directory in the active workspace,
-`<workspace_state>/datasets/<key>/`, as printed by
-`card.py status BUNDLE_ROOT ` (`dataset_dir:`). Views
-live there by default, next to the card, so the raw export stays pristine.
+For another representation, check the invariants that matter: identities, join
+cardinality, counts, units, missingness, selected values and the calculation.
+Validator success establishes only the checks it actually performs.
 
-Views are named by shape prefix (`design...`, `observations...`, `spectra...`,
-`assets...`, `events...`) so the validator infers the schema; use `--kind`
-otherwise. Validation must pass before any view is recorded in the card.
+## Report
 
-## The five shapes
-
-| Shape | One row = | Key | Notes |
-| --- | --- | --- | --- |
-| `design` | observation unit (plant/pot/plot) | `unit_id` | factors: genotype, treatment (always a string label), optional `treatment_value` + `treatment_unit` only when the owners confirm a dose, replicate, block, position |
-| `observations` | unit x time x variable | `unit_id, time, trait, method, scale` | long format; `value` null when missing, never a code |
-| `spectra` | unit x time x sensor x wavelength | `unit_id, time, sensor, wavelength_nm` | wavelength parsed from metadata or column names, in nm |
-| `assets` | unit x time x file | `unit_id, time, kind, path` | paths relative to bundle root; `shared_frame` + crop when one file shows several units |
-| `events` | imaging round / treatment / watering | `event_id` | status as recorded (completed, aborted, warning ...) |
-
-MIAPPE vocabulary for `observations`: an observed **variable** is
-**trait** (what: "projected leaf area") + **method** (how: sensor, algorithm,
-mask or source choice) + **scale** (unit: `px`, `mm2`, `ratio`, `a.u.`). Two
-values of the same trait from different methods are different variables; never
-merge them into one column.
-
-## Checks
-
-- **Design balance.** Count units per factor combination from `design`.
-  Report the table of counts, empty cells, and unequal replication. An
-  unbalanced design changes which tests are valid (`treatment-response`).
-- **Factor encoding.** Is the treatment a numeric dose (ordered, with a unit)
-  or a category (control vs treated, named compounds)? Look at the values,
-  the docs, and any label that encodes the design. If the export does not say
-  what the treatment is or its unit, ask the data owners; keep `treatment` as
-  a string and leave `treatment_value` null until they answer.
-- **Duplicated factors.** The same factor stored in several columns, or also
-  inside a composite label: check they agree row by row; keep one.
-- **Coverage.** Which units are present in `design` but absent from a sensor's
-  observations, and at which times; report per sensor.
-- **Time.** Units observed several times per period; sessions that are split,
-  aborted, or partial; the time zone assumption. Record in `events`.
-- **Variables.** For every trait, record method and scale; flag traits whose
-  scale is unknown or suspicious (see `size-and-growth-traits`,
-  `physiology-signals`).
-- **What is missing.** List what an analysis would need but the export does
-  not provide (units, treatment meaning, calibration, masks, raw data), and
-  put each item under the card's open questions.
-
-## Output to the user
-
-A design table (counts per cell), a coverage table (units x sensor x
-sessions), the validator result per view, and the missing-information list.
-Use generic tables and charts (presets first) when a view helps.
+Explain what the available design and measurements support, what is uncertain,
+which evidence was inspected and where any outputs were saved. Messy input is
+part of the analysis, not a request to fix the export.

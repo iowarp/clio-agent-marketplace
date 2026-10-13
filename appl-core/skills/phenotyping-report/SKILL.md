@@ -10,8 +10,9 @@ keywords:
 
 # Phenotyping report (draft)
 
-A report is a view of the experiment card plus computed results. It adds no
-facts that are not in the card or in tool output from this work.
+A report combines inspected source evidence and computed results. A card can
+help when present; it is not a prerequisite. Do not add facts unsupported by
+the inspected files, recorded user answers or tool output.
 
 ## Structure
 
@@ -23,7 +24,8 @@ facts that are not in the card or in tool output from this work.
 3. **Data and quality**: sensors and traits used (trait / method / scale),
    the traps found and how each was handled, exclusions with counts.
 4. **Methods**: aggregation over sessions, models and tests, software and
-   loader path, view hashes.
+   analysis-code or query references and relevant input/output fingerprints.
+   A fixed loader or materialized views are not required.
 5. **Results**: tables and figures, each with n, units, and uncertainty.
    Every claim tagged `[stated]`, `[checked]`, or `[inferred]` (see
    `evidence-and-claims`).

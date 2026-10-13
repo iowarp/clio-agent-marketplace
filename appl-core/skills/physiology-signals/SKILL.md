@@ -54,4 +54,5 @@ keywords:
   within one instrument, protocol, and session; do not compare magnitudes
   across instruments or facilities.
 - Report the method (sensor, protocol step, mask, aggregation) with every
-  value, in the `observations` view's `method` column.
+  result using the available metadata or analysis notes. An `observations`
+  table or a column named `method` is not required.
