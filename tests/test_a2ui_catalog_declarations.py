@@ -29,7 +29,6 @@ MARKETPLACE = Path(__file__).resolve().parents[1]
 EXPECTED_CATALOGS: dict[str, list[Any]] = {
     "appl-core": ["clio-workspace"],
     "base-agent": ["clio-workspace"],
-    "cluster-operator": ["clio-workspace"],
     "data-semantics": ["clio-workspace"],
     "deep-researcher": ["clio-workspace"],
     "document-production": ["clio-workspace"],
