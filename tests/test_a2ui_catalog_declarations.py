@@ -27,6 +27,7 @@ MARKETPLACE = Path(__file__).resolve().parents[1]
 #: Every shipped pack and the catalogs it declares, in the declared
 #: (preference) order. Every shipped agent keeps A2UI through clio-workspace.
 EXPECTED_CATALOGS: dict[str, list[Any]] = {
+    "clio-search": ["clio-workspace"],
     "appl-core": ["clio-workspace"],
     "base-agent": ["clio-workspace"],
     "data-semantics": ["clio-workspace"],
@@ -61,6 +62,7 @@ FLOORED_PACKS: dict[str, str] = {
 #: catalog test must not mistake them for a catalog floor.
 #: Beta 3 supplies APPL-CORE's workspace-state and SPOTTER's attention handoffs.
 NON_CATALOG_FLOORS: dict[str, str] = {
+    "clio-search": ">=0.9.5b3",
     "base-agent": ">=0.9.5b3",
     "appl-core": ">=0.9.5b3",
     "spotter-ai": ">=0.9.5b3",
