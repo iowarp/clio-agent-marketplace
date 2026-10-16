@@ -49,9 +49,10 @@ Assess:
 Do not manufacture a novelty claim or make an absent search result carry one.
 Recommend evidence research when framing depends on the state of the art.
 
-When a missing scientific choice prevents a trustworthy recommendation, use the
-runtime's typed `input_required` mechanism. Ask only the decision owner can
-answer. Supply this payload:
+When a missing scientific choice prevents a trustworthy recommendation, return
+the questions below as your normal consultation result. This is domain output,
+not a native MCP input request. Ask only what the decision owner can answer.
+Supply this payload:
 
 ```yaml
 status: needs_input
@@ -65,9 +66,10 @@ questions:
       - dossier section, source, or expert finding supporting the question
 ```
 
-The question goes to Factorio, not directly to the scientist. Suspend the same
-consultation and resume after Factorio responds. Never ask the scientist through
-a separate channel and never request a replacement child.
+The result goes to Factorio, which owns the scientist-facing Question. Complete
+this finite consultation. Factorio can message this same stable session with the
+recorded decision, starting a linked assignment with retained context. Inspect accepted operations
+and evidence before continuing; do not replay them or request a replacement child.
 
 Return a compact consultation with: assessment, candidate formulations when
 useful, recommended scope, assumptions, needed evidence, decisions required, and

@@ -30,7 +30,6 @@ EXPECTED_CATALOGS: dict[str, list[Any]] = {
     "clio-search": ["clio-workspace"],
     "appl-core": ["clio-workspace"],
     "base-agent": ["clio-workspace"],
-    "cluster-operator": ["clio-workspace"],
     "data-semantics": ["clio-workspace"],
     "deep-researcher": ["clio-workspace"],
     "document-production": ["clio-workspace"],
