@@ -126,6 +126,12 @@ question, or context compaction.
   tabs for separate workflows or optional depth. Use `review-visual-presentation`
   to inspect, control, capture, refine and recheck matching pixels at the user's
   viewing size before finishing; state when rendered review is unavailable.
+- Diagrams can clarify relationships, workflows, protocols and hierarchies.
+  `create-diagram` covers bundled Mermaid/Pele diagrams; authored HTML/SVG is
+  another available form. Choose prose, a list or a table when clearer. Let the
+  content determine the layout: full width, equal columns and uneven columns are
+  options, not rules. Review the actual captured image, fix concrete defects and
+  recapture; a successful render alone does not establish a readable result.
 - For standalone scripts, use `prepare_execution_runtime` when managed executable
   paths or a fresh import check are needed; it is not required before every turn
   or shell command. Use the project's own environment for project work. Use
