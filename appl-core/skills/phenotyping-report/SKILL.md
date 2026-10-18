@@ -1,7 +1,7 @@
 ---
 name: phenotyping-report
 title: Phenotyping Report
-description: DRAFT. Structure a phenotyping analysis report with evidence and caveats - experiment identity, design, data quality, methods, results with tagged claims, and open questions. Use when the user asks for a report, summary, or write-up of a phenotyping analysis.
+description: DRAFT. Structure a phenotyping analysis report with evidence and caveats - experiment identity, design, data quality, methods, results with specific supporting references, and open questions. Use when the user asks for a report, summary, or write-up of a phenotyping analysis.
 keywords:
 - level:L1
 - phenotyping
@@ -10,23 +10,26 @@ keywords:
 
 # Phenotyping report (draft)
 
-A report is a view of the experiment card plus computed results. It adds no
-facts that are not in the card or in tool output from this work.
+A report combines inspected source evidence and computed results. A card can
+help when present; it is not a prerequisite. Do not add facts unsupported by
+the inspected files, recorded user answers or tool output.
 
 ## Structure
 
 1. **Summary** (3-5 sentences): the question, the main result with its effect
    size and uncertainty, and the most important caveat.
-2. **Experiment**: identity from the card (dataset name and version as the
-   export states them, manifest hash), species, design (factors, levels,
-   replicates, balance table), period and sessions used.
+2. **Experiment**: identity and any version actually stated by the source,
+   relevant input fingerprints, species, observed design (factors, levels,
+   replicates, balance), period and sessions used. Identify missing metadata
+   rather than inventing it or requiring a card.
 3. **Data and quality**: sensors and traits used (trait / method / scale),
    the traps found and how each was handled, exclusions with counts.
 4. **Methods**: aggregation over sessions, models and tests, software and
-   loader path, view hashes.
+   analysis-code or query references and relevant input/output fingerprints.
+   A fixed loader or materialized views are not required.
 5. **Results**: tables and figures, each with n, units, and uncertainty.
-   Every claim tagged `[stated]`, `[checked]`, or `[inferred]` (see
-   `evidence-and-claims`).
+   Explain what was observed, calculated and interpreted in ordinary language,
+   with clickable supporting references near the claim (see `evidence-and-claims`).
 6. **Caveats and open questions**: what the analysis assumed, and the
    questions for the data owners that would change the result.
 
@@ -42,6 +45,6 @@ facts that are not in the card or in tool output from this work.
   artifacts.
 - Deliver as a Markdown artifact unless the user asks for another format:
   call `create_artifact` with a workspace-relative `.md` name, `kind="report"`,
-  the complete Markdown as `content`, and `used` listing the exact card,
-  views and figure files it derives from. Keep the returned artifact id and
+  the complete Markdown as `content`, and `used` listing the actual source
+  references and derived files it uses. Keep the returned artifact id and
   version, and only say the report exists once creation succeeded.

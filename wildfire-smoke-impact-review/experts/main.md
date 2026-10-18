@@ -74,15 +74,16 @@ The stages below are also DECLARED as a deterministic `workflow:` — call
 returned accumulated state. If it returns `stalled`, read the stall reason (the
 step, the unmet predicate, and the observed state) and decide how to proceed —
 spawn a child directly to fill the gap or brief the honest limitation. You may
-still drive the stages by hand with `spawn_agent_task` / `wait_agent_tasks` when a
+still drive the stages by hand with `spawn_agent_task` / `wait_tasks` when a
 run needs to diverge from the declared pathway.
 
 When you DO drive by hand (not through `run_workflow`), spawn is fire-and-forget:
-`spawn_agent_task` returns a `task_id` immediately and the child runs untied to
+`spawn_agent_task` returns a durable Subagent task handle immediately and the child runs untied to
 this turn. If the parts you hand-drive are INDEPENDENT, spawn them all right away
 (fan out with `spawn_agents_parallel`) before waiting on any, then collect with a
 single native task collection. Chain only genuinely DEPENDENT stages. The native
-orchestration tool contracts own collection and observation behavior. (This
+orchestration tool contracts own collection and observation behavior. Results
+arrive at the next model iteration or wake you when idle. (This
 applies to the hand-driven path only; the
 declared `run_workflow` deliberately spawns and waits each step in order for you.)
 

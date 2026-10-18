@@ -58,8 +58,8 @@ VIEWS_DIR = "views"
 AUDIT_DIR = "audit"
 MANIFEST_NAMES = ("manifest.json", "MANIFEST.json")
 
-#: Shared vocabulary for tagging traps in the card (``- [trap:<class>] ...``).
-#: Graders read these tags, so keep the names stable.
+#: Example vocabulary for describing data-quality findings. Legacy graders can
+#: still read these class names; new findings need not use tags or this taxonomy.
 TRAP_CLASSES: dict[str, str] = {
     "sentinel-values": "a numeric code (float max, -9999, ...) stands for missing",
     "ghost-columns": "all-empty or string-typed-but-empty columns, often twins of real ones",
@@ -93,35 +93,36 @@ status: draft
 
 # Experiment card
 
-Facts about this one dataset. Tag every line: `[stated]` (the export says so;
-cite the file), `[checked]` (verified in the data; cite the command or
-script output), `[inferred]` (an interpretation; list it under open questions
-until the data owners confirm it). Never copy a fact from another dataset's card.
+Facts about this one dataset. Write in ordinary language, distinguishing source
+documentation, data checks and uncertain interpretations. Cite the supporting
+files or recorded calculations; do not prefix claims with status tags. Never
+copy a fact from another dataset's card. This record's existence or status does
+not establish scientific correctness.
 
 ## Identity
 
-- [checked] bundle root when the card was created: `{bundle_root}`
-- [checked] manifest `{manifest}` sha256 `{manifest_sha256}`
-- [stated] export_version: {export_version}
-- [stated] generated_at: {generated_at}
+- Source directory when this record was created: `{bundle_root}`
+- Manifest on the agent host: `{manifest_path}`; SHA-256: `{manifest_sha256}`
+- Export version reported in the manifest: {export_version}
+- Generation time reported in the manifest: {generated_at}
 
-## Stated facts
+## Source documentation
 
-<!-- - [stated] <fact> (source: <file and section>) -->
+<!-- Describe what a specific inspected document says; cite its file and section. -->
 
-## Checked facts
+## Data checks
 
-<!-- - [checked] <fact> (evidence: <script/command and the number it printed>) -->
+<!-- Describe the calculation, its result and scope; retain input and output references. -->
 
-## Inferred facts
+## Interpretations and uncertainty
 
-<!-- - [inferred] <interpretation> (why: <evidence>; confirm with: <who>) -->
+<!-- Explain the interpretation, supporting evidence and what remains unresolved. -->
 
 ## Traps found
 
 <!-- One line per trap:
-- [trap:<class>] <table/column> -- <what is wrong> -- <how the loader handles it> (evidence: <...>)
-Classes: {trap_classes}
+- <table/column>: <finding and evidence>; <analytical decision and affected count>.
+Example topics: {trap_classes}
 -->
 
 ## Open questions for data owners
@@ -136,12 +137,12 @@ Classes: {trap_classes}
 
 ## Loader and views
 
-The loader is `{loader}` next to this card. Run it as
-`uv run --no-project {loader} BUNDLE_ROOT`: it reads the raw files from
-BUNDLE_ROOT (never writing there), applies the decisions above, and writes
-validated views under `{views}/` next to this card. Paths below are relative
-to this card's directory. `card.py record` fills the block; `card.py verify`
-re-checks it.
+If this analysis uses a saved loader, `{loader}` and `{views}/` are example
+locations next to this card. Keep source inputs unchanged and record the actual
+invocation, dependencies and analytical decisions. No loader or views are required.
+Paths below are relative to this card's directory. `card.py record` fills the
+optional hash block; `card.py verify` re-checks the files it records, not the
+scientific conclusions.
 
 ```json
 {hashes}
@@ -297,6 +298,9 @@ def init(root: Path, store: Path, *, force: bool = False) -> dict[str, Any]:
         key_source=source,
         bundle_root=root.resolve(),
         manifest=identity["manifest"] or "none",
+        manifest_path=str(root.resolve() / identity["manifest"])
+        if identity["manifest"]
+        else "No manifest found",
         manifest_sha256=identity["manifest_sha256"] or "none",
         export_version=identity["export_version"]
         if identity["export_version"] is not None

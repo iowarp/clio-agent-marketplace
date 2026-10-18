@@ -12,14 +12,15 @@ keywords:
 
 ## Decide the model from the design, not from the question
 
-1. **What is the treatment?** Read the design view and the card. A numeric
+1. **What is the treatment?** Inspect the source design information and any
+   relevant saved findings. A design view or card is optional. A numeric
    dose with a confirmed unit supports dose-response; a category (control vs
    treated, named agents) supports contrasts only. If the card lists the
    treatment's meaning as an open question, say the analysis treats levels as
    unordered categories and why.
 2. **What is the unit of replication?** Usually the plant/pot. Several images
    of the same plant are repeated measures, not replicates. Count replicates
-   per cell from `design`.
+   per cell from the actual unit and factor mappings you established.
 3. **What else structures the data?** Genotype, tray/position, block, session.
    If treatments are mixed within trays, position can be a covariate or random
    effect; if trays are confounded with treatment, say that effects cannot be
@@ -47,7 +48,8 @@ keywords:
 
 ## Checks before reporting
 
-- Outliers and scale errors removed per the card, with counts.
+- Outliers and suspicious scales investigated, with any justified analytical
+  exclusions and affected counts stated. Preserve the original source values.
 - Units and relative vs absolute scales stated; relative units (a.u.) are not
   compared across instruments.
 - Every number comes from computed output (script or tool), with the model

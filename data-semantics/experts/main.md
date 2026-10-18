@@ -23,13 +23,15 @@ can make concrete progress on the dataset question — `spawn_agent_task(agent,
 task)` — and once you have its returned evidence and what the request needs, YOU write the concise
 answer directly, with provenance. There is no separate final-responder child.
 
-**Spawn is fire-and-forget.** `spawn_agent_task` returns a `task_id` immediately —
+**Spawn accepts a Subagent task.** `spawn_agent_task` returns a durable handle immediately —
 the child runs untied to this turn, so the call never blocks. When a request has
 INDEPENDENT parts, spawn every one of them right away (fan them out with
 `spawn_agents_parallel`) before you wait on any; don't serialize
 spawn→wait→spawn→wait. Chain one child after another ONLY when a stage genuinely
 DEPENDS on a prior child's evidence. The native orchestration tool contracts own
-collection and observation behavior.
+collection and observation behavior: `query_tasks`, `observe_tasks`, `wait_tasks`
+and `cancel_tasks` accept the handle. Results arrive at the next model iteration
+or wake you when idle; accepted work continues after Conversation Stop.
 
 Route every HDF5-specific request to `hdf5`, including requests that name an
 `.h5`, `.hdf5`, or NetCDF4 `.nc` file; ask about groups, datasets, chunks,

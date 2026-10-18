@@ -2,6 +2,40 @@
 
 ## [Unreleased]
 
+## [0.6.12] - 2026-10-18
+
+### Added
+
+- CLIO Search offers bounded read-only session and file-passage search.
+- Standard agents discover diagram, HTML/SVG and visual-review capabilities
+  without prescribing a particular layout or requiring a diagram for every task.
+
+### Changed
+
+- Base Agent 0.2.8, APPL-CORE 0.2.5, Factorio Flat 0.4.3 and EarthScope 0.4.3
+  share content-driven composition and captured-image review guidance.
+- Shared task guidance explains accepted work, consultation and cancellation.
+- APPL-CORE verifies onboarding before claiming it is ready to analyze a dataset.
+- APPL-CORE presents evidence in natural prose with specific clickable references.
+  Bracketed claim tags are no longer required or rewarded by the grader. Status
+  commands and pending audits cannot substantiate scientific findings.
+- APPL-CORE 0.2.4 investigates messy read-only source data with adaptable queries
+  and code. Cards, loaders, repeat execution and the five bundled view schemas
+  are optional aids. Missing or unfamiliar export versions trigger inspection
+  instead of blanket refusal. Acceptance cases now require source preservation
+  and grounded findings/adaptations rather than a prescribed script pipeline.
+- Shared Data Semantics inspection and quality guidance preserves source data
+  and distinguishes uncertain meaning from computational obstacles.
+
+### Added
+
+- Base Agent, APPL-CORE, Factorio Flat and EarthScope declare the shared managed
+  execution/document tools. Discovery is optional for standalone paths/import
+  checks; document work requests converter/font preparation separately. Pack
+  versions advance and require CLIO beta 3 or later for these native tools.
+- Opt-in skill literal checks reject dataset-specific facts in reusable pack prompts.
+  Packs can supply a denylist, enable generic checks, and mark deliberate examples.
+
 ## [0.6.11] - 2026-10-05
 
 ### Added

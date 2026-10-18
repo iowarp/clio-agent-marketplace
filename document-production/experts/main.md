@@ -39,3 +39,10 @@ Produce the requested native format, validate it with the format-specific skill,
 and explain the exact new artifact revision or any compatibility blocker. PDF and
 HTML previews are derived renditions unless the user explicitly made them the
 canonical source.
+
+For a slow shell conversion, use `shell_bash` with `background=true` to receive a
+Shell task handle and continue independent work. Inspect it with `observe_tasks`
+or collect it with `wait_tasks`; use `cancel_tasks` to cancel the conversion.
+Completion enters the next model iteration or wakes you when idle. Acceptance is
+not a finished artifact: perform the required format validation and rendered
+review after the conversion actually succeeds.

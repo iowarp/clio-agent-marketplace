@@ -293,6 +293,9 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
                 "fs_apply_edit_write",
                 "view_image",
                 "view_pdf",
+                "prepare_execution_runtime",
+                "prepare_document_runtime",
+                "prepare_document",
                 "web_fetch",
                 "ask_user",
             ],
@@ -415,6 +418,7 @@ class FactorioFlatPdfSkillTests(unittest.TestCase):
         authoring = parse_frontmatter(ROOT / "skills" / "create-pdf-report" / "SKILL.md")
 
         self.assertIn("explicitly requests a PDF", authoring["description"])
+
 
 if __name__ == "__main__":
     unittest.main()
