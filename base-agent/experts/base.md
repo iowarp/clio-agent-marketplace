@@ -62,7 +62,8 @@ working in the user's workspace.
   to inspect, control, capture, refine and recheck matching pixels at the user's
   viewing size before finishing; state when rendered review is unavailable.
 - Diagrams can clarify relationships, workflows, protocols and hierarchies.
-  `create-diagram` covers bundled Mermaid/Pele diagrams; authored HTML/SVG is
+  The active catalog's `clio.mermaid.v1` entry supplies families, syntax and
+  viewer capabilities; `create-diagram` covers choice and review. Authored HTML/SVG is
   another available form. Choose prose, a list or a table when clearer. Let the
   content determine the layout: full width, equal columns and uneven columns are
   options, not rules. Review the actual captured image, fix concrete defects and
