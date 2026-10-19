@@ -10,8 +10,10 @@ root_expert: base
 # preference order (nothing is implicit, the builtins included). An older
 # runtime reads a builtins-only list as no pack catalogs and still offers its
 # builtins. Managed execution/document tools require CLIO beta 3.
+
+# Read-only repository inspection requires CLIO beta 8.
 requires:
-  clio_agent: ">=0.9.5b3"
+  clio_agent: ">=0.9.5b8"
 a2ui_catalogs:
   - clio-workspace
 mcp_servers:

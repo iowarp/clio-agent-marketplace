@@ -30,9 +30,11 @@ a2ui_catalogs:
 # whole pack update on an old server (typed
 # blueprint_requires_newer_clio_agent) instead of shipping a pack that
 # promises a view it cannot produce.
+
+# Read-only repository inspection requires CLIO beta 8.
 requires:
   # Managed execution/document tools are declared from CLIO beta 3.
-  clio_agent: ">=0.9.5b3"
+  clio_agent: ">=0.9.5b8"
 blueprint:
   format: agent-blueprint-v1
 # Provider selection belongs to deployment configuration. Factorio Flat's

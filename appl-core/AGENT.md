@@ -9,8 +9,10 @@ root_expert: main
 # pack's generated cards, loaders, audits and views. Older runtimes hold the
 # pack with blueprint_requires_newer_clio_agent instead of starting without
 # that required workspace handoff.
+
+# Read-only repository inspection requires CLIO beta 8.
 requires:
-  clio_agent: ">=0.9.5b3"
+  clio_agent: ">=0.9.5b8"
 # A2UI catalogs are a per-agent allowlist: builtin catalogs only. The level
 # contract keeps UI generic -- this pack contributes no catalog of its own.
 a2ui_catalogs:

@@ -23,9 +23,11 @@ a2ui_catalogs:
 # clio-schemas>=0.5.1; clio-agent 0.9.4.23 is the first release that pins it
 # (checked against its pyproject.toml). Enforced as a typed
 # blueprint_requires_newer_clio_agent at validate/activation/install.
+
+# Read-only repository inspection requires CLIO beta 8.
 requires:
   # Managed execution/document tools are declared from CLIO beta 3.
-  clio_agent: ">=0.9.5b3"
+  clio_agent: ">=0.9.5b8"
 blueprint:
   format: agent-blueprint-v1
 # clio-kit is provisioned once via `uv tool install clio-kit==2.10.6` (see clio-agent install/doctor).

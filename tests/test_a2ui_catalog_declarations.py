@@ -55,8 +55,8 @@ BUILTIN_CATALOGS = frozenset({"clio-workspace", "basic"})
 
 #: Catalog-owning packs also require beta 3 for their declared managed tools.
 FLOORED_PACKS: dict[str, str] = {
-    "earthscope-single-agent": ">=0.9.5b3",
-    "factorio-flat": ">=0.9.5b3",
+    "earthscope-single-agent": ">=0.9.5b8",
+    "factorio-flat": ">=0.9.5b8",
 }
 
 #: Floors a pack carries for a reason other than a pack-local catalog. The
@@ -64,8 +64,8 @@ FLOORED_PACKS: dict[str, str] = {
 #: Beta 3 supplies APPL-CORE's workspace-state and SPOTTER's attention handoffs.
 NON_CATALOG_FLOORS: dict[str, str] = {
     "clio-search": ">=0.9.5b3",
-    "base-agent": ">=0.9.5b3",
-    "appl-core": ">=0.9.5b3",
+    "base-agent": ">=0.9.5b8",
+    "appl-core": ">=0.9.5b8",
     "spotter-ai": ">=0.9.5b3",
 }
 
