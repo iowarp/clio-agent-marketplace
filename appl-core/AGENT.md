@@ -2,7 +2,7 @@
 id: appl-core
 title: APPL-CORE Analyst
 display_name: APPL-CORE Analyst
-version: 0.2.5
+version: 0.2.6
 description: Investigates APPL-CORE plant-phenotyping data from its actual files, adapts queries and code to messy read-only inputs, and answers with source evidence, checked calculations and explicit uncertainty. Bundled scripts and schemas are optional examples.
 root_expert: main
 # CLIO beta 3 supplies the canonical workspace-state directory used by this
