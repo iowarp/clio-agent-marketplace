@@ -9,7 +9,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
-_PIN_PATTERN = re.compile(r"^\s*default_model\s*:\s*(?P<model>[^#]+?)\s*(?:#.*)?$")
+# Every frontmatter spelling clio-agent turns into a model pin
+# (clio_agent/gact/expert_packs.py): an expert's ``model`` or
+# ``default_model``, else the blueprint's ``defaults.model``.
+_VALUE = r"\s*:\s*(?P<model>[^#]+?)\s*(?:#.*)?$"
+_TOP_LEVEL_PIN = re.compile(r"^(?P<key>model)" + _VALUE)
+_DEFAULT_MODEL_PIN = re.compile(r"^\s*(?P<key>default_model)" + _VALUE)
+_NESTED_MODEL_PIN = re.compile(r"^\s+(?P<key>model)" + _VALUE)
+_DEFAULTS_BLOCK = re.compile(r"^defaults\s*:\s*(?:#.*)?$")
+_DEFAULTS_FLOW = re.compile(r"^defaults\s*:\s*\{(?P<body>[^}]*)\}")
+_FLOW_MODEL = re.compile(r"(?:^|,)\s*model\s*:\s*(?P<model>[^,]+?)\s*(?=,|$)")
+# Values the loader treats as "no pin" (it takes the first truthy key).
+_UNSET = {"", "''", '""', "null", "~"}
 _JUSTIFICATION_PATTERN = re.compile(
     r"^\s*#\s*model-pin-justification\s*:\s*\S.*$",
     re.IGNORECASE,
@@ -23,6 +34,7 @@ class ModelPinViolation:
     path: Path
     line: int
     model: str
+    key: str = "default_model"
 
 
 def _frontmatter_end(lines: Sequence[str]) -> int | None:
@@ -41,6 +53,27 @@ def _has_adjacent_justification(lines: Sequence[str], index: int, end: int) -> b
     return any(_JUSTIFICATION_PATTERN.match(lines[candidate]) for candidate in adjacent)
 
 
+def _pin_on_line(line: str, in_defaults: bool) -> tuple[str, str] | None:
+    """Return ``(key, model)`` when this frontmatter line pins a model."""
+    for pattern, key in (
+        (_TOP_LEVEL_PIN, "model"),
+        (_DEFAULT_MODEL_PIN, "default_model"),
+    ):
+        match = pattern.match(line)
+        if match is not None:
+            return key, match.group("model")
+    if in_defaults:
+        match = _NESTED_MODEL_PIN.match(line)
+        if match is not None:
+            return "defaults.model", match.group("model")
+    flow = _DEFAULTS_FLOW.match(line)
+    if flow is not None:
+        match = _FLOW_MODEL.search(flow.group("body"))
+        if match is not None:
+            return "defaults.model", match.group("model")
+    return None
+
+
 def find_unjustified_pins(root: Path) -> list[ModelPinViolation]:
     """Find active pack frontmatter pins without an adjacent justification."""
     violations: list[ModelPinViolation] = []
@@ -51,15 +84,24 @@ def find_unjustified_pins(root: Path) -> list[ModelPinViolation]:
         end = _frontmatter_end(lines)
         if end is None:
             continue
+        in_defaults = False
         for index, line in enumerate(lines[1:end], start=1):
-            match = _PIN_PATTERN.match(line)
-            if match is None or _has_adjacent_justification(lines, index, end):
+            if line and not line[0].isspace() and not line.startswith("#"):
+                in_defaults = _DEFAULTS_BLOCK.match(line) is not None
+            pin = _pin_on_line(line, in_defaults)
+            if pin is None:
+                continue
+            key, raw_model = pin
+            if raw_model.strip() in _UNSET:
+                continue
+            if _has_adjacent_justification(lines, index, end):
                 continue
             violations.append(
                 ModelPinViolation(
                     path=path,
                     line=index + 1,
-                    model=match.group("model").strip().strip("'\""),
+                    model=raw_model.strip().strip("'\""),
+                    key=key,
                 )
             )
     return violations
@@ -79,7 +121,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     for violation in violations:
         print(
             f"  {violation.path.relative_to(root)}:{violation.line}: "
-            f"default_model={violation.model!r} requires an adjacent "
+            f"{violation.key}={violation.model!r} requires an adjacent "
             "# model-pin-justification: ... comment"
         )
     return 1
