@@ -9,69 +9,73 @@ permissions:
   contents: read
 
 jobs:
-  model-inheritance:
+  policy:
+    # Dependency-free: the plugin layout test, the model-pin policy and the
+    # dataset-literal (L3 leakage) lint run on a bare interpreter.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: Test policy checker
+      - name: Test the layout and policy checkers
         run: uv run --no-project --python 3.13 python -m unittest discover -s tests -v
       - name: Reject undocumented model pins
         run: uv run --no-project --python 3.13 python scripts/check_model_pins.py .
-      - name: Reject dataset-specific literals in pack prompts
+      - name: Reject dataset-specific literals in plugin prompts
         run: uv run --no-project --python 3.13 python scripts/check_skill_literals.py .
 
-  a2ui-catalog-pack:
-    # Composability proof for the earthscope-stations A2UI catalog
-    # (docs/design/a2ui-compat-campaign-2026-09.md S7): runs the REAL
-    # clio_agent.gact.agent_blueprints.validate_agent_blueprint_path against
-    # this pack and validates the catalog against clio-schemas' official
-    # shapes. Needs clio-agent importable, which the no-deps
-    # `model-inheritance` job above deliberately does not carry -- see
-    # earthscope-single-agent/tests/test_a2ui_catalog_pack.py's module
-    # docstring. clio-agent's own uv source pins clio-schemas 0.3.1, so the
-    # a2ui submodule import resolves without a separate pin here.
-    # `--prerelease=allow`: clio-agent depends on pre-release dspy/fastmcp
-    # (see clio-agent's own CLAUDE.md "uv installs need --prerelease allow").
+  plugin-check:
+    # The install resolver, run against this checkout: loads every plugin
+    # exactly as install does and resolves every agent class (packs,
+    # requirements, tool and skill collisions, prompt files, fragment budgets).
+    # `--prerelease=allow`: clio-agent depends on pre-release dspy/fastmcp.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: Run the A2UI catalog composability tests
+      - name: clio-agent plugin check
+        env:
+          CLIO_PLUGIN_STORE: ${{ runner.temp }}/clio-plugin-store
         run: |
-          uv run --python 3.13 --prerelease=allow \
+          uv run --python 3.14 --prerelease=allow \
             --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
-            --with pytest \
-            pytest earthscope-single-agent/tests/test_a2ui_catalog_pack.py \
-              factorio-flat/tests -v
+            clio-agent plugin check .
 
-  appl-core-pack:
-    # The APPL-CORE Analyst pack's own tests: its bundled skill scripts
-    # (inventory, column/key/flag audits, experiment card, glb conversion,
-    # view validation), its eval tooling (variant maker, grader), and the real
-    # clio-agent blueprint validator. Needs pyarrow/numpy/jsonschema/trimesh
-    # and clio-agent, none of which the dependency-free policy job carries.
+  plugin-tests:
+    # Each plugin's own tests: A2UI catalog composability (earthscope-skills,
+    # topology), the HDF5 subagent contract (data-semantics), skill scripts
+    # (appl-core, abaqus, pdf, visuals, connected-data, document-runtime) and
+    # the Factorio Flat black-box eval tooling. They need clio-agent (which
+    # brings clio-schemas) plus the scientific packages the skill scripts use.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: Run the APPL-CORE pack tests
+      - name: Run the plugin tests
         run: |
-          uv run --python 3.13 --prerelease=allow \
+          uv run --python 3.14 --prerelease=allow \
             --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
-            --with "numpy>=1.24" --with "jsonschema>=4.18" --with trimesh \
+            --with "numpy>=1.24" --with "jsonschema>=4.18" --with pyarrow --with trimesh \
             --with pytest \
-            pytest appl-core/tests -v
+            pytest plugins/*/tests -v
 
-  spotter-pack:
+  spotter-impl:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --project spotter-ai/impl --python 3.13 --frozen --extra dev
+      - run: uv sync --project plugins/spotter/impl --python 3.13 --frozen --extra dev
       - run: uv run --no-sync ruff check src tests
-        working-directory: spotter-ai/impl
+        working-directory: plugins/spotter/impl
       - run: uv run --no-sync pyright
-        working-directory: spotter-ai/impl
+        working-directory: plugins/spotter/impl
       - run: uv run --no-sync pytest tests -q
-        working-directory: spotter-ai/impl
+        working-directory: plugins/spotter/impl
+
+  phenotype-impl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --project plugins/phenotype/impl --python 3.13 --frozen --extra dev
+      - run: uv run --no-sync pytest tests -q
+        working-directory: plugins/phenotype/impl
