@@ -1,72 +1,3 @@
----
-id: ndp_dataset_discovery
-title: NDP EarthScope Dataset Discovery Expert
-description: "Searches NDP and stages the EarthScope station-metadata catalog CSV via tools. Produces acquisition.metadata_path. Run FIRST in the data branch."
-tier: 2
-parent: data
-module:
-  kind: react
-signature:
-  inputs:
-    question:
-      description: Region object plus a request to stage the EarthScope station metadata catalog.
-      type: string
-  outputs:
-    answer:
-      description: The staged+cleaned station metadata catalog path and its source URL.
-      type: string
-    workflow_state:
-      description: >-
-        Typed discovery state. Set acquisition.metadata_path to the EXACT local
-        `path` returned by ndp_stage_resource for the EarthScope station metadata
-        CSV (e.g. earthscope_converted_data.csv). Set catalog.status to
-        metadata_found when that metadata catalog was staged, candidates_found
-        when search returned candidates, or no_candidates when nothing matched.
-      type: object
-      fields:
-        catalog:
-          type: object
-          fields:
-            status:
-              type: 'literal["metadata_found","candidates_found","partial","search_incomplete","no_candidates"]'
-        acquisition:
-          type: object
-          fields:
-            status:
-              # Free-form at the DISCOVERY stage: no continuation contract routes on
-              # acquisition.status here (the discovery->catalog transitions key on
-              # catalog.status + acquisition.metadata_path). A strict literal only
-              # hard-aborted the whole pipeline when a small model emitted a near-miss
-              # value (e.g. the sibling catalog.status value 'metadata_found'). The
-              # resolver declares its OWN typed acquisition.status where it IS routed.
-              type: string
-            metadata_path:
-              description: Exact local path of the CLEANED catalog written by pandas_filter_data (earthscope_stations_clean.csv), or null if not produced.
-              type: optional[string]
-            metadata_source_url:
-              type: optional[string]
-            metadata_columns:
-              description: >-
-                Verified column identities in the cleaned catalog, forwarded to
-                ground the ranker against the misaligned header:
-                {"id":"Site","lat":"Latitude","lon":"(deg)"}. The real longitude is
-                "(deg)"; the column named "Longitude" is elevation, not longitude.
-              type: optional[object]
-            analysis_ready:
-              type: bool
-              default: false
-structured_outputs:
-  workflow_state: true
-  evidence: true
-  errors: true
-tools:
-  - ndp_search_datasets
-  - ndp_get_dataset_details
-  - ndp_stage_resource
-  - pandas_load_data
-  - pandas_filter_data
----
-
 # NDP EarthScope Dataset Discovery Expert
 
 ## DO EXACTLY THIS — three tool calls, then stop
@@ -299,3 +230,18 @@ Do not use previously observed benchmark station or resource names as routing
 evidence. Station and resource candidates must come from the current live NDP
 search/details results and must be justified against the current resolved
 region.
+
+## Task contract
+
+You receive: Region object plus a request to stage the EarthScope station metadata catalog.
+
+Return in your answer: The staged+cleaned station metadata catalog path and its source URL.
+
+Report workflow_state: Typed discovery state. Set acquisition.metadata_path to the EXACT local `path` returned by ndp_stage_resource for the EarthScope station metadata CSV (e.g. earthscope_converted_data.csv). Set catalog.status to metadata_found when that metadata catalog was staged, candidates_found when search returned candidates, or no_candidates when nothing matched.
+
+- `catalog.status` (literal["metadata_found","candidates_found","partial","search_incomplete","no_candidates"])
+- `acquisition.status` (string)
+- `acquisition.metadata_path` (optional[string]): Exact local path of the CLEANED catalog written by pandas_filter_data (earthscope_stations_clean.csv), or null if not produced.
+- `acquisition.metadata_source_url` (optional[string])
+- `acquisition.metadata_columns` (optional[object]): Verified column identities in the cleaned catalog, forwarded to ground the ranker against the misaligned header: {"id":"Site","lat":"Latitude","lon":"(deg)"}. The real longitude is "(deg)"; the column named "Longitude" is elevation, not longitude.
+- `acquisition.analysis_ready` (bool), default `false`

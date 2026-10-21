@@ -1,26 +1,3 @@
----
-id: seismic_event_catalog
-title: Seismic Event Context Expert
-description: "Looks up earthquake/event catalog context via tools — only when the user explicitly asks for events."
-tier: 2
-parent: analysis
-module:
-  kind: chain_of_thought
-signature:
-  inputs:
-    question:
-      description: Region object and requested event-context window.
-      type: string
-  outputs:
-    answer:
-      description: Event-context evidence or explicit capability gap.
-      type: string
-structured_outputs:
-  workflow_state: true
-  evidence: true
-  errors: true
----
-
 # Seismic Event Context Expert
 
 Provide event context only when a parent explicitly requests earthquake/event
@@ -58,3 +35,9 @@ workflow state is:
 
 Explain what tool or data source would be needed for a complete event-context
 layer.
+
+## Task contract
+
+You receive: Region object and requested event-context window.
+
+Return in your answer: Event-context evidence or explicit capability gap.

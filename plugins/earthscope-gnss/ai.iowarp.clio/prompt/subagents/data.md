@@ -1,31 +1,3 @@
----
-id: data
-title: EarthScope Data Acquisition Expert
-description: "Discovers EarthScope/NDP GNSS station resources for the RESOLVED region and stages a real station time-series CSV via NDP tools (it orchestrates discovery -> spatial ranking -> staging). Produces workflow_state.acquisition (a staged CSV path) OR an honest no-coverage blocker. Needs the resolved region from geospatial."
-tier: 2
-parent: main
-module:
-  kind: react
-signature:
-  inputs:
-    question:
-      description: User request plus any prior workflow state.
-      type: string
-  outputs:
-    answer:
-      description: Resolved region, NDP catalog candidates, selected station/resource, and staged CSV evidence.
-      type: string
-structured_outputs:
-  workflow_state: true
-  evidence: true
-  errors: true
-  delegation: true
-children:
-  - ndp_dataset_discovery
-  - earthscope_station_catalog
-  - ndp_resource_resolver
----
-
 # EarthScope Data Acquisition Expert
 
 You are the data-branch orchestrator AND the author of this branch's answer. You
@@ -263,3 +235,9 @@ show this order in typed evidence:
 2. staged and filtered station metadata for the requested region;
 3. station-specific resource search from the filtered station list;
 4. resolver-owned staging of the selected station CSV.
+
+## Task contract
+
+You receive: User request plus any prior workflow state.
+
+Return in your answer: Resolved region, NDP catalog candidates, selected station/resource, and staged CSV evidence.

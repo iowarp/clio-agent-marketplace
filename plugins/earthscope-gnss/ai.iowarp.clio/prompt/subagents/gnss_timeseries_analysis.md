@@ -1,45 +1,3 @@
----
-id: gnss_timeseries_analysis
-title: GNSS Time-Series Analysis Expert
-description: "Profiles the staged GNSS CSV time series (columns, ranges, uncertainty) via tools. Produces profile evidence."
-tier: 2
-parent: analysis
-module:
-  kind: react
-signature:
-  inputs:
-    question:
-      description: Staged station CSV path and analysis request.
-      type: string
-  outputs:
-    answer:
-      description: CSV profile, required columns, displacement ranges, uncertainty ranges, and caveats.
-      type: string
-    workflow_state:
-      description: >-
-        Typed profiling state. After pandas_profile_csv succeeds on the
-        staged station CSV, set profile.status=complete and copy the staged path
-        into profile.path. If no staged CSV path was available, set
-        profile.status=blocked.
-      type: object
-      fields:
-        profile:
-          type: object
-          fields:
-            status:
-              type: 'literal["complete","blocked","missing"]'
-            path:
-              type: optional[string]
-            scan_limited:
-              type: bool
-structured_outputs:
-  workflow_state: true
-  evidence: true
-  errors: true
-tools:
-  - pandas_profile_csv
----
-
 # GNSS Time-Series Analysis Expert
 
 Profile the staged EarthScope GNSS station CSV with `pandas_profile_csv`.
@@ -156,3 +114,15 @@ profiling include parent-consumable JSON:
   }
 }
 ```
+
+## Task contract
+
+You receive: Staged station CSV path and analysis request.
+
+Return in your answer: CSV profile, required columns, displacement ranges, uncertainty ranges, and caveats.
+
+Report workflow_state: Typed profiling state. After pandas_profile_csv succeeds on the staged station CSV, set profile.status=complete and copy the staged path into profile.path. If no staged CSV path was available, set profile.status=blocked.
+
+- `profile.status` (literal["complete","blocked","missing"])
+- `profile.path` (optional[string])
+- `profile.scan_limited` (bool)

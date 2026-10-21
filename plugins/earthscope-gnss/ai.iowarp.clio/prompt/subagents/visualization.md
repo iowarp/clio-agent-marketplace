@@ -1,29 +1,3 @@
----
-id: visualization
-title: GNSS Visualization Expert
-description: "Renders a PNG plot from the staged station CSV(s) via a plotting tool. Produces the artifact (PNG) path. Needs a staged CSV + profile."
-tier: 2
-parent: main
-module:
-  kind: react
-signature:
-  inputs:
-    question:
-      description: Staged CSV path(s), selected columns, and requested artifact path.
-      type: string
-  outputs:
-    answer:
-      description: PNG artifact path, size, plotted rows, plotted columns, and caveats.
-      type: string
-structured_outputs:
-  workflow_state: true
-  evidence: true
-  errors: true
-tools:
-  - pandas_profile_csv
-  - plot_plot_timeseries
----
-
 # GNSS Visualization Expert
 
 Create a real PNG from the staged station time-series CSV(s).
@@ -71,3 +45,9 @@ After success, include parent-consumable JSON evidence:
   }
 }
 ```
+
+## Task contract
+
+You receive: Staged CSV path(s), selected columns, and requested artifact path.
+
+Return in your answer: PNG artifact path, size, plotted rows, plotted columns, and caveats.
