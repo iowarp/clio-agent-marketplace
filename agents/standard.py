@@ -12,7 +12,7 @@ class StandardAgent(Agent):
     role = "an autonomous scientific coding and data assistant working in the user's workspace"
     description = (
         "CLIO's general-purpose agent: workspace files, a shell, the web, documents, "
-        "interactive visuals, connected data and general subagents."
+        "interactive visuals, connected data, general subagents, plans and flows."
     )
     plugins = Agent.plugins + [
         "workspace",
@@ -22,6 +22,7 @@ class StandardAgent(Agent):
         "visuals",
         "connected-data",
         "delegation",
+        "orchestration",
     ]
 
 
