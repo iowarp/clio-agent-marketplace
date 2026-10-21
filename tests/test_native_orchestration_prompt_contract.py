@@ -30,3 +30,13 @@ def test_model_instructions_do_not_reference_removed_or_bounded_task_collection(
             violations.append(f"{path.relative_to(ROOT)} gives wait_agent_tasks a timeout")
 
     assert violations == []
+
+
+def test_consultation_question_guidance_keeps_question_and_assignment_separate() -> None:
+    """A declined or unanswered Question must not be described as a child failure."""
+    text = (
+        ROOT / "factorio-flat/skills/coordinate-scientific-work/references/task-lifecycle.md"
+    ).read_text(encoding="utf-8")
+    assert "separate Question handle" in text and "wait_tasks(question_handle)" in text
+    assert "does not itself fail or cancel" in text and "no implicit deadline" in text
+    assert "its task stays `running`" not in text and "fails that task if" not in text

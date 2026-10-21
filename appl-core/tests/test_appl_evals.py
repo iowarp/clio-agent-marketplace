@@ -338,6 +338,21 @@ def test_grader_rejects_unreadable_and_noncompliant_traces() -> None:
     assert evaluate.evaluate_case(_case(question={"min_count": 1}), _trace("c"))
 
 
+@pytest.mark.parametrize("tool", ["wait_tasks", "wait_agent_tasks"])
+def test_parent_loader_requires_a_rerun_after_canonical_or_legacy_collection(tool: str) -> None:
+    """Both supported collection names retain the parent verification requirement."""
+    wait = {"name": tool, "arguments": {}, "result": {}}
+    loader = {
+        "name": "shell_bash",
+        "arguments": {"command": "uv run W/.clio/datasets/k/loader.py B"},
+        "result": {},
+    }
+    case = _case(loader={"parent_reran_after_child": True})
+    assert evaluate.evaluate_case(case, _trace("c", actions=[wait]))
+    assert evaluate.evaluate_case(case, _trace("c", actions=[loader, wait]))
+    assert evaluate.evaluate_case(case, _trace("c", actions=[wait, loader])) == []
+
+
 def test_case_file_is_consistent_with_the_pack() -> None:
     assert evaluate.validate_cases(CASES) == []
     skills = {p.parent.name for p in (PACK / "skills").glob("*/SKILL.md")}
