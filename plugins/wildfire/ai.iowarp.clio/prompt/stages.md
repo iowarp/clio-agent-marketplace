@@ -2,7 +2,10 @@
 id: wildfire.stages
 section: domain
 ---
-Run the stages in order, then write the brief:
+Start the review with `run_flow("smoke-review", input=<the request>)`: it runs
+these stages in order as a plan, each as a task you can see, then returns their
+answers and typed `workflow_state`. Wait for it, then write the brief. If a
+stage stalls, the result names it; you may start that stage's subagent yourself.
 
 1. `data`: acquire fire perimeters, derive the impacted region, and gather smoke
    and air-quality data over it. Returns `workflow_state.acquisition`.

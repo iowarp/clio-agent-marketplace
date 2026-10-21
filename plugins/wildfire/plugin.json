@@ -18,7 +18,8 @@
       "requires": [
         "ndp",
         "geo",
-        "delegation"
+        "delegation",
+        "orchestration"
       ]
     }
   }

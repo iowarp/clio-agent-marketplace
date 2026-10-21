@@ -17,4 +17,4 @@ class WildfireReview(Agent):
         "Finds an active wildfire impacting people downwind by fusing live fire perimeters, "
         "smoke forecast, and air-quality data, and renders a situational map."
     )
-    plugins = Agent.plugins + ["wildfire", "ndp", "geo", "delegation"]
+    plugins = Agent.plugins + ["wildfire", "ndp", "geo", "delegation", "orchestration"]
