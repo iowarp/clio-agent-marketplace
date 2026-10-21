@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Removed
+
+- The Factorio agents (`factorio`, `factorio-flat`) and the EarthScope GNSS
+  region agents (`earthscope-gnss-region`, `earthscope-flat` and the archived
+  depth and width topology variants), with the plugins only they used
+  (`factorio`, `factorio-flat`, `earthscope`, `earthscope-flat`,
+  `earthscope-gnss`, `earthscope-gnss-region-depth`,
+  `earthscope-gnss-region-width`). `earthscope-single-agent` remains the
+  EarthScope agent: one agent loading the `earthscope-skills` procedures on
+  demand. The materials and engineering capability plugins (abaqus, materials,
+  fatigue, characterization, mechanical-testing, am-process, manufacturing,
+  topology, scientific-method) stay, to add from the + menu.
+
 ### Changed
 
 - The marketplace moves from Agent Blueprints (`AGENT.md` plus `experts/*.md`)
@@ -12,8 +25,7 @@
   them. Shared capabilities (workspace, shell, web, documents, visuals,
   delegation, connected data, the clio-kit servers) are single plugins the
   agents depend on, so `create-pdf-report` and the document skills have one
-  home. Factorio and Factorio Flat share the `manufacturing` pack; the
-  EarthScope agents share the `earthscope` workflow-state plugin.
+  home.
 - The spotter and phenotype MCP projects move to `plugins/<id>/impl` and
   launch from `${PLUGIN_ROOT}`. The archived `old/` agents are converted too;
   tools no MCP server in the repository provides are not carried. hook-smoke's
