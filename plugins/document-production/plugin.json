@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "document-production",
+  "version": "0.1.1",
+  "description": "Document production practice: edit the canonical source, preserve Office and OpenDocument packages, validate the native format and review the rendered result.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "documents",
+    "office",
+    "opendocument",
+    "latex"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "documents",
+        "documents-review"
+      ]
+    }
+  }
+}
