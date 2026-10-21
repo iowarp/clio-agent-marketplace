@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "hpc-io-regression",
+  "version": "0.1.0",
+  "description": "Archived: Compares HPC I/O traces across two application versions and attributes performance regressions.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "archived",
+    "hpc",
+    "io",
+    "regression"
+  ]
+}

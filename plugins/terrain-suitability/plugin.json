@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "terrain-suitability",
+  "version": "0.1.0",
+  "description": "Archived: Finds bounded DEM or lidar terrain data and derives slope/elevation suitability evidence.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "archived",
+    "terrain",
+    "suitability"
+  ]
+}

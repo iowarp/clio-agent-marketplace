@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "proteomics-mzml-review",
+  "version": "0.2.0",
+  "description": "Archived: Reviews mzML runs and LFQ protein-intensity matrices for proteomics handoff readiness.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "archived",
+    "proteomics",
+    "mzml"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "calculator": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--no-project",
+        "--with",
+        "fastmcp>=3.2.4",
+        "python",
+        "${PLUGIN_ROOT}/mcp/calculator_server.py",
+        "serve"
+      ]
+    }
+  }
+}
