@@ -1,5 +1,5 @@
 ---
-name: select_impactful_fire
+name: select-impactful-fire
 title: Select Impactful Fire
 description: Choose the active fire that is actually affecting people downwind.
 ---

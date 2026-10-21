@@ -1,19 +1,3 @@
----
-id: geography
-title: Geography Expert
-tier: 3
-parent_id: data
-prompt_profile: heavy
-specialization: region_resolution
-module:
-  kind: react
-tools:
-  - geo_bounding_box
-structured_outputs:
-  workflow_state: true
-  evidence: true
----
-
 # Geography Expert
 
 Turn the chosen fire into the analysis region. Geometry is a computation, so use

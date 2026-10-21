@@ -1,23 +1,3 @@
----
-id: air_quality
-title: Air Quality Expert
-tier: 3
-parent_id: data
-prompt_profile: heavy
-specialization: air_quality
-module:
-  kind: react
-tools:
-  - ndp_search_datasets
-  - ndp_get_dataset_details
-  - geo_query_arcgis_features
-structured_outputs:
-  workflow_state: true
-  monitors_found: Count of air-quality monitors over the region.
-  monitors_geojson: GeoJSON monitor points over the region, with AQI and label.
-  source: NDP dataset id and feature-service URL queried.
----
-
 # Air Quality Expert
 
 Acquire current ground-truth air quality over the region of interest. The

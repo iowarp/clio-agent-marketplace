@@ -1,19 +1,3 @@
----
-id: downwind_impact
-title: Downwind Impact Expert
-tier: 3
-parent_id: analysis
-prompt_profile: heavy
-specialization: spatial_overlap
-module:
-  kind: react
-tools:
-  - geo_points_in_polygons
-structured_outputs:
-  workflow_state: true
-  evidence: true
----
-
 # Downwind Impact Expert
 
 Compute the spatial overlap that defines impact: which air-quality monitors lie

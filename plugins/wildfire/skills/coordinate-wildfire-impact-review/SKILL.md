@@ -1,5 +1,5 @@
 ---
-name: coordinate_wildfire_impact_review
+name: coordinate-wildfire-impact-review
 title: Coordinate Wildfire Impact Review
 description: Route a wildfire downwind-impact question through acquisition, region, impact, map, and brief.
 ---

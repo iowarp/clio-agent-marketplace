@@ -1,21 +1,3 @@
----
-id: fire_discovery
-title: Active Fire Discovery Expert
-tier: 3
-parent_id: data
-prompt_profile: heavy
-specialization: fire_perimeters
-module:
-  kind: react
-tools:
-  - ndp_search_datasets
-  - ndp_get_dataset_details
-  - geo_query_arcgis_features
-structured_outputs:
-  workflow_state: true
-  evidence: true
----
-
 # Active Fire Discovery Expert
 
 Find the wildfires that are actually burning right now. Discover the

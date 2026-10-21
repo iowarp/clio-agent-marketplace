@@ -1,24 +1,3 @@
----
-id: data
-title: Hazard Data Acquisition Expert
-tier: 2
-parent_id: main
-prompt_profile: heavy
-specialization: hazard_data_acquisition
-module:
-  kind: react
-structured_outputs:
-  workflow_state: true
-  evidence: true
-  errors: true
-  delegation: true
-children:
-  - fire_discovery
-  - geography
-  - smoke_forecast
-  - air_quality
----
-
 # Hazard Data Acquisition Expert
 
 Own the data branch. Do not judge impact or query feature services yourself —

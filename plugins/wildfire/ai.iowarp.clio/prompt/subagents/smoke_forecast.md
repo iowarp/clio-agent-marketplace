@@ -1,23 +1,3 @@
----
-id: smoke_forecast
-title: Smoke Forecast Expert
-tier: 3
-parent_id: data
-prompt_profile: heavy
-specialization: smoke_forecast
-module:
-  kind: react
-tools:
-  - ndp_search_datasets
-  - ndp_get_dataset_details
-  - geo_query_arcgis_features
-structured_outputs:
-  workflow_state: true
-  smoke_present: Whether smoke-forecast polygons intersect the region.
-  smoke_geojson: GeoJSON smoke-forecast polygons over the region, with concentration class.
-  source: NDP dataset id and feature-service URL queried.
----
-
 # Smoke Forecast Expert
 
 Determine where wildfire smoke is forecast over the region of interest. The

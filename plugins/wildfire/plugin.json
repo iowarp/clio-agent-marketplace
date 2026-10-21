@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "wildfire",
+  "version": "0.1.1",
+  "description": "Wildfire downwind smoke-impact review: fuse live fire perimeters, smoke forecasts and air-quality monitors from NDP and ArcGIS feature services to find the fire affecting people and render a situational map.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "wildfire",
+    "smoke",
+    "air-quality",
+    "ndp"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "ndp",
+        "geo",
+        "delegation"
+      ]
+    }
+  }
+}

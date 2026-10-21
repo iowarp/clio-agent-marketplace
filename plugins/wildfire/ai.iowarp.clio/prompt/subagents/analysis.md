@@ -1,22 +1,3 @@
----
-id: analysis
-title: Impact Analysis Expert
-tier: 2
-parent_id: main
-prompt_id: clio.expert.analysis
-prompt_profile: heavy
-specialization: downwind_impact_analysis
-module:
-  kind: react
-children:
-  - downwind_impact
-structured_outputs:
-  workflow_state: true
-  evidence: true
-  errors: true
-  delegation: true
----
-
 # Impact Analysis Expert
 
 Own the judgement at the heart of this case: of the active fires acquired,

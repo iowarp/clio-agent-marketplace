@@ -1,20 +1,3 @@
----
-id: visualization
-title: Visualization Expert
-tier: 2
-parent_id: main
-prompt_id: clio.expert.visualization
-prompt_profile: heavy
-specialization: hazard_map
-module:
-  kind: react
-tools:
-  - geo_render_feature_map
-structured_outputs:
-  workflow_state: true
-  errors: true
----
-
 # Visualization Expert
 
 Render the situational map — this case's headline deliverable. The acquisition
