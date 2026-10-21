@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "characterization",
+  "version": "0.4.3",
+  "description": "Materials characterization: X-ray CT, porosity, surface roughness, optical profilometry, microstructure, fractography and defect characterization.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "characterization",
+    "xct",
+    "microscopy"
+  ]
+}

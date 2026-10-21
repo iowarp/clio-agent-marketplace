@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "topology",
+  "version": "0.4.3",
+  "description": "Topology optimization with Tosca and Morphorm, and the abaqus-topology A2UI views of a part before and after optimization and its design history.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "topology-optimization",
+    "tosca",
+    "morphorm",
+    "a2ui"
+  ]
+}

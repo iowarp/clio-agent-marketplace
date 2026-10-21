@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "mechanical-testing",
+  "version": "0.4.3",
+  "description": "Mechanical testing: test design and interpretation for tensile and fatigue tests, MTS systems and experimental data acquisition.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "testing",
+    "tensile",
+    "fatigue",
+    "mts"
+  ]
+}

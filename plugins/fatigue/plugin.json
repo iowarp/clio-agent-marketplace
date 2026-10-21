@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "fatigue",
+  "version": "0.4.3",
+  "description": "Fatigue and failure analysis: fatigue mechanics, high-cycle and multiaxial fatigue, life prediction, Fatemi-Socie, fracture mechanics, crack initiation and defect-driven fatigue.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "fatigue",
+    "fracture",
+    "failure-analysis"
+  ]
+}

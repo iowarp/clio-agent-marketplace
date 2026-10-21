@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "materials",
+  "version": "0.4.3",
+  "description": "Materials science for metallic parts: processing-structure-property reasoning, nickel superalloys, Inconel 718, microstructure and heat treatment.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "materials",
+    "metallurgy",
+    "superalloys"
+  ]
+}

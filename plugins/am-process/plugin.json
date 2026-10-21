@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "am-process",
+  "version": "0.4.3",
+  "description": "Additive manufacturing process knowledge: laser powder bed fusion, process parameters, build orientation, manufacturability, post-processing and surface finishing.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "additive-manufacturing",
+    "pbf-lb",
+    "manufacturing"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "manufacturing",
+  "version": "0.4.3",
+  "description": "Manufacturing and topology optimization: Abaqus, topology optimization, materials, additive manufacturing, characterization, mechanical testing, fatigue and scientific method plugins.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "manufacturing",
+    "pack"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "kind": "pack",
+      "members": [
+        "abaqus",
+        "topology",
+        "materials",
+        "am-process",
+        "characterization",
+        "mechanical-testing",
+        "fatigue",
+        "scientific-method"
+      ]
+    }
+  }
+}
