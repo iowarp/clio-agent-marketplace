@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The marketplace moves from Agent Blueprints (`AGENT.md` plus `experts/*.md`)
+  to native Agent Plugins 1.0.0 packages under `plugins/` and Python agent
+  classes under `agents/`. Every agent keeps its id; experts become defined
+  subagents of the plugin they belong to, root prompts become domain
+  fragments, and skills move to hyphenated folders in the plugin that owns
+  them. Shared capabilities (workspace, shell, web, documents, visuals,
+  delegation, connected data, the clio-kit servers) are single plugins the
+  agents depend on, so `create-pdf-report` and the document skills have one
+  home. Factorio and Factorio Flat share the `manufacturing` pack; the
+  EarthScope agents share the `earthscope` workflow-state plugin.
+- The spotter and phenotype MCP projects move to `plugins/<id>/impl` and
+  launch from `${PLUGIN_ROOT}`. The archived `old/` agents are converted too;
+  tools no MCP server in the repository provides are not carried. hook-smoke's
+  `pre_message` is an SDK `prompt_submit` hook.
+- CI runs `clio-agent plugin check .`; the policy scripts check the plugin
+  layout instead of `AGENT.md`.
+
+### Removed
+
+- `base-agent` (now the `standard` agent), `cluster-operator` (retired relay
+  reference with no tools left to provide) and wildfire's declared `workflow:`
+  block, which awaits the orchestration plugin's plan flow.
+
 ## [0.6.12] - 2026-10-18
 
 ### Added
