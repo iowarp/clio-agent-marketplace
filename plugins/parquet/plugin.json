@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "parquet",
+  "version": "1.0.0",
+  "description": "Summarize and read Parquet files column by column through clio-kit's parquet MCP server.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "parquet",
+    "tables"
+  ]
+}

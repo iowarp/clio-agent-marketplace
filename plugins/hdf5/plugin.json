@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "hdf5",
+  "version": "1.0.0",
+  "description": "Open and inspect HDF5 files, datasets, attributes and chunking through clio-kit's hdf5 MCP server.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "hdf5",
+    "scientific-data"
+  ]
+}
