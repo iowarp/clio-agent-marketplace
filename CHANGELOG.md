@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.6.13] - 2026-10-21
+
+### Changed
+
+- Shared task guidance distinguishes waiting, consultation, pause and cancellation
+  while retaining the assignment and returned evidence.
+- Base Agent 0.2.9, APPL-CORE 0.2.6, Factorio Flat 0.4.4 and EarthScope 0.4.4
+  discover diagram families through the active catalog and use read-only repository
+  inspection. These pack versions require CLIO 0.9.5b8 or later.
+
 ## [0.6.12] - 2026-10-18
 
 ### Added
