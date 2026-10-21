@@ -21,6 +21,12 @@
 
 ### Changed
 
+- HDF5 guidance lives in the `hdf5` plugin (1.1.0) as one `hdf5` skill by the
+  HDF5 team: a router plus 22 guides under `references/`, audited against HDF5
+  2.0–2.2 and h5py 3.12–3.16 (from iowarp/clio-agent#1736, which proposed it
+  as a CLIO built-in). Every agent that adds `hdf5` gets it. `data-semantics`
+  (0.2.0) drops its 21 older `hdf5-*` skills, and its HDF5 subagent loads the
+  new guides, `references/clio_core_ingest.md` for clio-core ingest.
 - The marketplace moves from Agent Blueprints (`AGENT.md` plus `experts/*.md`)
   to native Agent Plugins 1.0.0 packages under `plugins/` and Python agent
   classes under `agents/`. Every agent keeps its id; experts become defined
