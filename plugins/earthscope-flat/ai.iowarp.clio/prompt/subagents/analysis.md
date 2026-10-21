@@ -1,50 +1,3 @@
----
-id: analysis
-title: EarthScope Scientific Analysis Expert
-description: "The single self-sufficient ANALYSIS expert. Profiles the STAGED GNSS time-series CSV with pandas_profile_csv and reasons about station/network suitability from that evidence. Produces workflow_state.profile (+ network_analysis). Needs a staged CSV from ndp."
-tier: 2
-parent: main
-module:
-  kind: react
-signature:
-  inputs:
-    question:
-      description: Staged CSV acquisition state plus station/resource evidence.
-      type: string
-  outputs:
-    answer:
-      description: GNSS profile, station suitability assessment, optional event-context capability note, and analysis limitations.
-      type: string
-    workflow_state:
-      description: >-
-        Typed analysis state. After pandas_profile_csv succeeds on the staged
-        station CSV set profile.status=complete and copy the staged path into
-        profile.path. If no staged CSV path was available set profile.status=blocked.
-      type: object
-      fields:
-        profile:
-          type: object
-          fields:
-            status:
-              type: string
-            path:
-              type: optional[string]
-            scan_limited:
-              type: bool
-              default: false
-        network_analysis:
-          type: object
-          fields:
-            status:
-              type: string
-structured_outputs:
-  workflow_state: true
-  evidence: true
-  errors: true
-tools:
-  - pandas_profile_csv
----
-
 # EarthScope Scientific Analysis Expert
 
 You own the ENTIRE analysis branch by yourself: profile the staged GNSS CSV, then
@@ -137,3 +90,16 @@ report event-catalog limitations.
   }
 }
 ```
+
+## Task contract
+
+You receive: Staged CSV acquisition state plus station/resource evidence.
+
+Return in your answer: GNSS profile, station suitability assessment, optional event-context capability note, and analysis limitations.
+
+Report workflow_state: Typed analysis state. After pandas_profile_csv succeeds on the staged station CSV set profile.status=complete and copy the staged path into profile.path. If no staged CSV path was available set profile.status=blocked.
+
+- `profile.status` (string)
+- `profile.path` (optional[string])
+- `profile.scan_limited` (bool), default `false`
+- `network_analysis.status` (string)

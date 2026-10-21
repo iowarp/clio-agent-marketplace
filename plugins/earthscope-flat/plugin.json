@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "earthscope-flat",
+  "version": "0.1.1",
+  "description": "Small-model-friendly flat EarthScope GNSS region study: a root over four self-sufficient subagents (geospatial, ndp, analysis, visualization) that resolve a geography, stage an NDP station CSV, profile it and produce an evidence-backed PNG.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "earthscope",
+    "gnss",
+    "ndp",
+    "subagents"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "earthscope",
+        "delegation"
+      ]
+    }
+  }
+}
