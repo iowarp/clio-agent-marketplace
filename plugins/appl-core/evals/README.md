@@ -88,7 +88,7 @@ examples, not acceptance gates.
 ## Grading and limits
 
 ```text
-uv run --no-project python appl-core/evals/scripts/evaluate_appl_core.py appl-core/evals/behavioral-cases.json captured-results.json
+uv run --no-project python plugins/appl-core/evals/scripts/evaluate_appl_core.py plugins/appl-core/evals/behavioral-cases.json captured-results.json
 ```
 
 The grader rejects missing preservation evidence, changed inputs, source writes,

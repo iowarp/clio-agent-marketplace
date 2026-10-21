@@ -3,7 +3,7 @@
 Run (CI form, see .github/workflows/ci.yml)::
 
     uv run --prerelease=allow --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \\
-        --with "numpy>=1.24" --with "jsonschema>=4.18" --with trimesh --with pytest pytest appl-core/tests
+        --with "numpy>=1.24" --with "jsonschema>=4.18" --with trimesh --with pytest pytest plugins/appl-core/tests
 """
 
 from __future__ import annotations
