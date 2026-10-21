@@ -18,8 +18,8 @@ uv run spotter-mcp --clio-config /path/to/clio-provenance-handoff.yaml
 ```
 
 `SPOTTER_CLIO_CONFIG` can provide the path when `--clio-config` is omitted.
-When launching through the bundled agent pack, clio-agent supplies both launcher inputs: the pack
-directory (`${CLIO_BLUEPRINT_DIR}`, whose `impl` project this is) and its effective provenance
+When launching through the `spotter` plugin, clio-agent supplies both launcher inputs: the plugin
+directory (`${PLUGIN_ROOT}`, whose `impl` project this is) and its effective provenance
 configuration as a CLIO YAML file (`${CLIO_PROVENANCE_CONFIG}`).
 
 To attach the watcher to a phenotype campaign, use the same campaign variables as the workload:

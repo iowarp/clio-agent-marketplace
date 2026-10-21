@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "spotter",
+  "version": "0.4.0",
+  "description": "SPOTTER's forensic provenance MCP: live anomaly surveillance and containment for the phenotype campaign, and provider-aware execution and artifact lineage across Flowcept, CMF and native stores.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "provenance",
+    "forensics",
+    "lineage",
+    "anomaly-detection"
+  ]
+}
