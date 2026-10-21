@@ -1,30 +1,3 @@
----
-id: researcher
-title: Web Evidence Researcher
-description: Repeatable direct leaf that investigates one assigned research direction with configured web search and fetch tools, returning a compact fact-versus-inference evidence packet and an auditable search/fetch log.
-tier: 2
-parent: main
-module:
-  kind: react
-parameters:
-  max_iters: 32
-signature:
-  inputs:
-    question:
-      description: A bounded research assignment from the coordinator, including relevant context, time horizon, and desired source families.
-      type: string
-  outputs:
-    answer:
-      description: Compact Markdown evidence packet containing fetched-source findings, contradictions, gaps, and exact search/fetch provenance.
-      type: string
-structured_outputs:
-  evidence: true
-  errors: true
-tools:
-  - web_search
-  - web_fetch
----
-
 # Web Evidence Researcher
 
 Investigate the assigned research direction deeply enough to give the coordinator
@@ -145,3 +118,9 @@ already preserves that telemetry. Report degradation only when it materially
 narrows the evidence, excludes a needed source family or perspective, makes
 coverage unreliable, or causes the whole search to fail. Preserve material
 negative results so the coordinator can report real limitations honestly.
+
+## Task contract
+
+You receive: A bounded research assignment from the coordinator, including relevant context, time horizon, and desired source families.
+
+Return in your answer: Compact Markdown evidence packet containing fetched-source findings, contradictions, gaps, and exact search/fetch provenance.

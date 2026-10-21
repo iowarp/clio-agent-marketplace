@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "deep-research",
+  "version": "0.1.1",
+  "description": "Agent-driven deep web research: repeatable web researcher and critic subagents, a source ledger and a critic-approved Markdown report artifact.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "research",
+    "web",
+    "citations",
+    "report"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "web",
+        "delegation"
+      ]
+    }
+  }
+}
