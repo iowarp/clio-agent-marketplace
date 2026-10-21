@@ -1,0 +1,4 @@
+interface:
+  display_name: "Author LaTeX PDF"
+  short_description: "Edit LaTeX and compile reviewable PDFs"
+  default_prompt: "Use $author-latex-pdf to revise and compile this LaTeX document."

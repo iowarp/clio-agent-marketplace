@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edit OOXML Spreadsheet"
+  short_description: "Create and safely revise XLSX files"
+  default_prompt: "Use $edit-ooxml-spreadsheet to revise this XLSX and recalculate it."

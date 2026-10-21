@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edit Markdown and HTML"
+  short_description: "Edit static text document sources safely"
+  default_prompt: "Use $edit-markdown-html to revise this document and preserve its structure."

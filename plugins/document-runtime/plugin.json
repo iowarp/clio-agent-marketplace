@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "document-runtime",
+  "version": "1.0.0",
+  "description": "CLIO's managed document toolchain: converters, fonts and bounded document inspection.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "documents",
+    "runtime"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "shell"
+      ]
+    }
+  }
+}

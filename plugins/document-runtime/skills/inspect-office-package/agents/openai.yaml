@@ -1,0 +1,4 @@
+interface:
+  display_name: "Inspect Office Package"
+  short_description: "Guard OOXML and ODF package fidelity"
+  default_prompt: "Use $inspect-office-package to preflight and compare this office package."

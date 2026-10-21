@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "shell",
+  "version": "1.0.0",
+  "description": "A shell in the session workspace, with CLIO's managed execution runtime.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "shell",
+    "execution"
+  ]
+}

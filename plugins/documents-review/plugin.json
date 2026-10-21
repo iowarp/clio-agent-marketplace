@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "documents-review",
+  "version": "1.0.0",
+  "description": "Review finished document artifacts against their brief, rendered page by page.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "documents",
+    "review"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "document-runtime"
+      ]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+"""CLIO's standard agent and the science base other agents build on."""
+
+from clio_agent.sdk import Agent
+
+
+class StandardAgent(Agent):
+    """The default agent: grounded workspace work with no hidden routing hierarchy."""
+
+    id = "standard"
+    version = "1.0.0"
+    name = "CLIO"
+    role = "an autonomous scientific coding and data assistant working in the user's workspace"
+    description = (
+        "CLIO's general-purpose agent: workspace files, a shell, the web, documents, "
+        "interactive visuals, connected data and general subagents."
+    )
+    plugins = Agent.plugins + [
+        "workspace",
+        "shell",
+        "web",
+        "documents",
+        "visuals",
+        "connected-data",
+        "delegation",
+    ]
+
+
+class ScienceAgent(StandardAgent):
+    """A base for domain science agents: the standard agent's capabilities."""
+
+    id = "science"
+    name = "CLIO Science"
+    role = "a scientific research assistant that grounds every claim in inspected data"
+    description = "The standard agent's capabilities as a base for domain science agents."

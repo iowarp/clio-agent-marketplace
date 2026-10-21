@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edit OOXML Word"
+  short_description: "Create and safely revise DOCX files"
+  default_prompt: "Use $edit-ooxml-word to revise this DOCX while preserving Office compatibility."

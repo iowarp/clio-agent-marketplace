@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edit OOXML Presentation"
+  short_description: "Create and safely revise PPTX files"
+  default_prompt: "Use $edit-ooxml-presentation to revise this PowerPoint presentation."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edit OpenDocument"
+  short_description: "Create and revise ODT ODS and ODP files"
+  default_prompt: "Use $edit-opendocument to revise this OpenDocument file safely."

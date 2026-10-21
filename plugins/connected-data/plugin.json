@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "connected-data",
+  "version": "1.0.0",
+  "description": "Connect research data sources and work with the National Data Platform and knowledge stores.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "data",
+    "ndp",
+    "knowledge"
+  ]
+}
