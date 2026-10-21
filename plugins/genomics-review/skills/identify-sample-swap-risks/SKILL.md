@@ -1,3 +1,9 @@
+---
+name: identify-sample-swap-risks
+title: Identify Sample Swap Risks
+description: Sample-swap risk requires independent identity evidence.
+---
+
 # Identify Sample Swap Risks
 
 Sample-swap risk requires independent identity evidence. Use manifest metadata,

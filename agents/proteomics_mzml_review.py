@@ -10,5 +10,7 @@ class ProteomicsMzmlReview(Agent):
     version = "0.2.0"
     name = "Proteomics Review Agent"
     role = "a proteomics reviewer of mzML runs and LFQ protein-intensity matrices"
-    description = "Reviews mzML runs and LFQ protein-intensity matrices for proteomics handoff readiness."
+    description = (
+        "Reviews mzML runs and LFQ protein-intensity matrices for proteomics handoff readiness."
+    )
     plugins = Agent.plugins + ["proteomics-mzml-review", "delegation"]

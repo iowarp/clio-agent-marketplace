@@ -7,6 +7,12 @@ station_network_analysis = Subagent(
     prompt=PromptFile("prompt/subagents/station_network_analysis.md"),
     description="Station Network Analysis Expert",
     plugins=["delegation"],
-    tools=["spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
+    tools=[
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
     structured_outputs={"workflow_state": True, "evidence": True, "errors": True},
 )

@@ -65,9 +65,7 @@ def test_hdf5_subagent_is_defined_and_routable(record) -> None:
 
     assert not record.errors
     assert {"data", "analysis", "visualization", "hdf5"} <= {sub.id for sub in record.subagents}
-    routing = (PLUGIN_ROOT / "ai.iowarp.clio" / "prompt" / "routing.md").read_text(
-        encoding="utf-8"
-    )
+    routing = (PLUGIN_ROOT / "ai.iowarp.clio" / "prompt" / "routing.md").read_text(encoding="utf-8")
     route = (PLUGIN_ROOT / "skills" / "route-dataset-questions" / "SKILL.md").read_text(
         encoding="utf-8"
     )

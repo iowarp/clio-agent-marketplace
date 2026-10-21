@@ -1,3 +1,9 @@
+---
+name: explain-missing-manifest-limits
+title: Explain Missing Manifest Limits
+description: State clearly which cohort QC claims cannot be made when no sample manifest is available.
+---
+
 # Explain Missing Manifest Limits
 
 When no manifest is available, state the boundary clearly:

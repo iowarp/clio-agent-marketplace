@@ -7,5 +7,12 @@ variants = Subagent(
     prompt=PromptFile("prompt/subagents/variants.md"),
     description="Variant Review Expert: genomics variants",
     plugins=["delegation"],
-    tools=["load_skill", "spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
+    tools=[
+        "load_skill",
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
 )

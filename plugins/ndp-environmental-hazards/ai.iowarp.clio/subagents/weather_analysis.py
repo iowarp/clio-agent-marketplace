@@ -7,6 +7,11 @@ weather_analysis = Subagent(
     prompt=PromptFile("prompt/subagents/weather_analysis.md"),
     description="NDP Weather CSV Analysis Expert",
     plugins=["ndp"],
-    tools=["ndp_search_datasets", "ndp_get_dataset_details", "ndp_stage_resource", "ndp_profile_csv_resource"],
+    tools=[
+        "ndp_search_datasets",
+        "ndp_get_dataset_details",
+        "ndp_stage_resource",
+        "ndp_profile_csv_resource",
+    ],
     structured_outputs={"evidence": True, "errors": True},
 )

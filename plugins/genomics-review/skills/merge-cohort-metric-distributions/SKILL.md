@@ -1,3 +1,9 @@
+---
+name: merge-cohort-metric-distributions
+title: Merge Cohort Metric Distributions
+description: Interpret sample metrics relative to the cohort distribution.
+---
+
 # Merge Cohort Metric Distributions
 
 Interpret sample metrics relative to the cohort distribution. Flag samples

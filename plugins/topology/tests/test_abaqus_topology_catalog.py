@@ -29,8 +29,15 @@ from clio_schemas.a2ui.validation import catalog_validators, message_validator
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_DIR = PLUGIN_ROOT / "ai.iowarp.clio" / "a2ui" / "abaqus-topology"
 _EXPECTED = {
-    "Text", "Column", "Row", "Button", "CheckBox", "ParameterSlider",
-    "TopologyViewport", "DesignMetric", "ConvergencePlot",
+    "Text",
+    "Column",
+    "Row",
+    "Button",
+    "CheckBox",
+    "ParameterSlider",
+    "TopologyViewport",
+    "DesignMetric",
+    "ConvergencePlot",
 }
 REVIEWED = "abaqus.topology.reviewed"
 FIGURE = "abaqus.topology.figure-requested"
@@ -123,11 +130,15 @@ def test_convergence_plot_shape_matches_its_chart_kernel(catalog_file: dict[str,
     alias = _component_props(catalog_file["components"]["ConvergencePlot"])
     kernel = _component_props(workspace["components"]["clio.chart.v1"])
     assert set(alias) <= set(kernel), f"fields not in clio.chart.v1: {set(alias) - set(kernel)}"
-    mismatched = {name: (shape, kernel[name]) for name, shape in alias.items() if shape != kernel[name]}
+    mismatched = {
+        name: (shape, kernel[name]) for name, shape in alias.items() if shape != kernel[name]
+    }
     assert not mismatched, f"fields whose shape drifted from clio.chart.v1: {mismatched}"
 
 
-def _validate_view(catalog_file: dict[str, Any], blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _validate_view(
+    catalog_file: dict[str, Any], blocks: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     create, update, data = blocks
     validator = message_validator("server_to_client", catalog=catalog_file)
     for message in (create, update, data):
@@ -189,10 +200,17 @@ def test_event_contexts_and_narration(sidecar: CatalogSidecar, event: str, index
 
 def test_event_schemas_reject_bad_values(sidecar: CatalogSidecar) -> None:
     with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate({"runId": "x", "decision": "maybe"}, sidecar.events[REVIEWED].context_schema)
+        jsonschema.validate(
+            {"runId": "x", "decision": "maybe"}, sidecar.events[REVIEWED].context_schema
+        )
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(
-            {"runId": "x", "camera": {"position": [0, 0], "target": [0, 0, 0]}, "frame": 0, "iso": 1.5},
+            {
+                "runId": "x",
+                "camera": {"position": [0, 0], "target": [0, 0, 0]},
+                "frame": 0,
+                "iso": 1.5,
+            },
             sidecar.events[FIGURE].context_schema,
         )
 

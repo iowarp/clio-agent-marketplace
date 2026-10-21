@@ -7,5 +7,12 @@ cohort_qc = Subagent(
     prompt=PromptFile("prompt/subagents/cohort_qc.md"),
     description="Cohort QC Expert: genomics cohort qc",
     plugins=["delegation"],
-    tools=["load_skill", "spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
+    tools=[
+        "load_skill",
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
 )

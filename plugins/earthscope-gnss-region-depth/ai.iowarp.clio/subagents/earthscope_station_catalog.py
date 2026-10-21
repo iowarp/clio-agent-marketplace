@@ -7,6 +7,13 @@ earthscope_station_catalog = Subagent(
     prompt=PromptFile("prompt/subagents/earthscope_station_catalog.md"),
     description="EarthScope Station Catalog Expert",
     plugins=["ndp", "delegation"],
-    tools=["ndp_filter_earthscope_station_catalog", "spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
+    tools=[
+        "ndp_filter_earthscope_station_catalog",
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
     structured_outputs={"workflow_state": True, "evidence": True, "errors": True},
 )

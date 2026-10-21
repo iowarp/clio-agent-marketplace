@@ -7,6 +7,16 @@ ndp_resource_resolver = Subagent(
     prompt=PromptFile("prompt/subagents/ndp_resource_resolver.md"),
     description="NDP Resource Resolver Expert",
     plugins=["ndp", "delegation"],
-    tools=["ndp_search_datasets", "ndp_get_dataset_details", "ndp_stage_resource", "ndp_filter_earthscope_station_catalog", "spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
+    tools=[
+        "ndp_search_datasets",
+        "ndp_get_dataset_details",
+        "ndp_stage_resource",
+        "ndp_filter_earthscope_station_catalog",
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
     structured_outputs={"workflow_state": True, "evidence": True, "errors": True},
 )

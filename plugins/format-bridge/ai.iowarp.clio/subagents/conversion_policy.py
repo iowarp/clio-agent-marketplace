@@ -7,5 +7,12 @@ conversion_policy = Subagent(
     prompt=PromptFile("prompt/subagents/conversion_policy.md"),
     description="Conversion Policy Expert: scientific format conversion policy",
     plugins=["delegation"],
-    tools=["load_skill", "spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
+    tools=[
+        "load_skill",
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
 )

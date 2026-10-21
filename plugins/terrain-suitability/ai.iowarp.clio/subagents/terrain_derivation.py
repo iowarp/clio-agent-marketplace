@@ -7,5 +7,12 @@ terrain_derivation = Subagent(
     prompt=PromptFile("prompt/subagents/terrain_derivation.md"),
     description="Terrain Derivation Expert: terrain derivation",
     plugins=["delegation"],
-    tools=["load_skill", "spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
+    tools=[
+        "load_skill",
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
 )

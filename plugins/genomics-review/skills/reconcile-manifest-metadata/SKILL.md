@@ -1,3 +1,9 @@
+---
+name: reconcile-manifest-metadata
+title: Reconcile Manifest Metadata
+description: Compare available manifest evidence against metric-derived QC findings.
+---
+
 # Reconcile Manifest Metadata
 
 Compare available manifest evidence against metric-derived QC findings. Check

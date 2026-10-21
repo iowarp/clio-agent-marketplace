@@ -1,3 +1,9 @@
+---
+name: compute-per-sample-genotype-metrics
+title: Compute Per-Sample Genotype Metrics
+description: Compute per-sample genotype metrics from a multi-sample VCF while preserving sample identity and call evidence.
+---
+
 # Compute Per-Sample Genotype Metrics
 
 For each sample in a multi-sample VCF, preserve:

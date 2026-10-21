@@ -7,5 +7,12 @@ trace_ingest = Subagent(
     prompt=PromptFile("prompt/subagents/trace_ingest.md"),
     description="Trace Ingest Expert: hpc trace ingest",
     plugins=["delegation"],
-    tools=["load_skill", "spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
+    tools=[
+        "load_skill",
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
 )

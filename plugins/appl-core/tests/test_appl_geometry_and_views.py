@@ -86,11 +86,7 @@ def test_mesh_triplet_becomes_a_viewport_glb_with_segment_field(tmp_path: Path) 
     assert primitive["mode"] == 4
     assert set(primitive["attributes"]) == {"POSITION", "_NODE", "COLOR_0"}
     (segment,) = clio["fields"]
-    assert (
-        segment["name"] == "SEGMENT"
-        and segment["location"] == "node"
-        and segment["count"] == 4
-    )
+    assert segment["name"] == "SEGMENT" and segment["location"] == "node" and segment["count"] == 4
     assert list(_accessor_values(out, segment["accessor"])) == [1.0, 1.0, 0.0, 0.0]
     assert clio["segments"]["palette_rgb255"] == [[0, 255, 0], [255, 0, 0]]
     assert _accessor_values(out, primitive["indices"]).tolist() == [
@@ -109,19 +105,14 @@ def test_mesh_triplet_becomes_a_viewport_glb_with_segment_field(tmp_path: Path) 
     ]
     assert (out.stat().st_size % 4) == 0
     before.pop("out/mesh.glb", None)
-    assert {
-        k: v for k, v in tree_hash(tmp_path).items() if not k.startswith("out/")
-    } == before
+    assert {k: v for k, v in tree_hash(tmp_path).items() if not k.startswith("out/")} == before
 
 
 def test_one_based_quads_are_detected_and_split(tmp_path: Path) -> None:
     v, f, _ = _geometry(tmp_path, faces="1 2 3 4\n")
     out = tmp_path / "quad.glb"
 
-    assert (
-        to_glb.main(["mesh", "--vertices", str(v), "--faces", str(f), "-o", str(out)])
-        == 0
-    )
+    assert to_glb.main(["mesh", "--vertices", str(v), "--faces", str(f), "-o", str(out)]) == 0
 
     clio = to_glb.read_glb_json(out)["scenes"][0]["extras"]["clio"]
     assert clio["conversion"] == {"index_base_detected": 1, "quads_split": True}
@@ -129,9 +120,7 @@ def test_one_based_quads_are_detected_and_split(tmp_path: Path) -> None:
     assert clio["fields"] == []
 
 
-def test_bad_geometry_is_refused(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_bad_geometry_is_refused(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     v, f, c = _geometry(tmp_path, faces="0 1 9\n")
     assert (
         to_glb.main(
@@ -175,10 +164,7 @@ def test_points_are_refused_unless_allowed(tmp_path: Path) -> None:
     assert not (tmp_path / "p.glb").exists()
 
     assert (
-        to_glb.main(
-            ["points", str(points), "-o", str(tmp_path / "p.glb"), "--allow-points"]
-        )
-        == 0
+        to_glb.main(["points", str(points), "-o", str(tmp_path / "p.glb"), "--allow-points"]) == 0
     )
     gltf = to_glb.read_glb_json(tmp_path / "p.glb")
     assert gltf["meshes"][0]["primitives"][0]["mode"] == 0
@@ -260,26 +246,21 @@ def test_invalid_views_fail_with_reasons() -> None:
     dup = validate_views.validate_table(_design(unit_id=["u1", "u1", "u3"]), schema)
     assert any("primary key" in e for e in dup["errors"])
 
-    as_text = validate_views.validate_table(
-        _design(treatment_value=["0", "50", "0"]), schema
-    )
+    as_text = validate_views.validate_table(_design(treatment_value=["0", "50", "0"]), schema)
     assert any("treatment_value" in e for e in as_text["errors"])
 
     missing = validate_views.validate_table(pa.table({"genotype": ["g1"]}), schema)
     assert any("missing required columns" in e for e in missing["errors"])
 
     observations = validate_views.load_schema("observations")
-    sentinel = validate_views.validate_table(
-        _observations([10.0, FLOAT_MAX, 12.0]), observations
-    )
+    sentinel = validate_views.validate_table(_observations([10.0, FLOAT_MAX, 12.0]), observations)
     assert any("sentinel" in e for e in sentinel["errors"])
 
     bad_time = _observations().set_column(
         1, "time", pa.array(["yesterday", "2000-01-02", "2000-01-01"])
     )
     assert any(
-        "ISO 8601" in e
-        for e in validate_views.validate_table(bad_time, observations)["errors"]
+        "ISO 8601" in e for e in validate_views.validate_table(bad_time, observations)["errors"]
     )
 
 

@@ -1,3 +1,9 @@
+---
+name: coordinate-cohort-qc-map-reduce
+title: Coordinate Cohort QC Map/Reduce
+description: Coordinate cohort QC as a three-step map-reduce over per-sample metrics, cohort outliers and manifest reconciliation.
+---
+
 # Coordinate Cohort QC Map/Reduce
 
 Use a three-step cohort QC pattern:

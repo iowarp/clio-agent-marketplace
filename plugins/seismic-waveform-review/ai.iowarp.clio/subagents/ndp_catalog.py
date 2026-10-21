@@ -7,5 +7,11 @@ ndp_catalog = Subagent(
     prompt=PromptFile("prompt/subagents/ndp_catalog.md"),
     description="NDP Catalog Child Expert: ndp catalog",
     plugins=["ndp"],
-    tools=["ndp_list_organizations", "ndp_search_datasets", "ndp_get_dataset_details", "ndp_stage_resource", "load_skill"],
+    tools=[
+        "ndp_list_organizations",
+        "ndp_search_datasets",
+        "ndp_get_dataset_details",
+        "ndp_stage_resource",
+        "load_skill",
+    ],
 )

@@ -7,6 +7,17 @@ analysis = Subagent(
     prompt=PromptFile("prompt/subagents/analysis.md"),
     description="EarthScope Scientific Analysis Expert",
     plugins=["delegation"],
-    tools=["spawn_agent_task", "spawn_agents_parallel", "wait_tasks", "observe_tasks", "get_task_result"],
-    structured_outputs={"workflow_state": True, "evidence": True, "errors": True, "delegation": True},
+    tools=[
+        "spawn_agent_task",
+        "spawn_agents_parallel",
+        "wait_tasks",
+        "observe_tasks",
+        "get_task_result",
+    ],
+    structured_outputs={
+        "workflow_state": True,
+        "evidence": True,
+        "errors": True,
+        "delegation": True,
+    },
 )

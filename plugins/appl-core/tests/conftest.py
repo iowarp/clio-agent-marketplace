@@ -123,13 +123,9 @@ def _signatures() -> pa.Table:
             "sample_key": keys,
             "plant_id": pa.array(plants, pa.int64()),
             "round_id": pa.array(rounds, pa.int64()),
-            "band_001_400p00nm": pa.array(
-                [0.05 + 0.001 * k for k in range(n)], pa.float64()
-            ),
+            "band_001_400p00nm": pa.array([0.05 + 0.001 * k for k in range(n)], pa.float64()),
             "band_001_400p01nm": pa.array([""] * n, pa.string()),
-            "band_002_401p15nm": pa.array(
-                [0.06 + 0.001 * k for k in range(n)], pa.float64()
-            ),
+            "band_002_401p15nm": pa.array([0.06 + 0.001 * k for k in range(n)], pa.float64()),
             "band_002_401p16nm": pa.array([None] * n, pa.string()),
         }
     )
@@ -178,15 +174,11 @@ def build_bundle(root: Path) -> Path:
             {
                 "modality_id": "spec",
                 "files": {"signatures": "spec/spec-signatures.parquet"},
-                "row_counts": {
-                    "signatures": signatures.num_rows + 1
-                },  # planted mismatch
+                "row_counts": {"signatures": signatures.num_rows + 1},  # planted mismatch
             },
         ],
     }
-    (root / "manifest.json").write_text(
-        json.dumps(manifest, indent=2), encoding="utf-8"
-    )
+    (root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     (root / "README.md").write_text(
         "# Synthetic export\n\nexport_version: 6\n\nColumns: area_px, score.\n",
         encoding="utf-8",
