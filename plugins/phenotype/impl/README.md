@@ -1,6 +1,6 @@
 # phenotype-workload
 
-The synthetic phenotyping workload behind the `phenotype` pack: a
+The synthetic phenotyping workload behind the `phenotype` plugin: a
 deterministic 5-stage pipeline (ingest -> calibrate -> segment ->
 extract_traits -> predict) over a fixed 60-plant cohort, with full provenance
 capture per stage execution into a SQLite store, quarantine semantics, batch
@@ -16,7 +16,7 @@ at the pack boundary, not by shared code.
 Entry points:
 
 - `phenotype-mcp` — the 3-tool workload MCP (`measure_cohort`,
-  `campaign_status`, `lift_quarantine`), declared by `phenotype/AGENT.md`.
+  `campaign_status`, `lift_quarantine`), declared by the `phenotype` plugin's `mcp.json`.
 - `spotter-campaign` — the batch campaign CLI.
 
 Test with `uv run --project . pytest`.
