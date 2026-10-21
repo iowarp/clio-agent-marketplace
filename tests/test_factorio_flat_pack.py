@@ -289,6 +289,8 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
             "main": [
                 "shell_bash",
                 "fs_read_file",
+                "fs_list_directory",
+                "fs_search_text",
                 "fs_propose_edit",
                 "fs_apply_edit_write",
                 "view_image",
