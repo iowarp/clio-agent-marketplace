@@ -253,7 +253,9 @@ def _check_loader(
             failures.append(EvaluationFailure(case_id, "card.py verify never passed"))
     if expect.get("parent_reran_after_child"):
         waits = [
-            i for i, a in enumerate(_rows(result["actions"])) if a.get("name") == "wait_agent_tasks"
+            i
+            for i, a in enumerate(_rows(result["actions"]))
+            if a.get("name") in {"wait_tasks", "wait_agent_tasks"}
         ]
         reruns = [i for i, c in _commands(result) if "loader.py" in c]
         if not waits or not any(i > waits[0] for i in reruns):

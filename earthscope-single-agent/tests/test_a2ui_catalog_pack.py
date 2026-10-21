@@ -387,8 +387,8 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     policy.py`` keeps a dependency-free companion check (the key exists and is a
     non-empty string) for CI's bare no-deps job; this test is the one that proves
     the value actually parses as PEP 440 and means what the AGENT.md comment next
-    to it claims. Beta 3 includes the catalog vocabulary and the managed
-    execution/document tools declared by this root.
+    to it claims. Beta 8 adds the read-only repository inspection tools
+    declared by this root, beyond the earlier managed execution/document tools.
 
     Deliberately NOT wrapped in a try/except-skip -- see this module's docstring.
     """
@@ -412,7 +412,8 @@ def test_manifest_declares_a_pep440_clio_agent_floor() -> None:
     assert isinstance(floor, str) and floor.strip()
 
     spec = SpecifierSet(floor)
-    assert spec.contains("0.9.5b3"), f"{floor!r} should admit beta 3 (the declared floor)"
+    assert spec.contains("0.9.5b8"), f"{floor!r} should admit beta 8 (the declared floor)"
+    assert not spec.contains("0.9.5b7.post2"), f"{floor!r} should reject pre-inspection runtimes"
     assert spec.contains("0.9.5"), f"{floor!r} should admit 0.9.5"
     assert not spec.contains("0.9.5b2"), (
         f"{floor!r} should exclude beta 2 (no released managed tools)"

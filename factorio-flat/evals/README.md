@@ -41,21 +41,20 @@ evaluator rejects a trace it cannot read rather than grading it as compliant.
 }
 ```
 
-Action results keep their runtime shapes: `spawn_agent_task` returns one handle
-(`task_id`, `status`, `run_index`, `queued_reason`), `spawn_agents_parallel`
-returns those handles under `spawned`, `wait_agent_tasks` returns full-fidelity
-rows under `results`, and `observe_agent_tasks` returns incremental event snapshots
-under `tasks`. The evaluator still understands historical `check_agent_tasks`
-records so saved qualification traces remain readable; that tool is no longer in
-the model inventory.
+New task integration uses `spawn_agent_task` to return one durable `handle`, and
+`spawn_agents_parallel` to return independent acceptance/error `outcomes`.
+Use `query_tasks`, `observe_tasks`, `wait_tasks` and `get_task_result` across kinds.
+Explicit collection acknowledges results at the recipient's Core input boundary;
+query and observation do not. Historical traces and agent-only aliases remain
+compatibility input, not fresh acceptance of the replacement.
 
-There is no paused task status. A child that needs a scientist-owned decision
-keeps status `running`. The order is: the child's own turn asks and goes
-`waiting_user`, and that status is what triggers the runtime to mint a forwarded
-question on the attended root whose `owner_session_id` is the child session —
-nothing in the forward path sets the child's status. The evaluator recognizes a
-blocked consultation by that conjunction, attributing it to a task by joining the
-question's `owner_session_id` to the task's `child_session_id`.
+Pause holds a child's model execution while accepted tasks continue. Asking a
+scientist-owned question posts a Question handle immediately; the child can
+continue independent work or explicitly `wait_tasks` for its answer. Question
+presentation follows ownership to the attended parent and refers to the same
+Question handle. It does not create another question lifecycle. Existing grader
+shapes below describe historical traces; replacement acceptance must exercise the
+shared public contract against actual models and the production service.
 
 ## Rules that reject a trace outright
 

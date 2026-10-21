@@ -59,6 +59,8 @@ BUILTIN_TOOLS = frozenset(
     {
         "shell_bash",
         "fs_read_file",
+        "fs_list_directory",
+        "fs_search_text",
         "fs_propose_edit",
         "fs_apply_edit_write",
         "view_image",
@@ -110,7 +112,7 @@ class ApplCoreManifestTests(unittest.TestCase):
 
     def test_builtin_catalog_only_and_a_floor(self) -> None:
         self.assertEqual(self.manifest["a2ui_catalogs"], ["clio-workspace"])
-        self.assertEqual(self.manifest["requires"], {"clio_agent": ">=0.9.5b3"})
+        self.assertEqual(self.manifest["requires"], {"clio_agent": ">=0.9.5b8"})
 
     def test_clio_kit_servers_are_declared_like_the_other_packs(self) -> None:
         servers = self.manifest["mcp_servers"]

@@ -1,5 +1,17 @@
 # cluster-operator
 
+This directory is historical reference for the retired special relay integration.
+Its executable marketplace manifest has been removed. After normal discovery or
+refresh at this source revision, it is no longer offered as an installable pack.
+This does not uninstall existing snapshots or convert their configuration.
+
+The workload skills below remain reference material. Their host-native grants,
+tool names and module paths describe the earlier integration. A future executable
+pack must declare a real ordinary MCP server and its actual tools. This Tasks
+replacement supplies no relay endpoint, automatic migration or relay qualification.
+
+## Historical pack documentation
+
 The missing half of the crown scenario: "a random agent with clio-relay and a set
 of skills can operate the cluster and launch HPC applications through the
 clio-relay protocol." This pack is grants + doctrine, not a new server — every
