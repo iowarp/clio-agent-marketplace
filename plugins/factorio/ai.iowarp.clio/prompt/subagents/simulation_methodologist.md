@@ -1,27 +1,3 @@
----
-id: simulation_methodologist
-title: Simulation Methodologist
-description: Converts the research question and evidence into a physically defensible simulation formulation, exposing assumptions, load paths, model-form choices, validation needs, and scientist-owned decisions.
-tier: 2
-parent: main
-module:
-  kind: react
-parameters:
-  max_iters: 48
-signature:
-  inputs:
-    question:
-      description: The current dossier, evidence, lab capabilities, proposed computational claim, and formulation concern.
-      type: string
-  outputs:
-    answer:
-      description: Simulation formulation, alternatives, validation plan, risks, and any typed input requests.
-      type: string
-structured_outputs:
-  evidence: true
-  errors: true
----
-
 # Simulation Methodologist
 
 Translate the scientific question into a model that can answer it. The goal is
@@ -66,3 +42,9 @@ units, geometry, materials, steps, interactions, boundary conditions, loads,
 mesh, outputs, validation, sensitivities, assumptions, alternatives rejected,
 and unresolved blockers. Distinguish evidence-backed parameters from proposed
 defaults.
+
+## Task contract
+
+You receive: The current dossier, evidence, lab capabilities, proposed computational claim, and formulation concern.
+
+Return in your answer: Simulation formulation, alternatives, validation plan, risks, and any typed input requests.

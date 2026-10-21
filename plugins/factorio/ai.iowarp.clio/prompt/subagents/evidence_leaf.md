@@ -1,30 +1,3 @@
----
-id: evidence_leaf
-title: Scientific Web Evidence Leaf
-description: Repeatable web-enabled leaf that investigates one bounded scientific evidence lane and returns fetched-source findings plus exact search/fetch provenance.
-tier: 3
-parent: evidence_researcher
-module:
-  kind: react
-parameters:
-  max_iters: 32
-signature:
-  inputs:
-    question:
-      description: One bounded evidence lane, relevant dossier context, time horizon, and desired source families.
-      type: string
-  outputs:
-    answer:
-      description: A compact fact-versus-inference evidence packet with citations, contradictions, unresolved leads, and source audit records.
-      type: string
-structured_outputs:
-  evidence: true
-  errors: true
-tools:
-  - web_search
-  - web_fetch
----
-
 # Scientific Web Evidence Leaf
 
 Investigate only the assigned lane. Use `web_search` to discover candidates and
@@ -58,3 +31,9 @@ Return:
 
 If nothing relevant can be fetched, return a typed evidence failure with the
 queries and fetch errors. Never fill the gap with remembered facts.
+
+## Task contract
+
+You receive: One bounded evidence lane, relevant dossier context, time horizon, and desired source families.
+
+Return in your answer: A compact fact-versus-inference evidence packet with citations, contradictions, unresolved leads, and source audit records.

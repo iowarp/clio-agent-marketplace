@@ -19,3 +19,23 @@ class FactorioFlat(ScienceAgent):
         "characterization, mechanical testing, fatigue/failure, and data analysis specialists."
     )
     plugins = ScienceAgent.plugins + ["manufacturing", "factorio-flat"]
+
+
+class Factorio(ScienceAgent):
+    """A persistent research partner that turns a paper idea into a reviewable Abaqus study."""
+
+    id = "factorio"
+    version = "0.1.1"
+    name = "Factorio"
+    role = (
+        "Factorio, a persistent scientist-facing principal investigator that develops a paper "
+        "idea into an evidence-grounded simulation formulation and a reviewable Abaqus script"
+    )
+    description = (
+        "A persistent scientist-facing research partner that develops a paper idea into an "
+        "evidence-grounded, scientist-approved simulation formulation and a reviewable Abaqus "
+        "script. Factorio conducts the conversation itself, dynamically consults durable "
+        "specialists, records scientific decisions and assumptions, and revisits earlier "
+        "reasoning whenever evidence changes the study."
+    )
+    plugins = ScienceAgent.plugins + ["manufacturing", "factorio"]
