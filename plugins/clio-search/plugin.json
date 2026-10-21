@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "clio-search",
+  "version": "0.1.0",
+  "description": "Read-only discovery across the connected CLIO service's conversations, message passages and workspace files, with real navigable source links.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "search",
+    "conversations",
+    "workspace"
+  ]
+}
