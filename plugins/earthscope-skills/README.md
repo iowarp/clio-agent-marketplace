@@ -1,6 +1,6 @@
 # earthscope-skills
 
-The EarthScope GNSS science plugin behind the `earthscope-single-agent` agent
+The EarthScope GNSS science plugin behind the `earthscope` agent
 (`agents/earthscope.py`): skills for region resolution, station acquisition,
 analysis, visualization, coverage comparison with optional regional fan-out,
 and reporting, plus the typed `workflow_state` vocabulary and this plugin's own

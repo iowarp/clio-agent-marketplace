@@ -43,9 +43,9 @@ jobs:
   plugin-tests:
     # Each plugin's own tests: A2UI catalog composability (earthscope-skills,
     # topology), the HDF5 subagent contract (data-semantics), skill scripts
-    # (appl-core, abaqus, pdf, visuals, connected-data, document-runtime). They
-    # need clio-agent (which brings clio-schemas) plus the scientific packages
-    # the skill scripts use.
+    # (appl-core, abaqus, pdf, visuals, connected-data, document-runtime) and
+    # the Factorio black-box eval tooling. They need clio-agent (which
+    # brings clio-schemas) plus the scientific packages the skill scripts use.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

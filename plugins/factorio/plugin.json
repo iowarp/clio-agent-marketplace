@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "factorio",
+  "version": "0.5.0",
+  "description": "Factorio's research-process subagents (methodologist, virtual lab, evidence researcher with leaf and critic, simulation methodologist, Abaqus engineer, independent reviewer) and its principal-investigator fragments.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "factorio",
+    "research",
+    "simulation"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "delegation"
+      ]
+    }
+  }
+}

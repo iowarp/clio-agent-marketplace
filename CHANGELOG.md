@@ -4,16 +4,20 @@
 
 ### Removed
 
-- The Factorio agents (`factorio`, `factorio-flat`) and the EarthScope GNSS
-  region agents (`earthscope-gnss-region`, `earthscope-flat` and the archived
-  depth and width topology variants), with the plugins only they used
-  (`factorio`, `factorio-flat`, `earthscope`, `earthscope-flat`,
-  `earthscope-gnss`, `earthscope-gnss-region-depth`,
-  `earthscope-gnss-region-width`). `earthscope-single-agent` remains the
-  EarthScope agent: one agent loading the `earthscope-skills` procedures on
-  demand. The materials and engineering capability plugins (abaqus, materials,
-  fatigue, characterization, mechanical-testing, am-process, manufacturing,
-  topology, scientific-method) stay, to add from the + menu.
+- The blueprint-era topology experiments, superseded by the flat agents that
+  load procedures on demand: the Factorio principal-investigator agent and the
+  EarthScope GNSS region agents (`earthscope-gnss-region`, `earthscope-flat`
+  and the archived depth and width topology variants), with the plugins only
+  they used (`earthscope`, `earthscope-flat`, `earthscope-gnss`,
+  `earthscope-gnss-region-depth`, `earthscope-gnss-region-width`).
+
+### Renamed
+
+- `factorio-flat` is now `factorio` (agent and plugin, 0.5.0): the flat
+  research partner replaces the earlier Factorio agent under its name.
+- `earthscope-single-agent` is now `earthscope` (0.5.0): one agent loading the
+  `earthscope-skills` procedures on demand. Refs to the old ids no longer
+  resolve; use `clio/factorio` and `clio/earthscope`.
 
 ### Changed
 
