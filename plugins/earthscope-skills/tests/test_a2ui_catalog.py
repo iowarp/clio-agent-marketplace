@@ -102,7 +102,7 @@ def _builtin_component_names() -> frozenset[str]:
 def test_every_implements_kernel_names_a_basic_or_workspace_component(
     sidecar_raw: dict[str, Any],
 ) -> None:
-    """Mirrors clio-agent's own install-time gate (a2ui_catalogs/blueprint.py::_load_one)."""
+    """Mirrors clio-agent's own install-time gate (a2ui_catalogs/plugin.py::load_catalog_directory)."""
 
     sidecar = CatalogSidecar.model_validate(sidecar_raw)
     builtin_names = _builtin_component_names()

@@ -7,7 +7,7 @@ capture per stage execution into a SQLite store, quarantine semantics, batch
 reports, and the chaos-engineering `injection.json` hook for validating
 anomaly detection.
 
-Split out of `spotter-ai/impl` on owner ruling: the SPOTTER provenance MCP
+Split out of the SPOTTER project (now `plugins/spotter/impl`) on owner ruling: the SPOTTER provenance MCP
 (general, reads Flowcept/CMF/native stores) and this synthetic demo science
 are **two different things** and ship as two projects. The SPOTTER server
 reads the provenance store this workload writes — that contract is exercised

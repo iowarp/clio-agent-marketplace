@@ -21,7 +21,7 @@ that stay side by side:
 | `render_view.py` | `uv run` with numpy and matplotlib | a `.glb`, to draw a report figure |
 
 Run the two plain-Python tools through uv's shared cached environment, never
-a `.venv` inside the installed skill or blueprint directory:
+a `.venv` inside the installed skill or plugin directory:
 
 ```text
 uv run --no-project --with "numpy>=1.24" python "SKILL_ROOT/scripts/fea_glb.py" ARGS

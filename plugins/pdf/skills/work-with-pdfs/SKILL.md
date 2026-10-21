@@ -91,7 +91,7 @@ and `python` paths as `UV` and `PYTHON`, then run:
 ```
 
 This uses uv's shared cached environment. Do not create a `.venv` inside the
-installed skill or blueprint directory.
+installed skill or plugin directory.
 
 For a drawing, scan, or other explicitly visual question, skip the slower text
 conversion and render pages immediately:
