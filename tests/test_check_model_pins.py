@@ -2,59 +2,88 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from scripts.check_model_pins import find_unjustified_pins
 
+_SUBAGENT = """from clio_agent.sdk import PromptFile, Subagent
+from clio_agent.sdk.model import Prefers
+
+reviewer = Subagent(
+    "reviewer",
+    prompt=PromptFile("prompt/subagents/reviewer.md"),
+{extra}    prefers=Prefers(model="sonnet"),
+)
+"""
+
+
+def _write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
 
 class ModelPinPolicyTests(unittest.TestCase):
-    """Exercise frontmatter-only model-pin enforcement."""
+    """Exercise model-pin enforcement over agents, subagents and manifests."""
 
-    def test_reports_unjustified_frontmatter_pin(self) -> None:
-        """A pack cannot silently override the session model."""
+    def test_reports_unjustified_subagent_pin(self) -> None:
+        """A subagent cannot silently override the session model."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            pack = root / "pack" / "experts" / "main.md"
-            pack.parent.mkdir(parents=True)
-            pack.write_text(
-                "---\nid: main\ndefault_model: sonnet\n---\nBody\n",
-                encoding="utf-8",
+            _write(
+                root / "plugins" / "p" / "ai.iowarp.clio" / "subagents" / "reviewer.py",
+                _SUBAGENT.format(extra=""),
             )
 
             violations = find_unjustified_pins(root)
 
         self.assertEqual(len(violations), 1)
-        self.assertEqual(violations[0].line, 3)
+        self.assertEqual(violations[0].line, 7)
         self.assertEqual(violations[0].model, "sonnet")
 
     def test_accepts_adjacent_explicit_justification(self) -> None:
         """A documented exceptional pin remains mechanically auditable."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            pack = root / "pack" / "AGENT.md"
-            pack.parent.mkdir(parents=True)
-            pack.write_text(
-                "---\nid: pack\n"
-                "# model-pin-justification: protocol qualification fixture\n"
-                "default_model: fixture-model\n---\n",
-                encoding="utf-8",
+            _write(
+                root / "plugins" / "p" / "ai.iowarp.clio" / "subagents" / "reviewer.py",
+                _SUBAGENT.format(
+                    extra="    # model-pin-justification: protocol qualification fixture\n"
+                ),
             )
 
             violations = find_unjustified_pins(root)
 
         self.assertEqual(violations, [])
 
-    def test_ignores_body_examples_and_non_frontmatter_files(self) -> None:
-        """Documentation prose must not be mistaken for active configuration."""
+    def test_reports_agent_class_and_manifest_pins(self) -> None:
+        """Agent classes and plugin.json preferences are checked too."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            body_example = root / "pack" / "README.md"
-            body_example.parent.mkdir(parents=True)
-            body_example.write_text(
-                "# Example\n\n`default_model: sonnet` is discouraged.\n",
-                encoding="utf-8",
+            _write(
+                root / "agents" / "a.py",
+                "from clio_agent.sdk import Agent, Prefers\n\n"
+                "class A(Agent):\n    id = 'a'\n    prefers = Prefers(provider='openai')\n",
+            )
+            _write(
+                root / "plugins" / "p" / "plugin.json",
+                json.dumps({"extensions": {"ai.iowarp.clio": {"prefers": {"model": "gpt"}}}}),
+            )
+
+            violations = find_unjustified_pins(root)
+
+        self.assertEqual(sorted(v.model for v in violations), ["gpt", "openai"])
+
+    def test_ignores_prose_and_effort_only_preferences(self) -> None:
+        """Documentation and non-model preferences are not pins."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write(root / "plugins" / "p" / "README.md", "`Prefers(model='sonnet')`\n")
+            _write(
+                root / "agents" / "a.py",
+                "from clio_agent.sdk import Prefers\n\nX = Prefers(effort='high', model='')\n",
             )
 
             violations = find_unjustified_pins(root)
