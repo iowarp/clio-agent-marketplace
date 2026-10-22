@@ -259,12 +259,13 @@ class FactorioFlatExpertContractTests(unittest.TestCase):
     def test_no_expert_pins_a_model_or_provider(self) -> None:
         """Every expert inherits the session's provider and model.
 
-        The loader honours a bare ``model:`` / ``provider:`` as well as the
-        ``default_model:`` the repo's pin checker scans for, so a pack-local
-        assertion is what actually keeps this pack model-agnostic.
+        The loader honours a bare ``model:`` / ``provider:`` as well as
+        ``default_model:``, and the repo's pin checker covers only the model
+        keys, so a pack-local assertion is what keeps this pack model- and
+        provider-agnostic.
 
         Deliberately stricter than ``scripts/check_model_pins.py``, which allows
-        a ``default_model:`` carrying an adjacent ``# model-pin-justification:``
+        a model pin carrying an adjacent ``# model-pin-justification:``
         comment. This pack is an A/B evaluation surface: a pin here would make
         two variants incomparable, so it has no justified form. Relax this test
         first if that ever stops being true.
