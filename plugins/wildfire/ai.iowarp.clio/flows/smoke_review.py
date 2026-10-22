@@ -51,7 +51,9 @@ class SmokeReview(Flow):
     """Run the three review stages in order and return their answers and typed state."""
 
     id = "smoke-review"
-    description = "Acquire fire, smoke and air-quality data, analyze downwind impact, render the map."
+    description = (
+        "Acquire fire, smoke and air-quality data, analyze downwind impact, render the map."
+    )
 
     async def forward(self, task: Any, ctx: Any) -> Any:
         return await ctx.call("workflow", {"workflow": SMOKE_REVIEW.to_dict(), "task": task})

@@ -42,11 +42,11 @@ def _frontmatter(path: Path) -> dict[str, str]:
     if not text.startswith("---"):
         return {}
     head = text.split("---", 2)[1]
-    return dict(
-        (key.strip(), value.strip())
+    return {
+        key.strip(): value.strip()
         for key, value in (line.split(":", 1) for line in head.splitlines() if ":" in line)
         if not key.startswith((" ", "\t", "-"))
-    )
+    }
 
 
 def _plugins() -> list[Path]:

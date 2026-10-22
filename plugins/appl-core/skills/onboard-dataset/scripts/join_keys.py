@@ -74,12 +74,10 @@ def _case(values: Iterable[str]) -> str:
 
 def _key_tuples(table: pa.Table, keys: list[str]) -> list[tuple[Any, ...]]:
     columns = [table.column(key).to_pylist() for key in keys]
-    return list(zip(*columns))
+    return list(zip(*columns, strict=False))
 
 
-def _side_report(
-    table: pa.Table, keys: list[str], tuples: list[tuple[Any, ...]]
-) -> dict[str, Any]:
+def _side_report(table: pa.Table, keys: list[str], tuples: list[tuple[Any, ...]]) -> dict[str, Any]:
     counts = Counter(tuples)
     report: dict[str, Any] = {
         "rows": table.num_rows,
@@ -166,9 +164,7 @@ def compare(table_a: pa.Table, table_b: pa.Table, keys: list[str]) -> dict[str, 
     for key in keys:
         ta, tb = report["a"]["types"][key], report["b"]["types"][key]
         if ta != tb:
-            warnings.append(
-                f"type mismatch on {key}: {ta} vs {tb} (cast before joining; '1' != 1)"
-            )
+            warnings.append(f"type mismatch on {key}: {ta} vs {tb} (cast before joining; '1' != 1)")
         ca = report["a"]["per_column"][key]["case"]
         cb = report["b"]["per_column"][key]["case"]
         if ca != cb:
@@ -176,13 +172,9 @@ def compare(table_a: pa.Table, table_b: pa.Table, keys: list[str]) -> dict[str, 
         sa = {s["shape"] for s in report["a"]["per_column"][key]["shapes"]}
         sb = {s["shape"] for s in report["b"]["per_column"][key]["shapes"]}
         if sa and sb and not sa & sb:
-            warnings.append(
-                f"no common value shape on {key}: {sorted(sa)[:3]} vs {sorted(sb)[:3]}"
-            )
+            warnings.append(f"no common value shape on {key}: {sorted(sa)[:3]} vs {sorted(sb)[:3]}")
     if report["a"]["duplicate_key_rows"] and report["b"]["duplicate_key_rows"]:
-        warnings.append(
-            "keys repeat on BOTH sides: a join multiplies rows (many-to-many)"
-        )
+        warnings.append("keys repeat on BOTH sides: a join multiplies rows (many-to-many)")
     smaller = min(len(set_a), len(set_b)) or 1
     if len(shared) / smaller < LOW_OVERLAP:
         warnings.append(
@@ -254,9 +246,7 @@ def summarize(report: dict[str, Any], limit: int = 6) -> list[str]:
     lines = [f"keys: {report['keys']}"]
     for side in ("a", "b"):
         s = report[side]
-        shapes = {
-            k: [x["shape"] for x in v["shapes"][:2]] for k, v in s["per_column"].items()
-        }
+        shapes = {k: [x["shape"] for x in v["shapes"][:2]] for k, v in s["per_column"].items()}
         lines.append(
             f"{side}: rows={s['rows']} distinct={s['distinct_keys']} dup_rows={s['duplicate_key_rows']} "
             f"null_keys={s['null_key_rows']} types={s['types']} shapes={shapes}"
@@ -291,9 +281,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("table_a", type=Path)
     parser.add_argument("table_b", type=Path)
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--keys", help="comma-separated key columns present in both tables"
-    )
+    group.add_argument("--keys", help="comma-separated key columns present in both tables")
     group.add_argument("--key-column", help="one key column present in both tables")
     parser.add_argument(
         "--out", type=Path, help="write the full JSON report here instead of stdout"

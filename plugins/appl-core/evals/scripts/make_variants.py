@@ -68,9 +68,7 @@ VARIANTS = (
 TABLE_SUFFIXES = frozenset({".parquet", ".pq", ".csv", ".tsv"})
 COPY_SUFFIXES = TABLE_SUFFIXES | {".json", ".md", ".yaml", ".yml", ".txt"}
 DOC_SUFFIXES = frozenset({".md", ".yaml", ".yml", ".txt"})
-TREATMENT_RE = re.compile(
-    r"(^|_)(treatment|dose|spike|concentration)(_\d+)?$", re.IGNORECASE
-)
+TREATMENT_RE = re.compile(r"(^|_)(treatment|dose|spike|concentration)(_\d+)?$", re.IGNORECASE)
 KEYLIKE_RE = re.compile(
     r"(^|_)(id|key|keys|time|timestamp|date|datetime|round|plant|unit|experiment|modality|path|name)(_|$)",
     re.IGNORECASE,
@@ -121,20 +119,14 @@ class Bundle:
 
         resolved = path.resolve()
         if resolved == self.src or self.src in resolved.parents:
-            raise VariantError(
-                f"refusing to write inside the source bundle: {resolved}"
-            )
+            raise VariantError(f"refusing to write inside the source bundle: {resolved}")
         if not (resolved == self.out or self.out in resolved.parents):
-            raise VariantError(
-                f"refusing to write outside the output bundle: {resolved}"
-            )
+            raise VariantError(f"refusing to write outside the output bundle: {resolved}")
         return resolved
 
     def tables(self) -> list[Path]:
         return sorted(
-            p
-            for p in self.out.rglob("*")
-            if p.is_file() and p.suffix.lower() in TABLE_SUFFIXES
+            p for p in self.out.rglob("*") if p.is_file() and p.suffix.lower() in TABLE_SUFFIXES
         )
 
     def manifest_path(self) -> Path | None:
@@ -149,9 +141,7 @@ class Bundle:
         path = self.manifest_path()
         if path is None:
             return
-        self.guard(path).write_text(
-            json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
-        )
+        self.guard(path).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 
 # ---------------------------------------------------------------- tables
@@ -173,7 +163,7 @@ def _csv_safe(table: pa.Table) -> pa.Table:
     """Render nested columns as Python-style strings so CSV can hold them."""
 
     columns = []
-    for field, column in zip(table.schema, table.columns):
+    for field, column in zip(table.schema, table.columns, strict=False):
         if pa.types.is_nested(field.type):
             values = [None if v is None else repr(v) for v in column.to_pylist()]
             columns.append(pa.array(values, type=pa.string()))
@@ -211,9 +201,7 @@ def transform_tables(
             changed[path.relative_to(bundle.out).as_posix()] = new.num_rows
     for path in (p for p in tables if p.suffix.lower() in {".csv", ".tsv"}):
         twin = mutated_parquet.get(path.with_suffix(""))
-        parquet_twin_exists = any(
-            path.with_suffix(s).is_file() for s in (".parquet", ".pq")
-        )
+        parquet_twin_exists = any(path.with_suffix(s).is_file() for s in (".parquet", ".pq"))
         if twin is not None:
             new: pa.Table | None = twin
         elif parquet_twin_exists:
@@ -287,11 +275,7 @@ def _is_asset_dir(directory: Path) -> bool:
     files = [p for p in directory.iterdir() if p.is_file()]
     if len(files) < ASSET_DIR_MIN_FILES:
         return False
-    data = sum(
-        1
-        for p in files
-        if p.suffix.lower() in TABLE_SUFFIXES | DOC_SUFFIXES | {".json"}
-    )
+    data = sum(1 for p in files if p.suffix.lower() in TABLE_SUFFIXES | DOC_SUFFIXES | {".json"})
     return data / len(files) < 0.1
 
 
@@ -379,9 +363,7 @@ def categorical_treatment(
     for path in bundle.tables():
         table = read_any(path)
         for name in table.column_names:
-            if (wanted is None and TREATMENT_RE.search(name)) or (
-                wanted and name in wanted
-            ):
+            if (wanted is None and TREATMENT_RE.search(name)) or (wanted and name in wanted):
                 values = _numeric_values(table.column(name))
                 if values is not None:
                     levels.update(v for v in values if v is not None)
@@ -397,16 +379,11 @@ def categorical_treatment(
     def fn(table: pa.Table, path: Path) -> pa.Table | None:
         changed = False
         for index, name in enumerate(table.column_names):
-            if not (
-                (wanted is None and TREATMENT_RE.search(name))
-                or (wanted and name in wanted)
-            ):
+            if not ((wanted is None and TREATMENT_RE.search(name)) or (wanted and name in wanted)):
                 continue
             if _numeric_values(table.column(name)) is None:
                 continue
-            labels = pa.array(
-                [label(v) for v in table.column(name).to_pylist()], type=pa.string()
-            )
+            labels = pa.array([label(v) for v in table.column(name).to_pylist()], type=pa.string())
             table = table.set_column(index, pa.field(name, pa.string()), labels)
             seen.setdefault(path.relative_to(bundle.out).as_posix(), []).append(name)
             changed = True
@@ -428,9 +405,7 @@ def _column_names(path: Path) -> list[str]:
     return read_any(path).column_names
 
 
-def unbalanced(
-    bundle: Bundle, args: argparse.Namespace, rng: random.Random
-) -> dict[str, Any]:
+def unbalanced(bundle: Bundle, args: argparse.Namespace, rng: random.Random) -> dict[str, Any]:
     tables = bundle.tables()
     column = args.unit_column
     if column is None:
@@ -453,10 +428,7 @@ def unbalanced(
         if column not in table.column_names:
             return None
         keep = pa.array(
-            [
-                v is None or str(v) not in dropped
-                for v in table.column(column).to_pylist()
-            ],
+            [v is None or str(v) not in dropped for v in table.column(column).to_pylist()],
             # An empty table would otherwise infer a null-typed mask, which filter rejects.
             type=pa.bool_(),
         )
@@ -479,11 +451,7 @@ def _modality_entries(manifest: Any) -> list[tuple[list[Any], int, str]]:
             for index, entry in enumerate(modalities):
                 if isinstance(entry, dict):
                     ident = next(
-                        (
-                            entry[k]
-                            for k in MODALITY_ID_KEYS
-                            if isinstance(entry.get(k), str)
-                        ),
+                        (entry[k] for k in MODALITY_ID_KEYS if isinstance(entry.get(k), str)),
                         None,
                     )
                     if ident:
@@ -491,15 +459,11 @@ def _modality_entries(manifest: Any) -> list[tuple[list[Any], int, str]]:
     return found
 
 
-def drop_modality(
-    bundle: Bundle, args: argparse.Namespace, rng: random.Random
-) -> dict[str, Any]:
+def drop_modality(bundle: Bundle, args: argparse.Namespace, rng: random.Random) -> dict[str, Any]:
     manifest = bundle.load_manifest()
     entries = _modality_entries(manifest)
     if not entries:
-        raise VariantError(
-            "the manifest has no 'modalities' list with identifiable entries"
-        )
+        raise VariantError("the manifest has no 'modalities' list with identifiable entries")
     if args.modality:
         match = [e for e in entries if e[2].lower() == args.modality.lower()]
         if not match:
@@ -530,10 +494,7 @@ def drop_modality(
         if column is None:
             return None
         keep = pa.array(
-            [
-                v is None or str(v).lower() != ident.lower()
-                for v in table.column(column).to_pylist()
-            ]
+            [v is None or str(v).lower() != ident.lower() for v in table.column(column).to_pylist()]
         )
         filtered = table.filter(keep)
         return filtered if filtered.num_rows != table.num_rows else None
@@ -555,17 +516,13 @@ def _pick_renames(bundle: Bundle, count: int, rng: random.Random) -> dict[str, s
     candidates = sorted(n for n in names if not KEYLIKE_RE.search(n))
     if not candidates:
         raise VariantError("no renameable (non-key) columns found")
-    return {
-        old: f"alt_{old}" for old in rng.sample(candidates, min(count, len(candidates)))
-    }
+    return {old: f"alt_{old}" for old in rng.sample(candidates, min(count, len(candidates)))}
 
 
 def _replace_json_strings(node: Any, mapping: dict[str, str]) -> Any:
     if isinstance(node, dict):
         return {
-            mapping.get(k, k) if isinstance(k, str) else k: _replace_json_strings(
-                v, mapping
-            )
+            mapping.get(k, k) if isinstance(k, str) else k: _replace_json_strings(v, mapping)
             for k, v in node.items()
         }
     if isinstance(node, list):
@@ -609,26 +566,20 @@ def apply_renames(bundle: Bundle, mapping: dict[str, str]) -> dict[str, Any]:
                 continue
             new = _replace_json_strings(data, mapping)
             if new != data:
-                bundle.guard(path).write_text(
-                    json.dumps(new, indent=2) + "\n", encoding="utf-8"
-                )
+                bundle.guard(path).write_text(json.dumps(new, indent=2) + "\n", encoding="utf-8")
                 touched.append(path.relative_to(bundle.out).as_posix())
         elif suffix in {".md", ".yaml", ".yml"}:
             text = path.read_text(encoding="utf-8", errors="replace")
             new_text = text
             for old, new_name in mapping.items():
-                new_text = re.sub(
-                    rf"(?<![\w]){re.escape(old)}(?![\w])", new_name, new_text
-                )
+                new_text = re.sub(rf"(?<![\w]){re.escape(old)}(?![\w])", new_name, new_text)
             if new_text != text:
                 bundle.guard(path).write_text(new_text, encoding="utf-8")
                 touched.append(path.relative_to(bundle.out).as_posix())
     return {"renames": mapping, "files_touched": sorted(set(touched))}
 
 
-def rename_columns(
-    bundle: Bundle, args: argparse.Namespace, rng: random.Random
-) -> dict[str, Any]:
+def rename_columns(bundle: Bundle, args: argparse.Namespace, rng: random.Random) -> dict[str, Any]:
     if args.rename:
         mapping = dict(item.split("=", 1) for item in args.rename)
     else:
@@ -636,9 +587,7 @@ def rename_columns(
     return apply_renames(bundle, mapping)
 
 
-def export_v7(
-    bundle: Bundle, args: argparse.Namespace, rng: random.Random
-) -> dict[str, Any]:
+def export_v7(bundle: Bundle, args: argparse.Namespace, rng: random.Random) -> dict[str, Any]:
     manifest = bundle.load_manifest()
     if not isinstance(manifest, dict):
         raise VariantError("export_v7 needs a manifest.json object at the bundle root")
@@ -651,11 +600,7 @@ def export_v7(
     )
     for path in sorted(bundle.out.rglob("*.md")):
         text = path.read_text(encoding="utf-8", errors="replace")
-        new_text = (
-            pattern.sub(lambda m: m.group(1) + "7", text)
-            if previous is not None
-            else text
-        )
+        new_text = pattern.sub(lambda m: m.group(1) + "7", text) if previous is not None else text
         if new_text != text:
             bundle.guard(path).write_text(new_text, encoding="utf-8")
             docs_touched.append(path.relative_to(bundle.out).as_posix())
@@ -715,9 +660,7 @@ def sentinel_elsewhere(
     return {"table": rel, "column": name, "injected": count, "value": FLOAT64_MAX}
 
 
-HANDLERS: dict[
-    str, Callable[[Bundle, argparse.Namespace, random.Random], dict[str, Any]]
-] = {
+HANDLERS: dict[str, Callable[[Bundle, argparse.Namespace, random.Random], dict[str, Any]]] = {
     "categorical_treatment": categorical_treatment,
     "unbalanced": unbalanced,
     "drop_modality": drop_modality,
@@ -740,9 +683,7 @@ def make_variant(src: Path, out: Path, args: argparse.Namespace) -> dict[str, An
     if not src.is_dir():
         raise VariantError(f"source bundle is not a directory: {src}")
     if out == src or src in out.parents or out in src.parents:
-        raise VariantError(
-            "OUT_DIR must be outside the source bundle (and must not contain it)"
-        )
+        raise VariantError("OUT_DIR must be outside the source bundle (and must not contain it)")
     if out.exists() and any(out.iterdir()):
         if not args.force:
             raise VariantError(
@@ -770,9 +711,7 @@ def make_variant(src: Path, out: Path, args: argparse.Namespace) -> dict[str, An
     provenance = provenance_path(out)
     if src == provenance.resolve() or src in provenance.resolve().parents:
         raise VariantError("provenance path would be inside the source bundle")
-    provenance.write_text(
-        json.dumps(record, indent=2, default=str) + "\n", encoding="utf-8"
-    )
+    provenance.write_text(json.dumps(record, indent=2, default=str) + "\n", encoding="utf-8")
     return record
 
 
@@ -801,25 +740,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--control-label", default="C")
     parser.add_argument("--treated-label", default="Ni")
-    parser.add_argument(
-        "--unit-column", help="unbalanced: the unit id column (default: detected)"
-    )
+    parser.add_argument("--unit-column", help="unbalanced: the unit id column (default: detected)")
     parser.add_argument("--drop-fraction", type=float, default=0.1)
-    parser.add_argument(
-        "--modality", help="drop_modality: which modality (default: seeded choice)"
-    )
-    parser.add_argument(
-        "--rename", action="append", help="rename_columns: OLD=NEW (repeatable)"
-    )
+    parser.add_argument("--modality", help="drop_modality: which modality (default: seeded choice)")
+    parser.add_argument("--rename", action="append", help="rename_columns: OLD=NEW (repeatable)")
     parser.add_argument(
         "--count",
         type=int,
         default=5,
         help="rename_columns: how many to rename when --rename is absent",
     )
-    parser.add_argument(
-        "--table", help="sentinel_elsewhere: restrict to this table file name"
-    )
+    parser.add_argument("--table", help="sentinel_elsewhere: restrict to this table file name")
     parser.add_argument("--column", help="sentinel_elsewhere: restrict to this column")
     parser.add_argument(
         "--fraction",

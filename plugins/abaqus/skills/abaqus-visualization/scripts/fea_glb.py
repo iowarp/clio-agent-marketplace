@@ -82,8 +82,9 @@ class Field:
 class Mesh:
     """Positions and triangles plus the index maps the viewer needs."""
 
-    def __init__(self, positions, triangles, node_index, cell_a=None, cell_b=None,
-                 nodes=0, cells=0):
+    def __init__(
+        self, positions, triangles, node_index, cell_a=None, cell_b=None, nodes=0, cells=0
+    ):
         self.positions = np.asarray(positions, dtype=np.float64)
         self.triangles = np.asarray(triangles, dtype=np.int64)
         self.node_index = np.asarray(node_index, dtype=np.int64)
@@ -248,7 +249,9 @@ def exterior_mesh(node_ids, coords, elements, keep=None):
     triangles = np.asarray(triangles, dtype=np.int64)
     used, compact = np.unique(triangles, return_inverse=True)
     return Mesh(
-        np.asarray(coords, dtype=np.float64)[used], compact.reshape(-1, 3), used,
+        np.asarray(coords, dtype=np.float64)[used],
+        compact.reshape(-1, 3),
+        used,
         nodes=len(node_ids),
     )
 
@@ -261,7 +264,7 @@ def cell_mesh(node_ids, coords, elements):
     """
 
     coords = np.asarray(coords, dtype=np.float64)
-    positions, triangles, node_index, cell_a, cell_b = [], [], [], [], []
+    triangles, node_index, cell_a, cell_b = [], [], [], []
     for ring, a, b in _faces(node_ids, elements).values():
         base = len(node_index)
         node_index.extend(ring)
@@ -271,8 +274,15 @@ def cell_mesh(node_ids, coords, elements):
         if len(ring) == 4:
             triangles.append((base, base + 2, base + 3))
     node_index = np.asarray(node_index, dtype=np.int64)
-    return Mesh(coords[node_index], triangles, node_index, cell_a, cell_b,
-                nodes=len(node_ids), cells=len(elements))
+    return Mesh(
+        coords[node_index],
+        triangles,
+        node_index,
+        cell_a,
+        cell_b,
+        nodes=len(node_ids),
+        cells=len(elements),
+    )
 
 
 def project_nearest(source_positions, source_values, target_positions, chunk=4096):
@@ -287,7 +297,9 @@ def project_nearest(source_positions, source_values, target_positions, chunk=409
     source_sq = (source**2).sum(axis=1)
     for start in range(0, len(target), chunk):
         block = target[start : start + chunk]
-        nearest[start : start + chunk] = np.argmin(source_sq[None, :] - 2.0 * block @ source.T, axis=1)
+        nearest[start : start + chunk] = np.argmin(
+            source_sq[None, :] - 2.0 * block @ source.T, axis=1
+        )
     values = np.asarray(source_values, dtype=np.float64)
     return values[..., nearest]
 
@@ -319,7 +331,9 @@ def write_glb(path, mesh, fields=(), *, stage, source, frames=None, units="mm", 
                 % (field.name, field.count, expected, field.location)
             )
         if field.frames not in (1, len(labels)):
-            raise ValueError("field %s has %d frames, expected %d" % (field.name, field.frames, len(labels)))
+            raise ValueError(
+                "field %s has %d frames, expected %d" % (field.name, field.frames, len(labels))
+            )
 
     buffers, views, accessors = [], [], []
     offset = 0
@@ -331,8 +345,12 @@ def write_glb(path, mesh, fields=(), *, stage, source, frames=None, units="mm", 
         if target:
             view["target"] = target
         views.append(view)
-        accessor = {"bufferView": len(views) - 1, "componentType": component,
-                    "count": int(array.shape[0]), "type": kind}
+        accessor = {
+            "bufferView": len(views) - 1,
+            "componentType": component,
+            "count": int(array.shape[0]),
+            "type": kind,
+        }
         if minmax:
             flat = array.reshape(array.shape[0], -1)
             accessor["min"] = [float(v) for v in flat.min(axis=0)]
@@ -355,12 +373,19 @@ def write_glb(path, mesh, fields=(), *, stage, source, frames=None, units="mm", 
     field_meta = []
     for field in fields:
         data = field.values
-        field_meta.append({
-            "name": field.name, "label": field.label, "unit": field.unit,
-            "location": field.location, "count": field.count, "frames": field.frames,
-            "accessor": add(data.reshape(-1), "SCALAR"),
-            "min": float(np.nanmin(data)), "max": float(np.nanmax(data)),
-        })
+        field_meta.append(
+            {
+                "name": field.name,
+                "label": field.label,
+                "unit": field.unit,
+                "location": field.location,
+                "count": field.count,
+                "frames": field.frames,
+                "accessor": add(data.reshape(-1), "SCALAR"),
+                "min": float(np.nanmin(data)),
+                "max": float(np.nanmax(data)),
+            }
+        )
 
     clio = {
         "contract": CONTRACT,
@@ -370,10 +395,16 @@ def write_glb(path, mesh, fields=(), *, stage, source, frames=None, units="mm", 
         "source": source,
         "fields": field_meta,
         "frames": [{"label": label} for label in labels] if frame_count > 1 else [],
-        "counts": {"vertices": int(len(mesh.positions)), "triangles": int(len(mesh.triangles)),
-                   "nodes": mesh.nodes, "cells": mesh.cells},
-        "bounds": {"min": [float(v) for v in mesh.positions.min(axis=0)],
-                   "max": [float(v) for v in mesh.positions.max(axis=0)]},
+        "counts": {
+            "vertices": int(len(mesh.positions)),
+            "triangles": int(len(mesh.triangles)),
+            "nodes": mesh.nodes,
+            "cells": mesh.cells,
+        },
+        "bounds": {
+            "min": [float(v) for v in mesh.positions.min(axis=0)],
+            "max": [float(v) for v in mesh.positions.max(axis=0)],
+        },
     }
     if mesh.topology == "surface":
         # Signed volume of the closed surface: the sanity check for an iso
@@ -387,7 +418,12 @@ def write_glb(path, mesh, fields=(), *, stage, source, frames=None, units="mm", 
         "scene": 0,
         "scenes": [{"nodes": [0], "extras": {"clio": clio}}],
         "nodes": [{"mesh": 0, "name": stage}],
-        "meshes": [{"name": stage, "primitives": [{"attributes": attributes, "indices": indices, "mode": 4}]}],
+        "meshes": [
+            {
+                "name": stage,
+                "primitives": [{"attributes": attributes, "indices": indices, "mode": 4}],
+            }
+        ],
         "buffers": [{"byteLength": offset}],
         "bufferViews": views,
         "accessors": accessors,
@@ -419,7 +455,9 @@ def read_glb(path):
         view = gltf["bufferViews"][acc["bufferView"]]
         dtype = {5126: "<f4", 5125: "<u4"}[acc["componentType"]]
         width = {"SCALAR": 1, "VEC3": 3}[acc["type"]]
-        arr = np.frombuffer(blob, dtype=dtype, count=acc["count"] * width, offset=view["byteOffset"])
+        arr = np.frombuffer(
+            blob, dtype=dtype, count=acc["count"] * width, offset=view["byteOffset"]
+        )
         return arr.reshape(acc["count"], width) if width > 1 else arr
 
     meta = gltf["scenes"][0]["extras"]["clio"]
@@ -431,11 +469,17 @@ def read_glb(path):
         accessor(attributes["_NODE"]).astype(np.int64),
         accessor(attributes["_CELL_A"]).astype(np.int64) if "_CELL_A" in attributes else None,
         accessor(attributes["_CELL_B"]).astype(np.int64) if "_CELL_B" in attributes else None,
-        nodes=counts["nodes"], cells=counts["cells"],
+        nodes=counts["nodes"],
+        cells=counts["cells"],
     )
     fields = [
-        Field(f["name"], accessor(f["accessor"]).reshape(f["frames"], f["count"]),
-              f["location"], f["label"], f["unit"])
+        Field(
+            f["name"],
+            accessor(f["accessor"]).reshape(f["frames"], f["count"]),
+            f["location"],
+            f["label"],
+            f["unit"],
+        )
         for f in meta["fields"]
     ]
     return mesh, fields, meta
@@ -450,7 +494,9 @@ def _main(argv=None):
 
     inp = sub.add_parser("inp", help="FE mesh from a flattened .inp (geometry only)")
     inp.add_argument("path")
-    inp.add_argument("--cells", action="store_true", help="keep every element face for thresholding")
+    inp.add_argument(
+        "--cells", action="store_true", help="keep every element face for thresholding"
+    )
     stl = sub.add_parser("stl", help="Tosca ISO/VOLUME smoothing STL")
     stl.add_argument("path")
     stl.add_argument("--project-from", help=".glb whose node fields are carried onto the STL")
@@ -467,9 +513,18 @@ def _main(argv=None):
         return 0
     if args.command == "inp":
         node_ids, coords, elements = read_inp(args.path)
-        mesh = cell_mesh(node_ids, coords, elements) if args.cells else exterior_mesh(node_ids, coords, elements)
-        meta = write_glb(args.output, mesh, stage=args.stage, units=args.units,
-                         source={"kind": "inp", "path": args.path, "elements": len(elements)})
+        mesh = (
+            cell_mesh(node_ids, coords, elements)
+            if args.cells
+            else exterior_mesh(node_ids, coords, elements)
+        )
+        meta = write_glb(
+            args.output,
+            mesh,
+            stage=args.stage,
+            units=args.units,
+            source={"kind": "inp", "path": args.path, "elements": len(elements)},
+        )
     else:
         positions, triangles = read_stl(args.path)
         mesh = surface_mesh(positions, triangles)
@@ -484,10 +539,20 @@ def _main(argv=None):
                     values = project_nearest(src_nodes[used], field.values[:, used], positions)
                     fields.append(Field(field.name, values, "node", field.label, field.unit))
             frames = [f["label"] for f in src_meta.get("frames", [])] or None
-            source["fields_from"] = {"path": args.project_from, "method": "nearest-node",
-                                     "source": src_meta.get("source")}
-        meta = write_glb(args.output, mesh, fields, stage=args.stage, units=args.units,
-                         source=source, frames=frames)
+            source["fields_from"] = {
+                "path": args.project_from,
+                "method": "nearest-node",
+                "source": src_meta.get("source"),
+            }
+        meta = write_glb(
+            args.output,
+            mesh,
+            fields,
+            stage=args.stage,
+            units=args.units,
+            source=source,
+            frames=frames,
+        )
     print(json.dumps(meta, indent=2))
     return 0
 

@@ -50,9 +50,7 @@ DOC_NAME = re.compile(
     r"(readme|codebook|dictionary|glossary|about|notes|license|changelog)",
     re.IGNORECASE,
 )
-CATALOG_NAME = re.compile(
-    r"(columns?|dictionary|codebook|schema|variables|catalog)", re.IGNORECASE
-)
+CATALOG_NAME = re.compile(r"(columns?|dictionary|codebook|schema|variables|catalog)", re.IGNORECASE)
 ROW_KEY = re.compile(
     r"(^|_)(rows?|row_counts?|n_rows|num_rows|nrows|record_count)($|_)", re.IGNORECASE
 )
@@ -117,9 +115,7 @@ def declared_table_counts(manifest: Any) -> list[dict[str, Any]]:
         counts = [
             key
             for key, value in node.items()
-            if ROW_KEY.search(str(key))
-            and isinstance(value, int)
-            and not isinstance(value, bool)
+            if ROW_KEY.search(str(key)) and isinstance(value, int) and not isinstance(value, bool)
         ]
         if len(paths) == 1 and len(counts) == 1:
             found.append(
@@ -132,9 +128,7 @@ def declared_table_counts(manifest: Any) -> list[dict[str, Any]]:
         path_maps = {
             key: value
             for key, value in node.items()
-            if isinstance(value, dict)
-            and value
-            and all(_is_table_path(v) for v in value.values())
+            if isinstance(value, dict) and value and all(_is_table_path(v) for v in value.values())
         }
         count_maps = {
             key: value
@@ -142,9 +136,7 @@ def declared_table_counts(manifest: Any) -> list[dict[str, Any]]:
             if ROW_KEY.search(str(key))
             and isinstance(value, dict)
             and value
-            and all(
-                isinstance(v, int) and not isinstance(v, bool) for v in value.values()
-            )
+            and all(isinstance(v, int) and not isinstance(v, bool) for v in value.values())
         }
         for path_key, path_map in path_maps.items():
             for count_key, count_map in count_maps.items():
@@ -205,9 +197,7 @@ def inventory(root: Path, *, count_csv_rows: bool = False) -> dict[str, Any]:
     """Build the inventory report for one dataset root."""
 
     root = root.resolve()
-    by_extension: dict[str, dict[str, int]] = defaultdict(
-        lambda: {"files": 0, "bytes": 0}
-    )
+    by_extension: dict[str, dict[str, int]] = defaultdict(lambda: {"files": 0, "bytes": 0})
     by_directory: dict[str, dict[str, Any]] = defaultdict(
         lambda: {"files": 0, "bytes": 0, "extensions": defaultdict(int)}
     )
@@ -258,36 +248,24 @@ def inventory(root: Path, *, count_csv_rows: bool = False) -> dict[str, Any]:
     for group in stems.values():
         if len(group) > 1:
             for table in group:
-                table["twins"] = [
-                    other["path"] for other in group if other is not table
-                ]
-                rows = {
-                    other.get("rows")
-                    for other in group
-                    if other.get("rows") is not None
-                }
+                table["twins"] = [other["path"] for other in group if other is not table]
+                rows = {other.get("rows") for other in group if other.get("rows") is not None}
                 if len(rows) > 1:
-                    table["twin_row_count_mismatch"] = sorted(
-                        int(r) for r in rows if r is not None
-                    )
+                    table["twin_row_count_mismatch"] = sorted(int(r) for r in rows if r is not None)
 
     directories = [
         {
             "path": path,
             "files": stats["files"],
             "bytes": stats["bytes"],
-            "extensions": dict(
-                sorted(stats["extensions"].items(), key=lambda kv: -kv[1])
-            ),
+            "extensions": dict(sorted(stats["extensions"].items(), key=lambda kv: -kv[1])),
         }
         for path, stats in sorted(by_directory.items())
     ]
     report: dict[str, Any] = {
         "root": str(root),
         "totals": {"files": total_files, "bytes": total_bytes},
-        "by_extension": dict(
-            sorted(by_extension.items(), key=lambda kv: -kv[1]["bytes"])
-        ),
+        "by_extension": dict(sorted(by_extension.items(), key=lambda kv: -kv[1]["bytes"])),
         "directories": directories,
         "tables": tables,
         "docs": docs,
@@ -301,9 +279,7 @@ def inventory(root: Path, *, count_csv_rows: bool = False) -> dict[str, Any]:
 
 
 def _manifest_report(root: Path, tables: list[dict[str, Any]]) -> dict[str, Any] | None:
-    path = next(
-        (root / name for name in MANIFEST_NAMES if (root / name).is_file()), None
-    )
+    path = next((root / name for name in MANIFEST_NAMES if (root / name).is_file()), None)
     if path is None:
         return None
     report: dict[str, Any] = {"path": path.name, "sha256": sha256_file(path)}
@@ -362,9 +338,7 @@ def summarize(report: dict[str, Any], limit: int = 8) -> list[str]:
     heavy = sorted(report["directories"], key=lambda d: -d["bytes"])[:limit]
     lines.append(
         "largest directories: "
-        + ", ".join(
-            f"{d['path']} ({_human(d['bytes'])}, {d['files']} files)" for d in heavy
-        )
+        + ", ".join(f"{d['path']} ({_human(d['bytes'])}, {d['files']} files)" for d in heavy)
     )
     tables = report["tables"]
     parquet = [t for t in tables if t["format"] in {"parquet", "pq"}]
@@ -382,9 +356,7 @@ def summarize(report: dict[str, Any], limit: int = 8) -> list[str]:
     catalogs = [t["path"] for t in tables if t.get("column_catalog_candidate")]
     if catalogs:
         lines.append(f"column-catalog candidates ({len(catalogs)}): {catalogs[:limit]}")
-    lines.append(
-        f"docs: {len(report['docs'])} e.g. {[d['path'] for d in report['docs'][:limit]]}"
-    )
+    lines.append(f"docs: {len(report['docs'])} e.g. {[d['path'] for d in report['docs'][:limit]]}")
     if report["legacy_agent_dir"]["exists"]:
         lines.append(
             ".clio dir in the bundle: skipped as agent artefacts, not data "
@@ -401,9 +373,7 @@ def summarize(report: dict[str, Any], limit: int = 8) -> list[str]:
             lines.append(f"manifest identity: {manifest['identity']}")
         counts = manifest.get("declared_counts", [])
         bad = [c for c in counts if c["status"] != "match"]
-        lines.append(
-            f"declared row counts: {len(counts)} checked, {len(bad)} not matching"
-        )
+        lines.append(f"declared row counts: {len(counts)} checked, {len(bad)} not matching")
         for item in bad[:limit]:
             lines.append(
                 f"  {item['status']}: {item['path']} declared={item['declared_rows']} actual={item['actual_rows']}"

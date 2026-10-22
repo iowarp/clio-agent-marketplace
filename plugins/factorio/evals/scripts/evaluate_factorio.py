@@ -53,7 +53,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-
 # The runtime's closed status vocabularies. A trace using anything else is not a
 # trace of this runtime, so it is rejected rather than graded.
 TASK_STATUSES = frozenset({"queued", "running", "completed", "failed", "cancelled"})
@@ -415,8 +414,7 @@ def _check_consistency(case_id: str, result: dict[str, Any]) -> list[EvaluationF
             failures.append(
                 EvaluationFailure(
                     case_id,
-                    f"{task_id} was spawned as {agent} but the roster records "
-                    f"{row.get('agent')!r}",
+                    f"{task_id} was spawned as {agent} but the roster records {row.get('agent')!r}",
                 )
             )
     # …and the same join in the other direction. Only the spawn CALL carries the
@@ -437,9 +435,7 @@ def _check_consistency(case_id: str, result: dict[str, Any]) -> list[EvaluationF
         payload = action.get("result") if isinstance(action.get("result"), dict) else {}
         minted = str(payload.get("question_id") or "")
         if not minted:
-            failures.append(
-                EvaluationFailure(case_id, "an ask_user call recorded no question_id")
-            )
+            failures.append(EvaluationFailure(case_id, "an ask_user call recorded no question_id"))
         elif minted not in question_ids:
             failures.append(
                 EvaluationFailure(

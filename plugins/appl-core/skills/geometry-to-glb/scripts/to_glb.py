@@ -61,9 +61,7 @@ def load_text(path: Path, columns: int | None = None) -> np.ndarray:
     try:
         data = np.loadtxt(path, dtype=np.float64, ndmin=2)
     except ValueError as exc:
-        raise GeometryError(
-            f"{path.name}: not a headerless numeric text table ({exc})"
-        ) from exc
+        raise GeometryError(f"{path.name}: not a headerless numeric text table ({exc})") from exc
     if data.size == 0:
         raise GeometryError(f"{path.name}: empty")
     if columns is not None and data.shape[1] < columns:
@@ -83,9 +81,7 @@ def triangulate(
         raise GeometryError("face indices are not integers")
     faces = faces.astype(np.int64)
     if faces.shape[1] not in (3, 4):
-        raise GeometryError(
-            f"faces must have 3 or 4 indices per row, found {faces.shape[1]}"
-        )
+        raise GeometryError(f"faces must have 3 or 4 indices per row, found {faces.shape[1]}")
     base = index_base
     if base == "auto":
         base = "1" if faces.min() >= 1 and faces.max() == vertex_count else "0"
@@ -101,9 +97,7 @@ def triangulate(
         faces = np.vstack([faces[:, [0, 1, 2]], faces[:, [0, 2, 3]]])
         notes["quads_split"] = True
     degenerate = (
-        (faces[:, 0] == faces[:, 1])
-        | (faces[:, 1] == faces[:, 2])
-        | (faces[:, 0] == faces[:, 2])
+        (faces[:, 0] == faces[:, 1]) | (faces[:, 1] == faces[:, 2]) | (faces[:, 0] == faces[:, 2])
     )
     if degenerate.any():
         notes["degenerate_triangles_dropped"] = int(degenerate.sum())
@@ -117,9 +111,7 @@ def normalise_colors(colors: np.ndarray, vertex_count: int) -> np.ndarray:
     """Return V x 3 float colours in [0, 1] from 0-255 ints or 0-1 floats."""
 
     if colors.shape[0] != vertex_count:
-        raise GeometryError(
-            f"colours have {colors.shape[0]} rows for {vertex_count} vertices"
-        )
+        raise GeometryError(f"colours have {colors.shape[0]} rows for {vertex_count} vertices")
     rgb = colors[:, :3].astype(np.float64)
     if rgb.min() < 0:
         raise GeometryError("negative colour values")
@@ -176,9 +168,7 @@ def write_glb(
         component: int = FLOAT,
     ) -> int:
         nonlocal offset
-        array = np.ascontiguousarray(
-            array, dtype="<f4" if component == FLOAT else "<u4"
-        )
+        array = np.ascontiguousarray(array, dtype="<f4" if component == FLOAT else "<u4")
         view: dict[str, Any] = {
             "buffer": 0,
             "byteOffset": offset,
@@ -315,20 +305,14 @@ def load_ply(path: Path) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | No
     try:
         import trimesh  # pyright: ignore[reportMissingImports]
     except ImportError as exc:
-        raise GeometryError(
-            "reading .ply needs trimesh: rerun with `--with trimesh`"
-        ) from exc
+        raise GeometryError("reading .ply needs trimesh: rerun with `--with trimesh`") from exc
     loaded = trimesh.load(path, process=False)
     positions = np.asarray(loaded.vertices, dtype=np.float64)
     faces = getattr(loaded, "faces", None)
-    triangles = (
-        np.asarray(faces, dtype=np.uint32) if faces is not None and len(faces) else None
-    )
+    triangles = np.asarray(faces, dtype=np.uint32) if faces is not None and len(faces) else None
     colors = None
     visual = getattr(loaded, "visual", None)
-    vertex_colors = (
-        getattr(visual, "vertex_colors", None) if visual is not None else None
-    )
+    vertex_colors = getattr(visual, "vertex_colors", None) if visual is not None else None
     if vertex_colors is None and hasattr(loaded, "colors"):
         vertex_colors = loaded.colors
     if vertex_colors is not None and len(vertex_colors) == len(positions):
@@ -359,9 +343,7 @@ def load_points(path: Path) -> tuple[np.ndarray, np.ndarray | None]:
             raise GeometryError(".pcd lacks x/y/z fields") from exc
         return xyz, None
     data = load_text(path, 3)
-    colors = (
-        normalise_colors(data[:, 3:6], data.shape[0]) if data.shape[1] >= 6 else None
-    )
+    colors = normalise_colors(data[:, 3:6], data.shape[0]) if data.shape[1] >= 6 else None
     return data[:, :3], colors
 
 
@@ -407,9 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     ply = sub.add_parser("ply", help=".ply mesh (needs trimesh)")
     ply.add_argument("input", type=Path)
     for name in ("points", "pcd"):
-        points = sub.add_parser(
-            name, help="point cloud (refused unless --allow-points)"
-        )
+        points = sub.add_parser(name, help="point cloud (refused unless --allow-points)")
         points.add_argument("input", type=Path)
     for command in (mesh, ply, sub.choices["points"], sub.choices["pcd"]):
         command.add_argument("-o", "--output", type=Path, required=True)
@@ -418,9 +398,7 @@ def main(argv: list[str] | None = None) -> int:
             default="mm",
             help="length unit of the coordinates (as documented by the data)",
         )
-        command.add_argument(
-            "--stage", default="geometry", help="a short label for the view"
-        )
+        command.add_argument("--stage", default="geometry", help="a short label for the view")
         command.add_argument(
             "--allow-points",
             action="store_true",

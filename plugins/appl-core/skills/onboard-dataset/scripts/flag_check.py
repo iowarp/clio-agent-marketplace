@@ -67,9 +67,7 @@ def parse_flags(cell: Any) -> frozenset[str]:
                 return frozenset(str(key) for key, value in parsed.items() if value)
         text = text.strip("[](){}")
     return frozenset(
-        part.strip().strip("'\"")
-        for part in SPLIT.split(text)
-        if part.strip().strip("'\"")
+        part.strip().strip("'\"") for part in SPLIT.split(text) if part.strip().strip("'\"")
     )
 
 
@@ -104,14 +102,13 @@ def check(
     flag_sets = [parse_flags(cell) for cell in table.column(flags_column).to_pylist()]
     signal_values = [table.column(name).to_pylist() for name in signals]
     missing = [
-        all(_missing(values[i], zero_is_missing) for values in signal_values)
-        for i in range(rows)
+        all(_missing(values[i], zero_is_missing) for values in signal_values) for i in range(rows)
     ]
     n_missing = sum(missing)
     per_flag: Counter[str] = Counter()
     per_flag_missing: Counter[str] = Counter()
     unflagged_missing = no_flag_rows = 0
-    for flags, is_missing in zip(flag_sets, missing):
+    for flags, is_missing in zip(flag_sets, missing, strict=False):
         if not flags:
             no_flag_rows += 1
             if is_missing:
@@ -137,10 +134,10 @@ def check(
     # A missing row is "explained" only by a flag that is not universal noise.
     specific = {row["flag"] for row in flag_rows if not row["universal"]}
     unexplained = sum(
-        1 for flags, m in zip(flag_sets, missing) if m and not (flags & specific)
+        1 for flags, m in zip(flag_sets, missing, strict=False) if m and not (flags & specific)
     )
     flagged_present = sum(
-        1 for flags, m in zip(flag_sets, missing) if not m and flags & specific
+        1 for flags, m in zip(flag_sets, missing, strict=False) if not m and flags & specific
     )
     return {
         "rows": rows,
@@ -186,8 +183,7 @@ def summarize(report: dict[str, Any], limit: int = 10) -> list[str]:
         )
     if (
         report["missing_signal_rows"]
-        and report["missing_without_specific_flag"] / report["missing_signal_rows"]
-        > 0.5
+        and report["missing_without_specific_flag"] / report["missing_signal_rows"] > 0.5
     ):
         lines.append(
             "=> flags MISS most missing-signal rows: filter on the signal itself, not on the flags"

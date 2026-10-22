@@ -6,8 +6,8 @@ halted or resumed:
 - The campaign CLI (:mod:`phenotype_workload.pipeline.campaign`) and the workload
   MCP server's ``measure_cohort`` both check for it before starting the next
   run and halt immediately if it is present.
-- The forensic MCP server's ``raise_alert`` tool (the SPOTTER forensic MCP (the ``spotter-ai`` pack))
-  writes it once an agent has confirmed tampering.
+- The forensic MCP server's ``raise_alert`` tool (the SPOTTER forensic MCP, from the
+  ``spotter-ai`` pack) writes it once an agent has confirmed tampering.
 - Both the forensic and workload MCP servers expose a ``lift_quarantine``
   tool that removes it, letting a human (or an agent acting on a human's
   explicit "continue") resume the campaign.

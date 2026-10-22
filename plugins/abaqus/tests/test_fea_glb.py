@@ -86,7 +86,7 @@ def test_cell_mesh_records_both_sides_of_every_face(tmp_path: Path) -> None:
     mesh = fea_glb.cell_mesh(node_ids, coords, elements)
     assert mesh.topology == "cells" and mesh.cells == 2
     assert len(mesh.triangles) == 22, "11 unique quads: 10 outer + the shared one"
-    per_face = {(int(a), int(b)) for a, b in zip(mesh.cell_a[::4], mesh.cell_b[::4])}
+    per_face = {(int(a), int(b)) for a, b in zip(mesh.cell_a[::4], mesh.cell_b[::4], strict=False)}
     assert per_face == {(0, -1), (1, -1), (0, 1)}
     boundary = mesh.triangles[mesh.cell_b[mesh.triangles[:, 0]] == -1]
     outer = fea_glb.Mesh(mesh.positions, boundary, mesh.node_index)
@@ -281,7 +281,7 @@ def test_odb_export_reads_density_for_every_cycle(tmp_path: Path, monkeypatch) -
         name="PART-1",
         nodes=[
             types.SimpleNamespace(label=int(n), coordinates=tuple(c))
-            for n, c in zip(node_ids, coords)
+            for n, c in zip(node_ids, coords, strict=False)
         ],
         elements=[
             types.SimpleNamespace(label=i + 1, type="C3D8R", connectivity=conn)
@@ -338,7 +338,7 @@ def test_odb_iso_export_keeps_dense_elements(tmp_path: Path, monkeypatch) -> Non
         name="PART-1",
         nodes=[
             types.SimpleNamespace(label=int(n), coordinates=tuple(c))
-            for n, c in zip(node_ids, coords)
+            for n, c in zip(node_ids, coords, strict=False)
         ],
         elements=[
             types.SimpleNamespace(label=i + 1, type="C3D8R", connectivity=conn)

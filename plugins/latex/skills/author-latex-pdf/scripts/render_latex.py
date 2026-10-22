@@ -38,9 +38,7 @@ def render(source: Path, output_dir: Path, *, timeout_seconds: float = 180.0) ->
         timeout=timeout_seconds,
     )
     if completed.returncode != 0:
-        raise RuntimeError(
-            (completed.stderr or completed.stdout or "Tectonic failed")[-8_192:]
-        )
+        raise RuntimeError((completed.stderr or completed.stdout or "Tectonic failed")[-8_192:])
     result = output_dir / f"{source.stem}.pdf"
     if not result.is_file():
         raise RuntimeError("Tectonic completed without producing the expected PDF")

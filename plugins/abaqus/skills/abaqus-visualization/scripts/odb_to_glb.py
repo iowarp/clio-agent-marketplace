@@ -65,7 +65,9 @@ def _nodal_average(field_output, instance, node_row, invariant=None):
     for block in subset.bulkDataBlocks:
         labels = np.asarray(block.nodeLabels)
         data = np.asarray(block.data).reshape(len(labels), -1)[:, 0]
-        rows = np.fromiter((node_row[int(l)] for l in labels), dtype=np.int64, count=len(labels))
+        rows = np.fromiter(
+            (node_row[int(label)] for label in labels), dtype=np.int64, count=len(labels)
+        )
         np.add.at(total, rows, data)
         np.add.at(count, rows, 1.0)
     return np.divide(total, count, out=np.zeros_like(total), where=count > 0)
@@ -102,10 +104,14 @@ def main(argv=None):
     parser.add_argument("--cells", action="store_true", help="export every element face")
     parser.add_argument("--frames", choices=("last", "all"), default="last")
     parser.add_argument("--frame-label", default="Frame", help='frame name prefix, e.g. "Cycle"')
-    parser.add_argument("--iso", type=float, help="surface export: keep elements with density >= ISO")
+    parser.add_argument(
+        "--iso", type=float, help="surface export: keep elements with density >= ISO"
+    )
     args = parser.parse_args(argv)
     if args.iso is not None and args.cells:
-        parser.error("--iso applies to surface exports; a --cells export is thresholded in the viewer")
+        parser.error(
+            "--iso applies to surface exports; a --cells export is thresholded in the viewer"
+        )
 
     from odbAccess import openOdb  # Abaqus-only import
 
@@ -159,11 +165,19 @@ def main(argv=None):
             fields.append(fea_glb.Field(name, np.vstack(frames)))
         frame_labels = ["%s %d" % (args.frame_label, f.frameId) for f in chosen]
         meta = fea_glb.write_glb(
-            args.output, mesh, fields, stage=args.stage, frames=frame_labels,
+            args.output,
+            mesh,
+            fields,
+            stage=args.stage,
+            frames=frame_labels,
             source={
-                "kind": "odb", "path": os.path.abspath(args.odb), "step": step_name,
-                "frames": [f.frameId for f in chosen], "instance": instance.name,
-                "elements": len(elements), "iso": args.iso,
+                "kind": "odb",
+                "path": os.path.abspath(args.odb),
+                "step": step_name,
+                "frames": [f.frameId for f in chosen],
+                "instance": instance.name,
+                "elements": len(elements),
+                "iso": args.iso,
                 "kept_elements": int(keep.sum()) if keep is not None else len(elements),
             },
         )

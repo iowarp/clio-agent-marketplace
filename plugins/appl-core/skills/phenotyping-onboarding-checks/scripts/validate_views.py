@@ -72,9 +72,7 @@ def read_view(path: Path) -> pa.Table:
     if suffix in {".csv", ".tsv"}:
         return pacsv.read_csv(
             path,
-            parse_options=pacsv.ParseOptions(
-                delimiter="\t" if suffix == ".tsv" else ","
-            ),
+            parse_options=pacsv.ParseOptions(delimiter="\t" if suffix == ".tsv" else ","),
         )
     raise ValueError(f"unsupported view type: {path.name}")
 
@@ -157,10 +155,7 @@ def validate_table(
         if pa.types.is_floating(arrow_type):
             values = table.column(column)
             huge = (
-                pc.sum(
-                    pc.cast(pc.greater_equal(pc.abs(values), SENTINEL), pa.int64())
-                ).as_py()
-                or 0
+                pc.sum(pc.cast(pc.greater_equal(pc.abs(values), SENTINEL), pa.int64())).as_py() or 0
             )
             if huge:
                 errors.append(
@@ -168,9 +163,7 @@ def validate_table(
                 )
             nans = pc.sum(pc.cast(pc.is_nan(values), pa.int64())).as_py() or 0
             if nans:
-                warnings.append(
-                    f"column {column}: {nans} NaN values (prefer null for missing)"
-                )
+                warnings.append(f"column {column}: {nans} NaN values (prefer null for missing)")
         if spec.get("format") == "date-time" and column in names:
             arrow_type = table.schema.field(column).type
             if pa.types.is_string(arrow_type) or pa.types.is_large_string(arrow_type):
@@ -189,7 +182,7 @@ def validate_table(
                 )
     key = [column for column in schema.get("x-primary-key", []) if column in names]
     if key and len(key) == len(schema.get("x-primary-key", [])):
-        tuples = list(zip(*(table.column(column).to_pylist() for column in key)))
+        tuples = list(zip(*(table.column(column).to_pylist() for column in key), strict=False))
         dupes = sum(count for count in Counter(tuples).values() if count > 1)
         if dupes:
             errors.append(f"primary key {key} is not unique: {dupes} rows share a key")
@@ -207,9 +200,7 @@ def validate_table(
             if len(row_errors) >= 20:
                 break
     if row_errors:
-        errors.append(
-            f"{len(row_errors)}+ row-level schema errors in the first {sample} rows"
-        )
+        errors.append(f"{len(row_errors)}+ row-level schema errors in the first {sample} rows")
     return {
         "rows": table.num_rows,
         "columns": table.column_names,
@@ -242,9 +233,7 @@ def main(argv: list[str] | None = None) -> int:
         default=SCHEMA_DIR,
         help="directory holding <kind>.schema.json",
     )
-    parser.add_argument(
-        "--sample", type=int, default=2000, help="rows to validate row-by-row"
-    )
+    parser.add_argument("--sample", type=int, default=2000, help="rows to validate row-by-row")
     parser.add_argument("--out", type=Path, help="write the JSON report here")
     args = parser.parse_args(argv)
     results: dict[str, Any] = {}
@@ -254,9 +243,7 @@ def main(argv: list[str] | None = None) -> int:
         if kind is None:
             results[str(path)] = {
                 "valid": False,
-                "errors": [
-                    f"cannot infer kind from name; pass --kind ({', '.join(KINDS)})"
-                ],
+                "errors": [f"cannot infer kind from name; pass --kind ({', '.join(KINDS)})"],
             }
             ok = False
             continue

@@ -34,10 +34,7 @@ def inventory(path: Path) -> dict[str, Any]:
                 raise ValueError("package exceeds the uncompressed size limit")
             if info.compress_size == 0 and info.file_size:
                 raise ValueError(f"invalid compression ratio: {info.filename}")
-            if (
-                info.compress_size
-                and info.file_size / info.compress_size > MAX_COMPRESSION_RATIO
-            ):
+            if info.compress_size and info.file_size / info.compress_size > MAX_COMPRESSION_RATIO:
                 raise ValueError(f"unsafe compression ratio: {info.filename}")
             payload = archive.read(info)
             result["parts"][info.filename] = {
@@ -70,9 +67,7 @@ def compare(
         for name in set(before_parts) & set(after_parts)
         if before_parts[name].get("sha256") != after_parts[name].get("sha256")
     )
-    unexpected = sorted(
-        name for name in [*removed, *added, *changed] if not allowed(name)
-    )
+    unexpected = sorted(name for name in [*removed, *added, *changed] if not allowed(name))
     return {
         "ok": not unexpected,
         "removed": removed,

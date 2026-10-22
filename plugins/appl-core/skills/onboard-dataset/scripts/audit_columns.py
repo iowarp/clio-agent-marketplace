@@ -59,9 +59,7 @@ HUGE = 1e300
 EXTREME_RATIO = 1e3
 
 NUMERIC_STRING = re.compile(r"^\s*[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?\s*$")
-DATE_STRING = re.compile(
-    r"^\s*\d{4}[-/.]\d{1,2}[-/.]\d{1,2}([ T]\d{1,2}:\d{2}(:\d{2}(\.\d+)?)?)?"
-)
+DATE_STRING = re.compile(r"^\s*\d{4}[-/.]\d{1,2}[-/.]\d{1,2}([ T]\d{1,2}:\d{2}(:\d{2}(\.\d+)?)?)?")
 LIST_STRING = re.compile(r"^\s*[\[{(].*[\]})]\s*$", re.DOTALL)
 NAME_NUMBER = re.compile(r"\d+(?:[p.]\d+)?")
 
@@ -80,24 +78,22 @@ def _string_profile(array: pa.ChunkedArray, non_null: int) -> dict[str, Any]:
         "nonempty_count": len(nonempty),
     }
     if nonempty:
-        profile["numeric_like_frac"] = sum(
-            bool(NUMERIC_STRING.match(v)) for v in nonempty
-        ) / len(nonempty)
-        profile["date_like_frac"] = sum(
-            bool(DATE_STRING.match(v)) for v in nonempty
-        ) / len(nonempty)
-        profile["list_like_frac"] = sum(
-            bool(LIST_STRING.match(v)) for v in nonempty
-        ) / len(nonempty)
+        profile["numeric_like_frac"] = sum(bool(NUMERIC_STRING.match(v)) for v in nonempty) / len(
+            nonempty
+        )
+        profile["date_like_frac"] = sum(bool(DATE_STRING.match(v)) for v in nonempty) / len(
+            nonempty
+        )
+        profile["list_like_frac"] = sum(bool(LIST_STRING.match(v)) for v in nonempty) / len(
+            nonempty
+        )
         counts: dict[str, int] = defaultdict(int)
         for value in nonempty:
             counts[value] += 1
         profile["distinct"] = len(counts)
         profile["top_values"] = [
             {"value": value[:80], "count": count}
-            for value, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[
-                :5
-            ]
+            for value, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:5]
         ]
     return profile
 
@@ -123,9 +119,7 @@ def _numeric_profile(array: pa.ChunkedArray) -> dict[str, Any]:
             "max": float(finite.max()),
             "zero_count": int((finite == 0).sum()),
             "negative_count": int((finite < 0).sum()),
-            "distinct": int(np.unique(finite).size)
-            if finite.size <= 2_000_000
-            else None,
+            "distinct": int(np.unique(finite).size) if finite.size <= 2_000_000 else None,
         }
     )
     sentinels: list[dict[str, Any]] = []
@@ -141,7 +135,7 @@ def _numeric_profile(array: pa.ChunkedArray) -> dict[str, Any]:
                     "count": int(mask.sum()),
                     "values": [
                         {"value": float(v), "count": int(c)}
-                        for v, c in zip(values[:5], counts[:5])
+                        for v, c in zip(values[:5], counts[:5], strict=False)
                     ],
                 }
             )
@@ -163,20 +157,12 @@ def _numeric_profile(array: pa.ChunkedArray) -> dict[str, Any]:
                 {
                     "kind": f"isolated extreme (>{EXTREME_RATIO:g}x the p01/p99 bulk)",
                     "count": int(extreme_mask.sum()),
-                    "values": [
-                        {"value": float(values[i]), "count": int(counts[i])}
-                        for i in order
-                    ],
+                    "values": [{"value": float(values[i]), "count": int(counts[i])} for i in order],
                 }
             )
         positive_bulk = bulk[bulk != 0]
         zeros = int((bulk == 0).sum())
-        if (
-            zeros
-            and positive_bulk.size
-            and (positive_bulk > 0).all()
-            and zeros / bulk.size < 0.2
-        ):
+        if zeros and positive_bulk.size and (positive_bulk > 0).all() and zeros / bulk.size < 0.2:
             profile["zero_as_missing_candidate"] = True
     profile["sentinel_candidates"] = sentinels
     return profile
@@ -201,9 +187,7 @@ def near_duplicate_names(
         members.sort()
         for (value_a, name_a), (value_b, name_b) in pairwise(members):
             gap = abs(value_b - value_a)
-            if name_a != name_b and gap <= max(
-                abs_tol, rel_tol * max(abs(value_a), abs(value_b))
-            ):
+            if name_a != name_b and gap <= max(abs_tol, rel_tol * max(abs(value_a), abs(value_b))):
                 pairs.append(
                     {
                         "a": name_a,
@@ -248,9 +232,7 @@ def identical_columns(table: pa.Table, candidates: list[str]) -> list[list[str]]
                 column = table.column(other)
                 try:
                     as_string = (
-                        column
-                        if pa.types.is_string(column.type)
-                        else pc.cast(column, pa.string())
+                        column if pa.types.is_string(column.type) else pc.cast(column, pa.string())
                     )
                 except (pa.ArrowInvalid, pa.ArrowNotImplementedError):
                     continue
@@ -283,15 +265,9 @@ def audit(table: pa.Table) -> dict[str, Any]:
             entry.update(_string_profile(array, rows - null_count))
             entry["all_null"] = null_count == rows
             entry["ghost_string"] = rows > 0 and entry.get("nonempty_count", 0) == 0
-        elif (
-            pa.types.is_integer(typ)
-            or pa.types.is_floating(typ)
-            or pa.types.is_decimal(typ)
-        ):
+        elif pa.types.is_integer(typ) or pa.types.is_floating(typ) or pa.types.is_decimal(typ):
             entry.update(_numeric_profile(array))
-            entry["all_null"] = (
-                null_count == rows or entry.get("nan_count", 0) + null_count == rows
-            )
+            entry["all_null"] = null_count == rows or entry.get("nan_count", 0) + null_count == rows
         elif pa.types.is_list(typ) or pa.types.is_large_list(typ):
             lengths = pc.list_value_length(array).to_numpy(zero_copy_only=False)
             entry["list_type"] = True
@@ -321,9 +297,7 @@ def audit(table: pa.Table) -> dict[str, Any]:
         "columns": columns,
         "findings": {
             "all_empty_columns": ghost,
-            "ghost_string_columns": [
-                c["name"] for c in columns if c.get("ghost_string")
-            ],
+            "ghost_string_columns": [c["name"] for c in columns if c.get("ghost_string")],
             "constant_columns": [c["name"] for c in columns if c.get("constant")],
             "sentinel_columns": [
                 {"name": c["name"], "candidates": c["sentinel_candidates"]}
@@ -350,9 +324,7 @@ def audit(table: pa.Table) -> dict[str, Any]:
     }
 
 
-def summarize(
-    report: dict[str, Any], path: str, sampled: int, limit: int = 8
-) -> list[str]:
+def summarize(report: dict[str, Any], path: str, sampled: int, limit: int = 8) -> list[str]:
     """Short human summary of an audit report."""
 
     f = report["findings"]
@@ -373,9 +345,7 @@ def summarize(
         )
         lines.append(f"SENTINEL candidate: {item['name']}: {kinds}")
     if len(f["sentinel_columns"]) > limit:
-        lines.append(
-            f"... {len(f['sentinel_columns']) - limit} more sentinel columns in the JSON"
-        )
+        lines.append(f"... {len(f['sentinel_columns']) - limit} more sentinel columns in the JSON")
     if f["zero_as_missing_candidates"]:
         lines.append(
             f"zeros in otherwise positive columns (zero-as-missing?): {f['zero_as_missing_candidates'][:limit]}"
@@ -396,9 +366,7 @@ def summarize(
                 f"  {pair['a']} ~ {pair['b']} ({pair['kind']}){' empty: ' + ', '.join(empties) if empties else ''}"
             )
     if f["identical_columns"]:
-        lines.append(
-            f"identical-content column groups: {f['identical_columns'][:limit]}"
-        )
+        lines.append(f"identical-content column groups: {f['identical_columns'][:limit]}")
     for key, label in (
         ("numeric_like_string_columns", "numbers stored as strings"),
         ("date_like_string_columns", "dates stored as strings"),

@@ -70,11 +70,27 @@ def view_angles(camera, up_axis):
     return np.degrees(np.arcsin(np.clip(z, -1, 1))), np.degrees(np.arctan2(y, x)), order
 
 
-PRESETS = {"iso": (1.0, 0.6, 1.0), "front": (0.0, 0.0, 1.0), "side": (1.0, 0.0, 0.0), "top": (0.0, 1.0, 0.001)}
+PRESETS = {
+    "iso": (1.0, 0.6, 1.0),
+    "front": (0.0, 0.0, 1.0),
+    "side": (1.0, 0.0, 0.0),
+    "top": (0.0, 1.0, 0.001),
+}
 
 
-def render(path, output, field_name=None, frame=0, threshold=None, value_range=None,
-           camera=None, preset="iso", up_axis="y", title=None, dpi=200):
+def render(
+    path,
+    output,
+    field_name=None,
+    frame=0,
+    threshold=None,
+    value_range=None,
+    camera=None,
+    preset="iso",
+    up_axis="y",
+    title=None,
+    dpi=200,
+):
     import matplotlib
 
     matplotlib.use("Agg")
@@ -118,18 +134,25 @@ def render(path, output, field_name=None, frame=0, threshold=None, value_range=N
         bar = fig.colorbar(mappable, ax=ax, orientation="horizontal", fraction=0.04, pad=0.02)
         bar.set_label("%s%s" % (field.label, " (%s)" % field.unit if field.unit else ""))
     else:
-        poly.set_facecolor(np.hstack([np.tile([0.72, 0.75, 0.79], (len(corners), 1)) * shade,
-                                      np.ones((len(corners), 1))]))
+        poly.set_facecolor(
+            np.hstack(
+                [np.tile([0.72, 0.75, 0.79], (len(corners), 1)) * shade, np.ones((len(corners), 1))]
+            )
+        )
     ax.add_collection3d(poly)
     lo, hi = mesh.positions[:, order].min(axis=0), mesh.positions[:, order].max(axis=0)
-    ax.set_xlim(lo[0], hi[0]); ax.set_ylim(lo[1], hi[1]); ax.set_zlim(lo[2], hi[2])
+    ax.set_xlim(lo[0], hi[0])
+    ax.set_ylim(lo[1], hi[1])
+    ax.set_zlim(lo[2], hi[2])
     ax.set_box_aspect(hi - lo)
     ax.view_init(elev=elev, azim=azim)
     ax.set_axis_off()
     frames = meta.get("frames") or []
     subtitle = frames[min(frame, len(frames) - 1)]["label"] if frames else ""
     if cut is not None:
-        subtitle = ", ".join(x for x in (subtitle, "%s in [%g, %g]" % (cut[0].label, cut[1], cut[2])) if x)
+        subtitle = ", ".join(
+            x for x in (subtitle, "%s in [%g, %g]" % (cut[0].label, cut[1], cut[2])) if x
+        )
     fig.suptitle(title or meta.get("stage", ""), fontsize=12, y=0.97)
     if subtitle:
         fig.text(0.5, 0.925, subtitle, ha="center", fontsize=9, color="#475569")
@@ -167,8 +190,18 @@ def main(argv=None):
     if args.camera:
         text = open(args.camera).read() if os.path.exists(args.camera) else args.camera
         camera = json.loads(text)
-    result = render(args.glb, args.output, args.field and args.field.upper(), args.frame, threshold,
-                    value_range, camera, args.preset, args.up_axis, args.title)
+    result = render(
+        args.glb,
+        args.output,
+        args.field and args.field.upper(),
+        args.frame,
+        threshold,
+        value_range,
+        camera,
+        args.preset,
+        args.up_axis,
+        args.title,
+    )
     print(json.dumps(result))
     return 0
 

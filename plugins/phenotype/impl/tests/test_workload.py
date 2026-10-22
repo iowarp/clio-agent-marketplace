@@ -180,9 +180,7 @@ class TestFaultInjection:
         # Plant a fault injection for global run-012 *before either call* --
         # a per-invocation-local index could never reach "12" from an 8-run
         # first call or a 6-run second call.
-        (data_dir / "injection.json").write_text(
-            json.dumps({"tamper_at": 12}), encoding="utf-8"
-        )
+        (data_dir / "injection.json").write_text(json.dumps({"tamper_at": 12}), encoding="utf-8")
 
         # First call: 8 healthy runs (run-001..run-008). No local index in
         # this call ever equals 12, so nothing should be tampered here.

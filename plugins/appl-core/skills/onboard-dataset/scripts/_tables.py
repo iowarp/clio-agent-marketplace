@@ -39,9 +39,7 @@ def sha256_file(path: Path, chunk: int = 1 << 20) -> str:
     return digest.hexdigest()
 
 
-def read_table(
-    path: Path, *, sample: int = 0, columns: list[str] | None = None
-) -> pa.Table:
+def read_table(path: Path, *, sample: int = 0, columns: list[str] | None = None) -> pa.Table:
     """Read a Parquet, CSV, or TSV table (optionally only the first ``sample`` rows).
 
     CSV cells are read with pyarrow's inference; empty cells in string columns
@@ -55,9 +53,7 @@ def read_table(
             return parquet.read(columns=columns)
         batches: list[pa.RecordBatch] = []
         remaining = sample
-        for batch in parquet.iter_batches(
-            batch_size=min(sample, 65536), columns=columns
-        ):
+        for batch in parquet.iter_batches(batch_size=min(sample, 65536), columns=columns):
             batches.append(batch.slice(0, remaining))
             remaining -= min(remaining, batch.num_rows)
             if remaining <= 0:

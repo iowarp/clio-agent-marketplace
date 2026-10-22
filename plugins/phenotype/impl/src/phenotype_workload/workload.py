@@ -2,8 +2,8 @@
 
 Server name: ``"phenotype-workload"``. This is the surface a science/ops
 agent drives to actually run the phenotyping campaign -- as opposed to
-the SPOTTER forensic MCP (the ``spotter-ai`` pack) (server name ``"spotter"``), which is the forensic
-attribution surface a separate watcher agent uses to investigate it. The two
+the SPOTTER forensic MCP from the ``spotter-ai`` pack (server name ``"spotter"``),
+which is the forensic attribution surface a separate watcher agent uses to investigate it. The two
 servers are deliberately split: this one knows nothing about forensics, and
 critically, nothing it returns ever reveals whether a run was tampered with
 (see ``measure_cohort``'s chaos-engineering fault-injection semantics
