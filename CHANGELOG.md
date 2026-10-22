@@ -47,7 +47,8 @@
 
 - `base-agent` (now the `standard` agent), `cluster-operator` (retired relay
   reference with no tools left to provide) and wildfire's declared `workflow:`
-  block, which awaits the orchestration plugin's plan flow.
+  block, now the `smoke-review` flow, which runs the stages on the core
+  `workflow` flow.
 
 ## [0.6.12] - 2026-10-18
 

@@ -3,7 +3,7 @@ id: wildfire.stages
 section: domain
 ---
 Start the review with `run_flow("smoke-review", input=<the request>)`: it runs
-these stages in order as a plan, each as a task you can see, then returns their
+these stages in order as a workflow, each as a task you can see, then returns their
 answers and typed `workflow_state`. Wait for it, then write the brief. If a
 stage stalls, the result names it; you may start that stage's subagent yourself.
 

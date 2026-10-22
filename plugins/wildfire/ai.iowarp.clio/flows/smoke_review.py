@@ -1,7 +1,7 @@
-"""The wildfire review's acquisition, analysis and map stages, as a plan.
+"""The wildfire review's acquisition, analysis and map stages, as a workflow.
 
-This replaces the blueprint's declared ``workflow:`` block. The plan runs on
-the ``plan`` flow from ``core``: each stage is an ordinary child assignment of a
+This replaces the blueprint's declared ``workflow:`` block. The workflow runs on
+the ``workflow`` flow from ``core``: each stage is an ordinary child assignment of a
 defined subagent, started once the stage before it finishes, and each stage
 receives the task plus the earlier stages' answers and typed ``workflow_state``.
 The main agent starts it with ``run_flow`` and writes the brief from its result.
@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from clio_agent.sdk import Flow, Node, Plan
+from clio_agent.sdk import Flow, Step, Workflow
 
-SMOKE_REVIEW = Plan(
-    nodes=[
-        Node(
+SMOKE_REVIEW = Workflow(
+    steps=[
+        Step(
             "start_with_data",
             "data",
             description=(
@@ -24,7 +24,7 @@ SMOKE_REVIEW = Plan(
                 "workflow_state.acquisition evidence"
             ),
         ),
-        Node(
+        Step(
             "data_to_analysis",
             "analysis",
             after=["start_with_data"],
@@ -33,7 +33,7 @@ SMOKE_REVIEW = Plan(
                 "rank affected communities; return typed workflow_state.impact evidence"
             ),
         ),
-        Node(
+        Step(
             "analysis_to_visualization",
             "visualization",
             after=["data_to_analysis"],
@@ -54,4 +54,4 @@ class SmokeReview(Flow):
     description = "Acquire fire, smoke and air-quality data, analyze downwind impact, render the map."
 
     async def forward(self, task: Any, ctx: Any) -> Any:
-        return await ctx.call("plan", {"plan": SMOKE_REVIEW.to_dict(), "task": task})
+        return await ctx.call("workflow", {"workflow": SMOKE_REVIEW.to_dict(), "task": task})
