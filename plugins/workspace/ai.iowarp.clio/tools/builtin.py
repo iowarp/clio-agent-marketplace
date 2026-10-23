@@ -1,10 +1,10 @@
-"""Workspace file tools: read, find, search, propose and apply edits, view images."""
+"""Workspace file tools: read, find, search, write and edit files, view images."""
 
 from clio_agent.sdk import native_tool
 
 fs_read_file = native_tool("fs_read_file")
 fs_glob = native_tool("fs_glob")
 fs_grep = native_tool("fs_grep")
-fs_propose_edit = native_tool("fs_propose_edit")
-fs_apply_edit_write = native_tool("fs_apply_edit_write")
+fs_write_file = native_tool("fs_write_file")
+fs_edit_file = native_tool("fs_edit_file")
 view_image = native_tool("view_image")
