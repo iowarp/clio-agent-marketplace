@@ -8,6 +8,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # The clio-agent the plugin check and plugin tests run against. This branch
+  # needs clio-agent's plugin system (iowarp/clio-agent#1825); set it back to
+  # develop once that merges.
+  CLIO_AGENT_REF: claude/sdk-plugins-flows
+
 jobs:
   policy:
     # Dependency-free: the plugin layout test, the model-pin policy and the
@@ -37,7 +43,7 @@ jobs:
           CLIO_PLUGIN_STORE: ${{ runner.temp }}/clio-plugin-store
         run: |
           uv run --python 3.14 --prerelease=allow \
-            --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
+            --with "clio-agent @ git+https://github.com/iowarp/clio-agent@${{ env.CLIO_AGENT_REF }}" \
             clio-agent plugin check .
 
   plugin-tests:
@@ -53,7 +59,7 @@ jobs:
       - name: Run the plugin tests
         run: |
           uv run --python 3.14 --prerelease=allow \
-            --with "clio-agent @ git+https://github.com/iowarp/clio-agent@develop" \
+            --with "clio-agent @ git+https://github.com/iowarp/clio-agent@${{ env.CLIO_AGENT_REF }}" \
             --with "numpy>=1.24" --with "jsonschema>=4.18" --with pyarrow --with trimesh \
             --with pytest \
             pytest plugins/*/tests -v
