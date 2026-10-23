@@ -45,6 +45,13 @@ jobs:
           uv run --python 3.14 --prerelease=allow \
             --with "clio-agent @ git+https://github.com/iowarp/clio-agent@${{ env.CLIO_AGENT_REF }}" \
             clio-agent plugin check .
+      - name: clio-agent plugin check (smoke-test marketplace)
+        env:
+          CLIO_PLUGIN_STORE: ${{ runner.temp }}/clio-plugin-store
+        run: |
+          uv run --python 3.14 --prerelease=allow \
+            --with "clio-agent @ git+https://github.com/iowarp/clio-agent@${{ env.CLIO_AGENT_REF }}" \
+            clio-agent plugin check testing
 
   plugin-tests:
     # Each plugin's own tests: A2UI catalog composability (earthscope-skills,

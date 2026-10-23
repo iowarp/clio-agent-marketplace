@@ -4,6 +4,11 @@
 
 ### Removed
 
+- The smoke-test agents `hook-smoke` and `mcp-calculator-smoke` and their
+  plugins leave the default marketplace, so people choosing an agent see only
+  agents meant for work. They live in `testing/`, a separate marketplace named
+  `clio-testing` that CLIO's own checks install; CI checks it alongside the
+  default one.
 - The blueprint-era topology experiments, superseded by the flat agents that
   load procedures on demand: the Factorio principal-investigator agent and the
   EarthScope GNSS region agents (`earthscope-gnss-region`, `earthscope-flat`
