@@ -26,6 +26,9 @@
 
 ### Changed
 
+- The `workspace` plugin (1.1.0) carries CLIO's read-only repository inspection
+  tools `fs_list_directory` and `fs_search_text` in place of `fs_glob` and
+  `fs_grep`, matching CLIO's file server.
 - The `visuals` plugin's diagram guidance points at the active catalog's
   `clio.mermaid.v1` entry for families, syntax and viewer capabilities, as
   0.6.13 did for the blueprint agents; `create-diagram` covers choice and review.
