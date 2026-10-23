@@ -26,6 +26,9 @@
 
 ### Changed
 
+- The `visuals` plugin's diagram guidance points at the active catalog's
+  `clio.mermaid.v1` entry for families, syntax and viewer capabilities, as
+  0.6.13 did for the blueprint agents; `create-diagram` covers choice and review.
 - HDF5 guidance lives in the `hdf5` plugin (1.1.0) as one `hdf5` skill by the
   HDF5 team: a router plus 22 guides under `references/`, audited against HDF5
   2.0–2.2 and h5py 3.12–3.16 (from iowarp/clio-agent#1736, which proposed it
@@ -54,6 +57,16 @@
   reference with no tools left to provide) and wildfire's declared `workflow:`
   block, now the `smoke-review` flow, which runs the stages on the core
   `workflow` flow.
+
+## [0.6.13] - 2026-10-21
+
+### Changed
+
+- Shared task guidance distinguishes waiting, consultation, pause and cancellation
+  while retaining the assignment and returned evidence.
+- Base Agent 0.2.9, APPL-CORE 0.2.6, Factorio Flat 0.4.4 and EarthScope 0.4.4
+  discover diagram families through the active catalog and use read-only repository
+  inspection. These pack versions require CLIO 0.9.5b8 or later.
 
 ## [0.6.12] - 2026-10-18
 

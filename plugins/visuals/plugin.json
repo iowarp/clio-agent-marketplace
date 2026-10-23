@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "visuals",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Interactive analysis, dashboards, diagrams and rendered visual review in CLIO's side panel.",
   "author": {
     "name": "IoWarp Team"
