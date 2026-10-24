@@ -43,7 +43,11 @@ def read_rows(path: Path) -> tuple[list[str], list[list[str]], str]:
         delimiter = dialect.delimiter
     except csv.Error:
         delimiter = ","
-    rows = [row for row in csv.reader(text.splitlines(), delimiter=delimiter) if any(c.strip() for c in row)]
+    rows = [
+        row
+        for row in csv.reader(text.splitlines(), delimiter=delimiter)
+        if any(c.strip() for c in row)
+    ]
     if not rows:
         raise SystemExit("empty catalog")
     return [h.strip() for h in rows[0]], rows[1:], delimiter
@@ -67,7 +71,9 @@ def column_index(header: list[str], ref: str) -> int:
     if not matches:
         raise SystemExit(f"{ref!r} is not a column; profile the catalog to see the names")
     if len(matches) > 1:
-        raise SystemExit(f"{ref!r} names columns {['#%d' % i for i in matches]}; choose one by #index")
+        raise SystemExit(
+            f"{ref!r} names columns {['#%d' % i for i in matches]}; choose one by #index"
+        )
     return matches[0]
 
 
@@ -86,6 +92,7 @@ def profile(path: Path) -> dict[str, Any]:
         parsed = [v for v in (number(x) for x in values) if v is not None]
         roles = []
         if parsed and len(parsed) >= 0.9 * len(values):
+
             def share(low: float, high: float) -> tuple[float, int]:
                 inside = sum(low <= v <= high for v in parsed)
                 return inside / len(parsed), len(parsed) - inside
@@ -96,8 +103,13 @@ def profile(path: Path) -> dict[str, Any]:
                 ("longitude in [0, 360)", 0, 360),
             ):
                 fraction, outside = share(low, high)
-                if fraction >= 0.5 and not (role.endswith("360)") and "longitude?" in " ".join(roles) and outside == 0):
-                    roles.append(f"{role}?" + (f" ({outside} values outside [{low}, {high}])" if outside else ""))
+                if fraction >= 0.5 and not (
+                    role.endswith("360)") and "longitude?" in " ".join(roles) and outside == 0
+                ):
+                    roles.append(
+                        f"{role}?"
+                        + (f" ({outside} values outside [{low}, {high}])" if outside else "")
+                    )
             if not roles:
                 roles.append("not a coordinate in degrees")
         columns.append(

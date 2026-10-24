@@ -26,7 +26,9 @@ def test_the_mission_names_skills_that_the_agent_carries() -> None:
         for plugin in ("clio-data", "hdf5", "adios", "parquet")
         for p in (PLUGIN.parent / plugin / "skills").glob("*/SKILL.md")
     }
-    named = {n for n in re.findall(r"`([a-z0-9-]+)`", mission) if not n.startswith(("shell", "create"))}
+    named = {
+        n for n in re.findall(r"`([a-z0-9-]+)`", mission) if not n.startswith(("shell", "create"))
+    }
     assert named and named <= shipped
 
 
@@ -48,9 +50,9 @@ def test_requires_the_format_plugins_and_lint_files_exist() -> None:
 
 def test_the_skill_documents_every_script_option() -> None:
     skill = (PLUGIN / "skills" / "convert-scientific-data" / "SKILL.md").read_text(encoding="utf-8")
-    script = (PLUGIN / "skills" / "convert-scientific-data" / "scripts" / "convert_to_parquet.py").read_text(
-        encoding="utf-8"
-    )
+    script = (
+        PLUGIN / "skills" / "convert-scientific-data" / "scripts" / "convert_to_parquet.py"
+    ).read_text(encoding="utf-8")
     options = set(re.findall(r'add_argument\(\s*"(--[a-z-]+)"', script))
     options |= set(re.findall(r'add_argument\("-o", "(--[a-z-]+)"', script))
     for option in options - {"--output"}:

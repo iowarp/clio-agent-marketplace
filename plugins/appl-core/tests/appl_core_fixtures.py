@@ -28,7 +28,9 @@ def load_script(relative: str, name: str) -> ModuleType:
     return module
 
 
-_shared = load_script("../data-onboarding/tests/onboarding_fixtures.py", "appl_core_onboarding_fixtures")
+_shared = load_script(
+    "../data-onboarding/tests/onboarding_fixtures.py", "appl_core_onboarding_fixtures"
+)
 FLOAT_MAX = _shared.FLOAT_MAX
 build_bundle = _shared.build_bundle
 tree_hash = _shared.tree_hash

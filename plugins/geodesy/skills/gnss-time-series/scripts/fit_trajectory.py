@@ -86,14 +86,18 @@ def parse_pairs(items: list[str] | None) -> dict[str, str]:
     return pairs
 
 
-def load(args: argparse.Namespace) -> tuple[np.ndarray, dict[str, np.ndarray], dict[str, np.ndarray], int]:
+def load(
+    args: argparse.Namespace,
+) -> tuple[np.ndarray, dict[str, np.ndarray], dict[str, np.ndarray], int]:
     path = Path(args.series)
     text = path.read_text(encoding="utf-8-sig", errors="replace")
     try:
         delimiter = csv.Sniffer().sniff(text[:65536], delimiters=",;\t|").delimiter
     except csv.Error:
         delimiter = ","
-    lines = [line for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")]
+    lines = [
+        line for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")
+    ]
     rows = list(csv.reader(lines, delimiter=delimiter))
     header = [h.strip() for h in rows[0]]
 
@@ -140,7 +144,9 @@ def load(args: argparse.Namespace) -> tuple[np.ndarray, dict[str, np.ndarray], d
     )
 
 
-def design(t: np.ndarray, t0: float, offsets: list[float], seasonal: bool) -> tuple[np.ndarray, list[str]]:
+def design(
+    t: np.ndarray, t0: float, offsets: list[float], seasonal: bool
+) -> tuple[np.ndarray, list[str]]:
     columns = [np.ones_like(t), t - t0]
     names = ["intercept", "rate"]
     for epoch in offsets:
@@ -154,23 +160,34 @@ def design(t: np.ndarray, t0: float, offsets: list[float], seasonal: bool) -> tu
 
 
 def fit_component(
-    t: np.ndarray, x: np.ndarray, sigma: np.ndarray | None, offsets: list[float], seasonal: bool, k: float
+    t: np.ndarray,
+    x: np.ndarray,
+    sigma: np.ndarray | None,
+    offsets: list[float],
+    seasonal: bool,
+    k: float,
 ) -> dict[str, Any]:
     t0 = float(np.round(np.mean(t), 4))
     sigma = sigma if sigma is not None else np.ones_like(x)
     keep = np.ones(len(t), bool)
     for _ in range(10):
-        a, names = design(t[keep], t0, [e for e in offsets if t[keep].min() < e <= t[keep].max()], seasonal)
+        a, names = design(
+            t[keep], t0, [e for e in offsets if t[keep].min() < e <= t[keep].max()], seasonal
+        )
         w = 1.0 / sigma[keep]
         coef, *_ = np.linalg.lstsq(a * w[:, None], x[keep] * w, rcond=None)
-        full, _ = design(t, t0, [e for e in offsets if t[keep].min() < e <= t[keep].max()], seasonal)
+        full, _ = design(
+            t, t0, [e for e in offsets if t[keep].min() < e <= t[keep].max()], seasonal
+        )
         normalized = (x - full @ coef) / sigma
         scale = 1.4826 * np.median(np.abs(normalized[keep] - np.median(normalized[keep])))
         new_keep = np.abs(normalized - np.median(normalized[keep])) <= k * max(scale, 1e-12)
         if np.array_equal(new_keep, keep):
             break
         keep = new_keep
-    a, names = design(t[keep], t0, [e for e in offsets if t[keep].min() < e <= t[keep].max()], seasonal)
+    a, names = design(
+        t[keep], t0, [e for e in offsets if t[keep].min() < e <= t[keep].max()], seasonal
+    )
     w = 1.0 / sigma[keep]
     aw = a * w[:, None]
     coef, *_ = np.linalg.lstsq(aw, x[keep] * w, rcond=None)
@@ -180,7 +197,10 @@ def fit_component(
     cov = np.linalg.pinv(aw.T @ aw)
     formal = np.sqrt(np.diag(cov))
     scaled = formal * math.sqrt(chi2)
-    params = {n: {"value": float(c), "formal_sigma": float(f), "scaled_sigma": float(s)} for n, c, f, s in zip(names, coef, formal, scaled)}
+    params = {
+        n: {"value": float(c), "formal_sigma": float(f), "scaled_sigma": float(s)}
+        for n, c, f, s in zip(names, coef, formal, scaled)
+    }
     out: dict[str, Any] = {
         "n_used": int(keep.sum()),
         "n_outliers": int((~keep).sum()),
@@ -190,14 +210,27 @@ def fit_component(
         "offsets": {n.split("@", 1)[1]: params[n] for n in names if n.startswith("offset@")},
         "wrms": float(math.sqrt(np.sum((residual * w) ** 2) / np.sum(w**2))),
         "reduced_chi2": chi2,
-        "residual_lag1_autocorrelation": float(np.corrcoef(residual[:-1], residual[1:])[0, 1]) if len(residual) > 2 else None,
+        "residual_lag1_autocorrelation": float(np.corrcoef(residual[:-1], residual[1:])[0, 1])
+        if len(residual) > 2
+        else None,
     }
     if seasonal:
-        for label, (c, s) in {"annual": ("annual_cos", "annual_sin"), "semiannual": ("semiannual_cos", "semiannual_sin")}.items():
+        for label, (c, s) in {
+            "annual": ("annual_cos", "annual_sin"),
+            "semiannual": ("semiannual_cos", "semiannual_sin"),
+        }.items():
             cv, sv = params[c]["value"], params[s]["value"]
             amp = math.hypot(cv, sv)
-            amp_sigma = math.hypot(cv * params[c]["scaled_sigma"], sv * params[s]["scaled_sigma"]) / amp if amp else None
-            out[label] = {"amplitude": amp, "amplitude_scaled_sigma": amp_sigma, "phase_rad": math.atan2(sv, cv)}
+            amp_sigma = (
+                math.hypot(cv * params[c]["scaled_sigma"], sv * params[s]["scaled_sigma"]) / amp
+                if amp
+                else None
+            )
+            out[label] = {
+                "amplitude": amp,
+                "amplitude_scaled_sigma": amp_sigma,
+                "phase_rad": math.atan2(sv, cv),
+            }
     out["midas_like_rate_per_year"] = midas_like(t[keep], x[keep], offsets)
     out["_keep"] = keep
     out["_model"] = (t0, coef, [e for e in offsets if t[keep].min() < e <= t[keep].max()])
@@ -233,13 +266,21 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("series")
     parser.add_argument("--time", required=True)
-    parser.add_argument("--time-format", choices=["auto", "decimal-year", "mjd", "iso"], default="auto")
+    parser.add_argument(
+        "--time-format", choices=["auto", "decimal-year", "mjd", "iso"], default="auto"
+    )
     parser.add_argument("--components", nargs="+", required=True, metavar="LABEL=COLUMN")
     parser.add_argument("--sigmas", nargs="+", metavar="LABEL=COLUMN")
-    parser.add_argument("--offset", nargs="*", default=[], help="offset epochs (decimal year or ISO date)")
+    parser.add_argument(
+        "--offset", nargs="*", default=[], help="offset epochs (decimal year or ISO date)"
+    )
     parser.add_argument("--no-seasonal", action="store_true")
-    parser.add_argument("--outlier", type=float, default=5.0, help="robust sigmas for outlier removal")
-    parser.add_argument("--scale", type=float, default=1.0, help="multiply values (e.g. 1000 for m to mm)")
+    parser.add_argument(
+        "--outlier", type=float, default=5.0, help="robust sigmas for outlier removal"
+    )
+    parser.add_argument(
+        "--scale", type=float, default=1.0, help="multiply values (e.g. 1000 for m to mm)"
+    )
     parser.add_argument("--units", default="as given")
     parser.add_argument("--residuals")
     parser.add_argument("--out")
@@ -252,7 +293,9 @@ def main(argv: list[str] | None = None) -> int:
         offsets.append(epoch)
     t, values, errors, skipped = load(args)
     fits = {
-        label: fit_component(t, x, errors.get(label), sorted(offsets), not args.no_seasonal, args.outlier)
+        label: fit_component(
+            t, x, errors.get(label), sorted(offsets), not args.no_seasonal, args.outlier
+        )
         for label, x in values.items()
     }
     caveats = [
@@ -267,7 +310,9 @@ def main(argv: list[str] | None = None) -> int:
             "biased by unmodelled seasonal signal (Blewitt and Lavallee, 2002)."
         )
     if not offsets:
-        caveats.append("No offset epochs were given; check equipment logs and earthquakes for steps.")
+        caveats.append(
+            "No offset epochs were given; check equipment logs and earthquakes for steps."
+        )
     if args.residuals:
         with open(args.residuals, "w", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)

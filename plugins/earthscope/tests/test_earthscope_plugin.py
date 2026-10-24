@@ -38,7 +38,9 @@ def test_workflow_state_keeps_only_what_core_reads() -> None:
     clio = manifest["extensions"]["ai.iowarp.clio"]
     assert set(clio["requires"]) == {"ndp", "geo", "geodesy"}
     assert "aliases" not in clio["workflow_state"]
-    assert clio["workflow_state"]["sections"]["acquisition"]["readiness"]["field"] == "analysis_ready"
+    assert (
+        clio["workflow_state"]["sections"]["acquisition"]["readiness"]["field"] == "analysis_ready"
+    )
 
 
 def test_no_denylisted_literal_anywhere_shipped() -> None:

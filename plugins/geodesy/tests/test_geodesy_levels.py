@@ -22,7 +22,16 @@ EXPECTED_LEVELS: dict[str, str] = {
 }
 #: Skills that spawn a child when run with a task.
 SPAWNING = {"count-stations-in-region"}
-L3_LITERALS = ("P475", "P473", "MTA1", "earthscope_converted_data.csv", "earthscope_stations_clean.csv", "`Site`", "`(deg)`", "60000000")
+L3_LITERALS = (
+    "P475",
+    "P473",
+    "MTA1",
+    "earthscope_converted_data.csv",
+    "earthscope_stations_clean.csv",
+    "`Site`",
+    "`(deg)`",
+    "60000000",
+)
 
 
 def _skill_dirs() -> list[Path]:

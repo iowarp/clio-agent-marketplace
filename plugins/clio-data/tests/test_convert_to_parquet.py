@@ -57,7 +57,9 @@ def table_h5(tmp_path: Path) -> Path:
         temp.attrs["units"] = "K"
         g.create_dataset("count", data=np.arange(n, dtype="int32"))
         g.create_dataset("big", data=np.array([2**63 + 5, 0, 1, 2, 3, 2**64 - 1], dtype="uint64"))
-        g.create_dataset("half", data=np.array([0.5, 1.0, np.nan, 2.0, -1.0, 65504.0], dtype="float16"))
+        g.create_dataset(
+            "half", data=np.array([0.5, 1.0, np.nan, 2.0, -1.0, 65504.0], dtype="float16")
+        )
         g.create_dataset("flag", data=np.array([True, False] * 3))
         g.create_dataset("label", data=np.array([b"a", b"bb", b"", b"ccc", b"d", b"e"], dtype="S3"))
         g.create_dataset(
@@ -78,7 +80,10 @@ def test_flat_table_converts_and_verifies(table_h5: Path, tmp_path: Path) -> Non
     out = tmp_path / "out" / "table.parquet"
     report_path = tmp_path / "report.json"
 
-    assert _run("hdf5", str(table_h5), "--group", "/obs", "-o", str(out), "--report", str(report_path)) == 0
+    assert (
+        _run("hdf5", str(table_h5), "--group", "/obs", "-o", str(out), "--report", str(report_path))
+        == 0
+    )
 
     assert _sha(table_h5) == before, "the source is never written"
     report = json.loads(report_path.read_text())
@@ -111,21 +116,57 @@ def test_flat_table_converts_and_verifies(table_h5: Path, tmp_path: Path) -> Non
 
 def test_batching_does_not_change_the_checksums(table_h5: Path, tmp_path: Path) -> None:
     one, two = tmp_path / "a.json", tmp_path / "b.json"
-    assert _run("hdf5", str(table_h5), "--group", "/obs", "-o", str(tmp_path / "a.parquet"), "--report", str(one)) == 0
     assert (
         _run(
-            "hdf5", str(table_h5), "--group", "/obs", "-o", str(tmp_path / "b.parquet"),
-            "--report", str(two), "--batch-rows", "4",
+            "hdf5",
+            str(table_h5),
+            "--group",
+            "/obs",
+            "-o",
+            str(tmp_path / "a.parquet"),
+            "--report",
+            str(one),
         )
         == 0
     )
-    sums = [{c["name"]: c["sha256_parquet"] for c in json.loads(p.read_text())["columns"]} for p in (one, two)]
+    assert (
+        _run(
+            "hdf5",
+            str(table_h5),
+            "--group",
+            "/obs",
+            "-o",
+            str(tmp_path / "b.parquet"),
+            "--report",
+            str(two),
+            "--batch-rows",
+            "4",
+        )
+        == 0
+    )
+    sums = [
+        {c["name"]: c["sha256_parquet"] for c in json.loads(p.read_text())["columns"]}
+        for p in (one, two)
+    ]
     assert sums[0] == sums[1]
 
 
 def test_complex_split_is_opt_in(table_h5: Path, tmp_path: Path) -> None:
     out = tmp_path / "c.parquet"
-    assert _run("hdf5", str(table_h5), "--datasets", "/obs/wave", "/obs/count", "-o", str(out), "--complex", "split") == 0
+    assert (
+        _run(
+            "hdf5",
+            str(table_h5),
+            "--datasets",
+            "/obs/wave",
+            "/obs/count",
+            "-o",
+            str(out),
+            "--complex",
+            "split",
+        )
+        == 0
+    )
     wave = pq.read_table(out).column("wave").to_pylist()
     assert wave[2] == {"real": 2.0, "imag": 4.0}
 
@@ -133,7 +174,9 @@ def test_complex_split_is_opt_in(table_h5: Path, tmp_path: Path) -> None:
 def test_compound_nested_and_multidimensional(tmp_path: Path) -> None:
     path = tmp_path / "compound.h5"
     inner = np.dtype([("x", "f8"), ("y", "f8")])
-    record = np.dtype([("id", "i4"), ("pos", inner), ("spec", "f4", (3,)), ("note", h5py.string_dtype())])
+    record = np.dtype(
+        [("id", "i4"), ("pos", inner), ("spec", "f4", (3,)), ("note", h5py.string_dtype())]
+    )
     data = np.zeros(4, dtype=record)
     data["id"] = [1, 2, 3, 4]
     data["pos"]["x"] = [0.1, 0.2, np.nan, 0.4]
@@ -145,11 +188,32 @@ def test_compound_nested_and_multidimensional(tmp_path: Path) -> None:
     out = tmp_path / "compound.parquet"
     report = tmp_path / "r.json"
 
-    assert _run("hdf5", str(path), "--datasets", "/records", "/grid", "-o", str(out), "--report", str(report)) == 0
+    assert (
+        _run(
+            "hdf5",
+            str(path),
+            "--datasets",
+            "/records",
+            "/grid",
+            "-o",
+            str(out),
+            "--report",
+            str(report),
+        )
+        == 0
+    )
 
     table = pq.read_table(out)
-    assert table.column_names == ["records.id", "records.pos", "records.spec", "records.note", "grid"]
-    assert table.schema.field("records.pos").type == pa.struct([("x", pa.float64()), ("y", pa.float64())])
+    assert table.column_names == [
+        "records.id",
+        "records.pos",
+        "records.spec",
+        "records.note",
+        "grid",
+    ]
+    assert table.schema.field("records.pos").type == pa.struct(
+        [("x", pa.float64()), ("y", pa.float64())]
+    )
     assert table.schema.field("records.spec").type == pa.list_(pa.float32(), 3)
     assert table.column("records.spec").to_pylist()[1] == [3.0, 4.0, 5.0]
     assert table.column("grid").to_pylist()[3] == [6.0, 7.0]
@@ -175,15 +239,29 @@ def test_cf_time_and_fill_values_change_only_on_request(tmp_path: Path) -> None:
     report = tmp_path / "r.json"
     assert (
         _run(
-            "hdf5", str(path), "--datasets", "/time", "/value", "-o", str(decoded),
-            "--cf-time", "decode", "--mask-fill", "--report", str(report),
+            "hdf5",
+            str(path),
+            "--datasets",
+            "/time",
+            "/value",
+            "-o",
+            str(decoded),
+            "--cf-time",
+            "decode",
+            "--mask-fill",
+            "--report",
+            str(report),
         )
         == 0
     )
     table = pq.read_table(decoded)
     assert table.schema.field("time").type == pa.timestamp("us", tz="UTC")
     stamps = [s.isoformat() for s in table.column("time").to_pylist()]
-    assert stamps == ["2000-01-01T00:00:00+00:00", "2000-01-01T12:00:00+00:00", "2000-01-02T00:00:00+00:00"]
+    assert stamps == [
+        "2000-01-01T00:00:00+00:00",
+        "2000-01-01T12:00:00+00:00",
+        "2000-01-02T00:00:00+00:00",
+    ]
     assert table.column("value").to_pylist() == [1.0, None, 3.0]
     value = next(c for c in json.loads(report.read_text())["columns"] if c["name"] == "value")
     assert value["masked_to_null"] == 1 and value["checksum_basis"] == "converted values"
@@ -193,7 +271,9 @@ def test_cf_time_and_fill_values_change_only_on_request(tmp_path: Path) -> None:
     "case",
     ["calendar", "lengths", "utf8", "exists"],
 )
-def test_refusals_write_nothing(tmp_path: Path, case: str, capsys: pytest.CaptureFixture[str]) -> None:
+def test_refusals_write_nothing(
+    tmp_path: Path, case: str, capsys: pytest.CaptureFixture[str]
+) -> None:
     path = tmp_path / "bad.h5"
     out = tmp_path / "bad.parquet"
     with h5py.File(path, "w") as f:
@@ -207,7 +287,9 @@ def test_refusals_write_nothing(tmp_path: Path, case: str, capsys: pytest.Captur
         utf8.set_size(2)
         utf8.set_cset(h5py.h5t.CSET_UTF8)
         dsid = h5py.h5d.create(f.id, b"text", utf8, h5py.h5s.create_simple((3,)))
-        dsid.write(h5py.h5s.ALL, h5py.h5s.ALL, np.array([b"ok", b"\xff\xfe", b"x"], dtype="S2"), mtype=utf8)
+        dsid.write(
+            h5py.h5s.ALL, h5py.h5s.ALL, np.array([b"ok", b"\xff\xfe", b"x"], dtype="S2"), mtype=utf8
+        )
     if case == "calendar":
         argv = ["--datasets", "/t", "--cf-time", "decode"]
     elif case == "lengths":
@@ -283,12 +365,26 @@ def test_a_corrupted_write_fails_verification(
             values[0] += 1
             columns = list(batch.columns)
             columns[index] = pa.array(values, batch.schema.field(index).type)
-            super().write_batch(pa.RecordBatch.from_arrays(columns, schema=batch.schema), row_group_size)
+            super().write_batch(
+                pa.RecordBatch.from_arrays(columns, schema=batch.schema), row_group_size
+            )
 
     monkeypatch.setattr(convert.pq, "ParquetWriter", Corrupting)
     report = tmp_path / "r.json"
 
-    assert _run("hdf5", str(table_h5), "--group", "/obs", "-o", str(tmp_path / "x.parquet"), "--report", str(report)) == 1
+    assert (
+        _run(
+            "hdf5",
+            str(table_h5),
+            "--group",
+            "/obs",
+            "-o",
+            str(tmp_path / "x.parquet"),
+            "--report",
+            str(report),
+        )
+        == 1
+    )
 
     bad = [c["name"] for c in json.loads(report.read_text())["columns"] if not c["ok"]]
     assert bad == ["count"]

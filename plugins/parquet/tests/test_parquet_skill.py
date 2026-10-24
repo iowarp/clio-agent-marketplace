@@ -11,7 +11,17 @@ SKILL = (PLUGIN / "skills" / "parquet" / "SKILL.md").read_text(encoding="utf-8")
 
 #: clio-kit parquet server 2.2.5 tools (unprefixed MCP names) and filter ops.
 TOOLS = {"summarize_tool", "read_slice_tool", "get_column_preview_tool", "aggregate_column_tool"}
-OPS = {"equal", "not_equal", "less", "less_equal", "greater", "greater_equal", "is_null", "is_valid", "is_in"}
+OPS = {
+    "equal",
+    "not_equal",
+    "less",
+    "less_equal",
+    "greater",
+    "greater_equal",
+    "is_null",
+    "is_valid",
+    "is_in",
+}
 
 
 def test_the_server_is_clio_kits_parquet() -> None:

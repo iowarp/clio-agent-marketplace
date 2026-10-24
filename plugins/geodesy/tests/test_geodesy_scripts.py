@@ -60,20 +60,56 @@ def test_profile_flags_duplicates_header_rows_and_candidates(messy_catalog: Path
     assert any(role.startswith("longitude in [0, 360)?") for role in by_ref["#3"]["could_be"])
 
 
-def test_write_uses_the_chosen_columns_and_reports_drops(messy_catalog: Path, tmp_path: Path) -> None:
+def test_write_uses_the_chosen_columns_and_reports_drops(
+    messy_catalog: Path, tmp_path: Path
+) -> None:
     before = hashlib.sha256(messy_catalog.read_bytes()).hexdigest()
     out = tmp_path / "normalized.csv"
 
     with pytest.raises(SystemExit, match="choose one by #index"):
-        catalog.main(["write", str(messy_catalog), "--id", "Station", "--lat", "Latitude", "--lon", "Longitude", "-o", str(out)])
-    assert catalog.main(
-        ["write", str(messy_catalog), "--id", "Station", "--lat", "Latitude", "--lon", "#3",
-         "--height", "#2", "--wrap-longitude", "-o", str(out), "--out", str(tmp_path / "r.json")]
-    ) == 0
+        catalog.main(
+            [
+                "write",
+                str(messy_catalog),
+                "--id",
+                "Station",
+                "--lat",
+                "Latitude",
+                "--lon",
+                "Longitude",
+                "-o",
+                str(out),
+            ]
+        )
+    assert (
+        catalog.main(
+            [
+                "write",
+                str(messy_catalog),
+                "--id",
+                "Station",
+                "--lat",
+                "Latitude",
+                "--lon",
+                "#3",
+                "--height",
+                "#2",
+                "--wrap-longitude",
+                "-o",
+                str(out),
+                "--out",
+                str(tmp_path / "r.json"),
+            ]
+        )
+        == 0
+    )
 
     report = json.loads((tmp_path / "r.json").read_text())
     assert report["written_rows"] == 3
-    assert report["dropped"] == {"non-numeric coordinate (header-like or missing)": 1, "latitude out of range": 1}
+    assert report["dropped"] == {
+        "non-numeric coordinate (header-like or missing)": 1,
+        "latitude out of range": 1,
+    }
     assert report["longitudes_wrapped_from_0_360"] == 2
     rows = list(csv.DictReader(out.open(encoding="utf-8")))
     assert [r["id"] for r in rows] == ["AAAA", "BBBB", "DDDD"]
@@ -94,7 +130,9 @@ def _series(tmp_path: Path, years: float = 6.0) -> Path:
             if d % 17 == 5:
                 continue  # gaps
             day = start + timedelta(days=d)
-            t = trajectory.decimal_year(trajectory.datetime(day.year, day.month, day.day, tzinfo=trajectory.timezone.utc))
+            t = trajectory.decimal_year(
+                trajectory.datetime(day.year, day.month, day.day, tzinfo=trajectory.timezone.utc)
+            )
             dt = t - 2013.0
             east = 0.020 * dt + 0.002 * np.cos(2 * np.pi * dt) + rng.normal(0, 0.001)
             north = -0.010 * dt + (0.015 if t >= 2012.5 else 0.0) + rng.normal(0, 0.001)
@@ -109,11 +147,34 @@ def test_trajectory_recovers_rates_offsets_and_seasonal_terms(tmp_path: Path) ->
     series = _series(tmp_path)
     out = tmp_path / "fit.json"
 
-    assert trajectory.main(
-        [str(series), "--time", "date", "--components", "E=east", "N=north", "U=up",
-         "--sigmas", "E=sig_e", "N=sig_n", "U=sig_u", "--offset", "2012-07-02",
-         "--scale", "1000", "--units", "mm", "--residuals", str(tmp_path / "res.csv"), "--out", str(out)]
-    ) == 0
+    assert (
+        trajectory.main(
+            [
+                str(series),
+                "--time",
+                "date",
+                "--components",
+                "E=east",
+                "N=north",
+                "U=up",
+                "--sigmas",
+                "E=sig_e",
+                "N=sig_n",
+                "U=sig_u",
+                "--offset",
+                "2012-07-02",
+                "--scale",
+                "1000",
+                "--units",
+                "mm",
+                "--residuals",
+                str(tmp_path / "res.csv"),
+                "--out",
+                str(out),
+            ]
+        )
+        == 0
+    )
 
     fit = json.loads(out.read_text())
     assert fit["rows_skipped_unparsable"] == 1
@@ -133,6 +194,11 @@ def test_trajectory_recovers_rates_offsets_and_seasonal_terms(tmp_path: Path) ->
 def test_short_series_warn_about_seasonal_bias(tmp_path: Path) -> None:
     series = _series(tmp_path, years=1.5)
     out = tmp_path / "fit.json"
-    assert trajectory.main([str(series), "--time", "date", "--components", "E=east", "--out", str(out)]) == 0
+    assert (
+        trajectory.main(
+            [str(series), "--time", "date", "--components", "E=east", "--out", str(out)]
+        )
+        == 0
+    )
     caveats = " ".join(json.loads(out.read_text())["caveats"])
     assert "2.5 years" in caveats and "No offset epochs" in caveats

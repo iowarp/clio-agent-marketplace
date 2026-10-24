@@ -264,10 +264,16 @@ def field_policy(
         struct = pa.struct([(m, t) for m, t, _ in children])
         return struct, convert_struct, "struct", lossless, notes
     if h5py.check_ref_dtype(dtype) is not None:
-        return None, None, "skip", False, [
-            "HDF5 object or region references point inside the source file and have no "
-            "Parquet meaning; record the referenced paths separately if they matter"
-        ]
+        return (
+            None,
+            None,
+            "skip",
+            False,
+            [
+                "HDF5 object or region references point inside the source file and have no "
+                "Parquet meaning; record the referenced paths separately if they matter"
+            ],
+        )
     enum = h5py.check_enum_dtype(dtype)
     if enum is not None:
         ordered = sorted(enum.items(), key=lambda kv: kv[1])
@@ -358,10 +364,16 @@ def field_policy(
         return None, None, "skip", False, [f"{dtype} has no Parquet float type"]
     if kind == "c":
         if opts.complex_mode != "split":
-            return None, None, "skip", False, [
-                f"{dtype}: complex values have no Parquet type; rerun with --complex split "
-                "for a struct of real and imag, or keep them out"
-            ]
+            return (
+                None,
+                None,
+                "skip",
+                False,
+                [
+                    f"{dtype}: complex values have no Parquet type; rerun with --complex split "
+                    "for a struct of real and imag, or keep them out"
+                ],
+            )
         part = np.dtype(f"f{dtype.itemsize // 2}")
         ptype = pa.from_numpy_dtype(part)
 
@@ -402,7 +414,13 @@ def cf_time_policy(name: str, attrs: dict[str, Any]) -> tuple[int, int] | None:
     epoch_text = match.group("epoch").replace("UTC", "").strip()
     epoch_text = re.sub(r"\s+", " ", epoch_text)
     epoch = None
-    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+    ):
         stamp = epoch_text.rstrip("Z").strip()
         offset = re.search(r"\s*([+-])(\d{1,2}):?(\d{2})?$", stamp) if fmt != "%Y-%m-%d" else None
         shift = timedelta(0)
@@ -426,7 +444,9 @@ def wrap_value_options(col: Column, opts: Options) -> None:
 
     base = col.convert
     attrs = col.attrs
-    fills = [v for key in ("_FillValue", "missing_value") for v in np.atleast_1d(attrs.get(key, []))]
+    fills = [
+        v for key in ("_FillValue", "missing_value") for v in np.atleast_1d(attrs.get(key, []))
+    ]
     col.fill_values = [plain(v) for v in fills]
     scale, offset = attrs.get("scale_factor"), attrs.get("add_offset")
     if col.fill_values:
@@ -440,7 +460,11 @@ def wrap_value_options(col: Column, opts: Options) -> None:
             + ("; unpacked to float64 (--unpack)" if opts.unpack else "; kept packed")
         )
     time = cf_time_policy(col.name, attrs) if opts.cf_time == "decode" else None
-    if opts.cf_time == "keep" and isinstance(attrs.get("units"), str) and CF_UNITS.match(attrs["units"]):
+    if (
+        opts.cf_time == "keep"
+        and isinstance(attrs.get("units"), str)
+        and CF_UNITS.match(attrs["units"])
+    ):
         col.notes.append(f"CF time ({attrs['units']}) kept numeric; --cf-time decode converts it")
     mask_fill = opts.mask_fill and bool(fills)
     unpack = opts.unpack and (scale is not None or offset is not None)
@@ -455,7 +479,9 @@ def wrap_value_options(col: Column, opts: Options) -> None:
         mask = np.zeros(len(flat), bool)
         if mask_fill:
             for fill in fills:
-                mask |= (flat == fill) | (np.isnan(flat) & np.isnan(fill) if flat.dtype.kind == "f" else False)
+                mask |= (flat == fill) | (
+                    np.isnan(flat) & np.isnan(fill) if flat.dtype.kind == "f" else False
+                )
             col.masked += int(mask.sum())
         data: np.ndarray = flat
         if unpack:
@@ -483,7 +509,9 @@ def wrap_value_options(col: Column, opts: Options) -> None:
     col.convert = convert
 
 
-def make_column(name: str, source: str, dtype: np.dtype, attrs: dict[str, Any], opts: Options) -> Column:
+def make_column(
+    name: str, source: str, dtype: np.dtype, attrs: dict[str, Any], opts: Options
+) -> Column:
     arrow, convert, action, lossless, notes = field_policy(name, dtype, opts, attrs)
     col = Column(
         name=name,
@@ -548,14 +576,27 @@ def plan_hdf5(source: Path, datasets: list[str], group: str | None, opts: Option
         dset = handle[path]
         if not isinstance(dset, h5py.Dataset):
             raise ConversionError(f"{path} is not a dataset")
-        attrs = {k: plain(v) if k not in ("_FillValue", "missing_value", "scale_factor", "add_offset") else v for k, v in dset.attrs.items()}
+        attrs = {
+            k: plain(v)
+            if k not in ("_FillValue", "missing_value", "scale_factor", "add_offset")
+            else v
+            for k, v in dset.attrs.items()
+        }
         name = names[path]
         if name in opts.skip or path in opts.skip:
-            skipped.append({"source": path, "dtype": str(dset.dtype), "reason": "skipped on request"})
+            skipped.append(
+                {"source": path, "dtype": str(dset.dtype), "reason": "skipped on request"}
+            )
             continue
         if dset.shape == ():
             file_meta.setdefault("scalars", {})[path] = plain(dset[()])
-            skipped.append({"source": path, "dtype": str(dset.dtype), "reason": "scalar; value kept in the file metadata"})
+            skipped.append(
+                {
+                    "source": path,
+                    "dtype": str(dset.dtype),
+                    "reason": "scalar; value kept in the file metadata",
+                }
+            )
             continue
         lengths[path] = dset.shape[0]
         element = dset.dtype if len(dset.shape) == 1 else np.dtype((dset.dtype, dset.shape[1:]))
@@ -564,11 +605,23 @@ def plan_hdf5(source: Path, datasets: list[str], group: str | None, opts: Option
             for member in dset.dtype.names:
                 cname = member if len(datasets) == 1 else f"{name}.{member}"
                 if cname in opts.skip or f"{path}.{member}" in opts.skip:
-                    skipped.append({"source": f"{path}.{member}", "dtype": str(dset.dtype.fields[member][0]), "reason": "skipped on request"})
+                    skipped.append(
+                        {
+                            "source": f"{path}.{member}",
+                            "dtype": str(dset.dtype.fields[member][0]),
+                            "reason": "skipped on request",
+                        }
+                    )
                     continue
                 col = make_column(cname, f"{path}.{member}", dset.dtype.fields[member][0], {}, opts)
                 if col.convert is None:
-                    skipped.append({"source": col.source, "dtype": col.source_dtype, "reason": "; ".join(col.notes)})
+                    skipped.append(
+                        {
+                            "source": col.source,
+                            "dtype": col.source_dtype,
+                            "reason": "; ".join(col.notes),
+                        }
+                    )
                     continue
                 made.append((col, member))
             readers.append((dset, made))
@@ -578,7 +631,9 @@ def plan_hdf5(source: Path, datasets: list[str], group: str | None, opts: Option
         if len(dset.shape) > 1:
             col.notes.insert(0, f"{len(dset.shape)}-D dataset: one row per first-axis index")
         if col.convert is None:
-            skipped.append({"source": path, "dtype": str(dset.dtype), "reason": "; ".join(col.notes)})
+            skipped.append(
+                {"source": path, "dtype": str(dset.dtype), "reason": "; ".join(col.notes)}
+            )
             continue
         readers.append((dset, [(col, None)]))
         columns.append(col)
@@ -597,16 +652,27 @@ def plan_hdf5(source: Path, datasets: list[str], group: str | None, opts: Option
             for dset, cols in readers:
                 values = dset[start:stop]
                 for col, member in cols:
-                    batch[col.name] = values if member is None else np.ascontiguousarray(values[member])
+                    batch[col.name] = (
+                        values if member is None else np.ascontiguousarray(values[member])
+                    )
             yield batch
 
     return Plan(columns, skipped, rows, batches, file_meta)
 
 
 ADIOS_TYPES = {
-    "int8_t": "i1", "int16_t": "i2", "int32_t": "i4", "int64_t": "i8",
-    "uint8_t": "u1", "uint16_t": "u2", "uint32_t": "u4", "uint64_t": "u8",
-    "float": "f4", "double": "f8", "float complex": "c8", "double complex": "c16",
+    "int8_t": "i1",
+    "int16_t": "i2",
+    "int32_t": "i4",
+    "int64_t": "i8",
+    "uint8_t": "u1",
+    "uint16_t": "u2",
+    "uint32_t": "u4",
+    "uint64_t": "u8",
+    "float": "f4",
+    "double": "f8",
+    "float complex": "c8",
+    "double complex": "c16",
 }
 
 
@@ -624,9 +690,13 @@ def plan_adios(source: Path, variables: list[str], steps: str, opts: Options) ->
     try:
         import adios2  # noqa: PLC0415
     except ImportError as exc:
-        raise ConversionError("adios2 is not installed: rerun with `uv run --with adios2 ...`") from exc
+        raise ConversionError(
+            "adios2 is not installed: rerun with `uv run --with adios2 ...`"
+        ) from exc
     if not hasattr(adios2, "FileReader"):
-        raise ConversionError(f"adios2 {adios2.__version__} has no FileReader; use adios2 2.10 or later")
+        raise ConversionError(
+            f"adios2 {adios2.__version__} has no FileReader; use adios2 2.10 or later"
+        )
     reader = adios2.FileReader(str(source))
     available = reader.available_variables()
     attributes = reader.available_attributes()
@@ -652,17 +722,33 @@ def plan_adios(source: Path, variables: list[str], steps: str, opts: Options) ->
         elif kind in ADIOS_TYPES:
             dtype = np.dtype(ADIOS_TYPES[kind])
         else:
-            skipped.append({"source": name, "dtype": kind, "reason": f"ADIOS type {kind} has no mapping"})
+            skipped.append(
+                {"source": name, "dtype": kind, "reason": f"ADIOS type {kind} has no mapping"}
+            )
             continue
         if shape == "" and info.get("SingleValue") != "true":
             raise ConversionError(f"{name}: a local array; read it per block in your own script")
         if shape and "," in shape:
-            raise ConversionError(f"{name}: {shape} is not one-dimensional; select a slice in your own script")
+            raise ConversionError(
+                f"{name}: {shape} is not one-dimensional; select a slice in your own script"
+            )
         shapes[name] = "value" if shape == "" else "array"
         prefix = f"{name}/"
-        attrs = {k[len(prefix):]: adios_attribute(reader, k, v) for k, v in attributes.items() if k.startswith(prefix)}
+        attrs = {
+            k[len(prefix) :]: adios_attribute(reader, k, v)
+            for k, v in attributes.items()
+            if k.startswith(prefix)
+        }
         if kind == "string":
-            col = Column(name, name, kind, "copy", pa.string(), lambda v: pa.array([str(x) for x in v.reshape(-1)], pa.string()), attrs=attrs)
+            col = Column(
+                name,
+                name,
+                kind,
+                "copy",
+                pa.string(),
+                lambda v: pa.array([str(x) for x in v.reshape(-1)], pa.string()),
+                attrs=attrs,
+            )
         else:
             col = make_column(name, name, dtype, attrs, opts)
         if col.convert is None:
@@ -702,7 +788,9 @@ def plan_adios(source: Path, variables: list[str], steps: str, opts: Options) ->
             yield batch
 
     meta = {
-        "attributes": {k: adios_attribute(reader, k, v) for k, v in attributes.items() if "/" not in k},
+        "attributes": {
+            k: adios_attribute(reader, k, v) for k, v in attributes.items() if "/" not in k
+        },
         "steps": [step_list[0], step_list[-1]],
         "adios2_version": adios2.__version__,
     }
@@ -775,7 +863,9 @@ def run(args: argparse.Namespace) -> int:
         if col.attrs:
             meta["attributes"] = json.dumps(plain(col.attrs), default=str)
         fields.append(pa.field(col.name, col.arrow_type, metadata=meta))
-    fields.extend(pa.field(n, t, metadata={"source": "ADIOS2 step index"}) for n, t in plan.extra_columns)
+    fields.extend(
+        pa.field(n, t, metadata={"source": "ADIOS2 step index"}) for n, t in plan.extra_columns
+    )
     provenance = {
         "script": "convert_to_parquet.py",
         "version": SCRIPT_VERSION,
@@ -790,13 +880,21 @@ def run(args: argparse.Namespace) -> int:
             "skip": sorted(opts.skip),
         },
         "columns": [
-            {"name": c.name, "source": c.source, "action": c.action, "lossless": c.lossless, "notes": c.notes}
+            {
+                "name": c.name,
+                "source": c.source,
+                "action": c.action,
+                "lossless": c.lossless,
+                "notes": c.notes,
+            }
             for c in plan.columns
         ],
         "skipped": plan.skipped,
         "file": plan.file_metadata,
     }
-    schema = pa.schema(fields, metadata={METADATA_KEY: json.dumps(provenance, default=str).encode()})
+    schema = pa.schema(
+        fields, metadata={METADATA_KEY: json.dumps(provenance, default=str).encode()}
+    )
     expected = {c.name: ColumnHash() for c in plan.columns}
     for name, _ in plan.extra_columns:
         expected[name] = ColumnHash()
@@ -817,7 +915,9 @@ def run(args: argparse.Namespace) -> int:
                         nan_source[col.name] += int(np.isnan(numeric).sum())
                     elif raw.dtype.kind == "c":
                         flat = raw.reshape(-1)
-                        nan_source[col.name] += int(np.isnan(flat.real).sum() + np.isnan(flat.imag).sum())
+                        nan_source[col.name] += int(
+                            np.isnan(flat.real).sum() + np.isnan(flat.imag).sum()
+                        )
                     else:
                         nan_source[col.name] += count_nan(array)
                     if col.source_comparable and numeric is not None:
@@ -865,8 +965,18 @@ def verify(
             nans[name] += count_nan(column)
     checks = []
     rows = handle.metadata.num_rows
-    checks.append({"check": "rows", "expected": plan.rows, "written": written, "parquet": rows, "ok": rows == plan.rows == written})
-    same_schema = handle.schema_arrow.remove_metadata().equals(schema.remove_metadata(), check_metadata=False)
+    checks.append(
+        {
+            "check": "rows",
+            "expected": plan.rows,
+            "written": written,
+            "parquet": rows,
+            "ok": rows == plan.rows == written,
+        }
+    )
+    same_schema = handle.schema_arrow.remove_metadata().equals(
+        schema.remove_metadata(), check_metadata=False
+    )
     checks.append({"check": "schema", "ok": same_schema})
     columns = []
     by_name = {c.name: c for c in plan.columns}
@@ -877,7 +987,9 @@ def verify(
             "name": name,
             "action": col.action if col else "index",
             "lossless": col.lossless if col else True,
-            "checksum_basis": "source values" if (col is None or col.source_comparable) else "converted values",
+            "checksum_basis": "source values"
+            if (col is None or col.source_comparable)
+            else "converted values",
             "sha256_expected": expected[name].hexdigest(),
             "sha256_parquet": got[name].hexdigest(),
             "nulls": nulls[name],
@@ -903,9 +1015,13 @@ def verify(
 
 
 def summarize(report: dict[str, Any]) -> str:
-    lines = [f"{'OK' if report['ok'] else 'CHECK FAILED'}: {report['rows']} rows -> {report['output']}"]
+    lines = [
+        f"{'OK' if report['ok'] else 'CHECK FAILED'}: {report['rows']} rows -> {report['output']}"
+    ]
     for check in report["checks"]:
-        lines.append(f"  {check['check']}: {'ok' if check['ok'] else 'MISMATCH ' + json.dumps(check)}")
+        lines.append(
+            f"  {check['check']}: {'ok' if check['ok'] else 'MISMATCH ' + json.dumps(check)}"
+        )
     for col in report["columns"]:
         flag = "ok" if col["ok"] else "MISMATCH"
         lossy = "" if col["lossless"] else " LOSSY"
