@@ -2,6 +2,9 @@
 name: finite-element-analysis
 title: Formulate a Finite Element Study From Question to Conclusion
 description: Trace one continuous argument from the physical question through idealization, discretization, and solution to what the outputs can actually support.
+keywords:
+- level:L1
+- fea-methods
 ---
 
 Trace one continuous chain: research question and quantity of interest,

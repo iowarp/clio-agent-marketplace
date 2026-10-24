@@ -2,6 +2,9 @@
 name: meshing
 title: Choose and Verify a Mesh for the Quantity of Interest
 description: Match element type and density to what the study needs to resolve, and prove convergence rather than assuming a fine mesh is adequate.
+keywords:
+- level:L1
+- fea-methods
 ---
 
 Match mesh density to the quantity of interest, not the whole model

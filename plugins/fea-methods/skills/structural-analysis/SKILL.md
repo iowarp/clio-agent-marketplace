@@ -2,6 +2,9 @@
 name: structural-analysis
 title: Reason Over Structural Response Under Load
 description: Connect a loading scenario to the structural response mode it actually produces — stiffness, stability, or strength-limited — before selecting an analysis type.
+keywords:
+- level:L1
+- fea-methods
 ---
 
 Identify which structural response the question is actually about: stiffness

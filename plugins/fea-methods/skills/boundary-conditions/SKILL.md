@@ -2,6 +2,9 @@
 name: boundary-conditions
 title: Justify Boundary Conditions Against the Physical System They Represent
 description: Treat every boundary condition and load as a modeling assumption that must match the real support and loading it stands in for, not a default the software supplies.
+keywords:
+- level:L1
+- fea-methods
 ---
 
 State what each boundary condition represents physically — a fixed support,

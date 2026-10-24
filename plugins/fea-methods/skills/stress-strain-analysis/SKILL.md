@@ -2,13 +2,16 @@
 name: stress-strain-analysis
 title: Extract and Interpret Local Stress-Strain State From Simulation Output
 description: Report a stress or strain result with the invariant, location, and material-model context that make it meaningful, rather than a single unqualified number.
+keywords:
+- level:L1
+- fea-methods
 ---
 
 State which stress or strain quantity is being reported — von Mises,
 maximum principal, a specific tensor component, or an invariant appropriate
 to the failure mode being assessed (maximum shear for ductile yielding,
 maximum principal for brittle fracture, a critical-plane quantity for
-multiaxial fatigue via `fatigue_failure_expert`). Reporting "the stress"
+multiaxial fatigue). Reporting "the stress"
 without naming the quantity is ambiguous and often the wrong one for the
 question.
 
