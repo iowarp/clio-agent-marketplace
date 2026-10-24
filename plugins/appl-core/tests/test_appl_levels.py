@@ -1,4 +1,4 @@
-"""Level contract for the appl-core plugin: skill levels and no L3 literals.
+"""Level contract for the appl-core plugin: skill levels, mission, and no L3 literals.
 
 Dependency-free; runs with the plugin's other tests.
 """
@@ -11,20 +11,13 @@ from pathlib import Path
 import pytest
 
 PLUGIN = Path(__file__).resolve().parents[1]
+PROMPT = PLUGIN / "ai.iowarp.clio" / "prompt"
 
-#: Each skill's level. L3 (one experiment) never ships in the plugin.
+#: Each skill's level. The general habits (data-onboarding, L0) and the
+#: phenotyping methods (phenotyping, L1) are separate plugins; appl-core holds
+#: only the APPL-CORE source knowledge. L3 (one experiment) never ships.
 EXPECTED_LEVELS: dict[str, str] = {
-    "onboard-dataset": "L0",
-    "audit-dataset": "L0",
-    "evidence-and-claims": "L0",
-    "geometry-to-glb": "L0",
-    "phenotyping-onboarding-checks": "L1",
-    "size-and-growth-traits": "L1",
-    "treatment-response": "L1",
-    "physiology-signals": "L1",
-    "phenotyping-report": "L1",
     "appl-core-exports": "L2",
-    "appl-instruments": "L2",
 }
 L3_LITERALS = ("Weston", "2026.04.09", "OPAL.0002", "28773", "29014", "5577", "Thalpsi")
 
@@ -45,14 +38,24 @@ def test_every_skill_has_the_expected_level() -> None:
         assert re.findall(r"(?m)^- (level:L[0-3])$", head) == [
             f"level:{EXPECTED_LEVELS[skill_dir.name]}"
         ]
-        assert re.search(r"^[ \t]+-[ \t]", head, re.MULTILINE) is None
+        assert re.search(r"(?m)^effect:", head) is None
 
 
-def test_only_the_audit_skill_spawns_a_child() -> None:
-    for skill_dir in _skill_dirs():
-        effect = re.search(r"(?m)^effect: (\S+)$", _head(skill_dir))
-        expected = "spawn_subagent_with_skill" if skill_dir.name == "audit-dataset" else None
-        assert (effect.group(1) if effect else None) == expected
+def test_the_mission_is_the_first_fragment_and_names_the_contract() -> None:
+    fragments = sorted(PROMPT.glob("*.md"))
+    assert fragments[0].name == "mission.md"
+    mission = fragments[0].read_text(encoding="utf-8")
+    assert "id: appl-core.mission" in mission
+    assert "OPAL" in mission and "ORNL" in mission
+
+
+def test_no_prohibition_wording() -> None:
+    """Defaults and conventions, never "treat the export as read-only"."""
+
+    texts = [p.read_text(encoding="utf-8") for p in sorted(PROMPT.glob("*.md"))]
+    texts += [(d / "SKILL.md").read_text(encoding="utf-8") for d in _skill_dirs()]
+    for text in texts:
+        assert "read-only" not in text.casefold()
 
 
 def test_lint_marker_and_denylist_are_present() -> None:

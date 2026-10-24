@@ -1,0 +1,2 @@
+# Literals that must never appear in this plugin's skills (L3 leakage).
+# One literal per line; lines starting with # are comments.

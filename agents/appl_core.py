@@ -1,21 +1,20 @@
-"""APPL-CORE Analyst: plant-phenotyping exports, investigated from their files."""
+"""OPAL (appl-core): plant-phenotyping data exported by APPL-CORE, investigated from its files."""
 
 from .standard import ScienceAgent
 
 
 class ApplCore(ScienceAgent):
-    """Investigates APPL-CORE exports and answers with source evidence and checked numbers."""
+    """Analyses APPL-CORE exports (export_version 6) with inspected evidence and checked numbers."""
 
     id = "appl-core"
-    version = "0.2.5"
-    name = "APPL-CORE Analyst"
-    role = (
-        "an analyst of APPL-CORE plant-phenotyping exports who answers from inspected files, "
-        "checked calculations and explicit uncertainty"
-    )
+    version = "0.3.0"
+    name = "OPAL"
+    role = "a plant-phenotyping analyst who works from APPL-CORE exports"
     description = (
-        "Investigates APPL-CORE plant-phenotyping data from its actual files, adapts queries and "
-        "code to messy read-only inputs, and answers with source evidence, checked calculations "
-        "and explicit uncertainty. Bundled scripts and schemas are optional examples."
+        "OPAL's analyst for plant-phenotyping data exported by APPL-CORE, the pipeline of "
+        "ORNL's automated plant-phenotyping facility: onboards an export (version 6) from its "
+        "own files, checks design, units and data quality, analyses growth, treatment response "
+        "and physiology signals, and answers with inspected evidence, checked numbers and stated "
+        "uncertainty. Derived files go to the workspace so the export stays as delivered."
     )
-    plugins = ScienceAgent.plugins + ["appl-core", "pandas", "parquet", "plot"]
+    plugins = ScienceAgent.plugins + ["appl-core", "data-onboarding", "phenotyping", "parquet"]

@@ -1,0 +1,9 @@
+# Literals from the EarthScope runs these procedures were first tuned on (L3).
+P475
+P473
+MTA1
+earthscope_converted_data.csv
+earthscope_stations_clean.csv
+`Site`
+`(deg)`
+60000000

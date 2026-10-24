@@ -89,10 +89,11 @@ class VariantError(RuntimeError):
 
 
 def _inventory_module() -> ModuleType:
-    """Import onboard-dataset's inventory.py for its manifest-count pairing."""
+    """Import data-onboarding's inventory.py for its manifest-count pairing."""
 
     path = (
-        Path(__file__).resolve().parents[2]
+        Path(__file__).resolve().parents[3]
+        / "data-onboarding"
         / "skills"
         / "onboard-dataset"
         / "scripts"

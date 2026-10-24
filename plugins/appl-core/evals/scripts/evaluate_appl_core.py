@@ -65,10 +65,15 @@ class EvaluationFailure:
 
 
 def trap_classes() -> frozenset[str]:
-    """The card vocabulary, read from the onboard-dataset card script."""
+    """The card vocabulary, read from data-onboarding's onboard-dataset card script."""
 
     path = (
-        Path(__file__).resolve().parents[2] / "skills" / "onboard-dataset" / "scripts" / "card.py"
+        Path(__file__).resolve().parents[3]
+        / "data-onboarding"
+        / "skills"
+        / "onboard-dataset"
+        / "scripts"
+        / "card.py"
     )
     spec = importlib.util.spec_from_file_location("appl_core_card", path)
     if spec is None or spec.loader is None:

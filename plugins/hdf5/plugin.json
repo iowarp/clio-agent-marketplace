@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "hdf5",
-  "version": "1.1.0",
-  "description": "Open and inspect HDF5 files through clio-kit's hdf5 MCP server, with the HDF5 team's `hdf5` skill: a router and reference guides on layout, chunking, filters, cloud and parallel access, drivers and clio-core ingest.",
+  "version": "1.2.0",
+  "description": "Open and inspect HDF5 files through clio-kit's hdf5 MCP server, with the HDF5 team's `hdf5` skill: how to use the tools with bounded reads, and reference guides on layout, chunking, filters, cloud and parallel access, drivers and clio-core ingest.",
   "author": {
     "name": "IoWarp Team"
   },

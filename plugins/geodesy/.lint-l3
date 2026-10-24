@@ -1,0 +1,3 @@
+# Marker: this plugin carries geodesy methods, never facts about one station,
+# network or run: no station ids, dates, counts, measured values or concrete
+# dataset file names. See lint-denylist.txt.

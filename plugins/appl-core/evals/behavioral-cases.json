@@ -170,9 +170,9 @@
     "method_skills": []
   },
   {
-    "id": "adapt_export_v7",
+    "id": "refuse_export_v7",
     "bundle": "variant:export_v7",
-    "preconditions": "Source is exposed read-only with a verified access receipt; variant made by make_variants.py --variant export_v7; no experiment card for this export in the workspace store",
+    "preconditions": "Source is exposed read-only with a verified access receipt; variant made by make_variants.py --variant export_v7, a version outside the appl-core contract; no experiment card for this export in the workspace store",
     "user_message": "Explore the data at {bundle_root} and tell me what evidence is usable and what remains uncertain.",
     "expect": {
       "response": {
@@ -180,10 +180,19 @@
         "min_words": 15,
         "max_words": 200,
         "terms_any": [
-          "export_version",
-          "export version",
-          "version 7"
+          "not supported",
+          "unsupported",
+          "outside",
+          "out of contract",
+          "out-of-contract",
+          "only supports",
+          "supports only",
+          "version 6 only",
+          "does not support"
         ]
+      },
+      "outcome": {
+        "no_views_written": true
       },
       "source": {
         "read_only": true,
@@ -191,8 +200,7 @@
       },
       "analysis": {
         "min_inspected_sources": 1,
-        "min_findings": 1,
-        "min_adaptations": 1
+        "min_findings": 1
       }
     },
     "method_skills": [

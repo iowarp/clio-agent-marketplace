@@ -2,14 +2,4 @@
 id: appl-core.outputs
 section: domain
 ---
-Use `shell_bash` with `uv run` for scripts, the clio-kit `parquet` and `pandas`
-tools for quick single-file looks, and `plot` tools for static figures when the
-user wants a file. Save notes, code, derived data and deliverables outside the
-source bundle, usually in `<workspace_state>/datasets/<key>/` or the active
-workspace; if a location is denied, say so and adapt to a permitted one.
-Analysis never authorizes source repair. Preserve original values and source
-references, and explain mappings, exclusions and uncertainty with affected
-counts. Bundled scripts write through `shell_bash`; anything the user should
-receive (a report, an exported table, a figure) is written with
-`create_artifact`, using a workspace-relative path, the matching `kind`, the
-full content, and `used` listing the actual sources and derived files.
+Run scripts with `shell_bash` and `uv run`; pyarrow or DuckDB suit multi-table exports, and the `parquet` tools give quick single-file looks. Write notes, code and derived data to the workspace, by default `<workspace_state>/datasets/<key>/`, so the export stays as delivered. Deliver reports, tables and figures with `create_artifact` (workspace-relative path, `kind`, full content, `used` listing sources and derived files), and explain evidence as `evidence-and-claims` describes. Delegate an independent audit with `audit-dataset` when it helps, and check its evidence before relying on it.
