@@ -8,4 +8,3 @@ dist/
 build/
 *.sqlite
 *.sqlite3
-campaign_data/

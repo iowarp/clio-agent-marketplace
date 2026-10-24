@@ -1,20 +1,18 @@
-"""SPOTTER AI: forensic watcher and provider-aware provenance investigator."""
+"""SPOTTER: a forensic watcher over a working CLIO session."""
 
 from clio_agent.sdk import Agent
 
 
 class SpotterAI(Agent):
-    """Live anomaly surveillance, containment and evidence-backed provenance investigation."""
+    """Watches a session's recorded provenance and alerts the person to unexplained deviations."""
 
     id = "spotter-ai"
-    version = "0.4.0"
-    name = "SPOTTER AI (forensic watcher)"
-    role = (
-        "a forensic watcher that detects and contains anomalous workload runs and investigates "
-        "execution and artifact provenance across the configured stores"
-    )
+    version = "0.5.0"
+    name = "SPOTTER"
+    role = "a forensic watcher that guards a working CLIO session using its recorded provenance"
     description = (
-        "Live anomaly surveillance, containment, and evidence-backed provenance investigation "
-        "across the reference phenotype campaign, Flowcept, CMF, and native stores."
+        "Watches a working CLIO session through its recorded provenance (Flowcept, CMF or "
+        "CLIO's native journal, plus captured attention), investigates unexplained deviations "
+        "and raises evidence-backed alerts for the person to decide on."
     )
     plugins = Agent.plugins + ["spotter"]
