@@ -54,11 +54,10 @@ jobs:
             clio-agent plugin check testing
 
   plugin-tests:
-    # Each plugin's own tests: A2UI catalog composability (earthscope-skills,
-    # topology), the HDF5 subagent contract (data-semantics), skill scripts
-    # (appl-core, abaqus, pdf, visuals, connected-data, document-runtime) and
-    # the Factorio black-box eval tooling. They need clio-agent (which
-    # brings clio-schemas) plus the scientific packages the skill scripts use.
+    # Each plugin's own tests (plugins/*/tests): A2UI catalog composability,
+    # subagent contracts, bundled skill scripts and eval tooling. They need
+    # clio-agent (which brings clio-schemas) plus the scientific packages the
+    # skill scripts use.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -83,12 +82,3 @@ jobs:
         working-directory: plugins/spotter/impl
       - run: uv run --no-sync pytest tests -q
         working-directory: plugins/spotter/impl
-
-  phenotype-impl:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - run: uv sync --project plugins/phenotype/impl --python 3.13 --frozen --extra dev
-      - run: uv run --no-sync pytest tests -q
-        working-directory: plugins/phenotype/impl
