@@ -64,7 +64,7 @@ Rules:
 |---|---|---|---|
 | `standard` (CLIO) | the general workspace assistant | workspace, shell, web, documents, visuals, connected-data, delegation, orchestration | L0 |
 | `science` (CLIO Science) | base for the science agents | standard + `scientific-method` | L0 |
-| `deep-researcher` | cited web research with independent verification | `deep-research` (only its researcher and critic subagents carry `web`) | L0 |
+| `deep-researcher` | cited web research with independent verification, run as the `deep-research` flow (plan, parallel research, critic audit, bounded gap rounds, report from verified claims) | `orchestration` + `deep-research` (only its researcher and critic subagents carry `web`) | L0 |
 | `document-production` | documents in every office and publishing format | `document-production` (with review) | L0 |
 | `clio-search` | answers from CLIO's own conversations and files | `clio-search` | L0 |
 | `clio-data` | inspects, converts and validates scientific data files | science + `clio-data`, `data-onboarding`, `hdf5`, `adios`, `parquet` | L2 formats |

@@ -5,9 +5,10 @@ from clio_agent.sdk import PromptFile, Subagent
 critic = Subagent(
     "critic",
     prompt=PromptFile("prompt/subagents/critic.md"),
-    description="Repeatable direct leaf that independently verifies an assembled evidence set and complete Markdown report draft, re-searches and re-fetches material claims, audits used-source citation coverage and the source ledger, and returns a pass-or-research-required verdict.",
+    description="Repeatable direct leaf that independently verifies researchers' evidence packets with its own web search and fetch, and returns a typed audit in workflow_state.audit: verified claims (claim, fetched source URL, supporting quote), rejected claims with reasons, and the material gaps that remain.",
     plugins=["web"],
     tools=["web_search", "web_fetch"],
     max_iters=32,
-    structured_outputs={"evidence": True, "errors": True},
+    # The deep-research flow branches on the typed audit; it validates the shape.
+    structured_outputs={"workflow_state": True},
 )

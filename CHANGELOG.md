@@ -56,6 +56,23 @@ plugins; every plugin with domain content carries the skill-literal lint.
 
 ### Changed
 
+- deep-researcher 0.3.0 runs deep research as the `deep-research` flow,
+  shipped in its plugin (0.3.0) and started with `run_flow` (the agent adds
+  `orchestration`). The flow plans directions (a recorded model step that
+  chooses how many, up to `max_directions`, default 6), researches them in
+  parallel (`concurrency`), has the critic verify them, researches the gaps the
+  critic names for at most `max_rounds` (default 2) more rounds, and writes the
+  report (a recorded model step) from verified claims only, appending the
+  unresolved questions and rejected claims; the report is written to the
+  workspace and its typed fields ride the result's `workflow_state`.
+  `researcher_model` and `critic_model` choose each subagent's model. The
+  critic returns a typed audit in `workflow_state.audit` (verified claims with
+  fetched source and quote, rejected claims with reasons, gaps), which the flow
+  validates. The coordinator answers simple questions directly and delivers the
+  flow's report with `create_artifact`; its fragments are gated on `run_flow`
+  so the subagents never read them. The `rounds`, `sources` and `verification`
+  fragments and the `deep-research-report` skill are removed: the flow and the
+  writer's instructions now hold that method.
 - Factorio 0.6.0: its identity no longer repeats its name; `factorio.mission`
   says whom it serves, that no simulation program is the default, and that it
   runs meshes, solves and batch jobs itself when it can; a roster fragment
