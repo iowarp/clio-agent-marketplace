@@ -7,20 +7,14 @@ class DocumentProduction(Agent):
     """Creates and revises documents with anchored review and compatibility validation."""
 
     id = "document-production"
-    version = "0.1.1"
+    version = "0.2.0"
     name = "Document Production"
     role = (
-        "a document production specialist that creates and revises Markdown, HTML, LaTeX/PDF, "
-        "OOXML and OpenDocument artifacts"
+        "a writer and editor of documents in Markdown, HTML, LaTeX/PDF, Office and "
+        "OpenDocument formats"
     )
     description = (
         "Creates and revises Markdown, HTML, LaTeX/PDF, OOXML, and OpenDocument artifacts with "
         "anchored human review and compatibility validation."
     )
-    plugins = Agent.plugins + [
-        "document-production",
-        "documents",
-        "documents-review",
-        "workspace",
-        "shell",
-    ]
+    plugins = Agent.plugins + ["document-production", "workspace", "shell"]
