@@ -1,0 +1,8 @@
+# Literals from one topology-optimization study (L3). They must never appear
+# in this plugin's skills or prompts. Read by scripts/check_skill_literals.py.
+exp10
+IN718
+Inconel 718
+44.6
+169.4
+170.5

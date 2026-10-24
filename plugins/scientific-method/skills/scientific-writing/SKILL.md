@@ -2,6 +2,9 @@
 name: scientific-writing
 title: Turn an Investigation Into a Written Scientific Deliverable
 description: Structure a thesis section, report, or manuscript so every claim traces to its evidence and method, matched to the venue's expected form.
+keywords:
+- level:L0
+- scientific-method
 ---
 
 Match the structure to the deliverable: a thesis section, a journal

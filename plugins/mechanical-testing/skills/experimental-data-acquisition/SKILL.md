@@ -2,6 +2,9 @@
 name: experimental-data-acquisition
 title: Verify Data Acquisition Settings Against the Signal Being Measured
 description: Check sampling rate, filtering, and channel calibration against the physical signal being captured, before treating logged data as a faithful record.
+keywords:
+- level:L1
+- mechanical-testing
 ---
 
 State the sampling rate relative to the fastest signal feature being

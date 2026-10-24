@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "fatigue",
-  "version": "0.4.3",
-  "description": "Fatigue and failure analysis: fatigue mechanics, high-cycle and multiaxial fatigue, life prediction, Fatemi-Socie, fracture mechanics, crack initiation and defect-driven fatigue.",
+  "version": "0.6.0",
+  "description": "Fatigue and failure method: regime and mechanism, high-cycle and multiaxial fatigue, critical-plane (Fatemi-Socie) and defect-driven life prediction, fracture mechanics and crack initiation, with the fatigue_failure_expert subagent.",
   "author": {
     "name": "IoWarp Team"
   },

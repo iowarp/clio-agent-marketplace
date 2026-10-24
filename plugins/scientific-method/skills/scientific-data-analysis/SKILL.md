@@ -2,12 +2,15 @@
 name: scientific-data-analysis
 title: Analyze Scientific Data Against Its Actual Question
 description: Match an analysis approach to the data's actual structure and the question being asked, and state every processing step applied to raw data before reporting a result.
+keywords:
+- level:L0
+- scientific-method
 ---
 
 State the data's structure before choosing an analysis: sample size, whether
 observations are independent or grouped/repeated (e.g., multiple
-measurements per specimen), and the presence of censored data (fatigue
-runouts) — a method that assumes independence applied to grouped data
+measurements per specimen or subject), and the presence of censored data
+(observations stopped before the event of interest) — a method that assumes independence applied to grouped data
 understates uncertainty.
 
 Record every processing step applied between raw data and reported result:

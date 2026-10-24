@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "scientific-method",
-  "version": "0.4.3",
-  "description": "Scientific method practice: framing research problems, coordinating specialist work, evidence fan-out and literature review, a scientific dossier, package audits, statistics, uncertainty and scientific plotting.",
+  "version": "0.6.0",
+  "description": "General scientific practice for every science agent: method choice and study design, literature search and review, research gaps, citations, data analysis, statistics, uncertainty, figures, scientific writing, non-interactive task runs, and the data_analysis_expert subagent.",
   "author": {
     "name": "IoWarp Team"
   },

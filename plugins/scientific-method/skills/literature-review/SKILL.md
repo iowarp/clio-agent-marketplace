@@ -2,6 +2,9 @@
 name: literature-review
 title: Synthesize a Scientific Literature Review
 description: Turn a set of gathered sources into a defensible state-of-knowledge synthesis with a claim map, contradictions, gaps, and an explicit novelty burden.
+keywords:
+- level:L0
+- scientific-method
 ---
 
 Use this skill once relevant sources have been gathered and the question is

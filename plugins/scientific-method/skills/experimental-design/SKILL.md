@@ -1,26 +1,47 @@
 ---
 name: experimental-design
-title: Design an Experiment or Study Around Its Actual Question
-description: Turn a research question into a study with controlled variables, adequate sample size, and a defined success criterion, before any test is run.
+title: Choose a Method and Design a Study Around Its Question
+description: Match a research question to a method that can answer it, state the method as a falsifiable procedure with its assumptions and scope, and design the study (variables, controls, sample size, acceptance criterion, confounds) before data is collected.
+keywords:
+- level:L0
+- methodology
+- study-design
 ---
 
-Start from what the study must be able to distinguish: state the hypothesis,
-the independent variable(s) being changed, the dependent variable(s) being
-measured, and every variable that must be held constant or controlled for. An
-uncontrolled variable that correlates with the one of interest invalidates the
-comparison regardless of how the data is analyzed afterward.
+## Choose the method
 
-Size the study to its question: state the number of replicates or specimens
-needed to detect the effect of interest given expected scatter, not a
-convenient or traditional number. For a comparative study (baseline vs.
-modified), define the comparison and its acceptance criterion before
-collecting data — deciding what counts as a difference after seeing the
-results is not a valid test of the hypothesis.
+Start from what the question asks (a mechanism, a comparison, a prediction, a
+characterization) and choose a method that can produce evidence for that
+claim, not just a familiar one. State it as a falsifiable procedure: which
+result would support the hypothesis, and which would weaken or contradict it.
 
-Identify confounds specific to the domain: a manufacturing batch effect, a
-specimen-location effect, an operator or equipment effect, and design the
-study to detect or exclude them (randomization, blocking, replication across
-batches).
+Name the method's assumptions and scope: the population, system, regime and
+conditions it applies to, and what it does not cover. A method borrowed from
+an adjacent field or a different system needs justification before its
+validity transfers.
 
-Return the study design: hypothesis, variables and controls, sample size and
-rationale, and the acceptance criterion that will decide the outcome.
+Keep the method separate from the instrument, program or protocol that
+executes a step of it, so the method survives a tool change.
+
+## Design the study
+
+- **What it must distinguish.** State the hypothesis, the independent
+  variables changed, the dependent variables measured, and every variable
+  held constant or controlled. An uncontrolled variable that correlates with
+  the one of interest invalidates the comparison however the data is analysed
+  afterwards.
+- **Size.** State the number of replicates needed to detect the effect of
+  interest given the expected scatter, not a convenient or traditional number.
+- **Acceptance criterion, fixed in advance.** For a comparison, define what
+  counts as a difference before collecting data; choosing it after seeing the
+  results does not test the hypothesis.
+- **Confounds.** Identify batch, location, operator, instrument and time
+  effects, and design to detect or exclude them: randomization, blocking,
+  replication across batches.
+
+## Return
+
+The method with its assumptions, scope and falsification criteria; the study
+design (hypothesis, variables and controls, sample size and rationale,
+acceptance criterion, confound controls); and the specialists or skills
+needed for each step.

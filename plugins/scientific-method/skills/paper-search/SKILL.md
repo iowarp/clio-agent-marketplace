@@ -2,6 +2,9 @@
 name: paper-search
 title: Search Scientific Literature for Relevant Sources
 description: Decompose a literature question into search lanes, fetch and read actual sources, and return only what was verified from the fetched text.
+keywords:
+- level:L0
+- scientific-method
 ---
 
 Define the question, the decision it informs, and the terms and synonyms a

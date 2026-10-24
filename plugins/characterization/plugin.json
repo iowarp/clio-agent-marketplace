@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "characterization",
-  "version": "0.4.3",
-  "description": "Materials characterization: X-ray CT, porosity, surface roughness, optical profilometry, microstructure, fractography and defect characterization.",
+  "version": "0.6.0",
+  "description": "Materials characterization method: X-ray CT and porosity, surface roughness and optical profilometry, fractography, and cross-technique defect synthesis, with the characterization_expert subagent.",
   "author": {
     "name": "IoWarp Team"
   },

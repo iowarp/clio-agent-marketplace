@@ -1,28 +1,27 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "manufacturing",
-  "version": "0.4.3",
-  "description": "Manufacturing and topology optimization: Abaqus, topology optimization, materials, additive manufacturing, characterization, mechanical testing, fatigue and scientific method plugins.",
+  "version": "0.6.0",
+  "description": "Manufacturing and materials science method, independent of any simulation program: materials, manufacturing processes, characterization, mechanical testing, fatigue and failure, and finite-element and topology-optimization method. Programs such as Abaqus or Morphorm are separate plugins an agent selects alongside it.",
   "author": {
     "name": "IoWarp Team"
   },
   "license": "BSD-3-Clause",
   "keywords": [
     "manufacturing",
+    "materials",
     "pack"
   ],
   "extensions": {
     "ai.iowarp.clio": {
       "kind": "pack",
       "members": [
-        "abaqus",
-        "topology",
         "materials",
-        "am-process",
+        "manufacturing-processes",
         "characterization",
         "mechanical-testing",
         "fatigue",
-        "scientific-method"
+        "fea-methods"
       ]
     }
   }

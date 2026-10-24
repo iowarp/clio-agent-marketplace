@@ -2,6 +2,9 @@
 name: metallic-materials
 title: Reason Over Metallic Material Class Behavior
 description: Apply the strengthening mechanisms, deformation behavior, and failure modes characteristic of a metal's crystal structure and alloy class before reasoning about a specific grade.
+keywords:
+- level:L1
+- materials
 ---
 
 Identify the crystal structure and alloy class first (FCC/BCC/HCP; steel,
@@ -21,5 +24,6 @@ for some aluminum tempers, creep for high-temperature nickel alloys) before
 assuming a generic ductile-failure model applies.
 
 Return the class-level reasoning (structure, strengthening mechanism,
-characteristic failure modes) and hand off to the specific alloy/grade skill
-(for example `nickel-superalloys`, `inconel-718`) for grade-specific claims.
+characteristic failure modes), and hand off to the family skill (for example
+`nickel-superalloys`) for family-level claims. Grade-specific values come from
+the scientist's data or cited sources.

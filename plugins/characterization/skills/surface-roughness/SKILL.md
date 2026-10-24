@@ -2,6 +2,9 @@
 name: surface-roughness
 title: Report Surface Roughness With Its Measurement Parameter and Method
 description: Attach a roughness value to the specific parameter, cutoff length, and measurement method that define it, since roughness numbers are not comparable without them.
+keywords:
+- level:L1
+- characterization
 ---
 
 State which roughness parameter is being reported — Ra (arithmetic mean),
@@ -17,7 +20,7 @@ cannot physically enter, while optical methods can be biased by highly
 reflective or steeply sloped as-built surfaces.
 
 For an AM surface specifically, state whether the measurement is on an
-as-built, machined, or finished surface (see `surface-finishing`), and note
+as-built, machined, or finished surface (see `post-processing`), and note
 that as-built AM roughness is typically anisotropic (different on up-facing,
 down-facing, and vertical surfaces per `build-orientation`) — a single
 reported value should state which surface it came from.

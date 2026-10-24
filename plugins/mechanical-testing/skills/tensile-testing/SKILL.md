@@ -2,6 +2,9 @@
 name: tensile-testing
 title: Run and Interpret a Tensile Test
 description: Extract baseline material behavior from a tensile test with its rate, geometry, and extensometry stated, and distinguish engineering from true stress-strain.
+keywords:
+- level:L1
+- mechanical-testing
 ---
 
 State the strain rate or crosshead speed — yield and ultimate strength are

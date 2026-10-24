@@ -2,6 +2,9 @@
 name: optical-profilometry
 title: Acquire and Interpret Optical Profilometry Data
 description: Configure an optical profilometer for the surface being measured and know where the technique's own artifacts can bias a roughness or topography result.
+keywords:
+- level:L1
+- characterization
 ---
 
 State the technique variant (confocal, focus-variation, white-light

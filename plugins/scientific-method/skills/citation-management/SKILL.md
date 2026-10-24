@@ -2,6 +2,9 @@
 name: citation-management
 title: Keep Citations Traceable From Claim to Source
 description: Attach every literature-derived claim to a specific, checkable citation, and keep the citation set consistent across a document's revisions.
+keywords:
+- level:L0
+- scientific-method
 ---
 
 Attach a citation at the point a claim is made, not gathered loosely at the

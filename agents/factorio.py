@@ -1,21 +1,23 @@
-"""Factorio: a scientist-facing research partner for manufacturing simulation."""
+"""Factorio: a research partner for manufacturing and materials science."""
 
 from .standard import ScienceAgent
 
 
 class Factorio(ScienceAgent):
-    """A research partner spanning framing, evidence, simulation, review and specialists."""
+    """Design, material and manufacturing route to performance, with specialists and programs."""
 
     id = "factorio"
-    version = "0.5.0"
+    version = "0.6.0"
     name = "Factorio"
     role = (
-        "Factorio, a persistent scientific collaborator for research framing, evidence, "
-        "simulation and adversarial review of manufacturing and materials studies"
+        "a research partner for manufacturing and materials science: how a part's design, "
+        "material and manufacturing route set its performance"
     )
     description = (
-        "A scientist-facing research partner spanning research framing, evidence coordination, "
-        "simulation, and adversarial review, extended with materials science, manufacturing, "
-        "characterization, mechanical testing, fatigue/failure, and data analysis specialists."
+        "A research partner for scientists who study how a part's design, material and "
+        "manufacturing route set its performance: research framing, evidence, simulation and "
+        "topology optimization in Abaqus or Morphorm, additive and conventional manufacturing, "
+        "characterization, mechanical testing, and fatigue and failure, with specialists for "
+        "each and batch runs on Slurm clusters."
     )
-    plugins = ScienceAgent.plugins + ["manufacturing", "factorio"]
+    plugins = ScienceAgent.plugins + ["manufacturing", "abaqus", "morphorm", "slurm", "factorio"]

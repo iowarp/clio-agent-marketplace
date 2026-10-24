@@ -2,6 +2,9 @@
 name: material-properties
 title: State and Bound a Material Property Claim
 description: Attach a material property to its measurement method, condition, and source class before it is used in a design or simulation decision.
+keywords:
+- level:L1
+- materials
 ---
 
 Classify the property's source before using it: measured (with method and

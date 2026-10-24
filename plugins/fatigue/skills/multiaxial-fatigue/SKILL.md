@@ -2,6 +2,9 @@
 name: multiaxial-fatigue
 title: Recognize and Analyze Multiaxial Fatigue Loading
 description: Detect when a stress state is genuinely multiaxial and non-proportional, and route to a critical-plane or equivalent-stress method capable of handling it.
+keywords:
+- level:L1
+- fatigue
 ---
 
 Check the stress state at the location of interest, not just the nominal
