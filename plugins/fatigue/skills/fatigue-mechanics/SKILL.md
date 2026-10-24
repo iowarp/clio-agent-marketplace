@@ -2,6 +2,9 @@
 name: fatigue-mechanics
 title: Reason Over Fatigue Damage Mechanisms and Regime Selection
 description: Identify the fatigue regime and controlling mechanism before selecting a life-prediction method, since the wrong regime assumption invalidates the method choice.
+keywords:
+- level:L1
+- fatigue
 ---
 
 Identify the fatigue regime by mechanism, not just cycle count: high-cycle

@@ -2,6 +2,9 @@
 name: fracture-mechanics
 title: Apply Linear-Elastic Fracture Mechanics to a Known or Assumed Defect
 description: Apply a stress-intensity or crack-growth approach with the defect geometry, loading, and material toughness stated explicitly, rather than assuming LEFM validity.
+keywords:
+- level:L1
+- fatigue
 ---
 
 Confirm linear-elastic fracture mechanics applies before using it: it

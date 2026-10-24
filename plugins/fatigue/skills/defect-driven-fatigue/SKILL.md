@@ -2,12 +2,14 @@
 name: defect-driven-fatigue
 title: Predict Fatigue Life From a Measured, Specific Defect
 description: Connect a measured defect's size and location to the local stress state at that exact location, and use a defect-size-based life model rather than a smooth-specimen S-N curve.
+keywords:
+- level:L1
+- fatigue
 ---
 
 Use this skill when a specific defect (pore, inclusion, lack-of-fusion
 region) is known to control or is suspected to control fatigue initiation —
-common for additively manufactured parts (see `porosity-analysis`,
-`xct`) — rather than assuming an idealized defect-free material.
+common for additively manufactured parts (see `xct`) — rather than assuming an idealized defect-free material.
 
 Connect the defect's measured size (typically an equivalent area or
 √area metric) and its exact location to the local stress state at that

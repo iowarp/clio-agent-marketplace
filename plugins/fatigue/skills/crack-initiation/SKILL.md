@@ -2,13 +2,16 @@
 name: crack-initiation
 title: Identify the Crack-Initiation Mechanism and Site
 description: Determine whether initiation is surface- or defect-driven and at which specific site, since the mechanism determines which mitigation is actually effective.
+keywords:
+- level:L1
+- fatigue
 ---
 
 Classify the initiation mechanism: surface-initiated (from surface roughness,
 a machining mark, or a persistent slip band at a free surface — mitigated by
-`surface-finishing` or shot peening) versus internal/defect-initiated (from a
+surface finishing or peening, see `post-processing`) versus internal/defect-initiated (from a
 subsurface pore or inclusion — mitigated by defect control in
-`additive-manufacturing`/`pbf-lb` or by HIP in `post-processing`). Applying a
+`am-process-parameters` or by HIP in `post-processing`). Applying a
 surface treatment does not address an internally-initiated failure, and vice
 versa.
 

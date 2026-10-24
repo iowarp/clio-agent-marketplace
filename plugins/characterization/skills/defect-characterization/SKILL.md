@@ -2,10 +2,13 @@
 name: defect-characterization
 title: Synthesize Defect Evidence Across Characterization Techniques
 description: Combine XCT, fractography, and microstructural evidence into one defect population/root-cause finding rather than reporting each technique's result in isolation.
+keywords:
+- level:L1
+- characterization
 ---
 
 Use this skill once individual characterization results (`xct`,
-`porosity-analysis`, `fractography`, `microstructure-characterization`) are
+`fractography`, `microstructure`) are
 available and the question is what they say together about a part's defect
 state or a failure's root cause. It synthesizes; it does not replace running
 the individual techniques.
@@ -18,9 +21,9 @@ fractography-identified initiator not present in the XCT data) is itself a
 finding worth reporting, not a discrepancy to quietly resolve.
 
 State the defect population's relationship to the manufacturing/processing
-record (`additive-manufacturing`, `pbf-lb`): whether the defect type and
-severity are consistent with the known process parameters, or represent an
-anomaly worth flagging back to `manufacturing_expert`.
+record (`additive-manufacturing`, `am-process-parameters`): whether the
+defect type and severity are consistent with the known process parameters,
+or are an anomaly to report as such.
 
 Return the synthesized defect finding: the population characteristics,
 cross-technique agreement or disagreement, and its consistency with the

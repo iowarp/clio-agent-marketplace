@@ -2,6 +2,9 @@
 name: high-cycle-fatigue
 title: Apply Stress-Based (S-N) High-Cycle Fatigue Analysis
 description: Apply an S-N life estimate with its mean-stress correction and fatigue-limit assumption stated explicitly, rather than reading a single curve without qualification.
+keywords:
+- level:L1
+- fatigue
 ---
 
 Confirm the regime is actually elastic-dominated (high-cycle, per

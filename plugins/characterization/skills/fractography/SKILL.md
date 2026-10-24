@@ -2,6 +2,9 @@
 name: fractography
 title: Determine Failure Mode and Initiation Site From a Fracture Surface
 description: Read a fracture surface systematically for initiation site, crack-growth features, and final-fracture region before attributing a cause.
+keywords:
+- level:L1
+- characterization
 ---
 
 Examine the fracture surface at multiple scales, low magnification first: locate the
@@ -18,8 +21,7 @@ environmentally-assisted fracture) — state which features were actually
 observed rather than assuming a mechanism from the loading history alone.
 
 Connect the initiation site to a specific feature when possible: a pore or
-inclusion visible at the origin (cross-reference `xct`/`porosity-analysis` if
-available), a surface roughness feature or machining mark, or a design
+inclusion visible at the origin (cross-reference `xct` if available), a surface roughness feature or machining mark, or a design
 stress concentration — a fractographic finding that identifies WHERE and
 often WHAT initiated failure is far stronger evidence than a fatigue-life
 number alone.

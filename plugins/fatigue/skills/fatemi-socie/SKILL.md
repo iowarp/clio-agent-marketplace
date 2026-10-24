@@ -2,6 +2,9 @@
 name: fatemi-socie
 title: Apply the Fatemi-Socie Critical-Plane Fatigue Parameter
 description: Compute and interpret the Fatemi-Socie damage parameter correctly for non-proportional multiaxial fatigue, with its material constant and search procedure stated.
+keywords:
+- level:L1
+- fatigue
 ---
 
 Confirm the Fatemi-Socie method is the right choice: it is a shear-strain-
