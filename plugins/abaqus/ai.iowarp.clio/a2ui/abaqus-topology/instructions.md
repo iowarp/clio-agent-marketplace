@@ -17,6 +17,11 @@ exporter's output. Never an inline mesh, never a filesystem path. Every
 number on a surface comes from the exporter's printed metadata or Tosca's
 report files, never estimated.
 
+The examples below show shapes only. Their ids, run id, metric values,
+slider limits, convergence rows and camera are placeholders: fill every one
+from the run in front of you (the exporter's output, `optimization_report.csv`
+and the number of exported frames).
+
 ## View 1: before and after, with a stress toggle
 
 Two `TopologyViewport`s in a `Row`, one per design state, with the same
@@ -51,16 +56,16 @@ differently), and two `Button`s send `abaqus.topology.reviewed` with
     "surfaceId": "topology-compare",
     "components": [
       {"id": "root", "component": "Column", "children": ["heading", "views", "stressToggle", "metrics", "actions"]},
-      {"id": "heading", "component": "Text", "variant": "h3", "text": "IN718 specimen: stress-constrained volume minimization"},
+      {"id": "heading", "component": "Text", "variant": "h3", "text": "Stress-constrained volume minimization"},
       {"id": "views", "component": "Row", "children": ["beforeView", "afterView"]},
       {
         "id": "beforeView",
         "component": "TopologyViewport",
         "title": "Before optimization",
-        "meshUri": "artifact://artifact_exp10base",
+        "meshUri": "artifact://artifact_baseline_mesh",
         "field": "S_MISES",
         "showField": {"path": "/showStress"},
-        "syncGroup": "run-exp10-prod",
+        "syncGroup": "topology-run",
         "upAxis": "y",
         "weight": 1
       },
@@ -68,10 +73,10 @@ differently), and two `Button`s send `abaqus.topology.reviewed` with
         "id": "afterView",
         "component": "TopologyViewport",
         "title": "After optimization",
-        "meshUri": "artifact://artifact_exp10opt",
+        "meshUri": "artifact://artifact_optimized_mesh",
         "field": "S_MISES",
         "showField": {"path": "/showStress"},
-        "syncGroup": "run-exp10-prod",
+        "syncGroup": "topology-run",
         "upAxis": "y",
         "weight": 1
       },
@@ -110,9 +115,9 @@ differently), and two `Button`s send `abaqus.topology.reviewed` with
     "surfaceId": "topology-compare",
     "path": "/",
     "value": {
-      "runId": "exp10-prod",
+      "runId": "RUN_ID",
       "showStress": false,
-      "metrics": {"volumeRetainedPct": 44.6, "peakBefore": 169.4, "peakAfter": 170.5}
+      "metrics": {"volumeRetainedPct": 0.0, "peakBefore": 0.0, "peakAfter": 0.0}
     }
   }
 }
@@ -121,7 +126,7 @@ differently), and two `Button`s send `abaqus.topology.reviewed` with
 Pressing "Accept design" delivers:
 
 ```json
-{"runId": "exp10-prod", "decision": "accept"}
+{"runId": "RUN_ID", "decision": "accept"}
 ```
 
 ## View 2: design history, with density and cycle sliders
@@ -183,7 +188,7 @@ same figure with `render_view.py`.
         "id": "designView",
         "component": "TopologyViewport",
         "title": "Design density",
-        "meshUri": "artifact://artifact_exp10design",
+        "meshUri": "artifact://artifact_design_history",
         "field": "DENSITY",
         "frame": {"path": "/cycle"},
         "thresholdField": "DENSITY",
@@ -195,7 +200,7 @@ same figure with `render_view.py`.
       },
       {"id": "side", "component": "Column", "children": ["isoSlider", "cycleSlider", "convergence"], "weight": 2},
       {"id": "isoSlider", "component": "ParameterSlider", "label": "Density threshold", "min": 0, "max": 1, "step": 0.01, "value": {"path": "/iso"}},
-      {"id": "cycleSlider", "component": "ParameterSlider", "label": "Design cycle", "min": 0, "max": 20, "step": 1, "value": {"path": "/cycle"}},
+      {"id": "cycleSlider", "component": "ParameterSlider", "label": "Design cycle", "min": 0, "max": 10, "step": 1, "value": {"path": "/cycle"}},
       {
         "id": "convergence",
         "component": "ConvergencePlot",
@@ -207,15 +212,9 @@ same figure with `render_view.py`.
         "entityField": "metric",
         "data": [
           {"cycle": 0, "metric": "volumeRatio", "value": 1.0},
-          {"cycle": 0, "metric": "stressRatio", "value": 1.672},
-          {"cycle": 1, "metric": "volumeRatio", "value": 1.017},
-          {"cycle": 1, "metric": "stressRatio", "value": 1.024},
-          {"cycle": 2, "metric": "volumeRatio", "value": 0.988},
-          {"cycle": 2, "metric": "stressRatio", "value": 0.887},
-          {"cycle": 3, "metric": "volumeRatio", "value": 0.961},
-          {"cycle": 3, "metric": "stressRatio", "value": 0.970},
-          {"cycle": 4, "metric": "volumeRatio", "value": 0.928},
-          {"cycle": 4, "metric": "stressRatio", "value": 0.917}
+          {"cycle": 0, "metric": "stressRatio", "value": 1.0},
+          {"cycle": 1, "metric": "volumeRatio", "value": 1.0},
+          {"cycle": 1, "metric": "stressRatio", "value": 1.0}
         ]
       },
       {
@@ -243,21 +242,21 @@ same figure with `render_view.py`.
   "updateDataModel": {
     "surfaceId": "topology-history",
     "path": "/",
-    "value": {"runId": "exp10-prod", "iso": 0.51, "cycle": 20}
+    "value": {"runId": "RUN_ID", "iso": 0.5, "cycle": 10}
   }
 }
 ```
 
-After the scientist orbits to an angle, sets the threshold to 0.45 at the
-last cycle, and presses the button, the delivered context is:
+After the scientist orbits to an angle, sets the threshold, and presses the
+button, the delivered context is:
 
 ```json
-{"runId": "exp10-prod", "camera": {"position": [92.1, 131.4, 88.0], "target": [0.0, 73.1, 12.5], "up": [0, 1, 0], "fov": 35, "zoom": 1}, "frame": 20, "iso": 0.45}
+{"runId": "RUN_ID", "camera": {"position": [1.0, 1.0, 1.0], "target": [0.0, 0.0, 0.0], "up": [0, 1, 0], "fov": 35, "zoom": 1}, "frame": 10, "iso": 0.5}
 ```
 
 Render it with the same numbers through `abaqus-visualization`'s
-`render_view.py` (`design.glb -o figure.png --field DENSITY --frame 20
---threshold DENSITY:0.45:1 --camera 'CAMERA_JSON'`), register the PNG, and
+`render_view.py` (`design.glb -o figure.png --field DENSITY --frame FRAME
+--threshold DENSITY:ISO:1 --camera 'CAMERA_JSON'`), register the PNG, and
 cite it.
 
 ## After creating a surface

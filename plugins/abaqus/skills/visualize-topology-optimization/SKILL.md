@@ -2,6 +2,9 @@
 name: visualize-topology-optimization
 title: Visualize a Topology Optimization Run
 description: Show a Tosca or Abaqus topology optimization the way scientists inspect it, before and after with a stress toggle, and the design history with density and cycle sliders. Use once optimization output exists.
+keywords:
+- level:L2
+- abaqus
 ---
 
 This skill uses the exporter and renderer from `abaqus-visualization` (load

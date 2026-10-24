@@ -2,6 +2,9 @@
 name: abaqus-visualization
 title: Visualize Abaqus Geometry and Results
 description: Show any Abaqus-generated geometry or result (.inp mesh, .odb fields, Tosca STL) as an interactive 3D view or a report figure. Use whenever a model, mesh, or solver result should be looked at rather than described.
+keywords:
+- level:L2
+- abaqus
 ---
 
 Scientists read FEA output by looking at it: turning the part, coloring it by a
@@ -87,7 +90,7 @@ The viewport's own "Save image" button gives the scientist a PNG of what they
 see. For a figure you cite, render it yourself from the same file:
 
 ```text
-uv run --no-project --with "numpy>=1.24" --with "matplotlib>=3.8" python "SKILL_ROOT/scripts/render_view.py" job.glb -o figure.png --field S_MISES --range 0:170 --camera '<camera JSON from the event>' --title "Baseline, 20 kN"
+uv run --no-project --with "numpy>=1.24" --with "matplotlib>=3.8" python "SKILL_ROOT/scripts/render_view.py" job.glb -o figure.png --field S_MISES --range MIN:MAX --camera '<camera JSON from the event>' --title "TITLE"
 ```
 
 When the surface binds `camera` to a path and a button sends it, use that

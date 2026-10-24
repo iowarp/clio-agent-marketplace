@@ -1,0 +1,4 @@
+# Marker: this plugin is held to the level contract (L2: the Abaqus program).
+# Skills and prompts describe what Abaqus and Tosca can do and how to check a
+# run: no run ids, specimen names, measured values or dataset file names.
+# See lint-denylist.txt for the literals from the runs this plugin was tuned on.

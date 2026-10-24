@@ -8,7 +8,7 @@ JSON the agent receives in an event), or from a named preset.
     python render_view.py design.glb -o figure.png --field DENSITY \\
         --frame 20 --threshold DENSITY:0.3:1 --camera camera.json
     python render_view.py baseline.glb -o before.png --field S_MISES \\
-        --range 0:170 --preset iso --title "Before optimization"
+        --range MIN:MAX --preset iso --title "Before optimization"
 
 Needs numpy and matplotlib (ordinary Python, not Abaqus Python).
 """

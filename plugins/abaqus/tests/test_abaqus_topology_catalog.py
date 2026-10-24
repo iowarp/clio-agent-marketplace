@@ -8,7 +8,7 @@ from clio-schemas 0.4.0, so these tests need that version (or a checkout)::
 
     uv run --project /path/to/clio-agent --with pytest \\
         --with /path/to/clio-schemas \\
-        pytest plugins/topology/tests/test_abaqus_topology_catalog.py
+        pytest plugins/abaqus/tests/test_abaqus_topology_catalog.py
 """
 
 from __future__ import annotations
