@@ -2,19 +2,21 @@
 name: uncertainty-quantification
 title: Quantify and Propagate Uncertainty Through a Result Chain
 description: Track measurement, model, and sampling uncertainty separately and propagate them explicitly through a chain of calculations rather than reporting a single deterministic answer.
+keywords:
+- level:L0
+- scientific-method
 ---
 
 Classify each source of uncertainty in the chain: measurement uncertainty
 (instrument resolution/calibration, per the specific technique's skill),
-sampling uncertainty (from finite sample size — how many specimens, fields,
-or scans), and model uncertainty (from an assumed material model, life model,
-or simplification). Report which sources were actually quantified and which
+sampling uncertainty (from finite sample size — how many samples, fields,
+or scans), and model uncertainty (from an assumed physical, predictive or
+statistical model, or a simplification). Report which sources were actually quantified and which
 were not.
 
 Propagate uncertainty through a multi-step calculation explicitly — a
-fatigue life prediction chaining a simulated stress, a measured defect size,
-and a fitted life model should carry each input's uncertainty through to the
-final result (via a stated method: analytical propagation, Monte Carlo
+prediction chaining a simulated quantity, a measured input, and a fitted
+model should carry each input's uncertainty through to the final result (via a stated method: analytical propagation, Monte Carlo
 sampling), not report the final number as if it were exact.
 
 State which input dominates the total uncertainty — this tells the scientist

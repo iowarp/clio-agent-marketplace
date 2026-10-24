@@ -2,6 +2,10 @@
 name: maintain-scientific-dossier
 title: Maintain the Scientific Dossier
 description: Keep research identity, evidence, assumptions, decisions, resources, artifacts, and verification claims traceable across the conversation.
+keywords:
+- level:L1
+- factorio
+- provenance
 ---
 
 Use this skill whenever the research state materially changes. Distinguish
@@ -15,7 +19,9 @@ Never overwrite history. A correction names what it supersedes and what must be
 revisited.
 
 Keep artifact status explicit: generated, statically reviewed,
-scientist-approved, solver-executed, or validated. When the dossier or another
+scientist-approved, solver-executed, or validated. Keep the dossier itself as
+a file in the workspace so it survives the conversation and specialists can
+read it. When the dossier or another
 deliverable becomes useful outside chat, call the runtime-provided
 `create_artifact` with complete content, an appropriate workspace-relative name,
 and exact inputs in `used`. Preserve the returned artifact identity and version;

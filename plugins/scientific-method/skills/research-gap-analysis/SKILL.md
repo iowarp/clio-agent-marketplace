@@ -2,6 +2,9 @@
 name: research-gap-analysis
 title: Identify Genuine Gaps in the Existing Literature
 description: Distinguish a real research gap from an under-searched question, and state precisely what evidence would close it.
+keywords:
+- level:L0
+- scientific-method
 ---
 
 A gap is a claim about the literature, not about memory: it holds only after

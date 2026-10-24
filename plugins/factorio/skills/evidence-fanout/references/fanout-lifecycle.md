@@ -27,10 +27,3 @@ If a child requests human input with `ask_user`, the runtime resumes that same
 task after the scientist answers. Keep and re-wait its original task id. If a source lane fails
 terminally, continue independent lanes where useful and carry the exact evidence
 gap and impact into the critic packet and final result.
-
-An explicit `pause_agent` holds model execution while accepted background tasks
-continue; `resume_agent` keeps the handle and context. `cancel_tasks` ends the
-consultation and cancels its descendants. A retained `restart_agent` creates a
-linked new run, never a replay of already accepted operations. Inspect current
-status and supported actions with `query_tasks(kind="Subagent")` before controlling
-an evidence lane.
