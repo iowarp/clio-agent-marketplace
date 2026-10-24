@@ -1,0 +1,3 @@
+# Marker: this plugin is held to the level contract (L1 method). Skills carry
+# finite-element and optimization method only: no program syntax, run ids,
+# specimen names, measured values or dataset file names. See lint-denylist.txt.

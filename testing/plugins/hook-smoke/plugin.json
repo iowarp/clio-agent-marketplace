@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "hook-smoke",
+  "version": "0.1.0",
+  "description": "Archived: Minimal smoke-test plugin for packaged plugin hook discovery, trust, and invocation evidence.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "archived",
+    "hook",
+    "smoke"
+  ]
+}

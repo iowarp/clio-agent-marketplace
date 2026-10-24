@@ -1,0 +1,5 @@
+# Literals from one run or workload that must never appear in this plugin's
+# prompts or skills (scripts/check_skill_literals.py). One literal per line.
+phenotype-2026
+run-012
+mean_biomass

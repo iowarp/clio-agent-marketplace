@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "docx",
+  "version": "1.0.0",
+  "description": "Create, edit and review Word documents.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "word",
+    "docx",
+    "documents"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "document-runtime"
+      ]
+    }
+  }
+}

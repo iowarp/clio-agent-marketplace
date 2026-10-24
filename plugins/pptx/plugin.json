@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "pptx",
+  "version": "1.0.0",
+  "description": "Create, edit and review PowerPoint presentations.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "powerpoint",
+    "pptx",
+    "presentations",
+    "documents"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "document-runtime"
+      ]
+    }
+  }
+}

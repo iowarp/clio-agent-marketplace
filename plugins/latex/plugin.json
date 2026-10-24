@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "latex",
+  "version": "1.0.0",
+  "description": "Author LaTeX documents and build them to PDF.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "latex",
+    "pdf",
+    "documents"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "document-runtime"
+      ]
+    }
+  }
+}

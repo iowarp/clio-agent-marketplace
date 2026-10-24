@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "parquet",
+  "version": "1.1.0",
+  "description": "Parquet through clio-kit's parquet MCP server (single-file summaries, slices, previews and aggregates) and the parquet skill: footer, row groups and statistics, physical and logical types, hive partitioning, bounded scans with pyarrow or DuckDB, and write options.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "parquet",
+    "tables"
+  ]
+}

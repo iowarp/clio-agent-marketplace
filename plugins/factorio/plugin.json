@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "factorio",
+  "version": "0.6.0",
+  "description": "Factorio's identity and research process: its mission, specialist roster and working practice; the coordination, framing, dossier, audit and evidence fan-out skills; and its research-process subagents (methodologist, virtual lab, evidence researcher with its leaf and critic lanes, simulation methodologist, independent reviewer).",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "factorio",
+    "research",
+    "manufacturing"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "delegation"
+      ]
+    }
+  }
+}

@@ -1,0 +1,3 @@
+# Literals from runs this plugin was tuned on (L3). Read by
+# scripts/check_skill_literals.py. One literal per line.
+exp10

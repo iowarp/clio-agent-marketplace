@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "documents",
+  "version": "1.0.0",
+  "description": "Every document format CLIO works with: PDF, Word, spreadsheets, presentations, LaTeX and OpenDocument.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "documents",
+    "pack"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "kind": "pack",
+      "members": [
+        "pdf",
+        "docx",
+        "xlsx",
+        "pptx",
+        "latex",
+        "opendocument"
+      ]
+    }
+  }
+}
