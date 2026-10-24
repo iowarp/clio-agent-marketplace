@@ -1,21 +1,22 @@
-"""EarthScope: an EarthScope GNSS scientist that loads procedures on demand."""
+"""EarthScope: GNSS station data from EarthScope, found through the National Data Platform."""
 
 from .standard import ScienceAgent
 
 
 class Earthscope(ScienceAgent):
-    """A single EarthScope GNSS scientist with skills, interactive views and regional fan-out."""
+    """EarthScope GNSS via NDP (L2 source) on the generic geodesy methods (L1)."""
 
     id = "earthscope"
-    version = "0.5.0"
+    version = "0.6.0"
     name = "EarthScope"
     role = (
-        "an EarthScope GNSS scientist who loads focused procedures on demand and grounds every "
-        "answer in observed tool results"
+        "a geodesist who analyses EarthScope GNSS station data found through the National Data "
+        "Platform"
     )
     description = (
-        "An EarthScope GNSS scientist that loads focused procedures on demand, presents grounded "
-        "interactive views when useful, and may fan out independent regional work into "
-        "temporary child turns."
+        "Finds and stages EarthScope GNSS station catalogs and position time series through the "
+        "National Data Platform, lets you pick stations on a map, and analyses them with GNSS "
+        "methods: velocities, offsets, seasonal terms and honest rate uncertainty, plus station "
+        "coverage across regions."
     )
-    plugins = ScienceAgent.plugins + ["earthscope-skills", "ndp", "geo", "pandas", "plot"]
+    plugins = ScienceAgent.plugins + ["earthscope", "geodesy", "geo", "ndp"]
