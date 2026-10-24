@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "factorio",
-  "version": "0.5.0",
-  "description": "Factorio's research-process subagents (methodologist, virtual lab, evidence researcher with leaf and critic, simulation methodologist, Abaqus engineer, independent reviewer) and its principal-investigator fragments.",
+  "version": "0.6.0",
+  "description": "Factorio's identity and research process: its mission, specialist roster and working practice; the coordination, framing, dossier, audit and evidence fan-out skills; and its research-process subagents (methodologist, virtual lab, evidence researcher with its leaf and critic lanes, simulation methodologist, independent reviewer).",
   "author": {
     "name": "IoWarp Team"
   },
@@ -10,7 +10,7 @@
   "keywords": [
     "factorio",
     "research",
-    "simulation"
+    "manufacturing"
   ],
   "extensions": {
     "ai.iowarp.clio": {

@@ -1,16 +1,62 @@
 # Factorio design note
 
-Factorio (`agents/factorio.py`, the `factorio` plugin over the
-`manufacturing` pack) records design rationale here, not copied prompt text.
+Factorio (`agents/factorio.py`) is a research partner for scientists who study
+how a part's design, material and manufacturing route set its performance.
+This note records design rationale, not copied prompt text. The marketplace
+rules it follows are in `ARCHITECTURE.md`.
+
+## Composition and levels
+
+`Factorio(ScienceAgent)` selects, beyond the science base (which already
+carries the L0 `scientific-method` plugin):
+
+| Plugin | Level | Holds |
+| --- | --- | --- |
+| `manufacturing` (pack) | L1 | `materials`, `manufacturing-processes`, `characterization`, `mechanical-testing`, `fatigue`, `fea-methods`: method only, no program |
+| `abaqus` | L2 | Abaqus scripting and runs, Tosca, result visualization, the `abaqus-topology` views, `abaqus_engineer` |
+| `morphorm` | L2 | the Morphorm workflow and its bundled checks |
+| `slurm` | L2 | Slurm batch jobs and the bounded-wait helper |
+| `factorio` | agent | identity and process: mission, specialist roster, practice; coordination, framing, dossier, audit and evidence fan-out skills; research-process subagents |
+
+No program is the default. Each program plugin has a capabilities fragment
+that says what the program can do; the mission tells Factorio to work in
+whichever program the scientist uses, and to run meshing, solves and batch
+jobs itself when the program is reachable.
+
+## Main-only fragments
+
+CLIO gives a subagent its owner plugin's fragments. `factorio.mission`,
+`factorio.practice` and `factorio.specialists` are written for the main
+agent, so each is gated on `spawn_skill_task`, a delegation tool the main
+agent has and no Factorio subagent is given (every subagent here has a tool
+allowlist that omits it). The fragments sort by file name, so `mission.md`
+comes first among Factorio's domain fragments.
+
+## Specialists
+
+Each domain specialist lives with the L1 plugin whose skills it uses and
+declares every plugin whose skills its prompt or those skills reference:
+`materials_scientist` (materials), `manufacturing_expert`
+(manufacturing-processes), `characterization_expert` (characterization),
+`mechanical_testing_expert` (mechanical-testing), `fatigue_failure_expert`
+(fatigue), `data_analysis_expert` (scientific-method), and `abaqus_engineer`
+(abaqus). Every subagent can read and list files; the ones whose job is to
+compute or build (data analysis, characterization, testing, fatigue, the
+Abaqus engineer, the simulation methodologist) can also write files and run
+the shell. `evidence_leaf` and `evidence_critic` are lanes of
+`evidence_researcher`; CLIO has no children-only flag (`internal` hides a
+subagent from every agent, its parent included), so they stay delegable and
+their descriptions say who starts them.
+
+## Sources
 
 - OpenAI describes an agent as instructions plus tools and recommends separate
-  agents when independent work has complex instructions or tool surfaces, while
-  keeping multi-agent use selective. Factorio therefore keeps a small root
-  identity, explicit tool ownership, and specialist-specific prompts.
+  agents when independent work has complex instructions or tool surfaces,
+  while keeping multi-agent use selective.
   [OpenAI, Building agents](https://developers.openai.com/tracks/building-agents#orchestration)
 - Anthropic distinguishes open-ended agents from fixed workflows, recommends
-  parallel work for independent concerns, and uses orchestrator-workers when the
-  subtasks must be chosen dynamically. Factorio puts those decisions in an
+  parallel work for independent concerns, and uses orchestrator-workers when
+  the subtasks must be chosen dynamically. Factorio puts those decisions in an
   on-demand coordination skill instead of an always-on sequence.
   [Anthropic, Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
 - Google recommends direct, structured instructions, decomposition of complex
@@ -18,49 +64,23 @@ Factorio (`agents/factorio.py`, the `factorio` plugin over the
   entrypoints with bundled references for progressive disclosure.
   [Google, Gemini prompt design strategies](https://ai.google.dev/gemini-api/docs/prompting-strategies)
 
-Behavior is assessed outside the prompt through normalized public responses and
-tool traces. The eval cases test semantic routing, clarification quality,
-parallelism, and task continuity without matching exact prose.
-
-## Layout
-
-The agent is `Factorio(ScienceAgent)`: the science base plus the
-`manufacturing` pack and this plugin.
-
-- This plugin holds the root's domain fragments and the research-process
-  subagents: `research_methodologist`, `virtual_lab`, `evidence_researcher`
-  (which delegates to `evidence_leaf` and `evidence_critic`, the one two-level
-  fan-out), `simulation_methodologist`, `abaqus_engineer` and
-  `independent_reviewer`.
-- The `manufacturing` pack's member plugins hold the specialized knowledge as
-  skills, and each specialist subagent lives with its member:
-  `materials` (`materials_scientist`), `am-process` (`manufacturing_expert`),
-  `characterization` (`characterization_expert`), `mechanical-testing`
-  (`mechanical_testing_expert`), `fatigue` (`fatigue_failure_expert`) and
-  `scientific-method` (`data_analysis_expert`, plus the coordination,
-  formulation, dossier, audit, evidence and literature skills). `abaqus` holds
-  the Abaqus, FEA and visualization skills; `topology` holds the Tosca,
-  Morphorm and topology optimization skills and the `abaqus-topology` A2UI
-  catalog.
-
-A skill can serve more than one subagent (for example `heat-treatment`, in
-`materials`, is used by both `materials_scientist` and `manufacturing_expert`):
-each subagent lists the plugins whose skills and tools it needs.
+Behavior is assessed outside the prompt through normalized public responses
+and tool traces (`evals/`). The cases test semantic routing, clarification
+quality, parallelism and task continuity without matching exact prose.
 
 ## Views
 
-`abaqus-topology` (in `topology/ai.iowarp.clio/a2ui/`) holds two topology
+`abaqus-topology` (in `abaqus/ai.iowarp.clio/a2ui/`) holds two topology
 optimization views: before and after in linked 3D viewports with a stress
 toggle, and the design history with density and cycle sliders. It adds no
 rendering of its own: `TopologyViewport` aliases the generic
-`clio.mesh-viewport.v1` kernel, `ParameterSlider` the generic `clio.slider.v1`,
-and `ConvergencePlot` the generic `clio.chart.v1`, bound to the viewport's
-threshold and frame. The `abaqus-visualization` skill ships the exporter
-(`odb_to_glb.py`, `fea_glb.py`) that turns ODB, `.inp`, and Tosca STL output
-into the `.glb` meshes the viewport reads, plus `render_view.py` for report
-figures; `visualize-topology-optimization` builds the two views on top of it.
-`create_artifact` comes from the core plugin, so a skill can use it for durable
-deliverables without adding it to a subagent's tool allowlist.
+`clio.mesh-viewport.v1` kernel, `ParameterSlider` the generic
+`clio.slider.v1`, and `ConvergencePlot` the generic `clio.chart.v1`. Its
+examples are placeholders filled from the run at hand.
 
-The skill roster is a first-pass, intentionally granular set rather than a
-merged one; expect it to be pruned and consolidated as it sees use.
+## Open work
+
+Most L1 skills are short checklists and should gain procedures, references
+and bundled scripts with the domain owners. The `tosca` skill does not
+reproduce `.par` syntax: no sourced copy was available, so it tells the agent
+to read the installed documentation.

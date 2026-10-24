@@ -27,9 +27,13 @@ class StandardAgent(Agent):
 
 
 class ScienceAgent(StandardAgent):
-    """A base for domain science agents: the standard agent's capabilities."""
+    """A base for domain science agents: the standard agent plus scientific method."""
 
     id = "science"
     name = "CLIO Science"
     role = "a scientific research assistant that grounds every claim in inspected data"
-    description = "The standard agent's capabilities as a base for domain science agents."
+    description = (
+        "The standard agent's capabilities plus general scientific practice, as a base for "
+        "domain science agents."
+    )
+    plugins = StandardAgent.plugins + ["scientific-method"]
