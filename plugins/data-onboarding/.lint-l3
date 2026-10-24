@@ -1,0 +1,4 @@
+# Marker: this plugin is held to the level contract. Its skills and scripts
+# carry checks and methods, never facts about one dataset: no experiment,
+# plant or round identifiers, dates, measured magnitudes, row counts, or
+# concrete dataset file names. See lint-denylist.txt for known literals.

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "data-onboarding",
+  "version": "1.0.0",
+  "description": "General habits for unfamiliar datasets: read the self-description, inventory and audit tables with bundled scripts (sentinels, empty and near-duplicate columns, flags against data, join keys, declared against actual counts), keep an experiment card in the workspace, audit in a child agent, and state evidence plainly.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "datasets",
+    "onboarding",
+    "data-quality",
+    "provenance"
+  ]
+}

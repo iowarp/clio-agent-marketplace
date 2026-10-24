@@ -10,7 +10,7 @@ from pathlib import Path
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 import pytest
-from conftest import FLOAT_MAX, PACK, load_script, tree_hash
+from appl_core_fixtures import FLOAT_MAX, PACK, load_script, tree_hash
 
 make_variants = load_script("evals/scripts/make_variants.py", "appl_make_variants")
 evaluate = load_script("evals/scripts/evaluate_appl_core.py", "appl_evaluate")
@@ -353,9 +353,13 @@ def test_parent_loader_requires_a_rerun_after_canonical_or_legacy_collection(too
     assert evaluate.evaluate_case(case, _trace("c", actions=[wait, loader])) == []
 
 
-def test_case_file_is_consistent_with_the_pack() -> None:
+def test_case_file_is_consistent_with_the_agent() -> None:
+    """Cases name skills the appl-core agent carries (its own, data-onboarding's and
+    phenotyping's) and ask one question per L1 phenotyping skill."""
+
     assert evaluate.validate_cases(CASES) == []
-    skills = {p.parent.name for p in (PACK / "skills").glob("*/SKILL.md")}
+    plugins = [PACK, PACK.parent / "data-onboarding", PACK.parent / "phenotyping"]
+    skills = {p.parent.name for plugin in plugins for p in (plugin / "skills").glob("*/SKILL.md")}
     variants = set(make_variants.VARIANTS)
     for case in CASES:
         assert "{bundle_root}" in case["user_message"], case["id"]
@@ -365,9 +369,10 @@ def test_case_file_is_consistent_with_the_pack() -> None:
             assert skill in skills, (case["id"], skill)
     level1 = {
         p.parent.name
-        for p in (PACK / "skills").glob("*/SKILL.md")
+        for p in (PACK.parent / "phenotyping" / "skills").glob("*/SKILL.md")
         if re.search(r"^- level:L1$", p.read_text(encoding="utf-8"), re.MULTILINE)
     }
+    assert level1, "the phenotyping plugin ships L1 skills"
     covered = {s for c in CASES for s in c.get("method_skills", [])}
     assert level1 <= covered, "one question per L1 skill"
 
@@ -407,20 +412,41 @@ def test_read_only_acceptance_rejects_missing_or_failed_preservation(failure: st
 
 
 def test_adaptation_requires_observed_evidence_not_just_a_claim() -> None:
-    trace = _trace("adapt_export_v7")
-    case = next(row for row in CASES if row["id"] == "adapt_export_v7")
+    trace = _trace("variant_rename_columns")
+    case = next(row for row in CASES if row["id"] == "variant_rename_columns")
     trace["response"] = (
-        "The export version is 7; I inspected the actual columns and readable measurements "
-        "and documented their limitations."
+        "The size column is not where the documentation says; I inspected the actual "
+        "columns, matched the renamed one to its documented definition by its values, "
+        "and read the measurements from it. The sentinel and the universal flag remain, "
+        "and the treatment unit is still an open question for the data owners."
     )
     assert evaluate.evaluate_case(case, trace) == []
     trace["bundle"]["adaptations"][0]["evidence"] = ["unrecorded-source"]
     assert evaluate.evaluate_case(case, trace)
 
 
+def test_an_out_of_contract_version_is_refused_without_views() -> None:
+    """export_version 7 is outside the contract: the agent says so and writes no views."""
+
+    case = next(row for row in CASES if row["id"] == "refuse_export_v7")
+    trace = _trace("refuse_export_v7", actions=[])
+    trace["response"] = (
+        "The manifest declares export_version 7. This agent supports APPL-CORE exports of "
+        "version 6 only, so I have not interpreted these files as an APPL-CORE export. "
+        "I can onboard them as unknown tabular data if you want, or analyse them once "
+        "the version 7 format documentation is available."
+    )
+    trace["bundle"].update(card_text=None, view_hash_runs=[], verify_exit_codes=[])
+    trace["bundle"]["adaptations"] = []
+    assert evaluate.evaluate_case(case, trace) == []
+    trace["bundle"]["view_hash_runs"] = [{"v": "1"}]
+    assert evaluate.evaluate_case(case, trace)
+
+
 def test_cases_do_not_prescribe_onboarding_scripts_or_view_schemas() -> None:
     for case in CASES:
         assert "required_scripts" not in case["expect"].get("actions", {})
-        assert case["expect"].get("outcome", {}).get("no_views_written") is not True
+        if case["id"] != "refuse_export_v7":  # the one out-of-contract refusal
+            assert case["expect"].get("outcome", {}).get("no_views_written") is not True
         if case["id"] != "loader_determinism":
             assert "loader" not in case["expect"]

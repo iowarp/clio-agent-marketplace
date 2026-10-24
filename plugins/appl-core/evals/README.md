@@ -1,4 +1,4 @@
-# APPL-CORE Analyst acceptance cases
+# OPAL (appl-core) acceptance cases
 
 These cases assess whether an agent can investigate messy, read-only data and
 answer the question using evidence. They do not prescribe a loader, five table
@@ -69,8 +69,11 @@ whether the prose mentions a list of terms.
   Status receipts, pending audits and unrelated manifest/README references do not
   support scientific findings. Review the cited content and calculation, not
   merely whether a reference exists. Natural prose is accepted without claim tags.
-- Unknown or missing versions lead to inspection and qualified use of readable
-  evidence. Only a specific inaccessible or uninterpretable part can be blocked.
+- An `export_version` outside the contract stated in `appl-core-exports`
+  (version 6) is refused plainly, with no views written for it; the agent offers
+  the user the next steps instead of half-handling the export
+  (`refuse_export_v7`). Within the contract, only a specific inaccessible or
+  uninterpretable part can be blocked.
 - Changed columns, incomplete modalities and an unavailable helper lead to a
   justified adjusted approach, without rewriting the source or inventing units.
 - Questions about uncertain treatment meaning, units or calibration remain
@@ -98,5 +101,5 @@ correctness or fresh live acceptance. Retain source/tool receipts and review the
 actual findings, calculations, limitations and interactive outputs.
 
 Unit cases use synthetic traces to exercise the grader. They are not a live
-model run or qualification of a real OPAL export. Do not rerun infrastructure or
+model run or qualification of a real APPL-CORE export. Do not rerun infrastructure or
 substitute another provider to manufacture that evidence.
