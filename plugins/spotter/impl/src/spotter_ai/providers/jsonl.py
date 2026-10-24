@@ -1,9 +1,20 @@
-"""Read-only CLIO and canonical Spotter JSONL provenance queries."""
+"""Read-only CLIO and canonical Spotter JSONL provenance queries.
+
+The native journal is every session CLIO ever recorded, so it grows without bound
+(gigabytes on a long-lived host). Queries stream it one line at a time and keep
+only what they return: holding the parsed journal costs several times its size on
+disk, and doing that per call took the server down with it. A query that filters
+on an identifier skips lines that cannot contain it before parsing them; only the
+lines a query parses are validated.
+"""
 
 from __future__ import annotations
 
+import heapq
 import json
+import re
 from collections import Counter
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -39,12 +50,13 @@ class JsonlProvider:
     def capabilities(self) -> set[str]:
         """Return operations supported by the records currently present."""
         capabilities = set(_BASE_CAPABILITIES)
-        records = self._records()
-        types = {str(record.get("record_type") or "") for record in records}
-        if "pipeline" in types:
-            capabilities.add("list_pipelines")
-        if "model_card" in types:
-            capabilities.add("get_model_card")
+        extra = {"pipeline": "list_pipelines", "model_card": "get_model_card"}
+        for record in self._records(all_of=("record_type",), any_of=tuple(extra)):
+            operation = extra.pop(str(record.get("record_type") or ""), None)
+            if operation:
+                capabilities.add(operation)
+            if not extra:
+                break
         return capabilities
 
     def health(self) -> dict[str, Any]:
@@ -64,23 +76,44 @@ class JsonlProvider:
             return []
         return sorted(path for path in self._path.rglob("*.jsonl") if path.is_file())[:1000]
 
-    def _records(self) -> list[dict[str, Any]]:
-        records: list[dict[str, Any]] = []
+    def _records(
+        self, *, all_of: tuple[str | None, ...] = (), any_of: tuple[str, ...] = ()
+    ) -> Iterator[dict[str, Any]]:
+        """Stream records, parsing only lines that hold every ``all_of`` and one ``any_of``.
+
+        Each value is a string some field of a matching record equals; ``None`` (an
+        unset filter) is ignored.
+        """
+        required = [_needle(value) for value in all_of if value]
+        required = [needle for needle in required if needle]
+        optional = [needle for needle in map(_needle, any_of) if needle]
+        if len(optional) < len(any_of):
+            optional = []
         for path in self._paths():
-            try:
-                lines = path.read_text(encoding="utf-8").splitlines()
-            except OSError as exc:
-                raise ProvenanceError(
-                    "provider_unavailable",
-                    f"could not read native provenance file: {path}",
-                    {"reason": type(exc).__name__},
-                ) from exc
-            for line_number, line in enumerate(lines, 1):
+            yield from self._file_records(path, required, optional)
+
+    def _file_records(
+        self, path: Path, required: list[bytes], optional: list[bytes]
+    ) -> Iterator[dict[str, Any]]:
+        try:
+            handle = path.open("rb")
+        except OSError as exc:
+            raise ProvenanceError(
+                "provider_unavailable",
+                f"could not read native provenance file: {path}",
+                {"reason": type(exc).__name__},
+            ) from exc
+        with handle:
+            for line_number, line in enumerate(handle, 1):
                 if not line.strip():
+                    continue
+                if any(needle not in line for needle in required):
+                    continue
+                if optional and not any(needle in line for needle in optional):
                     continue
                 try:
                     record = json.loads(line)
-                except json.JSONDecodeError as exc:
+                except (json.JSONDecodeError, UnicodeDecodeError) as exc:
                     raise ProvenanceError(
                         "invalid_query",
                         f"invalid JSONL record at {path}:{line_number}",
@@ -98,8 +131,7 @@ class JsonlProvider:
                         "invalid_query",
                         f"unknown provenance JSONL dialect at {path}:{line_number}",
                     )
-                records.append(record)
-        return records
+                yield record
 
     def list_campaigns(self, campaign_id: str | None, limit: int) -> dict[str, Any]:
         """Derive campaigns from canonical records or CLIO trace/workspace identifiers."""
@@ -116,10 +148,9 @@ class JsonlProvider:
         self, campaign_id: str | None, status: str | None, limit: int
     ) -> dict[str, Any]:
         """List canonical workflows or derive one workflow per CLIO session."""
-        records = self._records()
         items: list[dict[str, Any]] = []
-        by_session: dict[str, list[dict[str, Any]]] = {}
-        for record in records:
+        sessions: dict[str, _SessionSpan] = {}
+        for record in self._records():
             if record.get("record_type") == "workflow":
                 item = dict(record.get("data") or {})
                 item.setdefault("workflow_id", record.get("workflow_id"))
@@ -128,10 +159,13 @@ class JsonlProvider:
             elif record.get("event_type"):
                 session_id = str(record.get("session_id") or "")
                 if session_id:
-                    by_session.setdefault(session_id, []).append(record)
-        for session_id, events in by_session.items():
-            ordered = sorted(events, key=_timestamp)
-            terminal = ordered[-1]
+                    span = sessions.get(session_id)
+                    if span is None:
+                        sessions[session_id] = _SessionSpan(record)
+                    else:
+                        span.add(record)
+        for session_id, span in sessions.items():
+            terminal = span.terminal
             campaign = str(terminal.get("trace_id") or terminal.get("workspace_id") or "")
             items.append(
                 {
@@ -139,9 +173,9 @@ class JsonlProvider:
                     "campaign_id": campaign,
                     "name": f"CLIO session {session_id}",
                     "status": str(terminal.get("status") or ""),
-                    "started_at": _timestamp(ordered[0]),
-                    "ended_at": _timestamp(terminal),
-                    "extensions": {"clio": {"event_count": len(events)}},
+                    "started_at": span.started_at,
+                    "ended_at": span.ended_at,
+                    "extensions": {"clio": {"event_count": span.count}},
                 }
             )
         items = [
@@ -155,7 +189,7 @@ class JsonlProvider:
     def list_agents(self, workflow_id: str | None, limit: int) -> dict[str, Any]:
         """List agents observed in native records."""
         agents: dict[str, dict[str, Any]] = {}
-        for record in self._records():
+        for record in self._records(all_of=(workflow_id,)):
             if workflow_id and _workflow_id(record) != workflow_id:
                 continue
             if record.get("record_type") == "agent":
@@ -183,44 +217,43 @@ class JsonlProvider:
         limit: int,
     ) -> dict[str, Any]:
         """Query canonical tasks or project CLIO semantic events into tasks."""
-        items: list[dict[str, Any]] = []
-        for record in self._records():
+        matches = self._tasks(
+            workflow_id=workflow_id,
+            task_id=task_id,
+            agent_id=agent_id,
+            status=status,
+            activity_id=activity_id,
+            subtype=subtype,
+        )
+        # The earliest ``limit`` tasks, in the order a stable sort would give, holding
+        # no more than ``limit`` of them at a time.
+        items = heapq.nsmallest(
+            _limit(limit), matches, key=lambda item: float(item.get("started_at") or 0)
+        )
+        return {"items": items, "count": len(items)}
+
+    def _tasks(self, **filters: str | None) -> Iterator[dict[str, Any]]:
+        """Stream the tasks matching every set filter (a task field equal to it)."""
+        searched = tuple(value for key, value in filters.items() if key != "subtype")
+        for record in self._records(all_of=searched):
             item = _task(record)
             if item is None:
                 continue
-            if workflow_id and item["workflow_id"] != workflow_id:
-                continue
-            if task_id and item["task_id"] != task_id:
-                continue
-            if agent_id and item["agent_id"] != agent_id:
-                continue
-            if status and item["status"] != status:
-                continue
-            if activity_id and item["activity_id"] != activity_id:
-                continue
-            if subtype and item["subtype"] != subtype:
-                continue
-            items.append(item)
-        items.sort(key=lambda item: float(item.get("started_at") or 0))
-        items = items[: _limit(limit)]
-        return {"items": items, "count": len(items)}
+            if all(not value or item[key] == value for key, value in filters.items()):
+                yield item
 
     def summarize_tasks(self, workflow_id: str | None) -> dict[str, Any]:
-        """Summarize native task status and activity counts."""
-        items = self.query_tasks(
-            workflow_id=workflow_id,
-            task_id=None,
-            agent_id=None,
-            status=None,
-            activity_id=None,
-            subtype=None,
-            limit=10_000,
-        )["items"]
+        """Summarize native task status and activity counts over every matching task."""
+        statuses: Counter[str] = Counter()
+        activities: Counter[str] = Counter()
+        for item in self._tasks(workflow_id=workflow_id):
+            statuses[item["status"]] += 1
+            activities[item["activity_id"]] += 1
         return {
             "workflow_id": workflow_id,
-            "task_count": len(items),
-            "status_counts": dict(sorted(Counter(row["status"] for row in items).items())),
-            "activity_counts": dict(sorted(Counter(row["activity_id"] for row in items).items())),
+            "task_count": sum(statuses.values()),
+            "status_counts": dict(sorted(statuses.items())),
+            "activity_counts": dict(sorted(activities.items())),
         }
 
     def timeline(self, workflow_id: str, limit: int) -> dict[str, Any]:
@@ -265,7 +298,7 @@ class JsonlProvider:
         """List canonical pipeline records when the JSONL dialect provides them."""
         records = [
             dict(record.get("data") or {})
-            for record in self._records()
+            for record in self._records(all_of=("record_type", "pipeline"))
             if record.get("record_type") == "pipeline"
         ][: _limit(limit)]
         if not records:
@@ -277,7 +310,10 @@ class JsonlProvider:
     ) -> dict[str, Any]:
         """List native transform executions or canonical execution records."""
         items: list[dict[str, Any]] = []
-        for record in self._records():
+        limit = _limit(limit)
+        for record in self._records(
+            all_of=(pipeline, stage), any_of=("execution", "artifact.transform.recorded")
+        ):
             if record.get("record_type") == "execution":
                 item = dict(record.get("data") or {})
             elif record.get("event_type") == "artifact.transform.recorded":
@@ -296,7 +332,8 @@ class JsonlProvider:
             if stage and item.get("stage") != stage:
                 continue
             items.append(item)
-        items = items[: _limit(limit)]
+            if len(items) >= limit:
+                break
         return {"items": items, "count": len(items)}
 
     def list_artifact_types(self, pipeline: str | None, stage: str | None) -> dict[str, Any]:
@@ -322,7 +359,7 @@ class JsonlProvider:
         """List artifacts from CLIO artifact events or canonical JSONL records."""
         del stage
         items: dict[str, dict[str, Any]] = {}
-        for record in self._records():
+        for record in self._records(all_of=(pipeline,), any_of=("artifact",)):
             if record.get("record_type") == "artifact":
                 item = dict(record.get("data") or {})
                 item.setdefault("artifact_id", record.get("artifact_id"))
@@ -377,7 +414,7 @@ class JsonlProvider:
             for row in artifacts
         ]
         edges: list[dict[str, str]] = []
-        for record in self._records():
+        for record in self._records(all_of=(pipeline,), any_of=("artifact.transform.recorded",)):
             if record.get("event_type") != "artifact.transform.recorded":
                 continue
             payload = _payload(record)
@@ -412,7 +449,7 @@ class JsonlProvider:
 
     def model_card(self, model_id: str) -> dict[str, Any]:
         """Return a canonical model card only when one was explicitly recorded."""
-        for record in self._records():
+        for record in self._records(all_of=("model_card", model_id)):
             if (
                 record.get("record_type") == "model_card"
                 and str(record.get("model_id") or "") == model_id
@@ -423,7 +460,7 @@ class JsonlProvider:
     def find_correlation(self, correlation_id: str, limit: int) -> list[dict[str, Any]]:
         """Find native records containing an exact correlation identifier."""
         matches: list[dict[str, Any]] = []
-        for record in self._records():
+        for record in self._records(all_of=(correlation_id,)):
             candidates = {
                 str(record.get("correlation_id") or ""),
                 str(record.get("session_id") or ""),
@@ -447,6 +484,36 @@ class JsonlProvider:
 
     def close(self) -> None:
         """Native JSONL queries hold no open resources."""
+
+
+class _SessionSpan:
+    """One CLIO session's first and last events, as a stable sort by time would order them."""
+
+    __slots__ = ("count", "ended_at", "started_at", "terminal")
+
+    def __init__(self, record: dict[str, Any]) -> None:
+        self.count = 1
+        self.started_at = self.ended_at = _timestamp(record)
+        self.terminal = record
+
+    def add(self, record: dict[str, Any]) -> None:
+        self.count += 1
+        occurred = _timestamp(record)
+        self.started_at = min(self.started_at, occurred)
+        if occurred >= self.ended_at:
+            self.ended_at, self.terminal = occurred, record
+
+
+_PLAIN = re.compile(r"[A-Za-z0-9_.:@+-]+")
+
+
+def _needle(value: str) -> bytes | None:
+    """The bytes any JSON line holding ``value`` (as a string or a number) contains.
+
+    ``None`` for a value JSON may escape, which no line filter can rely on.
+    """
+
+    return value.encode() if _PLAIN.fullmatch(value) else None
 
 
 def _task(record: dict[str, Any]) -> dict[str, Any] | None:
