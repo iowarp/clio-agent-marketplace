@@ -36,7 +36,7 @@ named for that level (see `.claude/skills/author-agent-pack` in clio-agent).
 | Level | What it holds | Examples here |
 |---|---|---|
 | L0: general habits | how to onboard data, analyse, report, cite | `scientific-method`, `data-onboarding`, `visuals`, `workspace` |
-| L1: domain methods | how a field reasons, independent of any program or dataset | the `manufacturing` pack (`materials`, `manufacturing-processes`, `characterization`, `mechanical-testing`, `fatigue`, `fea-methods`), `phenotyping` |
+| L1: domain methods | how a field reasons, independent of any program or dataset | the `manufacturing` pack (`materials`, `manufacturing-processes`, `characterization`, `mechanical-testing`, `fatigue`, `fea-methods`), `phenotyping`, `geodesy` |
 | L2: one program, format, source or facility | how one tool or data source behaves | `abaqus` (with Tosca), `morphorm`, `slurm`, `hdf5`, `adios`, `parquet`, `ndp`, `earthscope`, `appl-core` |
 | L3: one instance | IDs, file names, counts, measured values from a run | never shipped; discovered at runtime, asked, or recorded with the data |
 
@@ -53,6 +53,10 @@ Rules:
 - **Every plugin with domain content carries `.lint-l3` and `lint-denylist.txt`**,
   so `scripts/check_skill_literals.py` guards it.
 - **Fragments stay within 150 tokens.** Longer guidance becomes a skill.
+- **A subagent receives its owner plugin's fragments too.** Gate an agent's
+  main-only fragments (mission, roster, practice) with
+  `when: {"tools": [<a tool only the main agent has>]}` so its subagents do not
+  read the main agent's mission as their own.
 
 ## The agents
 
@@ -60,14 +64,14 @@ Rules:
 |---|---|---|---|
 | `standard` (CLIO) | the general workspace assistant | workspace, shell, web, documents, visuals, connected-data, delegation, orchestration | L0 |
 | `science` (CLIO Science) | base for the science agents | standard + `scientific-method` | L0 |
-| `deep-researcher` | cited web research with independent verification | `deep-research` (its subagents carry `web`) | L0 |
+| `deep-researcher` | cited web research with independent verification | `deep-research` (only its researcher and critic subagents carry `web`) | L0 |
 | `document-production` | documents in every office and publishing format | `document-production` (with review) | L0 |
 | `clio-search` | answers from CLIO's own conversations and files | `clio-search` | L0 |
 | `clio-data` | inspects, converts and validates scientific data files | science + `clio-data`, `data-onboarding`, `hdf5`, `adios`, `parquet` | L2 formats |
 | `factorio` | manufacturing and materials research partner | science + `manufacturing` pack + `abaqus`, `morphorm`, `slurm` + `factorio` | L1 domain, L2 programs |
-| `earthscope` | EarthScope GNSS analysis through NDP | science + `geo`, `ndp` + `earthscope` | L2 source |
-| `appl-core` (OPAL) | APPL-CORE plant-phenotyping exports | science + `data-onboarding`, `phenotyping` + `appl-core` | L2 source |
-| `spotter-ai` | forensic watcher over a working CLIO session | `spotter` (provenance and attention tools) | L0 |
+| `earthscope` | EarthScope GNSS analysis through NDP | science + `geodesy`, `geo`, `ndp` + `earthscope` | L2 source |
+| `appl-core` (OPAL) | APPL-CORE plant-phenotyping exports | science + `data-onboarding`, `phenotyping`, `parquet` + `appl-core` | L2 source (export version 6) |
+| `spotter-ai` (SPOTTER) | forensic watcher over a working CLIO session | `spotter` (provenance and attention tools; alerts and containment through CLIO) | L0 |
 
 ## Removed
 
