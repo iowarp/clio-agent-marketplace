@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "deep-research",
-  "version": "0.2.0",
-  "description": "Agent-driven deep web research: a coordinator that fans out repeatable web researcher subagents and an independent critic (both carry web), keeps a source ledger and delivers a critic-approved Markdown report artifact.",
+  "version": "0.3.0",
+  "description": "Deep web research as a flow: a planner chooses research directions, repeatable web researcher subagents investigate them in parallel, an independent web-enabled critic returns a typed audit (verified claims with fetched source and quote, rejected claims, gaps), gaps are researched within bounded rounds, and a Markdown report is written only from verified claims.",
   "author": {
     "name": "IoWarp Team"
   },
@@ -11,7 +11,8 @@
     "research",
     "web",
     "citations",
-    "report"
+    "report",
+    "flow"
   ],
   "extensions": {
     "ai.iowarp.clio": {
