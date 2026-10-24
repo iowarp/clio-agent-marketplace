@@ -16,12 +16,11 @@ Load the guides you need with `load_skill`, for example
 - **Inspect before advising.** When a file is available, look at it first;
   never invent file facts. Report the paths, shapes, dtypes, chunking and
   attributes you actually saw.
-- **Use the HDF5 tools if you have them** (`open_file`, `list_keys`,
-  `get_by_path`, `list_attributes`, `read_partial_dataset`, `close_file`, …).
-  Otherwise use h5py through code execution: open read-only with
-  `h5py.File(path, "r")`, list with `list(f)` and `f.attrs`, and sample
-  values with slices such as `dset[:10]`. Never read a whole large dataset
-  to look at it.
+- **Use the HDF5 tools if you have them**, or h5py through code execution:
+  open with `h5py.File(path, "r")` to inspect, list with `list(f)` and
+  `f.attrs`, and sample values with slices such as `dset[:10]`. Never read a
+  whole large dataset to look at it. With the tools, see "With the hdf5 tools"
+  below.
 - **Start with the convention.** For an unfamiliar file, identify the
   community convention it follows before walking it:
   `references/conventions.md`. It tells you where the primary data is.
@@ -30,6 +29,42 @@ Load the guides you need with `load_skill`, for example
   in h5py, check `h5py.version.hdf5_version` and `h5py.version.version`.
 - **Advice is not measurement.** Present tuning advice as recommendations
   unless you measured it.
+
+## With the hdf5 tools
+
+The `hdf5` MCP server keeps one file open at a time.
+
+1. **Pick the file.** Use the path the user gave. Without one,
+   `list_available_hdf5_files` lists registered candidates; when there are
+   several, ask which one rather than choosing silently.
+2. **Open and walk it.** `open_file` (mode `r` to inspect), then `list_keys`
+   and `visit` for the hierarchy and `get_by_path` for one object.
+3. **Describe objects** with `get_shape`, `get_dtype`, `get_size`,
+   `get_chunks`, `list_attributes` and `read_attribute`;
+   `analyze_dataset_structure` gives a bounded overview.
+4. **Sample values** with `read_partial_dataset`: `start` and `count` are
+   comma-separated per dimension (`"0,0"`, `"10,10"`), and at most a thousand
+   values come back, with truncation stated. `read_full_dataset` and
+   `export_dataset` read the whole dataset into memory; keep them for small
+   ones.
+5. **I/O questions only:** `identify_io_bottlenecks` reports static layout
+   findings and `optimize_access_pattern` gives recommendations, not a
+   benchmark. Present neither as measured performance.
+6. **Always call `close_file`** when the inspection is finished, including
+   after a failed call.
+
+Report the exact paths, dataset names, shapes, dtypes, chunks and attributes
+the tools returned; never invent file facts. When a tool fails, name the
+failed operation, quote the useful part of its error, say what evidence is
+now missing, and give a concrete recovery step (another tool, h5py in a
+script, or a question for the user).
+
+For ingest into clio-core, IOWarp or the CTE/CAE, or "will clio-core make my
+reads faster", load `references/clio_core_ingest.md` and apply its decision
+rule: bundling into clio-core is not a single-client read speedup, its cost is
+per object (consolidate many small datasets before any ingest), and it is for
+cross-node sharing and tiering. Quote the guide's figures as measurements of
+its build, not of the user's system.
 
 ## Which guide
 
