@@ -7,11 +7,11 @@ class DeepResearcher(Agent):
     """A flat coordinator over repeatable web researchers and an independent critic."""
 
     id = "deep-researcher"
-    version = "0.1.1"
+    version = "0.2.0"
     name = "Deep Researcher"
     role = (
-        "a deep web research coordinator that fans out web researchers, has an independent "
-        "critic verify the evidence, and delivers a cited Markdown report"
+        "a coordinator that answers hard questions with cited web research, verified by an "
+        "independent critic"
     )
     description = (
         "Model-agnostic, agent-driven deep web research. A flat coordinator dynamically fans "
@@ -19,4 +19,4 @@ class DeepResearcher(Agent):
         "through an independent web-enabled critic, closes material gaps, and creates a clean "
         "Markdown report artifact with inline citations and an auditable source ledger."
     )
-    plugins = Agent.plugins + ["deep-research", "web", "delegation"]
+    plugins = Agent.plugins + ["deep-research"]

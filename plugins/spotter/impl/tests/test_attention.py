@@ -84,7 +84,6 @@ def test_mass_stays_uniform_while_heat_uses_shared_profile(
     assert mean["profile_revision"] != decay["profile_revision"]
     assert mean["sources"][0]["retained_tokens"] == 1
     assert len(mean["top_tokens"]) == 2
-    assert mean["quarantine_changed"] is False
 
 
 @pytest.mark.parametrize(
@@ -168,7 +167,7 @@ async def test_attention_mcp_is_read_only(
     capture: tuple[dict[str, Any], Path],
     tmp_path: Path,
 ) -> None:
-    """The real MCP contract returns versioned evidence without invoking quarantine."""
+    """The real MCP contract returns versioned evidence and is annotated read-only."""
     from spotter_ai.config import NativeQueryConfig
     from spotter_ai.providers.jsonl import JsonlProvider
     from spotter_ai.service import ProvenanceService
@@ -190,4 +189,3 @@ async def test_attention_mcp_is_read_only(
         )
         assert result.structured_content is not None
         assert result.structured_content["profile_revision"] == UNIFORM_MEAN.revision
-        assert result.structured_content["quarantine_changed"] is False

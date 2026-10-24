@@ -1,14 +1,17 @@
-# SPOTTER forensic and provenance MCP
+# SPOTTER provenance MCP
 
-SPOTTER is a standalone MCP server with two complementary surfaces:
+SPOTTER is a standalone MCP server for the `spotter-ai` watcher with two read-only surfaces:
 
 - provider-aware agentic execution and artifact-lineage queries over native JSONL, Flowcept, and CMF;
-- phenotype campaign health, run comparison, lineage inspection, alerting, quarantine, and recovery.
+- captured model-attention inspection for one watched session.
 
 It does not call clio-agent and it does not run or proxy the upstream Flowcept or CMF MCP servers.
 Provider queries read one explicit CLIO YAML configuration and connect directly to the stores selected
-there. Campaign forensics reads an existing phenotype SQLite database in read-only mode; only the
-explicit alert and quarantine tools mutate their bounded sentinel files.
+there. No tool writes to a store.
+
+Alerts and containment belong to CLIO, not to this server. The watcher raises an alert with CLIO's
+`raise_alert_card` tool, and CLIO's SPOTTER clearance holds the watched session's next mutating call
+until the watcher's review has settled; the person decides what happens next.
 
 ## Run
 
@@ -21,19 +24,6 @@ uv run spotter-mcp --clio-config /path/to/clio-provenance-handoff.yaml
 When launching through the `spotter` plugin, clio-agent supplies both launcher inputs: the plugin
 directory (`${PLUGIN_ROOT}`, whose `impl` project this is) and its effective provenance
 configuration as a CLIO YAML file (`${CLIO_PROVENANCE_CONFIG}`).
-
-To attach the watcher to a phenotype campaign, use the same campaign variables as the workload:
-
-```console
-SPOTTER_CAMPAIGN=phenotype-2026
-SPOTTER_DB=/workspace/spotter_provenance.sqlite
-SPOTTER_DATA_DIR=/workspace/campaign_data
-```
-
-The server never creates a missing campaign database. Until the workload has produced the database
-and its required schema, the campaign capability reports `campaign_store_unavailable` explicitly.
-The watcher can then perform one health sweep, inspect a suspicious run, raise the native alert card,
-quarantine further batches, and lift quarantine only after an explicit human resolution.
 
 ## Provider configuration
 
@@ -56,9 +46,8 @@ SPOTTER never fetches capture files over SSH or reads outside the configured roo
 The tool returns captured token coordinates and coverage, not guessed transcript
 or image coordinates. Use recorded decode-step mappings; do not estimate them from
 character offsets. Missing sparse values are unretained, not measured zero.
-Attention strength alone is not evidence of poisoning. These tools never invoke
-the campaign alert or quarantine actions. Delta fresh-inference and reviewer demo
-qualification remain required before publication.
+Attention strength alone is not evidence of poisoning. Delta fresh-inference and
+reviewer demo qualification remain required before publication.
 
 ```yaml
 provenance:
@@ -115,9 +104,3 @@ not a tool argument. Each provider advertises its exact capability set, and unsu
 raise a structured `capability_unavailable` error. Normalized fields support cross-provider agent
 reasoning; the complete source response remains under `extensions.flowcept`, `extensions.cmf`,
 `extensions.clio`, or `extensions.jsonl`.
-
-Campaign tools preserve the same explicit boundary. Inspection tools are read-only; `raise_alert`
-atomically writes the campaign `QUARANTINE` sentinel and `lift_quarantine` removes it. The health
-calculation is shared with the reference phenotype workload: at least eight completed peers, a one
-percent relative standard-deviation floor, and an anomaly threshold of `abs(z) >= 3`. Missing stores,
-schemas, runs, or artifacts return typed provenance errors instead of fabricated empty results.

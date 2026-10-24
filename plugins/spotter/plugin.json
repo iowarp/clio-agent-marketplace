@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "spotter",
-  "version": "0.4.0",
-  "description": "SPOTTER's forensic provenance MCP: live anomaly surveillance and containment for the phenotype campaign, and provider-aware execution and artifact lineage across Flowcept, CMF and native stores.",
+  "version": "0.5.0",
+  "description": "SPOTTER's forensic watcher: provider-aware execution and artifact lineage across Flowcept, CMF and CLIO's native journal, captured-attention inspection, and skills for investigating and alerting on unexplained deviations in a watched CLIO session.",
   "author": {
     "name": "IoWarp Team"
   },
@@ -11,6 +11,6 @@
     "provenance",
     "forensics",
     "lineage",
-    "anomaly-detection"
+    "attention"
   ]
 }

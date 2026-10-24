@@ -21,7 +21,7 @@ class AttentionQuery(Protocol):
 
 
 class AttentionEvidence:
-    """Inspect captures without calling CLIO or changing campaign state."""
+    """Inspect captures without calling CLIO or changing any store."""
 
     def __init__(self, source: AttentionQuery, files_dir: Path) -> None:
         self.source = source
@@ -138,5 +138,4 @@ class AttentionEvidence:
                 "Token positions do not establish image or transcript coordinates.",
                 "Attention strength alone is not evidence of poisoning.",
             ],
-            "quarantine_changed": False,
         }
