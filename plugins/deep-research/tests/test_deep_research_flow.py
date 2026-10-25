@@ -1035,6 +1035,12 @@ def test_the_report_is_written_to_the_workspace_and_typed_for_the_caller(tmp_pat
     assert typed["gaps_unresolved"] == [gap("open")] and typed["rounds"] == 1
     assert typed["persistence"]["status"] == "verified"
     assert typed["persistence"]["text_sha256"] == typed["persistence"]["readback_text_sha256"]
+    delivery = typed["delivery"]
+    assert delivery["report_path"] == str(path)
+    assert delivery["used"] == [claim(1)["evidence"][0]["source_url"]]
+    assert delivery["verified_count"] == 1 and delivery["rejected_count"] == 0
+    assert delivery["gaps_unresolved"] == typed["gaps_unresolved"]
+    assert delivery["report_review"]["report_sha256"] == typed["persistence"]["text_sha256"]
 
     ctx = ScriptedCtx(Children([audit([claim(1)])]))
     assert run(make_flow(Planner(["a"])), ctx)["report_path"] == ""
@@ -1064,6 +1070,27 @@ def test_replay_reattaches_to_the_same_calls_and_steps() -> None:
     assert run(make_flow(planner, writer), replay) == result
     assert replay.calls == first.calls
     assert planner.asked == [] and writer.given == []
+
+
+def test_delivery_uses_only_cited_claims_but_counts_the_entire_audit() -> None:
+    audit_model = flow_module.Audit.model_validate(
+        audit([claim(1), claim(2)])["workflow_state"]["audit"]
+    )
+    blocks = [
+        {"text": "Only this claim.", "kind": "source_fact", "claim_ids": [claim(2)["claim_id"]]}
+    ]
+    reviews = [{"status": "accepted_by_reviewer", "report_sha256": "exact-document"}]
+    delivery = flow_module.delivery_record(
+        audit_model,
+        blocks,
+        reviews,
+        {"status": "unavailable", "path": "", "reason": "no_workspace"},
+        [],
+    )
+    assert delivery["report_path"] == ""
+    assert delivery["used"] == [claim(2)["evidence"][0]["source_url"]]
+    assert delivery["verified_count"] == 2
+    assert delivery["report_review"] == reviews[-1]
 
 
 def test_an_audit_off_schema_is_restated_once_then_stalls() -> None:

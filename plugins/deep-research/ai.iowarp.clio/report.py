@@ -31,6 +31,34 @@ def cited_outside(report: str, verified: list[dict[str, Any]]) -> list[str]:
     )
 
 
+def delivery_record(
+    audit: Any,
+    blocks: list[dict[str, Any]],
+    reviews: list[dict[str, Any]],
+    persistence: dict[str, Any],
+    unresolved: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Compact handoff derived from the exact rendered blocks and observed persistence."""
+    cited = {claim_id for block in blocks for claim_id in block.get("claim_ids", [])}
+    used = list(
+        dict.fromkeys(
+            edge.source_url
+            for claim in audit.verified
+            if claim.claim_id in cited
+            for edge in claim.evidence
+        )
+    )
+    return {
+        "report_path": persistence["path"] if persistence["status"] == "verified" else "",
+        "persistence": persistence,
+        "used": used,
+        "verified_count": len(audit.verified),
+        "rejected_count": len(audit.rejected),
+        "gaps_unresolved": unresolved,
+        "report_review": {key: reviews[-1][key] for key in ("status", "report_sha256")},
+    }
+
+
 class ReportSynthesis:
     """Give model-identified faults to their owner while preserving every attempt."""
 

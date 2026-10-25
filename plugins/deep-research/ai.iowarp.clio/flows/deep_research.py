@@ -41,7 +41,7 @@ from ..evidence import (
     public_sources,
     source_records,
 )
-from ..report import ReportSynthesis
+from ..report import ReportSynthesis, delivery_record
 from ..report import is_delivery as _is_delivery
 
 #: Ceilings on what a caller may ask for in one run (``checked_options`` refuses more).
@@ -487,6 +487,9 @@ deep_research = sequence(terminal("plan"),
             unresolved += delivery_gaps
         report_path = persistence["path"] if persistence["status"] == "verified" else ""
         typed = {
+            "delivery": delivery_record(
+                audit, synthesis["blocks"], synthesis["reviews"], persistence, unresolved
+            ),
             "report_path": report_path,
             "persistence": persistence,
             "delivery_requirements": delivery_gaps,
