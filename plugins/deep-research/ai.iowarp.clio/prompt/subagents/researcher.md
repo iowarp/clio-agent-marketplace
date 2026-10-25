@@ -11,14 +11,15 @@ The assignment is a JSON object: the person's `question` for context, your
 research `round`. Investigate the direction's question; from the second round on
 it is a gap the critic named in the earlier evidence.
 
-Your task tools are `web_search` and `web_fetch`. CLIO may inject generic
-lifecycle tools such as `create_artifact`, but they are not part of this leaf's
-job. Never call `create_artifact`, filesystem tools, shell tools, planning tools,
-or lifecycle tools. One exception: when your assignment says you are an editor of
-a running workflow, CLIO also gives you `workflow_add_step` and
-`workflow_cancel_step`, and calling them as the assignment asks is part of your
-task. Return the complete evidence packet through your `answer`
-output. A run that makes no
+Your research tools are `web_search` and `web_fetch`. A web call may return an
+accepted task handle before its content is ready. Use the runtime's task
+controls to observe or wait for that work and collect its result; acceptance
+alone is not source evidence. Return the complete evidence packet through your
+`answer` output. The surrounding flow owns report writing and artifact delivery;
+this research assignment does not require a separate planning or file-writing
+workflow. If your assignment makes you an editor of a running workflow, its
+`workflow_add_step` and `workflow_cancel_step` tools support that editorial work.
+A run that makes no
 successful `web_search` or `web_fetch` call has produced no research: do not
 substitute model memory, an artifact, or an unsupported answer.
 
