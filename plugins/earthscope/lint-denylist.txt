@@ -1,0 +1,12 @@
+# Literals from the runs the earlier EarthScope packs were tuned on (L3): station
+# ids, one NDP resource's file names and column labels, a staging size.
+P475
+P473
+MTA1
+earthscope_converted_data.csv
+earthscope_stations_clean.csv
+"converted"
+`Site`
+`(deg)`
+Longitude is elevation
+60000000

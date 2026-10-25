@@ -1,0 +1,10 @@
+# Literals from the experiments these skills were first written against (L3).
+# They must never appear in this plugin's skills or scripts. Read by
+# scripts/check_skill_literals.py. One literal per line; '#' starts a comment.
+Weston
+2026.04.09
+OPAL.0002
+28773
+29014
+5577
+Thalpsi

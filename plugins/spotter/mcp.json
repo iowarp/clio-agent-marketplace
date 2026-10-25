@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "spotter": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "${PLUGIN_ROOT}/impl",
+        "spotter-mcp",
+        "--clio-config",
+        "${CLIO_PROVENANCE_CONFIG}"
+      ]
+    }
+  }
+}

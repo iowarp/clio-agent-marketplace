@@ -1,0 +1,4 @@
+{
+  "name": "clio-testing",
+  "description": "Smoke-test agents and plugins for CLIO's own checks. Not installed by default; install this folder to run them."
+}

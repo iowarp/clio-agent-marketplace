@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "geodesy",
+  "version": "1.0.0",
+  "description": "GNSS geodesy methods for any network: position time series (frames, trajectory models with rate, offsets and seasonal terms, noise and rate uncertainty) with a bundled fit, station catalogs read without guessing columns, region resolution, and station-coverage comparison over any discovered catalog.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "geodesy",
+    "gnss",
+    "time-series",
+    "stations"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "geo"
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# Literals that must never appear in this plugin's skills or prompts.
+# The retired format-bridge pack leaked its benchmark into prompts: its
+# evidence labels and a conversion tool that never existed.
+safe_float
+format_convert_hdf5_to_parquet
+the benchmark conversion

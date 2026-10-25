@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "clio-data",
+  "version": "1.0.0",
+  "description": "The clio-data agent's plugin: its mission, assess-data-quality (what a variable states, checks, comparisons, visual checks) and convert-scientific-data (the HDF5/ADIOS2 to Parquet dtype map, skip-or-ask rules, and a bundled converter that reads back and verifies rows, nulls, NaNs, dtypes and per-column checksums).",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "hdf5",
+    "adios2",
+    "parquet",
+    "conversion",
+    "data-quality"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "data-onboarding",
+        "hdf5",
+        "adios",
+        "parquet"
+      ]
+    }
+  }
+}

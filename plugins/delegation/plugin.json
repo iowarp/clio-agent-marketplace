@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "delegation",
+  "version": "1.0.0",
+  "description": "Start general subagents (any installed agent, or one of this agent's defined subagents) with a task prompt.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "delegation",
+    "subagents",
+    "tasks"
+  ]
+}

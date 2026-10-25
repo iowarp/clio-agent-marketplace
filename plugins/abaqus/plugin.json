@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "abaqus",
+  "version": "0.6.0",
+  "description": "The Abaqus program: scripting, running and auditing Abaqus/Standard and Explicit packages, Tosca optimization runs, 3D views and report figures of meshes and results, the abaqus-topology views, and the abaqus_engineer subagent.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "abaqus",
+    "tosca",
+    "fea",
+    "simulation"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "shell"
+      ]
+    }
+  }
+}

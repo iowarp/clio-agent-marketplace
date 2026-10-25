@@ -43,31 +43,50 @@ class SkillLiteralPolicyTests(unittest.TestCase):
         """Remove the temporary marketplace root."""
         self._tmp.cleanup()
 
+    def _plugin(self, name: str) -> Path:
+        """Create ``plugins/<name>/plugin.json`` and return the plugin folder."""
+        plugin = self.root / "plugins" / name
+        _write(plugin / "plugin.json", "{}\n")
+        return plugin
+
     def test_denylist_hit_is_reported_without_opt_in(self) -> None:
-        """A denylisted literal fails the pack even with strict rules off."""
-        pack = self.root / "gnss"
-        _write(pack / "lint-denylist.txt", "# station ids\n\nP475\n")
-        _write(pack / "experts" / "main.md", "---\nid: main\n---\nUse station P475.\n")
-        _write(pack / "skills" / "profile" / "run.py", "STATION = 'P475'\n")
+        """A denylisted literal fails the plugin even with strict rules off."""
+        plugin = self._plugin("gnss")
+        _write(plugin / "lint-denylist.txt", "# station ids\n\nP475\n")
+        _write(
+            plugin / "ai.iowarp.clio" / "prompt" / "main.md",
+            "---\nid: gnss.main\nsection: domain\n---\nUse station P475.\n",
+        )
+        _write(plugin / "skills" / "profile" / "run.py", "STATION = 'P475'\n")
 
         findings = find_literals(self.root)
 
         self.assertEqual(_rules(findings), ["denylist", "denylist"])
-        self.assertEqual(findings[0].line, 4)
+        self.assertEqual(findings[0].line, 5)
         self.assertEqual(findings[0].excerpt, "P475")
         self.assertEqual(findings[1].path.name, "run.py")
 
+    def test_subagent_prompts_are_scanned(self) -> None:
+        """Plain prompt files (subagent prompts) are prompt text too."""
+        plugin = self._plugin("gnss")
+        _write(plugin / "lint-denylist.txt", "P475\n")
+        _write(plugin / "ai.iowarp.clio" / "prompt" / "subagents" / "data.md", "Stage P475.\n")
+
+        findings = find_literals(self.root)
+
+        self.assertEqual([(f.rule, f.line) for f in findings], [("denylist", 1)])
+
     def test_strict_rules_are_off_by_default(self) -> None:
-        """Existing packs without a marker are not held to the generic rules."""
-        _write(self.root / "legacy" / "skills" / "x" / "SKILL.md", _STRICT_LINES)
+        """Plugins without a marker are not held to the generic rules."""
+        _write(self._plugin("legacy") / "skills" / "x" / "SKILL.md", _STRICT_LINES)
 
         self.assertEqual(find_literals(self.root), [])
 
     def test_marker_file_enables_strict_rules(self) -> None:
-        """A ``.lint-l3`` marker opts a pack into every generic rule."""
-        pack = self.root / "strict"
-        _write(pack / ".lint-l3", "")
-        _write(pack / "skills" / "x" / "SKILL.md", _STRICT_LINES)
+        """A ``.lint-l3`` marker opts a plugin into every generic rule."""
+        plugin = self._plugin("strict")
+        _write(plugin / ".lint-l3", "")
+        _write(plugin / "skills" / "x" / "SKILL.md", _STRICT_LINES)
 
         findings = find_literals(self.root)
 
@@ -85,21 +104,21 @@ class SkillLiteralPolicyTests(unittest.TestCase):
         self.assertEqual(findings[-1].excerpt, "P475.CI.LY_.20.csv")
 
     def test_strict_pack_flag_enables_strict_rules(self) -> None:
-        """``--strict-pack`` opts in one named pack only."""
-        _write(self.root / "a" / "experts" / "main.md", "Seen on 2023-01-02.\n")
-        _write(self.root / "b" / "experts" / "main.md", "Seen on 2023-01-02.\n")
+        """``--strict-pack`` opts in one named plugin only."""
+        for name in ("a", "b"):
+            _write(self._plugin(name) / "skills" / "x" / "SKILL.md", "Seen on 2023-01-02.\n")
 
         findings = find_literals(self.root, ["a"])
 
         self.assertEqual(len(findings), 1)
-        self.assertEqual(findings[0].path.parts[-3], "a")
+        self.assertEqual(findings[0].path.parts[-4], "a")
 
     def test_generic_names_and_templates_pass_strict_rules(self) -> None:
         """Placeholders, digit-free names and ordinary prose are not leaks."""
-        pack = self.root / "strict"
-        _write(pack / ".lint-l3", "")
+        plugin = self._plugin("strict")
+        _write(plugin / ".lint-l3", "")
         _write(
-            pack / "skills" / "x" / "SKILL.md",
+            plugin / "skills" / "x" / "SKILL.md",
             "Open output.h5, <station>.csv, {id}_2024.parquet or *.nc.\n"
             "Stage it at `<workspace>/<station id>.*.csv`.\n"
             "Use a 1920x1080 image and hex 0x1F; 3 of 4 rows.\n",
@@ -109,11 +128,11 @@ class SkillLiteralPolicyTests(unittest.TestCase):
 
     def test_allow_comment_skips_line(self) -> None:
         """``lint: allow-literal`` exempts exactly the line that carries it."""
-        pack = self.root / "strict"
-        _write(pack / ".lint-l3", "")
-        _write(pack / "lint-denylist.txt", "P475\n")
+        plugin = self._plugin("strict")
+        _write(plugin / ".lint-l3", "")
+        _write(plugin / "lint-denylist.txt", "P475\n")
         _write(
-            pack / "experts" / "main.md",
+            plugin / "skills" / "x" / "SKILL.md",
             "Example P475 on 2024-01-01 <!-- lint: allow-literal -->\nNever P475.\n",
         )
 
@@ -121,34 +140,38 @@ class SkillLiteralPolicyTests(unittest.TestCase):
 
         self.assertEqual([(f.rule, f.line) for f in findings], [("denylist", 2)])
 
-    def test_skips_pack_tests_evals_fixtures_and_non_pack_dirs(self) -> None:
-        """Test data and repository tooling are outside the scanned surface."""
-        _write(self.root / "old" / "p" / "experts" / "main.md", "P475\n")
-        _write(self.root / "old" / "lint-denylist.txt", "P475\n")
-        pack = self.root / "pack"
-        _write(pack / "lint-denylist.txt", "P475\n")
-        _write(pack / "tests" / "test_x.py", "P475\n")
-        _write(pack / "evals" / "case.md", "P475\n")
-        _write(pack / "skills" / "x" / "fixtures" / "data.txt", "P475\n")
-        _write(pack / "skills" / "x" / "evals" / "case.md", "P475\n")
-        _write(pack / "README.md", "P475\n")
-        _write(pack / "experts" / "nested" / "deep.md", "P475\n")
+    def test_skips_tests_evals_fixtures_and_non_plugin_dirs(self) -> None:
+        """Test data, folders without plugin.json and repository tooling are not scanned."""
+        _write(self.root / "scripts" / "skills" / "x" / "SKILL.md", "P475\n")
+        _write(self.root / "plugins" / "loose" / "lint-denylist.txt", "P475\n")
+        _write(self.root / "plugins" / "loose" / "skills" / "x" / "SKILL.md", "P475\n")
+        plugin = self._plugin("pack")
+        _write(plugin / "lint-denylist.txt", "P475\n")
+        _write(plugin / "tests" / "test_x.py", "P475\n")
+        _write(plugin / "evals" / "case.md", "P475\n")
+        _write(plugin / "skills" / "x" / "fixtures" / "data.txt", "P475\n")
+        _write(plugin / "skills" / "x" / "evals" / "case.md", "P475\n")
+        _write(plugin / "README.md", "P475\n")
+        _write(plugin / "ai.iowarp.clio" / "a2ui" / "c" / "instructions.md", "P475\n")
 
         self.assertEqual(find_literals(self.root), [])
 
-    def test_agent_frontmatter_is_not_scanned(self) -> None:
-        """Only the AGENT.md body is prompt text; frontmatter is configuration."""
-        pack = self.root / "pack"
-        _write(pack / "lint-denylist.txt", "P475\n")
-        _write(pack / "AGENT.md", "---\nid: P475\n---\nBody mentions P475.\n")
+    def test_fragment_frontmatter_is_not_scanned(self) -> None:
+        """Only a fragment's body is prompt text; its frontmatter is configuration."""
+        plugin = self._plugin("pack")
+        _write(plugin / "lint-denylist.txt", "P475\n")
+        _write(
+            plugin / "ai.iowarp.clio" / "prompt" / "x.md",
+            "---\nid: pack.P475\nsection: domain\n---\nBody mentions P475.\n",
+        )
 
         findings = find_literals(self.root)
 
-        self.assertEqual([(f.rule, f.line) for f in findings], [("denylist", 4)])
+        self.assertEqual([(f.rule, f.line) for f in findings], [("denylist", 5)])
 
     def test_main_reports_and_exits_nonzero(self) -> None:
         """The CLI prints ``path:line: rule: excerpt`` and exits 1 on findings."""
-        _write(self.root / "p" / "experts" / "main.md", "ok\nsee 2020-05-06\n")
+        _write(self._plugin("p") / "skills" / "x" / "SKILL.md", "ok\nsee 2020-05-06\n")
         output = io.StringIO()
 
         with contextlib.redirect_stdout(output):
@@ -157,11 +180,11 @@ class SkillLiteralPolicyTests(unittest.TestCase):
 
         self.assertEqual(clean, 0)
         self.assertEqual(dirty, 1)
-        self.assertIn("p/experts/main.md:2: iso-date: 2020-05-06", output.getvalue())
+        self.assertIn("plugins/p/skills/x/SKILL.md:2: iso-date: 2020-05-06", output.getvalue())
 
     def test_main_rejects_unknown_strict_pack(self) -> None:
         """A typo in ``--strict-pack`` is a usage error, not a silent pass."""
-        (self.root / "p").mkdir()
+        self._plugin("p")
 
         with (
             contextlib.redirect_stderr(io.StringIO()),

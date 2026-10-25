@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "morphorm",
+  "version": "0.6.0",
+  "description": "The Morphorm topology-optimization program: Cubit mesh, input deck, XMLGenerator, batch run and restarts, with bundled checks of the Exodus mesh, the generated XML settings and the optimizer diagnostics.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "morphorm",
+    "topology-optimization",
+    "simulation"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "shell"
+      ]
+    }
+  }
+}

@@ -1,0 +1,3 @@
+# Marker: this plugin is held to the level contract (L2: the Morphorm program).
+# No run ids, block or set names from one study, iteration counts or measured
+# objective values. See lint-denylist.txt.
