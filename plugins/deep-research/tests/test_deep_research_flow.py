@@ -16,6 +16,7 @@ import re
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import dspy
@@ -68,6 +69,9 @@ class ScriptedCtx:
         self.script = script
         self.run_id = "flowrun_0123456789abcdef"
         self.workspace = FlowWorkspace(workspace)
+        self.resolution = SimpleNamespace(
+            subagents=[{"id": "researcher", "tools": ["web_search", "web_fetch"]}]
+        )
         self.journal = journal if journal is not None else {"steps": {}, "calls": {}}
         self.calls: list[dict[str, Any]] = []
         self.steps: list[str] = []
@@ -153,15 +157,17 @@ class ScriptedCtx:
 class Planner:
     """Stands in for the planner module: returns the directions it is given."""
 
-    def __init__(self, questions: list[str]) -> None:
+    def __init__(self, questions: list[str | dict[str, Any]]) -> None:
         self.questions = questions
         self.asked: list[dict[str, Any]] = []
 
-    def __call__(self, *, question: str, max_directions: int) -> Any:
-        self.asked.append({"question": question, "max_directions": max_directions})
+    def __call__(self, *, question: str, max_directions: int, capabilities: dict[str, Any]) -> Any:
+        self.asked.append(
+            {"question": question, "max_directions": max_directions, "capabilities": capabilities}
+        )
         return dspy.Prediction(
             directions=[
-                flow_module.Direction(question=q, why=f"why {q}", answer_looks_like="sources")
+                flow_module.Direction.model_validate(q if isinstance(q, dict) else gap(q))
                 for q in self.questions
             ]
         )
@@ -170,20 +176,32 @@ class Planner:
 class Writer:
     """Stands in for the writer module: cites every verified claim it was given."""
 
-    def __init__(self, extra: str = "") -> None:
+    def __init__(self, extra: str = "", repairable: bool = False) -> None:
         self.extra = extra
+        self.repairable = repairable
         self.given: list[dict[str, Any]] = []
 
-    def __call__(self, *, question: str, verified: list[Any], unresolved_gaps: list[Any]) -> Any:
+    def __call__(
+        self,
+        *,
+        question: str,
+        verified: list[Any],
+        unresolved_gaps: list[Any],
+        delivery: dict[str, Any],
+        citation_problems: list[str],
+    ) -> Any:
         self.given.append(
             {
                 "question": question,
                 "verified": [c.model_dump() for c in verified],
                 "unresolved_gaps": [g.model_dump() for g in unresolved_gaps],
+                "delivery": delivery,
+                "citation_problems": citation_problems,
             }
         )
         lines = [f"- {c.claim} ([source]({c.source_url}))" for c in verified]
-        return dspy.Prediction(report="# Report\n\n" + "\n".join(lines) + self.extra)
+        extra = "" if self.repairable and citation_problems else self.extra
+        return dspy.Prediction(report="# Report\n\n" + "\n".join(lines) + extra)
 
 
 def claim(n: int) -> dict[str, str]:
@@ -195,15 +213,43 @@ def claim(n: int) -> dict[str, str]:
     }
 
 
-def gap(text: str) -> dict[str, str]:
-    return {"question": text, "why": "it could change the answer", "answer_looks_like": "a filing"}
+def gap(text: str, **closure: Any) -> dict[str, Any]:
+    return flow_module.Gap.model_validate(
+        {
+            "question": text,
+            "why": "it could change the answer",
+            "answer_looks_like": "a filing",
+            "closure_kind": "web_research",
+            "required_tools": ["web_fetch"],
+            "action": "",
+            **closure,
+        }
+    ).model_dump()
 
 
-def audit(verified: list[Any] = (), rejected: list[Any] = (), gaps: list[Any] = ()) -> dict:
+def audit(
+    verified: list[Any] = (),
+    rejected: list[Any] = (),
+    gaps: list[Any] = (),
+    resolved: list[str] = (),
+) -> dict:
     return {
         "answer": "audit summary",
         "workflow_state": {
-            "audit": {"verified": list(verified), "rejected": list(rejected), "gaps": list(gaps)}
+            "audit": {
+                "verified": list(verified),
+                "rejected": list(rejected),
+                "gaps": list(gaps),
+                "resolved_gaps": [
+                    {
+                        "gap_id": gap(q)["gap_id"],
+                        "basis": "new_evidence",
+                        "reason": "The verified passage answers it",
+                        "source_urls": [claim(1)["source_url"]],
+                    }
+                    for q in resolved
+                ],
+            }
         },
     }
 
@@ -273,7 +319,13 @@ def test_plan_research_verify_report() -> None:
 
     result = run(flow, ctx)
 
-    assert planner.asked == [{"question": "What changed?", "max_directions": 6}]
+    assert planner.asked == [
+        {
+            "question": "What changed?",
+            "max_directions": 6,
+            "capabilities": flow_module._capabilities(ctx),
+        }
+    ]
     researchers = of(ctx, "researcher")
     assert [r["key"] for r in researchers] == ["research:d1", "research:d2"]
     assert [r["input"]["direction"]["question"] for r in researchers] == ["a", "b"]
@@ -295,7 +347,10 @@ def test_plan_research_verify_report() -> None:
 
 
 def test_a_named_gap_gets_exactly_one_targeted_round() -> None:
-    audits = [audit([claim(1)], gaps=[gap("who ruled?")]), audit([claim(1), claim(2)])]
+    audits = [
+        audit([claim(1)], gaps=[gap("who ruled?")]),
+        audit([claim(1), claim(2)], resolved=["who ruled?"]),
+    ]
     ctx = ScriptedCtx(Children(audits))
 
     result = run(make_flow(Planner(["a", "b"])), ctx)
@@ -315,8 +370,174 @@ def test_a_named_gap_gets_exactly_one_targeted_round() -> None:
     assert result["verified"] == [claim(1), claim(2)]
 
 
+def test_non_web_requirements_do_not_spawn_impossible_research_rounds(tmp_path: Path) -> None:
+    requirements = [
+        gap(
+            "Save and read back this report",
+            closure_kind="workflow_action",
+            required_tools=[],
+            action="persist_report",
+        ),
+        gap("Supply the site's free space", closure_kind="external_input", required_tools=[]),
+        gap(
+            "Measure the private dataset",
+            closure_kind="unavailable_action",
+            required_tools=["shell_run"],
+        ),
+        gap(
+            "Proposed benchmark gates await measurements",
+            closure_kind="design_limit",
+            required_tools=[],
+        ),
+        gap("Check an inaccessible file", required_tools=["fs_read"]),
+    ]
+    ctx = ScriptedCtx(Children([audit([claim(1)], gaps=requirements)]), workspace=tmp_path)
+    writer = Writer()
+
+    result = run(make_flow(Planner(["public evidence"]), writer), ctx)
+
+    assert len(of(ctx, "researcher")) == len(of(ctx, "critic")) == 1
+    assert result["gaps_unresolved"] == requirements[1:]
+    assert result["delivery_requirements"] == requirements[:1]
+    assert result["persistence"]["status"] == "verified"
+    assert writer.given[0]["unresolved_gaps"] == requirements[1:]
+    assert writer.given[0]["delivery"]["stage"] == "after_synthesis"
+    assert "Save and read back" not in result["answer"]
+    assert "Supply the site's free space" in result["answer"]
+    assert "requires: fs_read" in result["answer"]
+    assert any(e.get("missing_tools") == ["fs_read"] for e in ctx.events)
+
+
+def test_planner_requirements_are_routed_using_the_actual_declared_allowlist() -> None:
+    filesystem = gap("Inspect a local report", required_tools=["fs_read"])
+    delivery = gap(
+        "Persist the final document",
+        closure_kind="workflow_action",
+        required_tools=[],
+        action="persist_report",
+    )
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    result = run(make_flow(Planner([filesystem, delivery, "public documentation"])), ctx)
+    assert [c["input"]["direction"]["question"] for c in of(ctx, "researcher")] == [
+        "public documentation"
+    ]
+    assert of(ctx, "critic")[0]["input"]["assignments"][0]["question"] == "Inspect a local report"
+    assert result["gaps_unresolved"] == [filesystem, delivery]
+    assert result["persistence"]["status"] == "unavailable"
+
+    # A missing declaration is unknown access, not permission to assume web tools.
+    ctx = ScriptedCtx(Children([]))
+    ctx.resolution.subagents = []
+    result = run(make_flow(Planner(["public documentation"])), ctx)
+    assert not ctx.calls
+    assert result["rounds"] == 0
+    assert result["gaps_unresolved"] == [gap("public documentation")]
+
+
+def test_a_later_critic_sees_deferred_requirements_but_only_web_gaps_are_delegated(
+    tmp_path: Path,
+) -> None:
+    delivery = gap(
+        "Verify report persistence",
+        closure_kind="workflow_action",
+        required_tools=[],
+        action="persist_report",
+    )
+    ctx = ScriptedCtx(
+        Children(
+            [
+                audit([claim(1)], gaps=[delivery, gap("contradiction")]),
+                audit([claim(1), claim(2)], gaps=[delivery], resolved=["contradiction"]),
+            ]
+        ),
+        workspace=tmp_path,
+    )
+    result = run(make_flow(Planner(["a"])), ctx)
+    assert [r["input"]["direction"]["question"] for r in of(ctx, "researcher")] == [
+        "a",
+        "contradiction",
+    ]
+    assert of(ctx, "critic")[1]["input"]["earlier_audit"]["gaps"] == [
+        delivery,
+        gap("contradiction"),
+    ]
+    assert result["gaps_unresolved"] == []
+    assert sum(s.endswith("persist_report") for s in ctx.steps) == 1
+
+
+def test_delivery_failure_never_returns_a_verified_report_path(tmp_path: Path) -> None:
+    class BrokenReadback(FlowWorkspace):
+        def read(self, relative: str) -> str:
+            return "different report"
+
+    delivery = gap(
+        "Persist report", closure_kind="workflow_action", required_tools=[], action="persist_report"
+    )
+    ctx = ScriptedCtx(Children([audit([claim(1)], gaps=[delivery])]))
+    ctx.workspace = BrokenReadback(tmp_path)
+    result = run(make_flow(Planner(["a"])), ctx)
+    assert result["report_path"] == ""
+    assert result["persistence"]["reason"] == "readback_mismatch"
+    assert result["gaps_unresolved"] == [delivery]
+    assert result["persistence"]["text_sha256"] != result["persistence"]["readback_text_sha256"]
+
+    class DeniedWrite(FlowWorkspace):
+        def write(self, relative: str, text: str) -> str:
+            raise PermissionError("test write denied")
+
+    ctx = ScriptedCtx(Children([audit()]))
+    ctx.workspace = DeniedWrite(tmp_path)
+    result = run(make_flow(Planner(["a"])), ctx)
+    assert result["report_path"] == ""
+    assert result["persistence"]["status"] == "failed"
+    assert result["persistence"]["reason"] == "PermissionError"
+
+
+def test_verified_delivery_replays_its_receipt_without_rewriting(tmp_path: Path) -> None:
+    class CountedWorkspace(FlowWorkspace):
+        writes = 0
+        reads = 0
+
+        def write(self, relative: str, text: str) -> str:
+            self.writes += 1
+            return super().write(relative, text)
+
+        def read(self, relative: str) -> str:
+            self.reads += 1
+            return super().read(relative)
+
+    workspace = CountedWorkspace(tmp_path)
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    ctx.workspace = workspace
+    result = run(make_flow(Planner(["a"])), ctx)
+    replay = ScriptedCtx(Children([]), journal=ctx.journal)
+    replay.workspace = workspace
+    assert run(make_flow(Planner(["a"])), replay) == result
+    assert workspace.writes == workspace.reads == 1
+    assert Path(result["report_path"]).read_text(encoding="utf-8") == result["answer"]
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"closure_kind": "guess"},
+        {"required_tools": []},
+        {"closure_kind": "workflow_action", "action": ""},
+        {"action": "persist_report"},
+    ],
+)
+def test_malformed_closure_requirements_are_not_silently_web_work(changes: dict[str, Any]) -> None:
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        gap("open", **changes)
+
+
 def test_a_gap_left_open_at_the_bound_is_reported_unresolved() -> None:
-    audits = [audit([claim(1)], gaps=[gap("who ruled?")]), audit([claim(1)], gaps=[gap("when?")])]
+    audits = [
+        audit([claim(1)], gaps=[gap("who ruled?")]),
+        audit([claim(1)], gaps=[gap("when?")], resolved=["who ruled?"]),
+    ]
     writer = Writer()
     ctx = ScriptedCtx(Children(audits))
 
@@ -328,9 +549,97 @@ def test_a_gap_left_open_at_the_bound_is_reported_unresolved() -> None:
     assert "## Unresolved questions\n\n- when? (it could change the answer)" in result["answer"]
 
 
+def test_omission_cannot_erase_an_unanswered_requirement_or_a_capped_web_gap() -> None:
+    external = gap("Operator input", closure_kind="external_input", required_tools=[])
+    pending = [external, gap("selected follow-up"), gap("capped follow-up")]
+    ctx = ScriptedCtx(Children([audit([claim(1)], gaps=pending), audit([claim(1)])]))
+    result = run(make_flow(Planner(["a"]), max_directions=1, max_rounds=1), ctx)
+    assert result["gaps_unresolved"] == pending
+    assert [r["input"]["direction"]["question"] for r in of(ctx, "researcher")] == [
+        "a",
+        "selected follow-up",
+    ]
+    assert of(ctx, "critic")[1]["input"]["open_requirements"] == pending
+
+
+def test_gap_closure_requires_prior_identity_and_verified_evidence_or_scope_reason() -> None:
+    pending = gap("Need user quota", closure_kind="external_input", required_tools=[])
+    section = audit()["workflow_state"]
+    section["audit"]["resolved_gaps"] = [
+        {
+            "gap_id": pending["gap_id"],
+            "basis": "new_evidence",
+            "reason": "It was checked",
+            "source_urls": ["https://unsupported.example/claim"],
+        }
+    ]
+    result = SimpleNamespace(workflow_state=section)
+    typed_pending = [flow_module.Gap.model_validate(pending)]
+    assert flow_module._audit_of(result, typed_pending)[0] is None
+    section["audit"]["resolved_gaps"] = [
+        {
+            "gap_id": pending["gap_id"],
+            "basis": "scope_correction",
+            "reason": "The person asked for an admission formula, not measured free capacity",
+            "source_urls": [],
+        }
+    ]
+    parsed, problems = flow_module._audit_of(result, typed_pending)
+    assert not problems and parsed.gaps == []
+    assert flow_module._audit_of(result, [])[0] is None
+
+
+def test_unrepaired_outside_citations_stall_before_persistence(tmp_path: Path) -> None:
+    writer = Writer(extra="\n[a blog](https://unsupported.example/claim)")
+    ctx = ScriptedCtx(Children([audit([claim(1)])]), workspace=tmp_path)
+    with pytest.raises(FlowStall) as stalled:
+        run(make_flow(Planner(["a"]), writer), ctx)
+    assert stalled.value.stall == "report_citations_invalid"
+    assert stalled.value.details["observed"]["urls"] == ["https://unsupported.example/claim"]
+    assert "https://unsupported.example/claim" in stalled.value.details["observed"]["draft"]
+    assert len(writer.given) == 2
+    assert not any(s.endswith("persist_report") for s in ctx.steps)
+    assert not list(tmp_path.rglob("*.md"))
+
+
+def test_an_empty_report_cannot_receive_a_verified_delivery_receipt(tmp_path: Path) -> None:
+    flow = make_flow(Planner(["a"]))
+    flow.writer = lambda **kwargs: dspy.Prediction(report=" \n ")
+    ctx = ScriptedCtx(Children([audit([claim(1)])]), workspace=tmp_path)
+    with pytest.raises(FlowStall) as stalled:
+        run(flow, ctx)
+    assert stalled.value.stall == "report_empty"
+    assert not list(tmp_path.rglob("*.md"))
+
+
+def test_prior_claims_cannot_disappear_without_an_explicit_audit_update() -> None:
+    rejected = {"claim": "unsupported", "reason": "no primary source", "source_url": ""}
+    earlier = flow_module.Audit.model_validate(
+        audit([claim(1)], [rejected])["workflow_state"]["audit"]
+    )
+    result = SimpleNamespace(workflow_state=audit()["workflow_state"])
+    parsed, problems = flow_module._audit_of(result, [], earlier)
+    assert not problems
+    assert [c.model_dump() for c in parsed.verified] == [claim(1)]
+    assert [c.model_dump() for c in parsed.rejected] == [rejected]
+
+    withdrawal = {
+        "claim": claim(1)["claim"],
+        "source_url": claim(1)["source_url"],
+        "reason": "The source now retracts it",
+    }
+    result.workflow_state = audit(rejected=[withdrawal])["workflow_state"]
+    parsed, problems = flow_module._audit_of(result, [], earlier)
+    assert not problems and not parsed.verified
+    assert [c.model_dump() for c in parsed.rejected] == [withdrawal, rejected]
+
+
 @pytest.mark.parametrize("max_rounds", [0, 1, 2, 3])
 def test_max_rounds_bounds_the_gap_rounds(max_rounds: int) -> None:
-    audits = [audit([claim(1)], gaps=[gap(f"open {n}")]) for n in range(10)]
+    audits = [
+        audit([claim(1)], gaps=[gap(f"open {n}")], resolved=[f"open {n - 1}"] if n else [])
+        for n in range(10)
+    ]
     ctx = ScriptedCtx(Children(audits))
 
     result = run(make_flow(Planner(["a"]), max_rounds=max_rounds), ctx)
@@ -346,7 +655,7 @@ def test_max_directions_caps_the_plan_and_each_gap_round() -> None:
     audits = [audit(gaps=[gap(f"g{n}") for n in range(1, 5)]), audit()]
     ctx = ScriptedCtx(Children(audits))
 
-    result = run(make_flow(planner, max_directions=3), ctx)
+    result = run(make_flow(planner, max_directions=3, max_rounds=1), ctx)
 
     assert planner.asked[0]["max_directions"] == 3
     assert [r["key"] for r in of(ctx, "researcher")] == [
@@ -367,7 +676,7 @@ def test_max_directions_caps_the_plan_and_each_gap_round() -> None:
 
 def test_the_report_is_written_only_from_verified_claims() -> None:
     rejected = {"claim": "the moon is cheese", "reason": "no source supports it", "source_url": ""}
-    writer = Writer(extra="\n\nSee also [a blog](https://blog.example.net/post).")
+    writer = Writer(extra="\n\nSee also [a blog](https://blog.example.net/post).", repairable=True)
     ctx = ScriptedCtx(Children([audit([claim(1)], rejected=[rejected])]))
 
     result = run(make_flow(Planner(["a"]), writer), ctx)
@@ -379,13 +688,15 @@ def test_the_report_is_written_only_from_verified_claims() -> None:
     assert "the moon is cheese" not in report
     assert "- the moon is cheese: no source supports it" in record
     assert result["rejected"] == [rejected]
-    # A citation outside the verified sources is surfaced, not removed.
-    assert result["citations_outside_verified"] == ["https://blog.example.net/post"]
+    # The model corrects its draft once; an unverified citation is not delivered.
+    assert result["citations_outside_verified"] == []
+    assert result["rejected_draft_citations"] == ["https://blog.example.net/post"]
+    assert len(writer.given) == 2
     assert {
         "event": "report_cites_unverified_source",
         "urls": ["https://blog.example.net/post"],
     } in (ctx.events)
-    assert "## Citations outside the verified sources" in result["answer"]
+    assert "https://blog.example.net/post" not in result["answer"]
 
 
 def test_the_report_is_written_to_the_workspace_and_typed_for_the_caller(tmp_path: Path) -> None:
@@ -396,10 +707,12 @@ def test_the_report_is_written_to_the_workspace_and_typed_for_the_caller(tmp_pat
     path = Path(result["report_path"])
     assert path == tmp_path / "deep-research" / "why-did-the-rule-change-89abcdef.md"
     assert path.read_text(encoding="utf-8") == result["answer"]
-    assert ctx.steps[-1] == "FlowWorkspace.write"
+    assert ctx.steps[-1] == "DeepResearch.forward.<locals>.persist_report"
     typed = result["workflow_state"]["deep_research"]
     assert typed["report_path"] == str(path) and typed["verified"] == [claim(1)]
     assert typed["gaps_unresolved"] == [gap("open")] and typed["rounds"] == 1
+    assert typed["persistence"]["status"] == "verified"
+    assert typed["persistence"]["text_sha256"] == typed["persistence"]["readback_text_sha256"]
 
     ctx = ScriptedCtx(Children([audit([claim(1)])]))
     assert run(make_flow(Planner(["a"])), ctx)["report_path"] == ""
@@ -408,7 +721,9 @@ def test_the_report_is_written_to_the_workspace_and_typed_for_the_caller(tmp_pat
 
 def test_replay_reattaches_to_the_same_calls_and_steps() -> None:
     def fresh() -> Children:
-        return Children([audit([claim(1)], gaps=[gap("open")]), audit([claim(1), claim(2)])])
+        return Children(
+            [audit([claim(1)], gaps=[gap("open")]), audit([claim(1), claim(2)], resolved=["open"])]
+        )
 
     first = ScriptedCtx(fresh())
     result = run(make_flow(Planner(["a", "b"])), first)

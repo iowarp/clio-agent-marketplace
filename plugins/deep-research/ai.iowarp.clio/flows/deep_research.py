@@ -7,20 +7,22 @@ The flow encodes the method's shape; every decision in it is a model's:
 * each ``researcher`` subagent decides how to search and what its evidence shows;
 * the ``critic`` subagent decides which claims are verified, which are rejected and
   which gaps remain, and returns them typed in ``workflow_state.audit``;
-* the writer (a recorded model step) writes the report from verified claims only.
+* the writer (a recorded model step) separates verified external facts from
+  supplied context, labelled assumptions and design proposals.
 
 The flow branches only on those typed, schema-validated fields. Its options are
 growth bounds (how many directions, gap rounds and concurrent researchers), not
 decisions. A bound that cuts what a model asked for is recorded as a run event.
 """
 
+import hashlib
 import json
 import re
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Literal
 
 import dspy
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from clio_agent.flows.outcomes import CallCancelled, FlowOutcome, FlowStall, GatherFailed
 from clio_agent.sdk import Flow
@@ -37,7 +39,7 @@ _CITED_URL = re.compile(r"https?://[^\s)\]>\"'`]+")
 
 
 class Direction(BaseModel):
-    """One research direction: a question a web researcher can answer from sources."""
+    """A model-selected question and the kind of work that could close it."""
 
     question: str = Field(min_length=1, description="One precise, self-contained question")
     why: str = Field(default="", description="Why its answer matters to the person's question")
@@ -45,6 +47,22 @@ class Direction(BaseModel):
         default="",
         description="What would answer it: source families, data, period or jurisdiction",
     )
+    closure_kind: Literal[
+        "web_research", "workflow_action", "external_input", "unavailable_action", "design_limit"
+    ]
+    required_tools: list[str] = Field(default_factory=list)
+    action: str = Field(default="", description="Registered workflow action, otherwise empty")
+
+    @model_validator(mode="after")
+    def check_closure(self) -> "Direction":
+        """Require an explicit tool requirement or action for executable work."""
+        if self.closure_kind == "web_research" and not self.required_tools:
+            raise ValueError("web_research requires the tools needed to answer it")
+        if self.closure_kind == "workflow_action" and not self.action:
+            raise ValueError("workflow_action requires a registered action name")
+        if self.closure_kind != "workflow_action" and self.action:
+            raise ValueError("only workflow_action may name an action")
+        return self
 
 
 class VerifiedClaim(BaseModel):
@@ -65,7 +83,28 @@ class RejectedClaim(BaseModel):
 
 
 class Gap(Direction):
-    """A material question the evidence leaves open (the shape of a direction)."""
+    """A material open question, retaining the work and tools needed to close it."""
+
+    gap_id: str = Field(default="", description="Preserve a supplied ID; leave empty for a new gap")
+
+    @model_validator(mode="after")
+    def identify_gap(self) -> "Gap":
+        """Keep closure identity stable across audit rounds and changed explanations."""
+        key = [self.question, self.closure_kind, sorted(self.required_tools), self.action]
+        expected = "gap_" + hashlib.sha256(json.dumps(key).encode()).hexdigest()[:16]
+        if self.gap_id and self.gap_id != expected:
+            raise ValueError("gap_id does not identify this question and closure requirement")
+        self.gap_id = expected
+        return self
+
+
+class GapResolution(BaseModel):
+    """An explicit, inspectable reason an earlier gap no longer needs work."""
+
+    gap_id: str
+    basis: Literal["new_evidence", "scope_correction"]
+    reason: str = Field(min_length=1)
+    source_urls: list[str] = Field(default_factory=list)
 
 
 class Audit(BaseModel):
@@ -74,36 +113,50 @@ class Audit(BaseModel):
     verified: list[VerifiedClaim] = Field(default_factory=list)
     rejected: list[RejectedClaim] = Field(default_factory=list)
     gaps: list[Gap] = Field(default_factory=list)
+    resolved_gaps: list[GapResolution] = Field(default_factory=list)
 
 
 class PlanResearch(dspy.Signature):
     """Plan the research a question needs as independent directions.
 
-    Each direction is one precise question a web researcher can answer from fetched
-    sources, with why it matters and what would answer it (source families, data,
+    Each direction is one precise question, with the work needed to answer it,
+    why it matters and what would answer it (source families, data,
     period, jurisdiction). Cover the material subquestions, competing explanations,
     stakeholder views, time-sensitive facts and the primary sources the question
-    turns on. Directions must not overlap. Plan as many as the question needs, never
+    turns on. Use the capability inventory, not imagined access. Label work that
+    cannot be answered from web sources with its actual closure_kind; it will not
+    be sent to a web researcher. Report persistence belongs to the registered
+    persist_report action after synthesis, never a research question. Distinguish
+    a requested design or proposed benchmark from an instruction to execute it:
+    unprovided measurements and approvals may be conditional design inputs, not
+    new requirements. Directions must not overlap. Plan as many as the question needs, never
     more than max_directions, most important first; a narrow question may need one.
     """
 
     question: str = dspy.InputField()
     max_directions: int = dspy.InputField(desc="The most directions you may plan")
+    capabilities: dict[str, Any] = dspy.InputField(
+        desc="Declared researcher tools and flow actions"
+    )
     directions: list[Direction] = dspy.OutputField()
 
 
 class WriteReport(dspy.Signature):
-    """Write the research report in Markdown from the verified claims only.
+    """Write the research report with explicit evidence and assumption boundaries.
 
     Lead with the answer or assessment, then the evidence and reasoning in the
     clearest structure for the question: a title, the question and its scope, a
     short executive answer, findings, then a conclusion and `References`.
 
-    Every factual sentence rests on verified claims and cites each claim's
+    Every externally sourced factual sentence rests on verified claims and cites each claim's
     source_url as a Markdown link right after the claim it supports; a paragraph
     with several sourced claims needs enough citations to make the mapping
-    unambiguous. Use no fact, figure, date or source that is not in the verified
-    claims, not even one you know. Keep units, populations, periods and the dates
+    unambiguous. Use no external fact, figure, date or source that is not in the verified
+    claims, not even one you know. The person's supplied context is usable when
+    identified as supplied, not independently verified. Label calculations from
+    those inputs, assumptions, design proposals and proposed acceptance criteria.
+    A benchmark design is not a benchmark execution or a measured ranking.
+    Keep units, populations, periods and the dates
     sources give attached to figures. Label your own synthesis, inferences and
     scenarios as such, separate from sourced facts, and say where verified claims
     disagree.
@@ -113,11 +166,20 @@ class WriteReport(dspy.Signature):
     do not list them again. `References` lists every source you cited, each as
     `[title](url)`, and nothing you did not cite. Never cite a search page or a URL
     that is not a verified claim's source_url.
+
+    Delivery is handled by the flow after synthesis using the supplied delivery
+    contract. Do not claim this document has or has not been saved, inspected or
+    read back: those actions have not happened yet. Their actual outcome is
+    returned separately as the flow's persistence receipt.
     """
 
     question: str = dspy.InputField()
     verified: list[VerifiedClaim] = dspy.InputField(desc="The claims the critic verified")
     unresolved_gaps: list[Gap] = dspy.InputField(desc="Material questions still open")
+    delivery: dict[str, Any] = dspy.InputField(desc="Parent-owned post-synthesis delivery contract")
+    citation_problems: list[str] = dspy.InputField(
+        desc="An earlier draft cited these unverified URLs; write a corrected report using verified sources"
+    )
     report: str = dspy.OutputField(desc="The complete Markdown report")
 
 
@@ -135,9 +197,9 @@ class DeepResearch(Flow):
     id = "deep-research"
     description = (
         "Deep web research with independent verification: plans research directions, "
-        "researches them in parallel, has an independent critic verify every claim "
+        "researches them in parallel, has an independent critic verify sourced claims "
         "against fetched sources and name the gaps, researches those gaps, then writes "
-        "a Markdown report cited only from verified claims, with unresolved questions "
+        "a Markdown report separating verified facts, supplied context and proposals, with open questions "
         "and rejected claims listed. Options: max_directions (default 6, at most 12), "
         "max_rounds (gap-closing rounds, default 2, at most 5), concurrency (researchers "
         "at once; 0 runs a round together), researcher_model and critic_model. The "
@@ -187,24 +249,36 @@ deep_research = sequence(terminal("plan"),
         return checked
 
     # ------------------------------------------------------------ model steps
-    def _plan(self, question: str, max_directions: int) -> dict[str, Any]:
-        prediction = self.planner(question=question, max_directions=max_directions)
+    def _plan(
+        self, question: str, max_directions: int, capabilities: dict[str, Any]
+    ) -> dict[str, Any]:
+        prediction = self.planner(
+            question=question, max_directions=max_directions, capabilities=capabilities
+        )
         return {"directions": [_as_model(Direction, d).model_dump() for d in prediction.directions]}
 
     def _write(
-        self, question: str, verified: list[dict[str, Any]], gaps: list[dict[str, Any]]
+        self,
+        question: str,
+        verified: list[dict[str, Any]],
+        gaps: list[dict[str, Any]],
+        delivery: dict[str, Any],
+        citation_problems: list[str] | None = None,
     ) -> dict[str, Any]:
         prediction = self.writer(
             question=question,
             verified=[VerifiedClaim.model_validate(row) for row in verified],
             unresolved_gaps=[Gap.model_validate(row) for row in gaps],
+            delivery=delivery,
+            citation_problems=citation_problems or [],
         )
         return {"report": str(prediction.report)}
 
     # ------------------------------------------------------------------ run
     async def forward(self, task: Any, ctx: Any) -> Any:
         question = task if isinstance(task, str) else json.dumps(task, sort_keys=True)
-        plan = await ctx.step(self._plan, question, self.max_directions)
+        capabilities = _capabilities(ctx)
+        plan = await ctx.step(self._plan, question, self.max_directions, capabilities)
         planned = list(plan.get("directions") or [])
         if not planned:
             raise FlowStall(
@@ -216,14 +290,23 @@ deep_research = sequence(terminal("plan"),
         kept = await _bounded(ctx, planned, self.max_directions, "directions_capped", 0)
         directions = [{"id": f"d{n}", **row} for n, row in enumerate(kept, 1)]
 
-        packets = await self._research(ctx, question, directions, 1)
+        targets = _researchable(directions, capabilities)
+        deferred = [row for row in directions if row not in targets]
+        packets = await self._research(ctx, question, targets, 1) if targets else []
         researched = list(packets)
-        audit, critic = await self._verify(ctx, question, directions, packets, None, 1)
-        critics = [critic]
-        rounds = 1
-        while audit.gaps and rounds - 1 < self.max_rounds:
+        if targets:
+            audit, critic = await self._verify(ctx, question, directions, packets, None, 1)
+            critics = [critic]
+        else:
+            audit = Audit(gaps=[Gap.model_validate(row) for row in deferred])
+            critics = []
+        rounds = 1 if targets else 0
+        resolutions = [{"round": rounds, **row.model_dump()} for row in audit.resolved_gaps]
+        while rounds and rounds - 1 < self.max_rounds:
+            gaps = _researchable([gap.model_dump() for gap in audit.gaps], capabilities)
+            if not gaps:
+                break
             rounds += 1
-            gaps = [gap.model_dump() for gap in audit.gaps]
             chosen = await _bounded(ctx, gaps, self.max_directions, "gaps_capped", rounds)
             targets = [{"id": f"g{rounds}.{n}", **row} for n, row in enumerate(chosen, 1)]
             packets = await self._research(ctx, question, targets, rounds)
@@ -231,30 +314,71 @@ deep_research = sequence(terminal("plan"),
             earlier = (audit, critic)
             audit, critic = await self._verify(ctx, question, targets, packets, earlier, rounds)
             critics.append(critic)
+            resolutions += [{"round": rounds, **row.model_dump()} for row in audit.resolved_gaps]
 
         verified = [claim.model_dump() for claim in audit.verified]
         rejected = [claim.model_dump() for claim in audit.rejected]
-        unresolved = [gap.model_dump() for gap in audit.gaps]
-        written = await ctx.step(self._write, question, verified, unresolved)
-        report = str(written.get("report") or "")
+        delivery_gaps = [gap.model_dump() for gap in audit.gaps if _is_delivery(gap)]
+        unresolved = [gap.model_dump() for gap in audit.gaps if not _is_delivery(gap)]
+        for gap in unresolved:
+            if gap["closure_kind"] == "web_research":
+                missing = sorted(set(gap["required_tools"]) - set(capabilities["researcher_tools"]))
+                if missing:
+                    await ctx.record_event(
+                        {
+                            "event": "gap_capability_unavailable",
+                            "gap": gap,
+                            "missing_tools": missing,
+                        }
+                    )
+        delivery = capabilities["workflow_actions"]["persist_report"]
+        written = await ctx.step(self._write, question, verified, unresolved, delivery)
+        report = _report_text(written)
         outside = _cited_outside(report, verified)
+        draft_citations = outside
         if outside:
             await ctx.record_event({"event": "report_cites_unverified_source", "urls": outside})
-        document = report + _record(unresolved, rejected, outside)
-        report_path = ""
+            corrected = await ctx.step(
+                self._write, question, verified, unresolved, delivery, outside
+            )
+            report = _report_text(corrected)
+            outside = _cited_outside(report, verified)
+            if outside:
+                raise FlowStall(
+                    "report_citations_invalid",
+                    "the report still cites unverified sources after correction",
+                    step="report",
+                    observed={"urls": outside, "draft": report},
+                )
+        document = report + _record(unresolved, rejected)
         if ctx.workspace.root is not None:
             name = _report_name(question, ctx.run_id)
-            report_path = await ctx.step(ctx.workspace.write, name, document)
+            workspace = ctx.workspace
+
+            def persist_report(name: str, text: str) -> dict[str, Any]:
+                return _persist_report(workspace, name, text)
+
+            persistence = await ctx.step(persist_report, name, document)
         else:
+            persistence = {"status": "unavailable", "reason": "no_workspace", "path": ""}
             await ctx.record_event({"event": "report_not_written", "reason": "no_workspace"})
+        await ctx.record_event({"event": "report_persistence", **persistence})
+        if persistence["status"] != "verified":
+            unresolved += delivery_gaps
+        report_path = persistence["path"] if persistence["status"] == "verified" else ""
         typed = {
             "report_path": report_path,
+            "persistence": persistence,
+            "delivery_requirements": delivery_gaps,
+            "capabilities": capabilities,
             "directions": directions,
             "verified": verified,
             "rejected": rejected,
             "gaps_unresolved": unresolved,
+            "gap_resolutions": resolutions,
             "rounds": rounds,
             "citations_outside_verified": outside,
+            "rejected_draft_citations": draft_citations,
             # Who did each part, on which model: the run's audit trail.
             "researchers": [
                 {k: row[k] for k in ("id", "handle", "model", "failed") if k in row}
@@ -315,16 +439,24 @@ deep_research = sequence(terminal("plan"),
             "assignments": targets,
             "packets": [_packet(p) for p in packets],
             "max_gaps": self.max_directions,
+            "capabilities": _capabilities(ctx),
         }
         evidence = [p["handle"] for p in packets if p.get("handle")]
+        pending = [
+            Gap.model_validate(row)
+            for row in targets
+            if row not in _researchable(targets, _capabilities(ctx))
+        ]
         if earlier is not None:
-            audit, critic = earlier
+            earlier_audit, critic = earlier
+            pending = earlier_audit.gaps
             request["earlier_audit"] = {
-                "verified": [claim.model_dump() for claim in audit.verified],
-                "rejected": [claim.model_dump() for claim in audit.rejected],
-                "gaps": [gap.model_dump() for gap in audit.gaps],
+                "verified": [claim.model_dump() for claim in earlier_audit.verified],
+                "rejected": [claim.model_dump() for claim in earlier_audit.rejected],
+                "gaps": [gap.model_dump() for gap in earlier_audit.gaps],
             }
             evidence.append(critic["handle"])
+        request["open_requirements"] = [gap.model_dump() for gap in pending]
         result = await ctx.call(
             "critic",
             request,
@@ -332,7 +464,8 @@ deep_research = sequence(terminal("plan"),
             key=f"verify:{round_no}",
             model=self.critic_model,
         )
-        audit, problems = _audit_of(result)
+        prior_audit = earlier[0] if earlier is not None else None
+        audit, problems = _audit_of(result, pending, prior_audit)
         if audit is None:
             # Format-only correction: the critic restates its own audit in the schema.
             result = await ctx.call(
@@ -342,12 +475,14 @@ deep_research = sequence(terminal("plan"),
                     "round": round_no,
                     "repair": problems,
                     "audit_as_returned": result.workflow_state.get("audit"),
+                    "capabilities": _capabilities(ctx),
+                    "open_requirements": [gap.model_dump() for gap in pending],
                 },
                 evidence=[result.handle],
                 key=f"verify:{round_no}:repair",
                 model=self.critic_model,
             )
-            audit, problems = _audit_of(result)
+            audit, problems = _audit_of(result, pending, prior_audit)
         if audit is None:
             raise FlowStall(
                 "critic_audit_invalid",
@@ -366,6 +501,60 @@ _BOUNDS = {
     "max_rounds": (0, MAX_ROUNDS_CEILING),
     "concurrency": (0, MAX_DIRECTIONS_CEILING),
 }
+
+
+def _capabilities(ctx: Any) -> dict[str, Any]:
+    """Read the installed researcher's allowlist; never invent missing tool access."""
+    rows = getattr(getattr(ctx, "resolution", None), "subagents", ())
+    researcher: dict[str, Any] = next((row for row in rows if row.get("id") == "researcher"), {})
+    tools = researcher.get("tools")
+    return {
+        "researcher_tools": sorted(tools) if isinstance(tools, list) else [],
+        "workflow_actions": {
+            "persist_report": {
+                "stage": "after_synthesis",
+                "available": ctx.workspace.root is not None,
+                "verification": "write then read back the complete report text",
+            }
+        },
+    }
+
+
+def _researchable(rows: list[dict[str, Any]], capabilities: dict[str, Any]) -> list[dict[str, Any]]:
+    """Dispatch only model-classified web work supported by the declared tools."""
+    available = set(capabilities["researcher_tools"])
+    return [
+        row
+        for row in rows
+        if row["closure_kind"] == "web_research"
+        and row["required_tools"]
+        and set(row["required_tools"]) <= available
+    ]
+
+
+def _is_delivery(gap: Gap) -> bool:
+    return gap.closure_kind == "workflow_action" and gap.action == "persist_report"
+
+
+def _persist_report(workspace: Any, name: str, text: str) -> dict[str, Any]:
+    """One journalled parent action: write and verify logical UTF-8 report text."""
+    path = ""
+    try:
+        path = workspace.write(name, text)
+        observed = workspace.read(name)
+    except (OSError, UnicodeError, ValueError) as exc:
+        return {"status": "failed", "path": path, "reason": type(exc).__name__, "detail": str(exc)}
+    expected_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    observed_hash = hashlib.sha256(observed.encode("utf-8")).hexdigest()
+    return {
+        "status": "verified" if observed == text else "failed",
+        "path": path,
+        "reason": "" if observed == text else "readback_mismatch",
+        "verification": "workspace_text_readback",
+        "text_sha256": expected_hash,
+        "readback_text_sha256": observed_hash,
+        "characters": len(text),
+    }
 
 
 def _packet(row: dict[str, Any]) -> dict[str, Any]:
@@ -396,19 +585,73 @@ async def _bounded(
     return rows[:bound]
 
 
-def _audit_of(result: Any) -> tuple[Audit | None, list[str]]:
+def _audit_of(
+    result: Any, pending: list[Gap], earlier: Audit | None = None
+) -> tuple[Audit | None, list[str]]:
     """The critic's typed audit, or why its ``workflow_state.audit`` is not one."""
 
     section = result.workflow_state.get("audit")
     if not isinstance(section, Mapping):
         return None, ["workflow_state.audit is missing or not an object"]
     try:
-        return Audit.model_validate(section), []
+        audit = Audit.model_validate(section)
     except ValidationError as exc:
         return None, [
             f"audit.{'.'.join(str(p) for p in error['loc'])}: {error['msg']}"
             for error in exc.errors()
         ]
+    known = {gap.gap_id: gap for gap in pending}
+    remaining = {gap.gap_id: gap for gap in audit.gaps}
+    if earlier is not None:
+        verified = {(claim.claim, claim.source_url): claim for claim in audit.verified}
+        rejected = {(claim.claim, claim.source_url): claim for claim in audit.rejected}
+        for claim in earlier.verified:
+            withdrawn = any(
+                row.claim == claim.claim and row.source_url in {"", claim.source_url}
+                for row in audit.rejected
+            )
+            if not withdrawn:
+                verified.setdefault((claim.claim, claim.source_url), claim)
+        for rejection in earlier.rejected:
+            reconsidered = any(
+                row.claim == rejection.claim and rejection.source_url in {"", row.source_url}
+                for row in audit.verified
+            )
+            if not reconsidered:
+                rejected.setdefault((rejection.claim, rejection.source_url), rejection)
+        audit.verified = list(verified.values())
+        audit.rejected = list(rejected.values())
+    sources = {claim.source_url for claim in audit.verified}
+    problems = []
+    for resolution in audit.resolved_gaps:
+        if resolution.gap_id not in known or resolution.gap_id in remaining:
+            problems.append(
+                f"resolved_gaps: {resolution.gap_id} must identify an earlier gap, not an open one"
+            )
+        if resolution.basis == "new_evidence" and (
+            not resolution.source_urls or not set(resolution.source_urls) <= sources
+        ):
+            problems.append(
+                f"resolved_gaps: {resolution.gap_id} needs supporting verified source URLs"
+            )
+    if problems:
+        return None, problems
+    closed = {row.gap_id for row in audit.resolved_gaps}
+    for gap_id, gap in known.items():
+        if gap_id not in closed:
+            remaining.setdefault(gap_id, gap)
+    audit.gaps = list(remaining.values())
+    return audit, []
+
+
+def _report_text(written: dict[str, Any]) -> str:
+    """Reject an empty synthesis before claiming delivery of a report."""
+    report = str(written.get("report") or "").replace("\r\n", "\n")
+    if not report.strip():
+        raise FlowStall(
+            "report_empty", "the writer returned no report", step="report", observed=written
+        )
+    return report
 
 
 def _report_name(question: str, run_id: str) -> str:
@@ -434,27 +677,33 @@ def _cited_outside(report: str, verified: list[dict[str, Any]]) -> list[str]:
     return outside
 
 
-def _record(
-    unresolved: list[dict[str, Any]], rejected: list[dict[str, Any]], outside: list[str]
-) -> str:
+def _record(unresolved: list[dict[str, Any]], rejected: list[dict[str, Any]]) -> str:
     """The verification record appended to the report, from the critic's typed audit."""
 
     parts: list[str] = []
+    closures = {
+        "web_research": "Further source research",
+        "workflow_action": "Workflow action",
+        "external_input": "Input needed",
+        "unavailable_action": "Unavailable execution",
+        "design_limit": "Design boundary",
+    }
     if unresolved:
         parts.append(
             "## Unresolved questions\n\n"
             + "\n".join(
-                f"- {g['question']}" + (f" ({g['why']})" if g["why"] else "") for g in unresolved
+                f"- {g['question']}"
+                + (f" ({g['why']})" if g["why"] else "")
+                + f" — {closures[g['closure_kind']]}"
+                + (f"; requires: {', '.join(g['required_tools'])}" if g["required_tools"] else "")
+                + (f"; action: {g['action']}" if g["action"] else "")
+                + (f". Closure: {g['answer_looks_like']}" if g["answer_looks_like"] else "")
+                for g in unresolved
             )
         )
     if rejected:
         parts.append(
             "## Rejected claims\n\nThe critic did not verify these; they are not findings.\n\n"
             + "\n".join(f"- {c['claim']}: {c['reason']}" for c in rejected)
-        )
-    if outside:
-        parts.append(
-            "## Citations outside the verified sources\n\n"
-            + "\n".join(f"- {url}" for url in outside)
         )
     return "".join(f"\n\n{part}" for part in parts)
