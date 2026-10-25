@@ -38,6 +38,15 @@ _HTTP_URL = r"^https?://\S+$"
 _CITED_URL = re.compile(r"https?://[^\s)\]>\"'`]+")
 
 
+class PermissionRequirement(BaseModel):
+    """The exact authorization question, distinct from a receipt's granted scope."""
+
+    scope: Literal["workspace", "session", "invocation"]
+    scope_id: str = Field(
+        min_length=1, description="Workspace ID, session ID, or exact permission ID"
+    )
+
+
 class Direction(BaseModel):
     """A model-selected question and the kind of work that could close it."""
 
@@ -51,6 +60,8 @@ class Direction(BaseModel):
         "web_research", "workflow_action", "external_input", "unavailable_action", "design_limit"
     ]
     required_tools: list[str] = Field(default_factory=list)
+    input_kind: Literal["", "permission"] = ""
+    permission_requirement: PermissionRequirement | None = None
     action: str = Field(default="", description="Registered workflow action, otherwise empty")
 
     @model_validator(mode="after")
@@ -62,6 +73,10 @@ class Direction(BaseModel):
             raise ValueError("workflow_action requires a registered action name")
         if self.closure_kind != "workflow_action" and self.action:
             raise ValueError("only workflow_action may name an action")
+        if self.input_kind and (self.closure_kind != "external_input" or not self.required_tools):
+            raise ValueError("permission input requires external_input and its affected tools")
+        if (self.input_kind == "permission") != (self.permission_requirement is not None):
+            raise ValueError("permission input requires its exact permission_requirement scope")
         return self
 
 
@@ -90,7 +105,14 @@ class Gap(Direction):
     @model_validator(mode="after")
     def identify_gap(self) -> "Gap":
         """Keep closure identity stable across audit rounds and changed explanations."""
-        key = [self.question, self.closure_kind, sorted(self.required_tools), self.action]
+        key = [
+            self.question,
+            self.closure_kind,
+            sorted(self.required_tools),
+            self.action,
+            self.input_kind,
+            self.permission_requirement.model_dump() if self.permission_requirement else None,
+        ]
         expected = "gap_" + hashlib.sha256(json.dumps(key).encode()).hexdigest()[:16]
         if self.gap_id and self.gap_id != expected:
             raise ValueError("gap_id does not identify this question and closure requirement")
@@ -102,9 +124,10 @@ class GapResolution(BaseModel):
     """An explicit, inspectable reason an earlier gap no longer needs work."""
 
     gap_id: str
-    basis: Literal["new_evidence", "scope_correction"]
+    basis: Literal["new_evidence", "scope_correction", "operator_evidence"]
     reason: str = Field(min_length=1)
     source_urls: list[str] = Field(default_factory=list)
+    receipt_ids: list[str] = Field(default_factory=list)
 
 
 class Audit(BaseModel):
@@ -131,12 +154,18 @@ class PlanResearch(dspy.Signature):
     unprovided measurements and approvals may be conditional design inputs, not
     new requirements. Directions must not overlap. Plan as many as the question needs, never
     more than max_directions, most important first; a narrow question may need one.
+    Operational evidence supplies this assignment's exact scope IDs. Never invent
+    an authorization blocker merely because a tool might later ask permission.
+    A concrete permission input must use a supplied scope/permission ID.
     """
 
     question: str = dspy.InputField()
     max_directions: int = dspy.InputField(desc="The most directions you may plan")
     capabilities: dict[str, Any] = dspy.InputField(
         desc="Declared researcher tools and flow actions"
+    )
+    operational_evidence: dict[str, Any] = dspy.InputField(
+        desc="Own scope IDs and attributable permission history"
     )
     directions: list[Direction] = dspy.OutputField()
 
@@ -161,6 +190,13 @@ class WriteReport(dspy.Signature):
     scenarios as such, separate from sourced facts, and say where verified claims
     disagree.
 
+    operational_evidence is attributable permission history, separate from web
+    source evidence. Initial timeouts remain failed attempts after a later grant.
+    A historical grant is not a claim of present authority or successful execution.
+    Conversely, an unresolved operational gap must not negate current verified
+    source claims: explain the specific time and scope of the uncertainty.
+    Missing attributed receipts do not prove that no approval occurred.
+
     Where an unresolved gap limits a finding, say so at that finding. The flow
     appends the unresolved questions and the rejected claims after your report, so
     do not list them again. `References` lists every source you cited, each as
@@ -177,6 +213,9 @@ class WriteReport(dspy.Signature):
     verified: list[VerifiedClaim] = dspy.InputField(desc="The claims the critic verified")
     unresolved_gaps: list[Gap] = dspy.InputField(desc="Material questions still open")
     delivery: dict[str, Any] = dspy.InputField(desc="Parent-owned post-synthesis delivery contract")
+    operational_evidence: dict[str, Any] = dspy.InputField(
+        desc="Scoped historical permission receipts"
+    )
     citation_problems: list[str] = dspy.InputField(
         desc="An earlier draft cited these unverified URLs; write a corrected report using verified sources"
     )
@@ -250,10 +289,17 @@ deep_research = sequence(terminal("plan"),
 
     # ------------------------------------------------------------ model steps
     def _plan(
-        self, question: str, max_directions: int, capabilities: dict[str, Any]
+        self,
+        question: str,
+        max_directions: int,
+        capabilities: dict[str, Any],
+        operational_evidence: dict[str, Any],
     ) -> dict[str, Any]:
         prediction = self.planner(
-            question=question, max_directions=max_directions, capabilities=capabilities
+            question=question,
+            max_directions=max_directions,
+            capabilities=capabilities,
+            operational_evidence=operational_evidence,
         )
         return {"directions": [_as_model(Direction, d).model_dump() for d in prediction.directions]}
 
@@ -263,6 +309,7 @@ deep_research = sequence(terminal("plan"),
         verified: list[dict[str, Any]],
         gaps: list[dict[str, Any]],
         delivery: dict[str, Any],
+        operational_evidence: dict[str, Any],
         citation_problems: list[str] | None = None,
     ) -> dict[str, Any]:
         prediction = self.writer(
@@ -270,6 +317,7 @@ deep_research = sequence(terminal("plan"),
             verified=[VerifiedClaim.model_validate(row) for row in verified],
             unresolved_gaps=[Gap.model_validate(row) for row in gaps],
             delivery=delivery,
+            operational_evidence=operational_evidence,
             citation_problems=citation_problems or [],
         )
         return {"report": str(prediction.report)}
@@ -278,7 +326,10 @@ deep_research = sequence(terminal("plan"),
     async def forward(self, task: Any, ctx: Any) -> Any:
         question = task if isinstance(task, str) else json.dumps(task, sort_keys=True)
         capabilities = _capabilities(ctx)
-        plan = await ctx.step(self._plan, question, self.max_directions, capabilities)
+        planning_evidence = await ctx.permission_receipts()
+        plan = await ctx.step(
+            self._plan, question, self.max_directions, capabilities, planning_evidence
+        )
         planned = list(plan.get("directions") or [])
         if not planned:
             raise FlowStall(
@@ -316,6 +367,24 @@ deep_research = sequence(terminal("plan"),
             critics.append(critic)
             resolutions += [{"round": rounds, **row.model_dump()} for row in audit.resolved_gaps]
 
+        operational_evidence = await ctx.permission_receipts(refresh=True)
+        if (
+            critics
+            and any(gap.input_kind == "permission" for gap in audit.gaps)
+            and critics[-1]["permission_revision"] != _permission_revision(operational_evidence)
+        ):
+            audit, critic = await self._verify(
+                ctx,
+                question,
+                [],
+                [],
+                (audit, critics[-1]),
+                rounds,
+                operational_update=operational_evidence,
+            )
+            critics.append(critic)
+            resolutions += [{"round": rounds, **row.model_dump()} for row in audit.resolved_gaps]
+
         verified = [claim.model_dump() for claim in audit.verified]
         rejected = [claim.model_dump() for claim in audit.rejected]
         delivery_gaps = [gap.model_dump() for gap in audit.gaps if _is_delivery(gap)]
@@ -332,14 +401,16 @@ deep_research = sequence(terminal("plan"),
                         }
                     )
         delivery = capabilities["workflow_actions"]["persist_report"]
-        written = await ctx.step(self._write, question, verified, unresolved, delivery)
+        written = await ctx.step(
+            self._write, question, verified, unresolved, delivery, operational_evidence
+        )
         report = _report_text(written)
         outside = _cited_outside(report, verified)
         draft_citations = outside
         if outside:
             await ctx.record_event({"event": "report_cites_unverified_source", "urls": outside})
             corrected = await ctx.step(
-                self._write, question, verified, unresolved, delivery, outside
+                self._write, question, verified, unresolved, delivery, operational_evidence, outside
             )
             report = _report_text(corrected)
             outside = _cited_outside(report, verified)
@@ -371,6 +442,7 @@ deep_research = sequence(terminal("plan"),
             "persistence": persistence,
             "delivery_requirements": delivery_gaps,
             "capabilities": capabilities,
+            "operational_evidence": operational_evidence,
             "directions": directions,
             "verified": verified,
             "rejected": rejected,
@@ -430,6 +502,7 @@ deep_research = sequence(terminal("plan"),
         packets: list[dict[str, Any]],
         earlier: tuple[Audit, dict[str, Any]] | None,
         round_no: int,
+        operational_update: dict[str, Any] | None = None,
     ) -> tuple[Audit, dict[str, Any]]:
         """The critic's complete audit of this round's evidence, schema-validated."""
 
@@ -440,7 +513,12 @@ deep_research = sequence(terminal("plan"),
             "packets": [_packet(p) for p in packets],
             "max_gaps": self.max_directions,
             "capabilities": _capabilities(ctx),
+            "operational_evidence": operational_update
+            if operational_update is not None
+            else await ctx.permission_receipts(),
         }
+        if operational_update is not None:
+            request["operational_update"] = True
         evidence = [p["handle"] for p in packets if p.get("handle")]
         pending = [
             Gap.model_validate(row)
@@ -457,15 +535,16 @@ deep_research = sequence(terminal("plan"),
             }
             evidence.append(critic["handle"])
         request["open_requirements"] = [gap.model_dump() for gap in pending]
+        stage = f"verify:{round_no}" + (":permissions" if operational_update is not None else "")
         result = await ctx.call(
             "critic",
             request,
             evidence=evidence,
-            key=f"verify:{round_no}",
+            key=stage,
             model=self.critic_model,
         )
         prior_audit = earlier[0] if earlier is not None else None
-        audit, problems = _audit_of(result, pending, prior_audit)
+        audit, problems = _audit_of(result, pending, prior_audit, request["operational_evidence"])
         if audit is None:
             # Format-only correction: the critic restates its own audit in the schema.
             result = await ctx.call(
@@ -477,12 +556,16 @@ deep_research = sequence(terminal("plan"),
                     "audit_as_returned": result.workflow_state.get("audit"),
                     "capabilities": _capabilities(ctx),
                     "open_requirements": [gap.model_dump() for gap in pending],
+                    "operational_evidence": request["operational_evidence"],
+                    "operational_update": operational_update is not None,
                 },
                 evidence=[result.handle],
-                key=f"verify:{round_no}:repair",
+                key=f"{stage}:repair",
                 model=self.critic_model,
             )
-            audit, problems = _audit_of(result, pending, prior_audit)
+            audit, problems = _audit_of(
+                result, pending, prior_audit, request["operational_evidence"]
+            )
         if audit is None:
             raise FlowStall(
                 "critic_audit_invalid",
@@ -491,7 +574,13 @@ deep_research = sequence(terminal("plan"),
                 observed=problems,
                 handle=result.handle,
             )
-        return audit, {"round": round_no, "handle": result.handle, "model": result.model}
+        return audit, {
+            "round": round_no,
+            "handle": result.handle,
+            "model": result.model,
+            "permission_revision": _permission_revision(request["operational_evidence"]),
+            "operational_update": operational_update is not None,
+        }
 
 
 _OPTIONS = ("max_directions", "max_rounds", "concurrency", "researcher_model", "critic_model")
@@ -586,7 +675,10 @@ async def _bounded(
 
 
 def _audit_of(
-    result: Any, pending: list[Gap], earlier: Audit | None = None
+    result: Any,
+    pending: list[Gap],
+    earlier: Audit | None = None,
+    operational_evidence: dict[str, Any] | None = None,
 ) -> tuple[Audit | None, list[str]]:
     """The critic's typed audit, or why its ``workflow_state.audit`` is not one."""
 
@@ -622,18 +714,48 @@ def _audit_of(
         audit.verified = list(verified.values())
         audit.rejected = list(rejected.values())
     sources = {claim.source_url for claim in audit.verified}
+    receipts = {
+        row["receipt_id"]: row
+        for row in (operational_evidence or {}).get("receipts", [])
+        if row.get("receipt_id")
+    }
     problems = []
     for resolution in audit.resolved_gaps:
+        gap = known.get(resolution.gap_id)
         if resolution.gap_id not in known or resolution.gap_id in remaining:
             problems.append(
                 f"resolved_gaps: {resolution.gap_id} must identify an earlier gap, not an open one"
             )
         if resolution.basis == "new_evidence" and (
-            not resolution.source_urls or not set(resolution.source_urls) <= sources
+            not resolution.source_urls
+            or not set(resolution.source_urls) <= sources
+            or gap is not None
+            and gap.input_kind == "permission"
         ):
             problems.append(
                 f"resolved_gaps: {resolution.gap_id} needs supporting verified source URLs"
             )
+        if resolution.basis == "operator_evidence":
+            decisions = [receipts[key] for key in resolution.receipt_ids if key in receipts]
+            valid = bool(
+                gap is not None
+                and gap.closure_kind == "external_input"
+                and gap.input_kind == "permission"
+                and resolution.receipt_ids
+                and len(decisions) == len(resolution.receipt_ids)
+                and all(
+                    row.get("grantor") == "user"
+                    and row.get("action") in {"allow", "allow_session", "allow_workspace"}
+                    and row.get("decision_status") == "resolved"
+                    for row in decisions
+                )
+                and all(_permission_covers(row, gap.permission_requirement) for row in decisions)
+                and set(gap.required_tools) <= {row.get("tool_name") for row in decisions}
+            )
+            if not valid:
+                problems.append(
+                    f"resolved_gaps: {resolution.gap_id} needs attributable user receipts for its permission input"
+                )
     if problems:
         return None, problems
     closed = {row.gap_id for row in audit.resolved_gaps}
@@ -642,6 +764,27 @@ def _audit_of(
             remaining.setdefault(gap_id, gap)
     audit.gaps = list(remaining.values())
     return audit, []
+
+
+def _permission_revision(evidence: dict[str, Any]) -> str:
+    """Identify the exact historical permission evidence an audit consumed."""
+    return hashlib.sha256(json.dumps(evidence, sort_keys=True).encode()).hexdigest()
+
+
+def _permission_covers(receipt: dict[str, Any], requirement: PermissionRequirement | None) -> bool:
+    """Match recorded scope; never broaden one call or an opaque resource constraint."""
+    if requirement is None or receipt.get("kind") not in {"tool", "external_mcp"}:
+        return False
+    if requirement.scope == "invocation":
+        return receipt.get("permission_id") == requirement.scope_id
+    identity_field = "workspace_id" if requirement.scope == "workspace" else "session_id"
+    return bool(
+        receipt.get("action") == f"allow_{requirement.scope}"
+        and receipt.get("policy_scope") == requirement.scope
+        and receipt.get("policy_scope_id") == requirement.scope_id
+        and receipt.get(identity_field) == requirement.scope_id
+        and receipt.get("resource_restricted") is False
+    )
 
 
 def _report_text(written: dict[str, Any]) -> str:

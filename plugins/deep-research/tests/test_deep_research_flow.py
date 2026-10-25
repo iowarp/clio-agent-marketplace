@@ -152,6 +152,9 @@ class ScriptedCtx:
     async def record_event(self, event: dict[str, Any]) -> None:
         self.events.append(event)
 
+    async def permission_receipts(self, *, refresh: bool = False) -> dict[str, Any]:
+        return {"status": "available", "receipts": []}
+
 
 # ----------------------------------------------------------------- the models
 class Planner:
@@ -161,9 +164,21 @@ class Planner:
         self.questions = questions
         self.asked: list[dict[str, Any]] = []
 
-    def __call__(self, *, question: str, max_directions: int, capabilities: dict[str, Any]) -> Any:
+    def __call__(
+        self,
+        *,
+        question: str,
+        max_directions: int,
+        capabilities: dict[str, Any],
+        operational_evidence: dict[str, Any],
+    ) -> Any:
         self.asked.append(
-            {"question": question, "max_directions": max_directions, "capabilities": capabilities}
+            {
+                "question": question,
+                "max_directions": max_directions,
+                "capabilities": capabilities,
+                "operational_evidence": operational_evidence,
+            }
         )
         return dspy.Prediction(
             directions=[
@@ -188,6 +203,7 @@ class Writer:
         verified: list[Any],
         unresolved_gaps: list[Any],
         delivery: dict[str, Any],
+        operational_evidence: dict[str, Any],
         citation_problems: list[str],
     ) -> Any:
         self.given.append(
@@ -196,6 +212,7 @@ class Writer:
                 "verified": [c.model_dump() for c in verified],
                 "unresolved_gaps": [g.model_dump() for g in unresolved_gaps],
                 "delivery": delivery,
+                "operational_evidence": operational_evidence,
                 "citation_problems": citation_problems,
             }
         )
@@ -324,6 +341,7 @@ def test_plan_research_verify_report() -> None:
             "question": "What changed?",
             "max_directions": 6,
             "capabilities": flow_module._capabilities(ctx),
+            "operational_evidence": {"status": "available", "receipts": []},
         }
     ]
     researchers = of(ctx, "researcher")
@@ -341,7 +359,17 @@ def test_plan_research_verify_report() -> None:
     assert result["rounds"] == 1 and result["citations_outside_verified"] == []
     assert [d["id"] for d in result["directions"]] == ["d1", "d2"]
     assert [r["handle"] for r in result["researchers"]] == ["task_1", "task_2"]
-    assert result["critics"] == [{"round": 1, "handle": "task_3", "model": "acct/large"}]
+    assert result["critics"] == [
+        {
+            "round": 1,
+            "handle": "task_3",
+            "model": "acct/large",
+            "operational_update": False,
+            "permission_revision": flow_module._permission_revision(
+                {"status": "available", "receipts": []}
+            ),
+        }
+    ]
     assert "## Unresolved questions" not in result["answer"]
     assert result["answer"].startswith("# Report")
 
@@ -600,6 +628,222 @@ def test_unrepaired_outside_citations_stall_before_persistence(tmp_path: Path) -
     assert len(writer.given) == 2
     assert not any(s.endswith("persist_report") for s in ctx.steps)
     assert not list(tmp_path.rglob("*.md"))
+
+
+@pytest.mark.parametrize(
+    ("grantor", "action", "tool", "input_kind", "receipt_id", "accepted"),
+    [
+        ("user", "allow_workspace", "web_fetch", "permission", "r1", True),
+        ("user", "allow", "web_fetch", "permission", "r1", False),
+        ("system", "allow_workspace", "web_fetch", "permission", "r1", False),
+        ("user", "deny", "web_fetch", "permission", "r1", False),
+        ("user", "allow_workspace", "shell_exec", "permission", "r1", False),
+        ("user", "allow_workspace", "web_fetch", "", "r1", False),
+        ("user", "allow_workspace", "web_fetch", "permission", "invented", False),
+    ],
+)
+def test_operator_resolution_requires_receipts_for_this_specific_permission_input(
+    grantor: str,
+    action: str,
+    tool: str,
+    input_kind: str,
+    receipt_id: str,
+    accepted: bool,
+) -> None:
+    pending = flow_module.Gap.model_validate(
+        gap(
+            "Was this tool operation authorized?",
+            closure_kind="external_input",
+            required_tools=["web_fetch"],
+            input_kind=input_kind,
+            permission_requirement={"scope": "workspace", "scope_id": "ws_expected"}
+            if input_kind
+            else None,
+        )
+    )
+    result = SimpleNamespace(
+        workflow_state={
+            "audit": {
+                "resolved_gaps": [
+                    {
+                        "gap_id": pending.gap_id,
+                        "basis": "operator_evidence",
+                        "reason": "Historical decision, within the tool and scope recorded in the receipt",
+                        "receipt_ids": [receipt_id],
+                    }
+                ]
+            }
+        }
+    )
+    evidence = {
+        "status": "available",
+        "receipts": [
+            {
+                "receipt_id": "r1",
+                "grantor": grantor,
+                "action": action,
+                "tool_name": tool,
+                "decision_status": "resolved",
+                "kind": "external_mcp",
+                "workspace_id": "ws_expected",
+                "policy_scope": "workspace",
+                "policy_scope_id": "ws_expected",
+                "resource_restricted": False,
+            }
+        ],
+    }
+    parsed, _problems = flow_module._audit_of(result, [pending], operational_evidence=evidence)
+    assert (parsed is not None) == accepted
+
+
+@pytest.mark.parametrize(
+    ("scope", "scope_id", "updates", "accepted"),
+    [
+        ("workspace", "ws_a", {}, True),
+        ("workspace", "ws_b", {}, False),
+        ("workspace", "ws_a", {"resource_restricted": True}, False),
+        ("workspace", "ws_a", {"workspace_id": "ws_b"}, False),
+        ("workspace", "ws_a", {"policy_scope_id": "ws_b"}, False),
+        ("workspace", "ws_a", {"kind": "network_egress"}, False),
+        ("session", "sess_a", {}, False),
+        (
+            "session",
+            "sess_a",
+            {"action": "allow_session", "policy_scope": "session", "policy_scope_id": "sess_a"},
+            True,
+        ),
+        ("invocation", "perm_a", {"action": "allow", "resource_restricted": True}, True),
+        ("invocation", "perm_b", {"action": "allow"}, False),
+    ],
+)
+def test_permission_requirement_cannot_broaden_another_scope_or_operation(
+    scope: str,
+    scope_id: str,
+    updates: dict[str, Any],
+    accepted: bool,
+) -> None:
+    receipt = {
+        "permission_id": "perm_a",
+        "kind": "external_mcp",
+        "action": "allow_workspace",
+        "workspace_id": "ws_a",
+        "session_id": "sess_a",
+        "policy_scope": "workspace",
+        "policy_scope_id": "ws_a",
+        "resource_restricted": False,
+        **updates,
+    }
+    requirement = flow_module.PermissionRequirement.model_validate(
+        {"scope": scope, "scope_id": scope_id}
+    )
+    assert flow_module._permission_covers(receipt, requirement) == accepted
+
+
+def test_audit_and_writer_receive_operational_history_without_replacing_source_evidence() -> None:
+    class ReceiptCtx(ScriptedCtx):
+        async def permission_receipts(self, *, refresh: bool = False) -> dict[str, Any]:
+            return {
+                "status": "available",
+                "receipts": [
+                    {
+                        "receipt_id": "historic-timeout",
+                        "action": "deny",
+                        "grantor": "system",
+                        "reason": "permission_request_timeout",
+                    }
+                ],
+            }
+
+    writer = Writer()
+    ctx = ReceiptCtx(Children([audit([claim(1)])]))
+    result = run(make_flow(Planner(["a"]), writer), ctx)
+    assert (
+        of(ctx, "critic")[0]["input"]["operational_evidence"]["receipts"][0]["receipt_id"]
+        == "historic-timeout"
+    )
+    assert writer.given[0]["verified"] == [claim(1)]
+    assert writer.given[0]["operational_evidence"] == result["operational_evidence"]
+
+
+def test_late_consent_opens_a_new_audit_boundary_without_repeating_research() -> None:
+    requirement = gap(
+        "May this workspace retry the tool?",
+        closure_kind="external_input",
+        required_tools=["web_fetch"],
+        input_kind="permission",
+        permission_requirement={"scope": "workspace", "scope_id": "ws_a"},
+    )
+    receipt = {
+        "receipt_id": "r1",
+        "permission_id": "perm_a",
+        "kind": "external_mcp",
+        "grantor": "user",
+        "action": "allow_workspace",
+        "decision_status": "resolved",
+        "tool_name": "web_fetch",
+        "workspace_id": "ws_a",
+        "policy_scope": "workspace",
+        "policy_scope_id": "ws_a",
+        "resource_restricted": False,
+    }
+    closed = audit()
+    closed["workflow_state"]["audit"]["resolved_gaps"] = [
+        {
+            "gap_id": requirement["gap_id"],
+            "basis": "operator_evidence",
+            "reason": "The later human grant covers this workspace tool requirement",
+            "receipt_ids": ["r1"],
+        }
+    ]
+
+    class LateConsentCtx(ScriptedCtx):
+        async def permission_receipts(self, *, refresh: bool = False) -> dict[str, Any]:
+            return {"status": "available", "receipts": [receipt] if refresh else []}
+
+    ctx = LateConsentCtx(Children([audit([claim(1)], gaps=[requirement]), closed]))
+    result = run(make_flow(Planner(["a"])), ctx)
+    assert len(of(ctx, "researcher")) == 1
+    assert len(of(ctx, "critic")) == 2
+    update = of(ctx, "critic")[1]["input"]
+    assert update["operational_update"] is True and update["packets"] == []
+    assert update["earlier_audit"]["verified"] == [claim(1)]
+    assert result["verified"] == [claim(1)] and result["gaps_unresolved"] == []
+    assert result["critics"][-1]["operational_update"] is True
+
+
+def test_planner_can_ground_an_explicit_permission_requirement_in_its_own_scope() -> None:
+    class ScopedCtx(ScriptedCtx):
+        async def permission_receipts(self, *, refresh: bool = False) -> dict[str, Any]:
+            return {
+                "status": "available",
+                "receipts": [],
+                "scope": {
+                    "workspace_id": "ws_real",
+                    "session_id": "sess_real",
+                    "assignment_id": "task_real",
+                },
+            }
+
+    class ScopePlanner(Planner):
+        def __call__(self, **kwargs: Any) -> Any:
+            self.questions = [
+                gap(
+                    "Requested confirmation of workspace approval",
+                    closure_kind="external_input",
+                    input_kind="permission",
+                    required_tools=["web_fetch"],
+                    permission_requirement={
+                        "scope": "workspace",
+                        "scope_id": kwargs["operational_evidence"]["scope"]["workspace_id"],
+                    },
+                )
+            ]
+            return super().__call__(**kwargs)
+
+    planner = ScopePlanner([])
+    result = run(make_flow(planner), ScopedCtx(Children([])))
+    assert result["gaps_unresolved"][0]["permission_requirement"]["scope_id"] == "ws_real"
+    assert planner.asked[0]["operational_evidence"]["scope"]["assignment_id"] == "task_real"
 
 
 def test_an_empty_report_cannot_receive_a_verified_delivery_receipt(tmp_path: Path) -> None:

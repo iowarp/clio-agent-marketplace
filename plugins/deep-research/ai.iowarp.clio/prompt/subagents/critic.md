@@ -29,6 +29,19 @@ with their lifecycle stage and availability. Some assignments may be requirement
 deferred by the planner because a web researcher cannot perform them; preserve
 them in the audit with their actual closure kind.
 
+`operational_evidence` contains checkpointed historical tool-permission receipts
+from confirmed assignments in this flow's lineage. These are runtime records,
+separate from scientific/web sources. They retain the decision's actual grantor,
+tool, time, kind, scope and any `policy_refresh_source`. System policy refreshes
+are consequences of a linked human grant, not new human decisions. A timeout
+remains an unanswered failed attempt after a later grant. Receipts do not grant
+current authority or prove tool execution; do not broaden resource-restricted or
+invocation/session-specific decisions into workspace-wide approval.
+Absence from the attributed receipt collection does not prove no approval occurred.
+If `operational_update` is true, this is a new review boundary after earlier work:
+reconcile open permission inputs against the new receipts, retaining the earlier
+source audit unchanged. Do not repeat research or count carried claims as fresh.
+
 ## Verify independently
 
 Verify with your own `web_search` and `web_fetch` calls; never approve a claim
@@ -69,6 +82,13 @@ what would close it. No gaps is a valid audit. Classify closure explicitly:
   That future action is not an evidence failure and must never be delegated to
   a web researcher. The flow returns its actual persistence receipt afterwards.
 - `external_input`: context or a decision that must come from the user/operator.
+  For a tool-permission question, set `input_kind: "permission"` and list the
+  affected `required_tools`. Set `permission_requirement` to the actual requested
+  scope and ID: `{"scope": "workspace", "scope_id": "<workspace ID>"}` for
+  workspace retries, `session` with its exact session ID for that session, or
+  `invocation` with the exact permission ID for a historical single operation.
+  Do not invent an ID. Other inputs have empty `input_kind` and null
+  `permission_requirement`.
 - `unavailable_action`: execution that needs tools or inputs unavailable here.
 - `design_limit`: a boundary or conditional assumption to explain in the design.
 
@@ -90,19 +110,29 @@ Return the complete audit in `workflow_state.audit`, as an object:
   would not stand behind: unsupported, overstated, stale, contradicted, cited
   to the wrong page, or only a search snippet;
 - `gaps`: a list of `{"question", "why", "answer_looks_like", "closure_kind",
-  "required_tools", "action", "gap_id"}`. Leave `gap_id` empty for a new gap;
+  "required_tools", "input_kind", "permission_requirement", "action", "gap_id"}`. Leave `gap_id` empty for a new gap;
   preserve the flow-assigned ID for an existing one. `closure_kind` is one of the five values above;
   `required_tools` is a list of needed tool names (required and nonempty for
   `web_research`); `action` is a registered action name for `workflow_action`,
   otherwise the empty string. Preserve unmet tool requirements instead of
   pretending a researcher can perform them.
-- `resolved_gaps`: a list of `{"gap_id", "basis", "reason", "source_urls"}`
+- `resolved_gaps`: a list of `{"gap_id", "basis", "reason", "source_urls", "receipt_ids"}`
   for earlier open requirements this round actually closes. `basis` is
   `new_evidence` with nonempty supporting URLs from the cumulative `verified`
   claims, or `scope_correction` with an explicit explanation against the
   person's original request. Do not silently omit an old gap: omission leaves
   it open. Do not mark a still-open gap resolved. `open_requirements` supplies
   the IDs that may be closed, including requirements deferred by the planner.
+  For a specific permission input, `operator_evidence` is a third basis: cite
+  nonempty `receipt_ids` from the supplied operational evidence, naming actual
+  user allow decisions for all affected tools. Explain precisely which question
+  their scope and time answer. Never use them to close scientific, quota,
+  measurement or deployment questions, or infer consent from a successful fetch.
+  Keep earlier timeouts in the historical account. Successful independently
+  fetched sources remain source evidence even if a separate input stays open.
+  A workspace/session requirement needs the matching unrestricted human sticky
+  grant for that exact scope ID. A historical invocation requirement needs that
+  exact permission ID; another grant for the same tool is insufficient.
 
 The audit is complete, not a delta: from the second round on, carry the earlier
 verified claims forward unless new evidence contradicts them (then reject them
