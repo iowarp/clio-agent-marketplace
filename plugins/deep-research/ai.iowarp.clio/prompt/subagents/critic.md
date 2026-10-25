@@ -172,6 +172,13 @@ CLIO handles, hashes and URLs, with source tasks pinned for inspection. Correct
 identity/format mistakes without changing supported substance. Reject or narrow
 claims whose source or quotation is actually unsupported; do not manufacture a
 quote or substitute a plausible URL. Fetch missing evidence if appropriate.
+`validated_prior_ledger` contains independently typed, source-bound rows retained
+from the earlier attempt and canonical open requirements. It is continuity of
+that audit, not new verification. Omitted carried claims remain unless explicitly
+rejected under the same reconsideration rules as later rounds. Raw invalid IDs
+remain in `audit_as_returned`; a repaired audit still needs canonical identities.
+Valid gap closures are retained after the same source/permission checks; an
+explicitly reopened gap supersedes its carried closure.
 
 If `evidence_review` is present, the final semantic reviewer identified an audit
 problem, such as a compound claim only partly supported by its passages. Revisit
