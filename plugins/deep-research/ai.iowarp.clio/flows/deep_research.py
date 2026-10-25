@@ -8,7 +8,9 @@ The flow encodes the method's shape; every decision in it is a model's:
 * the ``critic`` subagent decides which claims are verified, which are rejected and
   which gaps remain, and returns them typed in ``workflow_state.audit``;
 * the writer (a recorded model step) separates verified external facts from
-  supplied context, labelled assumptions and design proposals.
+  supplied context, labelled assumptions and design proposals;
+* a separate recorded semantic review challenges the source graph and full report,
+  returning faults to the auditor or writer before delivery.
 
 The flow branches only on those typed, schema-validated fields. Its options are
 growth bounds (how many directions, gap rounds and concurrent researchers), not
@@ -22,20 +24,31 @@ from collections.abc import Mapping
 from typing import Any, Literal
 
 import dspy
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, ValidationError, model_validator
 
 from clio_agent.flows.outcomes import CallCancelled, FlowOutcome, FlowStall, GatherFailed
 from clio_agent.sdk import Flow
 from clio_agent.sdk.flow import FlowOptionsInvalid
+
+from ..evidence import (
+    ReportBlock,
+    ReviewIssue,
+    ReviewReport,
+    VerifiedClaim,
+    bind_claims,
+    claim_urls,
+    merge_claims,
+    public_sources,
+    source_records,
+)
+from ..report import ReportSynthesis
+from ..report import is_delivery as _is_delivery
 
 #: Ceilings on what a caller may ask for in one run (``checked_options`` refuses more).
 MAX_DIRECTIONS_CEILING = 12
 MAX_ROUNDS_CEILING = 5
 #: Researchers running at once when the caller sets no ``concurrency``.
 DEFAULT_CONCURRENCY_CAP = 8
-
-_HTTP_URL = r"^https?://\S+$"
-_CITED_URL = re.compile(r"https?://[^\s)\]>\"'`]+")
 
 
 class PermissionRequirement(BaseModel):
@@ -78,15 +91,6 @@ class Direction(BaseModel):
         if (self.input_kind == "permission") != (self.permission_requirement is not None):
             raise ValueError("permission input requires its exact permission_requirement scope")
         return self
-
-
-class VerifiedClaim(BaseModel):
-    """A claim the critic confirmed on a page it fetched itself."""
-
-    claim: str = Field(min_length=1)
-    source_url: str = Field(pattern=_HTTP_URL, description="The fetched page that supports it")
-    quote: str = Field(min_length=1, description="The supporting passage, quoted from the page")
-    source_title: str = ""
 
 
 class RejectedClaim(BaseModel):
@@ -137,6 +141,7 @@ class Audit(BaseModel):
     rejected: list[RejectedClaim] = Field(default_factory=list)
     gaps: list[Gap] = Field(default_factory=list)
     resolved_gaps: list[GapResolution] = Field(default_factory=list)
+    _sources: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
 
 
 class PlanResearch(dspy.Signature):
@@ -178,7 +183,7 @@ class WriteReport(dspy.Signature):
     short executive answer, findings, then a conclusion and `References`.
 
     Every externally sourced factual sentence rests on verified claims and cites each claim's
-    source_url as a Markdown link right after the claim it supports; a paragraph
+    evidence source URLs; a paragraph
     with several sourced claims needs enough citations to make the mapping
     unambiguous. Use no external fact, figure, date or source that is not in the verified
     claims, not even one you know. The person's supplied context is usable when
@@ -197,11 +202,18 @@ class WriteReport(dspy.Signature):
     source claims: explain the specific time and scope of the uncertainty.
     Missing attributed receipts do not prove that no approval occurred.
 
+    Return Markdown blocks, each with text, kind and claim_ids. Map every sourced
+    assertion to all supporting atomic claims; split a paragraph if that makes its
+    provenance clearer. Source citations and References are rendered by the flow
+    from those IDs, so do not hand-write citations or a References section.
+    Use kind=structure only for headings or transitions, never to hide factual
+    assertions. Label proposals, supplied context, calculations and inferences
+    clearly in the prose as well as the map. Every independently checkable clause
+    needs its own supporting claim; do not merge facts while losing a document.
+
     Where an unresolved gap limits a finding, say so at that finding. The flow
     appends the unresolved questions and the rejected claims after your report, so
-    do not list them again. `References` lists every source you cited, each as
-    `[title](url)`, and nothing you did not cite. Never cite a search page or a URL
-    that is not a verified claim's source_url.
+    do not list them again. Do not cite a search page or an unverified source.
 
     Delivery is handled by the flow after synthesis using the supplied delivery
     contract. Do not claim this document has or has not been saved, inspected or
@@ -219,7 +231,15 @@ class WriteReport(dspy.Signature):
     citation_problems: list[str] = dspy.InputField(
         desc="An earlier draft cited these unverified URLs; write a corrected report using verified sources"
     )
-    report: str = dspy.OutputField(desc="The complete Markdown report")
+    review_feedback: list[ReviewIssue] = dspy.InputField(
+        desc="Concrete issues in a previous draft to correct"
+    )
+    previous_blocks: list[dict[str, Any]] = dspy.InputField(
+        desc="Earlier draft, empty for the first attempt"
+    )
+    blocks: list[ReportBlock] = dspy.OutputField(
+        desc="Complete report in readable Markdown units with an evidence map"
+    )
 
 
 class DeepResearch(Flow):
@@ -231,6 +251,7 @@ class DeepResearch(Flow):
     (researchers at once; 0 runs all of a round together, up to 8),
     ``researcher_model`` and ``critic_model`` (the model each subagent runs on;
     empty lets it choose). The planner and the writer run on this run's model.
+    The final semantic reviewer also uses the run's model and a separate signature.
     """
 
     id = "deep-research"
@@ -239,10 +260,11 @@ class DeepResearch(Flow):
         "researches them in parallel, has an independent critic verify sourced claims "
         "against fetched sources and name the gaps, researches those gaps, then writes "
         "a Markdown report separating verified facts, supplied context and proposals, with open questions "
-        "and rejected claims listed. Options: max_directions (default 6, at most 12), "
+        "and rejected claims listed. A separate semantic review checks the evidence map and full report "
+        "before delivery, with one correction allowed. Options: max_directions (default 6, at most 12), "
         "max_rounds (gap-closing rounds, default 2, at most 5), concurrency (researchers "
         "at once; 0 runs a round together), researcher_model and critic_model. The "
-        "planner and the writer run on the run's model."
+        "planner, writer and final reviewer run on the run's model."
     )
     shape = """railroad-beta
 deep_research = sequence(terminal("plan"),
@@ -251,7 +273,9 @@ deep_research = sequence(terminal("plan"),
                          optional(oneOrMore(sequence(
                              choice(terminal("gap researcher 1"), terminal("gap researcher n")),
                              terminal("critic")))),
-                         terminal("report"));"""
+                         terminal("draft"), terminal("review"),
+                         optional(sequence(choice(terminal("audit correction"), terminal("draft correction")), terminal("review"))),
+                         terminal("deliver"));"""
     max_directions: int = 6
     max_rounds: int = 2
     concurrency: int = 0
@@ -262,6 +286,7 @@ deep_research = sequence(terminal("plan"),
         super().__init__(ref, **options)
         self.planner = dspy.ChainOfThought(PlanResearch)
         self.writer = dspy.Predict(WriteReport)
+        self.reviewer = dspy.Predict(ReviewReport)
 
     @classmethod
     def checked_options(cls, options: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -311,6 +336,8 @@ deep_research = sequence(terminal("plan"),
         delivery: dict[str, Any],
         operational_evidence: dict[str, Any],
         citation_problems: list[str] | None = None,
+        review_feedback: list[dict[str, Any]] | None = None,
+        previous_blocks: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         prediction = self.writer(
             question=question,
@@ -319,8 +346,39 @@ deep_research = sequence(terminal("plan"),
             delivery=delivery,
             operational_evidence=operational_evidence,
             citation_problems=citation_problems or [],
+            review_feedback=[ReviewIssue.model_validate(row) for row in review_feedback or []],
+            previous_blocks=previous_blocks or [],
         )
-        return {"report": str(prediction.report)}
+        return {
+            "blocks": [
+                row.model_dump() if isinstance(row, BaseModel) else row for row in prediction.blocks
+            ]
+        }
+
+    def _review(
+        self,
+        question: str,
+        verified: list[dict[str, Any]],
+        sources: list[dict[str, Any]],
+        operational_evidence: dict[str, Any],
+        gaps: list[dict[str, Any]],
+        rejected: list[dict[str, Any]],
+        blocks: list[dict[str, Any]],
+        report: str,
+    ) -> dict[str, Any]:
+        prediction = self.reviewer(
+            question=question,
+            verified=[VerifiedClaim.model_validate(row) for row in verified],
+            source_records=sources,
+            operational_evidence=operational_evidence,
+            unresolved_gaps=gaps,
+            rejected_claims=rejected,
+            blocks=[ReportBlock.model_validate(row) for row in blocks],
+            report=report,
+        )
+        return {
+            "issues": [ReviewIssue.model_validate(row).model_dump() for row in prediction.issues]
+        }
 
     # ------------------------------------------------------------------ run
     async def forward(self, task: Any, ctx: Any) -> Any:
@@ -385,6 +443,18 @@ deep_research = sequence(terminal("plan"),
             critics.append(critic)
             resolutions += [{"round": rounds, **row.model_dump()} for row in audit.resolved_gaps]
 
+        synthesis = await ReportSynthesis(self, ctx, _record).run(
+            question,
+            audit,
+            researched,
+            critics,
+            resolutions,
+            rounds,
+            operational_evidence,
+            capabilities["workflow_actions"]["persist_report"],
+        )
+        audit = synthesis["audit"]
+        operational_evidence = synthesis["operational_evidence"]
         verified = [claim.model_dump() for claim in audit.verified]
         rejected = [claim.model_dump() for claim in audit.rejected]
         delivery_gaps = [gap.model_dump() for gap in audit.gaps if _is_delivery(gap)]
@@ -400,28 +470,7 @@ deep_research = sequence(terminal("plan"),
                             "missing_tools": missing,
                         }
                     )
-        delivery = capabilities["workflow_actions"]["persist_report"]
-        written = await ctx.step(
-            self._write, question, verified, unresolved, delivery, operational_evidence
-        )
-        report = _report_text(written)
-        outside = _cited_outside(report, verified)
-        draft_citations = outside
-        if outside:
-            await ctx.record_event({"event": "report_cites_unverified_source", "urls": outside})
-            corrected = await ctx.step(
-                self._write, question, verified, unresolved, delivery, operational_evidence, outside
-            )
-            report = _report_text(corrected)
-            outside = _cited_outside(report, verified)
-            if outside:
-                raise FlowStall(
-                    "report_citations_invalid",
-                    "the report still cites unverified sources after correction",
-                    step="report",
-                    observed={"urls": outside, "draft": report},
-                )
-        document = report + _record(unresolved, rejected)
+        document = synthesis["document"]
         if ctx.workspace.root is not None:
             name = _report_name(question, ctx.run_id)
             workspace = ctx.workspace
@@ -443,14 +492,17 @@ deep_research = sequence(terminal("plan"),
             "delivery_requirements": delivery_gaps,
             "capabilities": capabilities,
             "operational_evidence": operational_evidence,
+            "sources": public_sources(audit._sources),
+            "report_blocks": synthesis["blocks"],
+            "report_reviews": synthesis["reviews"],
             "directions": directions,
             "verified": verified,
             "rejected": rejected,
             "gaps_unresolved": unresolved,
             "gap_resolutions": resolutions,
             "rounds": rounds,
-            "citations_outside_verified": outside,
-            "rejected_draft_citations": draft_citations,
+            "citations_outside_verified": synthesis["outside"],
+            "rejected_draft_citations": synthesis["draft_citations"],
             # Who did each part, on which model: the run's audit trail.
             "researchers": [
                 {k: row[k] for k in ("id", "handle", "model", "failed") if k in row}
@@ -503,6 +555,7 @@ deep_research = sequence(terminal("plan"),
         earlier: tuple[Audit, dict[str, Any]] | None,
         round_no: int,
         operational_update: dict[str, Any] | None = None,
+        evidence_review: list[dict[str, Any]] | None = None,
     ) -> tuple[Audit, dict[str, Any]]:
         """The critic's complete audit of this round's evidence, schema-validated."""
 
@@ -519,6 +572,8 @@ deep_research = sequence(terminal("plan"),
         }
         if operational_update is not None:
             request["operational_update"] = True
+        if evidence_review:
+            request["evidence_review"] = evidence_review
         evidence = [p["handle"] for p in packets if p.get("handle")]
         pending = [
             Gap.model_validate(row)
@@ -534,8 +589,12 @@ deep_research = sequence(terminal("plan"),
                 "gaps": [gap.model_dump() for gap in earlier_audit.gaps],
             }
             evidence.append(critic["handle"])
+            evidence += list(earlier_audit._sources)
+            request["source_inventory"] = public_sources(earlier_audit._sources)
         request["open_requirements"] = [gap.model_dump() for gap in pending]
         stage = f"verify:{round_no}" + (":permissions" if operational_update is not None else "")
+        if evidence_review:
+            stage += ":evidence"
         result = await ctx.call(
             "critic",
             request,
@@ -544,9 +603,14 @@ deep_research = sequence(terminal("plan"),
             model=self.critic_model,
         )
         prior_audit = earlier[0] if earlier is not None else None
+        auditors = {result.handle}
+        rows = await ctx.tool_results(result.handle)
+        records = dict(prior_audit._sources) if prior_audit is not None else {}
+        records.update(source_records(rows, auditors))
         audit, problems = _audit_of(result, pending, prior_audit, request["operational_evidence"])
-        if audit is None:
-            # Format-only correction: the critic restates its own audit in the schema.
+        if audit is not None:
+            problems += bind_claims(audit.verified, records)
+        if audit is None or problems:
             result = await ctx.call(
                 "critic",
                 {
@@ -558,15 +622,23 @@ deep_research = sequence(terminal("plan"),
                     "open_requirements": [gap.model_dump() for gap in pending],
                     "operational_evidence": request["operational_evidence"],
                     "operational_update": operational_update is not None,
+                    "source_inventory": public_sources(records),
+                    "evidence_review": evidence_review or [],
                 },
-                evidence=[result.handle],
+                evidence=[result.handle, *records],
                 key=f"{stage}:repair",
                 model=self.critic_model,
             )
             audit, problems = _audit_of(
                 result, pending, prior_audit, request["operational_evidence"]
             )
-        if audit is None:
+            auditors.add(result.handle)
+            for auditor in sorted(auditors):
+                rows = await ctx.tool_results(auditor)
+                records.update(source_records(rows, auditors))
+            if audit is not None:
+                problems += bind_claims(audit.verified, records)
+        if audit is None or problems:
             raise FlowStall(
                 "critic_audit_invalid",
                 f"the critic's audit for round {round_no} does not match its schema",
@@ -574,12 +646,15 @@ deep_research = sequence(terminal("plan"),
                 observed=problems,
                 handle=result.handle,
             )
+        audit._sources = records
         return audit, {
             "round": round_no,
             "handle": result.handle,
             "model": result.model,
             "permission_revision": _permission_revision(request["operational_evidence"]),
             "operational_update": operational_update is not None,
+            "evidence_review": bool(evidence_review),
+            "source_auditors": sorted(auditors),
         }
 
 
@@ -619,10 +694,6 @@ def _researchable(rows: list[dict[str, Any]], capabilities: dict[str, Any]) -> l
         and row["required_tools"]
         and set(row["required_tools"]) <= available
     ]
-
-
-def _is_delivery(gap: Gap) -> bool:
-    return gap.closure_kind == "workflow_action" and gap.action == "persist_report"
 
 
 def _persist_report(workspace: Any, name: str, text: str) -> dict[str, Any]:
@@ -695,25 +766,28 @@ def _audit_of(
     known = {gap.gap_id: gap for gap in pending}
     remaining = {gap.gap_id: gap for gap in audit.gaps}
     if earlier is not None:
-        verified = {(claim.claim, claim.source_url): claim for claim in audit.verified}
+        verified = list(audit.verified)
         rejected = {(claim.claim, claim.source_url): claim for claim in audit.rejected}
         for claim in earlier.verified:
             withdrawn = any(
-                row.claim == claim.claim and row.source_url in {"", claim.source_url}
+                row.claim == claim.claim
+                and (not row.source_url or row.source_url in claim_urls(claim))
                 for row in audit.rejected
             )
             if not withdrawn:
-                verified.setdefault((claim.claim, claim.source_url), claim)
+                verified.append(claim)
         for rejection in earlier.rejected:
             reconsidered = any(
-                row.claim == rejection.claim and rejection.source_url in {"", row.source_url}
+                row.claim == rejection.claim
+                and (not rejection.source_url or rejection.source_url in claim_urls(row))
                 for row in audit.verified
             )
             if not reconsidered:
                 rejected.setdefault((rejection.claim, rejection.source_url), rejection)
-        audit.verified = list(verified.values())
+        audit.verified = merge_claims(verified)
         audit.rejected = list(rejected.values())
-    sources = {claim.source_url for claim in audit.verified}
+    audit.verified = merge_claims(audit.verified)
+    sources = {url for claim in audit.verified for url in claim_urls(claim)}
     receipts = {
         row["receipt_id"]: row
         for row in (operational_evidence or {}).get("receipts", [])
@@ -787,37 +861,11 @@ def _permission_covers(receipt: dict[str, Any], requirement: PermissionRequireme
     )
 
 
-def _report_text(written: dict[str, Any]) -> str:
-    """Reject an empty synthesis before claiming delivery of a report."""
-    report = str(written.get("report") or "").replace("\r\n", "\n")
-    if not report.strip():
-        raise FlowStall(
-            "report_empty", "the writer returned no report", step="report", observed=written
-        )
-    return report
-
-
 def _report_name(question: str, run_id: str) -> str:
     """The report's workspace path: the question's first words and the run."""
 
     slug = re.sub(r"[^a-z0-9]+", "-", question.lower()).strip("-")[:48].strip("-")
     return f"deep-research/{slug or 'report'}-{run_id[-8:]}.md"
-
-
-def _url_key(url: str) -> str:
-    return url.rstrip("/.,;:")
-
-
-def _cited_outside(report: str, verified: list[dict[str, Any]]) -> list[str]:
-    """URLs the report cites that are no verified claim's source, in first-cited order."""
-
-    sources = {_url_key(row["source_url"]) for row in verified}
-    outside: list[str] = []
-    for url in _CITED_URL.findall(report):
-        key = _url_key(url)
-        if key not in sources and key not in outside:
-            outside.append(key)
-    return outside
 
 
 def _record(unresolved: list[dict[str, Any]], rejected: list[dict[str, Any]]) -> str:

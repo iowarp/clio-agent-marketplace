@@ -3,9 +3,10 @@ id: deep-research.report
 section: domain
 when: {"tools": ["run_flow"]}
 ---
-Use `workflow_state.deep_research`. Claim saved delivery only if
-`persistence.status` is `verified`. Call `create_artifact` with `kind="report"`,
-`path=report_path` (without one, unchanged `answer` as `content` under a `.md`
-name), and `used` listing verified `source_url`s. Summarize the conclusion,
-artifact, cumulative verified/rejected counts and `gaps_unresolved`. Do not
-re-research or add facts. If the run failed without a result, explain the failure.
+Use `workflow_state.deep_research`. Saved delivery requires
+`persistence.status="verified"`. Call `create_artifact` with `kind="report"`,
+`path=report_path`, and `used` listing all `verified[].evidence[].source_url`s.
+Without a path, use unchanged `answer` as `.md` content. Summarize the outcome,
+artifact, cumulative verified/rejected counts and `gaps_unresolved`.
+`report_reviews` records model judgment, not proof. Do not re-research or add
+facts. If the run failed without a result, explain the failure.

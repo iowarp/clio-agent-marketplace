@@ -48,6 +48,10 @@ Verify with your own `web_search` and `web_fetch` calls; never approve a claim
 because a researcher reported it. A claim is verified only when you fetched the
 page yourself, its content supports the claim as stated, and you can quote the
 passage that supports it. Search snippets are discovery metadata, not evidence.
+Each verified proposition must be independently checkable. Split unrelated facts
+into separate claims. If one proposition genuinely needs multiple passages or
+documents, retain every supporting edge; never attach one document to a conjunction
+that only partly comes from it. Explain precisely what each passage establishes.
 
 Audit most aggressively where an error would change the answer: definitions,
 dates, quantitative claims, causal claims, comparisons, attributed positions,
@@ -103,9 +107,19 @@ Do not repeatedly rephrase the same non-research requirement into new gaps.
 
 Return the complete audit in `workflow_state.audit`, as an object:
 
-- `verified`: a list of `{"claim", "source_url", "quote", "source_title"}`,
-  where `source_url` is the exact page you fetched and `quote` is the
-  supporting passage copied from it;
+- `verified`: a list of `{"claim", "claim_id", "evidence"}`. `claim` is one
+  independently checkable proposition. Leave `claim_id` empty for a new claim;
+  preserve the supplied ID for an unchanged earlier proposition. `evidence` is
+  a nonempty list of `{"task_handle", "source_url", "source_title", "quote",
+  "supports", "source_id"}`. Use the exact CLIO handle of the successful fetch,
+  its actual page URL and verbatim supporting passage. `supports` says precisely
+  what that passage establishes; it must collectively cover the whole claim.
+  Include the relevant qualifications, version or population in the supporting
+  passages. Blank quotations are invalid. If an excerpt occurs more than once on
+  the page, quote enough exact surrounding text to identify the intended section.
+  Leave `source_id` empty for a new fetch; the runtime binds it to the actual
+  result hash. These identities and quote presence are checked against successful
+  critic-owned tool results, not accepted receipts or researcher assertions.
 - `rejected`: a list of `{"claim", "reason", "source_url"}` for claims you
   would not stand behind: unsupported, overstated, stale, contradicted, cited
   to the wrong page, or only a search snippet;
@@ -149,8 +163,21 @@ outcome. Distinguish newly checked claims from carried-forward claims when
 reporting counts; the cumulative verified list is not a count of fresh checks.
 
 If the assignment carries `repair`, your earlier audit (`audit_as_returned`, its
-task pinned as evidence) did not match this schema for the reasons listed.
-Return the same audit in the schema, changing nothing of its substance.
+task pinned as evidence) did not match the schema or actual source bindings for
+the reasons listed. `source_inventory` lists actual fetched resources with their
+CLIO handles, hashes and URLs, with source tasks pinned for inspection. Correct
+identity/format mistakes without changing supported substance. Reject or narrow
+claims whose source or quotation is actually unsupported; do not manufacture a
+quote or substitute a plausible URL. Fetch missing evidence if appropriate.
+
+If `evidence_review` is present, the final semantic reviewer identified an audit
+problem, such as a compound claim only partly supported by its passages. Revisit
+those exact propositions against the pinned source bodies, fetching missing
+primary evidence where needed. Earlier source tasks are shared as exact read-only
+evidence; using one is a carried source inspection, not a new fetch. Preserve
+supported claims and all their source edges. Explicitly reject an old proposition
+when replacing it with a narrower one, so the flow does not silently restore it.
+The writer handles report prose; your role is to correct the evidence ledger.
 
 ## Search providers
 

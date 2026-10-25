@@ -10,10 +10,9 @@ made, a gather runs at most ``limit`` calls at once and hands back typed outcome
 from __future__ import annotations
 
 import asyncio
-import importlib.util
+import hashlib
 import json
 import re
-import sys
 from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
@@ -24,6 +23,7 @@ import pytest
 
 from clio_agent.flows.outcomes import CallFailed, FlowOutcome, FlowStall, GatherFailed
 from clio_agent.flows.values import CallResult, FlowWorkspace
+from clio_agent.plugins.loader import import_plugin_module
 from clio_agent.sdk.flow import FlowOptionsInvalid
 
 PLUGIN = Path(__file__).resolve().parents[1]
@@ -32,14 +32,7 @@ PROMPT = PLUGIN / "ai.iowarp.clio" / "prompt"
 
 
 def _load_flow_module() -> Any:
-    name = "deep_research_flow_under_test"
-    if name in sys.modules:
-        return sys.modules[name]
-    spec = importlib.util.spec_from_file_location(name, FLOW_FILE)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+    return import_plugin_module(PLUGIN, "flows/deep_research.py")
 
 
 flow_module = _load_flow_module()
@@ -155,6 +148,20 @@ class ScriptedCtx:
     async def permission_receipts(self, *, refresh: bool = False) -> dict[str, Any]:
         return {"status": "available", "receipts": []}
 
+    async def tool_results(self, handle: str) -> list[dict[str, Any]]:
+        owners = {}
+        for row in self.journal["calls"].values():
+            for verified in (
+                row.get("value", {}).get("workflow_state", {}).get("audit", {}).get("verified", [])
+            ):
+                for edge in verified.get("evidence", []):
+                    owners.setdefault(edge["task_handle"], row["handle"])
+        return [
+            source_fixture(int(match[1]), handle)
+            for task, owner in owners.items()
+            if owner == handle and (match := re.fullmatch(r"fetch_(\d+)", task))
+        ]
+
 
 # ----------------------------------------------------------------- the models
 class Planner:
@@ -205,6 +212,8 @@ class Writer:
         delivery: dict[str, Any],
         operational_evidence: dict[str, Any],
         citation_problems: list[str],
+        review_feedback: list[Any],
+        previous_blocks: list[Any],
     ) -> Any:
         self.given.append(
             {
@@ -214,20 +223,84 @@ class Writer:
                 "delivery": delivery,
                 "operational_evidence": operational_evidence,
                 "citation_problems": citation_problems,
+                "review_feedback": [row.model_dump() for row in review_feedback],
             }
         )
-        lines = [f"- {c.claim} ([source]({c.source_url}))" for c in verified]
-        extra = "" if self.repairable and citation_problems else self.extra
-        return dspy.Prediction(report="# Report\n\n" + "\n".join(lines) + extra)
+        blocks = [{"text": "# Report", "kind": "structure", "claim_ids": []}]
+        blocks += [
+            {"text": c.claim, "kind": "source_fact", "claim_ids": [c.claim_id]} for c in verified
+        ]
+        extra = "" if self.repairable and (citation_problems or review_feedback) else self.extra
+        if extra:
+            blocks.append({"text": extra, "kind": "proposal", "claim_ids": []})
+        return dspy.Prediction(blocks=blocks)
 
 
-def claim(n: int) -> dict[str, str]:
-    return {
-        "claim": f"claim {n}",
-        "source_url": f"https://example.org/{n}",
-        "quote": f"passage {n}",
-        "source_title": f"Source {n}",
+def source_fixture(n: int, auditor: str) -> dict[str, Any]:
+    reference = {
+        "session_id": "source-fixture",
+        "scope": "test",
+        "content_id": f"result_{n}",
+        "sha256": hashlib.sha256(f"result {n}".encode()).hexdigest(),
     }
+    return {
+        "task": {
+            "handle": f"fetch_{n}",
+            "kind": "MCP",
+            "status": "completed",
+            "tool": "fetch",
+            "backend": {"server": "web"},
+            "owner": {"assignment_id": auditor},
+            "terminal_at": "2026-01-01T00:00:00Z",
+        },
+        "result_reference": reference,
+        "value": {
+            "ok": True,
+            "status": 200,
+            "content": f"passage {n}",
+            "url": f"https://example.org/{n}",
+            "title": f"Source {n}",
+        },
+    }
+
+
+def claim(n: int) -> dict[str, Any]:
+    record = source_fixture(n, "critic")
+    url = f"https://example.org/{n}"
+    body_hash = hashlib.sha256(f"passage {n}".encode()).hexdigest()
+    source_id = (
+        "source_"
+        + hashlib.sha256(
+            json.dumps([record["result_reference"], url, body_hash], sort_keys=True).encode()
+        ).hexdigest()[:24]
+    )
+    return flow_module.VerifiedClaim.model_validate(
+        {
+            "claim": f"claim {n}",
+            "evidence": [
+                {
+                    "task_handle": f"fetch_{n}",
+                    "source_url": url,
+                    "quote": f"passage {n}",
+                    "source_title": f"Source {n}",
+                    "supports": f"claim {n}",
+                    "source_id": source_id,
+                }
+            ],
+        }
+    ).model_dump()
+
+
+class Reviewer:
+    """Script only the semantic judgment; production still binds actual source fixtures."""
+
+    def __init__(self, issues: list[list[dict[str, Any]]] | None = None) -> None:
+        self.issues = list(issues or [])
+        self.given: list[dict[str, Any]] = []
+
+    def __call__(self, **kwargs: Any) -> Any:
+        self.given.append(kwargs)
+        return dspy.Prediction(issues=self.issues.pop(0) if self.issues else [])
 
 
 def gap(text: str, **closure: Any) -> dict[str, Any]:
@@ -262,7 +335,7 @@ def audit(
                         "gap_id": gap(q)["gap_id"],
                         "basis": "new_evidence",
                         "reason": "The verified passage answers it",
-                        "source_urls": [claim(1)["source_url"]],
+                        "source_urls": [claim(1)["evidence"][0]["source_url"]],
                     }
                     for q in resolved
                 ],
@@ -289,12 +362,15 @@ class Children:
         raise AssertionError(f"unexpected target {target}")
 
 
-def make_flow(planner: Planner, writer: Writer | None = None, **options: Any) -> Any:
+def make_flow(
+    planner: Planner, writer: Writer | None = None, reviewer: Reviewer | None = None, **options: Any
+) -> Any:
     flow = DeepResearch()
     for key, value in DeepResearch.checked_options(options).items():
         setattr(flow, key, value)
     flow.planner = planner
     flow.writer = writer or Writer()
+    flow.reviewer = reviewer or Reviewer()
     return flow
 
 
@@ -352,7 +428,7 @@ def test_plan_research_verify_report() -> None:
     assert critic["key"] == "verify:1" and critic["model"] == "acct/large"
     assert critic["evidence"] == ["task_1", "task_2"]
     assert [p["evidence"] for p in critic["input"]["packets"]] == ["packet for a", "packet for b"]
-    assert ctx.steps == ["DeepResearch._plan", "DeepResearch._write"]
+    assert ctx.steps == ["DeepResearch._plan", "DeepResearch._write", "DeepResearch._review"]
     assert writer.given[0]["verified"] == [claim(1), claim(2)]
     assert result["verified"] == [claim(1), claim(2)]
     assert result["rejected"] == [] and result["gaps_unresolved"] == []
@@ -365,6 +441,8 @@ def test_plan_research_verify_report() -> None:
             "handle": "task_3",
             "model": "acct/large",
             "operational_update": False,
+            "evidence_review": False,
+            "source_auditors": ["task_3"],
             "permission_revision": flow_module._permission_revision(
                 {"status": "available", "receipts": []}
             ),
@@ -390,7 +468,7 @@ def test_a_named_gap_gets_exactly_one_targeted_round() -> None:
     first, second = of(ctx, "critic")
     assert second["key"] == "verify:2"
     # The second critic reads only the new packet, with the first audit pinned and carried.
-    assert second["evidence"] == ["task_4", "task_3"]
+    assert second["evidence"] == ["task_4", "task_3", "fetch_1"]
     assert [p["id"] for p in second["input"]["packets"]] == ["g2.1"]
     assert second["input"]["earlier_audit"]["verified"] == [claim(1)]
     assert second["input"]["earlier_audit"]["gaps"] == [gap("who ruled?")]
@@ -848,7 +926,7 @@ def test_planner_can_ground_an_explicit_permission_requirement_in_its_own_scope(
 
 def test_an_empty_report_cannot_receive_a_verified_delivery_receipt(tmp_path: Path) -> None:
     flow = make_flow(Planner(["a"]))
-    flow.writer = lambda **kwargs: dspy.Prediction(report=" \n ")
+    flow.writer = lambda **kwargs: dspy.Prediction(blocks=[])
     ctx = ScriptedCtx(Children([audit([claim(1)])]), workspace=tmp_path)
     with pytest.raises(FlowStall) as stalled:
         run(flow, ctx)
@@ -869,7 +947,7 @@ def test_prior_claims_cannot_disappear_without_an_explicit_audit_update() -> Non
 
     withdrawal = {
         "claim": claim(1)["claim"],
-        "source_url": claim(1)["source_url"],
+        "source_url": claim(1)["evidence"][0]["source_url"],
         "reason": "The source now retracts it",
     }
     result.workflow_state = audit(rejected=[withdrawal])["workflow_state"]
@@ -996,13 +1074,196 @@ def test_an_audit_off_schema_is_restated_once_then_stalls() -> None:
 
     first, repair = of(ctx, "critic")
     assert repair["key"] == "verify:1:repair" and repair["evidence"] == ["task_2"]
-    assert any("source_url" in problem for problem in repair["input"]["repair"])
+    assert any("evidence" in problem for problem in repair["input"]["repair"])
     assert result["verified"] == [claim(1)]
 
     ctx = ScriptedCtx(Children([bad, {"answer": "still prose"}]))
     with pytest.raises(FlowStall) as stalled:
         run(make_flow(Planner(["a"])), ctx)
     assert stalled.value.stall == "critic_audit_invalid"
+
+
+@pytest.mark.parametrize("field", ["quote", "supports", "task_handle"])
+def test_source_edges_cannot_use_blank_integrity_fields(field: str) -> None:
+    row = claim(1)
+    row["evidence"][0][field] = " \n\t "
+    with pytest.raises(ValueError, match="must not be blank"):
+        flow_module.VerifiedClaim.model_validate(row)
+
+
+@pytest.mark.parametrize(
+    "failure",
+    ["failed", "server_error", "empty", "other_actor", "wrong_server", "accepted", "error_flag"],
+)
+def test_only_actual_successful_critic_fetches_can_bind_a_source(failure: str) -> None:
+    row = source_fixture(1, "critic")
+    if failure == "failed":
+        row["task"]["status"] = "failed"
+    elif failure == "server_error":
+        row["value"]["status"] = 503
+    elif failure == "empty":
+        row["value"]["content"] = " "
+    elif failure == "other_actor":
+        row["task"]["owner"]["assignment_id"] = "researcher"
+    elif failure == "wrong_server":
+        row["task"]["backend"]["server"] = "other"
+    elif failure == "accepted":
+        row["value"] = {"status": "running", "result": row["value"]}
+    else:
+        row["value"] = {"isError": True, "structuredContent": row["value"]}
+    assert flow_module.source_records([row], {"critic"}) == {}
+
+
+def test_source_binding_checks_actual_url_quote_and_unique_occurrence() -> None:
+    records = flow_module.source_records([source_fixture(1, "critic")], {"critic"})
+    wrong_url = flow_module.VerifiedClaim.model_validate(claim(1))
+    wrong_url.evidence[0].source_url += "?different=query"
+    assert "fetched resource" in flow_module.bind_claims([wrong_url], records)[0]
+    wrong_quote = flow_module.VerifiedClaim.model_validate(claim(1))
+    wrong_quote.evidence[0].quote = "a plausible passage not actually fetched"
+    assert "absent" in flow_module.bind_claims([wrong_quote], records)[0]
+    row = source_fixture(1, "critic")
+    row["value"]["content"] = "passage 1 in section A. passage 1 in section B."
+    records = flow_module.source_records([row], {"critic"})
+    ambiguous = flow_module.VerifiedClaim.model_validate(claim(1))
+    assert "repeats" in flow_module.bind_claims([ambiguous], records)[0]
+    ambiguous.evidence[0].quote = "passage 1 in section B."
+    assert flow_module.bind_claims([ambiguous], records) == []
+
+
+def test_merging_a_proposition_keeps_every_supporting_document() -> None:
+    first = claim(1)
+    second = claim(2)
+    first["claim"] = second["claim"] = "Joint proposition from two documents"
+    first["claim_id"] = second["claim_id"] = ""
+    merged = flow_module.merge_claims(
+        [flow_module.VerifiedClaim.model_validate(row) for row in [first, second]]
+    )
+    assert len(merged) == 1 and len(merged[0].evidence) == 2
+    report = flow_module.ReportBlock(
+        text="Joint proposition from two documents",
+        kind="source_fact",
+        claim_ids=[merged[0].claim_id],
+    )
+    evidence_module = import_plugin_module(PLUGIN, "evidence.py")
+    rendered = evidence_module.render_report([report], merged)
+    assert "https://example.org/1" in rendered and "https://example.org/2" in rendered
+
+
+def test_review_context_retains_source_line_structure_and_declares_window_bounds() -> None:
+    module = import_plugin_module(PLUGIN, "evidence.py")
+    row = source_fixture(1, "critic")
+    row["value"]["content"] = (
+        "Prefix\n" + "x" * 1000 + "\n```python\n    passage 1\n```\n" + "y" * 1000
+    )
+    records = flow_module.source_records([row], {"critic"})
+    claims = [flow_module.VerifiedClaim.model_validate(claim(1))]
+    assert flow_module.bind_claims(claims, records) == []
+    context = module.review_sources(claims, records)[0]["passage_context"][0]
+    assert "```python\n    passage 1\n```" in context["text"]
+    assert context["context_complete"] is False
+    assert context["coordinates"] == "source_text_characters"
+    assert (
+        row["value"]["content"][context["context_start"] : context["context_end"]]
+        == context["text"]
+    )
+
+
+def test_rendered_citations_do_not_break_code_blocks_or_reparse_source_titles() -> None:
+    module = import_plugin_module(PLUGIN, "evidence.py")
+    claim_row = flow_module.VerifiedClaim.model_validate(claim(1))
+    claim_row.evidence[0].source_title = "Xarray_to_zarr [API]"
+    block = flow_module.ReportBlock(
+        text="```python\nprint('example')\n```", kind="proposal", claim_ids=[claim_row.claim_id]
+    )
+    rendered = module.render_report([block], [claim_row])
+    assert "\n```\n\n[Xarray\\_to\\_zarr \\[API\\]]" in rendered
+
+
+def test_semantic_contradiction_is_corrected_and_review_covers_the_saved_document(
+    tmp_path: Path,
+) -> None:
+    stale = "No fresh sources were fetched."
+    issue = {
+        "owner": "report",
+        "excerpt": stale,
+        "reason": "Contradicts a current-run successful bound source",
+        "claim_ids": [claim(1)["claim_id"]],
+    }
+    reviewer = Reviewer([[issue], []])
+    writer = Writer(extra=stale, repairable=True)
+    ctx = ScriptedCtx(Children([audit([claim(1)])]), workspace=tmp_path)
+    result = run(make_flow(Planner(["a"]), writer, reviewer), ctx)
+    assert stale not in result["answer"]
+    assert len(writer.given) == len(reviewer.given) == 2
+    assert reviewer.given[0]["source_records"][0]["http_status"] == 200
+    assert result["report_reviews"][0]["issues"] == [issue]
+    assert result["report_reviews"][-1]["status"] == "accepted_by_reviewer"
+    assert result["report_reviews"][-1]["report_sha256"] == result["persistence"]["text_sha256"]
+
+
+def test_semantic_audit_fault_returns_to_critic_without_losing_source_edges() -> None:
+    compound = claim(1)
+    compound["claim"] = "claim 1 and claim 2"
+    compound["claim_id"] = ""
+    compound = flow_module.VerifiedClaim.model_validate(compound).model_dump()
+    # Its quote is genuinely in source1, but that alone does not support the second clause.
+    issue = {
+        "owner": "audit",
+        "excerpt": compound["claim"],
+        "reason": "The second clause has no supporting source edge",
+        "claim_ids": [compound["claim_id"]],
+    }
+    correction = audit(
+        [claim(1), claim(2)],
+        rejected=[
+            {
+                "claim": compound["claim"],
+                "reason": "Only partial support; replaced with two atoms",
+                "source_url": compound["evidence"][0]["source_url"],
+            }
+        ],
+    )
+    ctx = ScriptedCtx(Children([audit([compound]), correction]))
+    result = run(make_flow(Planner(["a"]), reviewer=Reviewer([[issue], []])), ctx)
+    assert result["verified"] == [claim(1), claim(2)]
+    assert result["critics"][-1]["evidence_review"] is True
+    assert of(ctx, "critic")[1]["input"]["evidence_review"] == [issue]
+    assert len(result["sources"]) == 2
+
+
+def test_unresolved_semantic_fault_stops_before_persistence(tmp_path: Path) -> None:
+    issue = {
+        "owner": "report",
+        "excerpt": "unsupported connective",
+        "reason": "The report is still stronger than its mapped claims",
+        "claim_ids": [],
+    }
+    ctx = ScriptedCtx(Children([audit([claim(1)])]), workspace=tmp_path)
+    with pytest.raises(FlowStall) as stalled:
+        run(make_flow(Planner(["a"]), reviewer=Reviewer([[issue], [issue]])), ctx)
+    assert stalled.value.stall == "report_review_unresolved"
+    assert len(stalled.value.details["observed"]["reviews"]) == 2
+    assert not list(tmp_path.rglob("*.md"))
+
+
+def test_source_repair_reobserves_the_original_auditor_without_inventing_fetch_success() -> None:
+    class LateResultCtx(ScriptedCtx):
+        def __init__(self) -> None:
+            super().__init__(Children([audit([claim(1)]), audit([claim(1)])]))
+            self.reads: dict[str, int] = {}
+
+        async def tool_results(self, handle: str) -> list[dict[str, Any]]:
+            self.reads[handle] = self.reads.get(handle, 0) + 1
+            if self.reads[handle] == 1 and handle == "task_2":
+                return []  # No confirmed terminal source at this observation point.
+            return await super().tool_results(handle)
+
+    ctx = LateResultCtx()
+    result = run(make_flow(Planner(["a"])), ctx)
+    assert ctx.reads["task_2"] == 2
+    assert len(of(ctx, "researcher")) == 1
+    assert result["verified"] == [claim(1)]
 
 
 def test_a_failed_researcher_reaches_the_critic_and_all_failing_ends_the_run() -> None:
