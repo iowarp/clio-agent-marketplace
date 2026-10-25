@@ -15,8 +15,42 @@ _CITED_URL = re.compile(r"https?://[^\s)\]>\"'`]+")
 
 
 def is_delivery(gap: Any) -> bool:
-    """The registered parent report action, deferred until after synthesis."""
-    return gap.closure_kind == "workflow_action" and gap.action == "persist_report"
+    """Known parent report actions, deferred until the document exists."""
+    return gap.closure_kind == "workflow_action" and gap.action in {
+        "review_report",
+        "persist_report",
+    }
+
+
+def action_receipts(
+    document: str, reviews: list[dict[str, Any]], persistence: dict[str, Any]
+) -> dict[str, dict[str, Any]]:
+    """Bind each parent-stage outcome to the exact document it inspected."""
+    digest = hashlib.sha256(document.encode("utf-8")).hexdigest()
+    review = reviews[-1] if reviews else {}
+    accepted = review.get("status") == "accepted_by_reviewer"
+    matches = review.get("report_sha256") == digest
+    saved = (
+        persistence.get("status") == "verified"
+        and persistence.get("text_sha256") == digest
+        and persistence.get("readback_text_sha256") == digest
+    )
+    return {
+        "review_report": {
+            "status": "accepted_by_reviewer" if accepted and matches else "unverified",
+            "report_sha256": digest,
+            "review": review,
+            "verification": "model_judgment_of_exact_draft",
+        },
+        "persist_report": {**persistence, "status": "verified" if saved else "unverified"},
+    }
+
+
+def action_completed(gap: dict[str, Any], receipts: dict[str, dict[str, Any]]) -> bool:
+    """Settle only the registered requirement whose own receipt establishes closure."""
+    expected = {"review_report": "accepted_by_reviewer", "persist_report": "verified"}
+    action = gap["action"]
+    return action in expected and receipts.get(action, {}).get("status") == expected[action]
 
 
 def cited_outside(report: str, verified: list[dict[str, Any]]) -> list[str]:

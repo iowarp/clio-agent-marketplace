@@ -41,7 +41,7 @@ from ..evidence import (
     public_sources,
     source_records,
 )
-from ..report import ReportSynthesis, delivery_record
+from ..report import ReportSynthesis, action_completed, action_receipts, delivery_record
 from ..report import is_delivery as _is_delivery
 
 #: Ceilings on what a caller may ask for in one run (``checked_options`` refuses more).
@@ -154,7 +154,8 @@ class PlanResearch(dspy.Signature):
     turns on. Use the capability inventory, not imagined access. Label work that
     cannot be answered from web sources with its actual closure_kind; it will not
     be sent to a web researcher. Report persistence belongs to the registered
-    persist_report action after synthesis, never a research question. Distinguish
+    persist_report action after synthesis; review_report reviews the completed draft.
+    These parent stages are never web research questions. Distinguish
     a requested design or proposed benchmark from an instruction to execute it:
     unprovided measurements and approvals may be conditional design inputs, not
     new requirements. Directions must not overlap. Plan as many as the question needs, never
@@ -451,7 +452,7 @@ deep_research = sequence(terminal("plan"),
             resolutions,
             rounds,
             operational_evidence,
-            capabilities["workflow_actions"]["persist_report"],
+            capabilities["workflow_actions"],
         )
         audit = synthesis["audit"]
         operational_evidence = synthesis["operational_evidence"]
@@ -483,8 +484,8 @@ deep_research = sequence(terminal("plan"),
             persistence = {"status": "unavailable", "reason": "no_workspace", "path": ""}
             await ctx.record_event({"event": "report_not_written", "reason": "no_workspace"})
         await ctx.record_event({"event": "report_persistence", **persistence})
-        if persistence["status"] != "verified":
-            unresolved += delivery_gaps
+        receipts = action_receipts(document, synthesis["reviews"], persistence)
+        unresolved += [gap for gap in delivery_gaps if not action_completed(gap, receipts)]
         report_path = persistence["path"] if persistence["status"] == "verified" else ""
         typed = {
             "delivery": delivery_record(
@@ -493,6 +494,7 @@ deep_research = sequence(terminal("plan"),
             "report_path": report_path,
             "persistence": persistence,
             "delivery_requirements": delivery_gaps,
+            "action_receipts": receipts,
             "capabilities": capabilities,
             "operational_evidence": operational_evidence,
             "sources": public_sources(audit._sources),
@@ -614,6 +616,15 @@ deep_research = sequence(terminal("plan"),
         if audit is not None:
             problems += bind_claims(audit.verified, records)
         if audit is None or problems:
+            await ctx.record_event(
+                {
+                    "event": "critic_audit_repair",
+                    "round": round_no,
+                    "critic": result.handle,
+                    "problems": problems,
+                    "source_count": len(records),
+                }
+            )
             result = await ctx.call(
                 "critic",
                 {
@@ -678,11 +689,16 @@ def _capabilities(ctx: Any) -> dict[str, Any]:
     return {
         "researcher_tools": sorted(tools) if isinstance(tools, list) else [],
         "workflow_actions": {
+            "review_report": {
+                "stage": "after_draft",
+                "available": True,
+                "verification": "recorded model judgment of exact draft against source passages and operational history; not proof of truth",
+            },
             "persist_report": {
                 "stage": "after_synthesis",
                 "available": ctx.workspace.root is not None,
                 "verification": "write then read back the complete report text",
-            }
+            },
         },
     }
 

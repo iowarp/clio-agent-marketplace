@@ -507,7 +507,8 @@ def test_non_web_requirements_do_not_spawn_impossible_research_rounds(tmp_path: 
     assert result["delivery_requirements"] == requirements[:1]
     assert result["persistence"]["status"] == "verified"
     assert writer.given[0]["unresolved_gaps"] == requirements[1:]
-    assert writer.given[0]["delivery"]["stage"] == "after_synthesis"
+    assert writer.given[0]["delivery"]["persist_report"]["stage"] == "after_synthesis"
+    assert writer.given[0]["delivery"]["review_report"]["stage"] == "after_draft"
     assert "Save and read back" not in result["answer"]
     assert "Supply the site's free space" in result["answer"]
     assert "requires: fs_read" in result["answer"]

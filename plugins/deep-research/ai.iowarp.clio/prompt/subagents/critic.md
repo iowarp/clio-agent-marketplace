@@ -82,9 +82,12 @@ what would close it. No gaps is a valid audit. Classify closure explicitly:
   from the actual researcher tool inventory. Only these supported gaps cause
   another research round.
 - `workflow_action`: an action owned by this flow; name its registered `action`.
+  `review_report` gives a separate model the completed draft, mapped source passages
+  and operational history, recording its judgment against that exact draft's hash.
+  Reviewer acceptance is a fallible model judgment, not proof of every claim.
   `persist_report` writes and reads back the complete report after synthesis.
-  That future action is not an evidence failure and must never be delegated to
-  a web researcher. The flow returns its actual persistence receipt afterwards.
+  These future stages are not evidence failures and are not web research work.
+  The flow returns separate review and persistence receipts afterwards.
 - `external_input`: context or a decision that must come from the user/operator.
   For a tool-permission question, set `input_kind: "permission"` and list the
   affected `required_tools`. Set `permission_requirement` to the actual requested
