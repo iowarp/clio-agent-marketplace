@@ -294,7 +294,7 @@ deep_research = sequence(terminal("plan"),
             if isinstance(result, FlowOutcome):
                 row["failed"] = {"reason": result.reason, "message": str(result)}
             else:
-                row.update(handle=result.handle, model=result.model, evidence=result.answer)
+                row.update(handle=result.handle, model=result.model, evidence=result.response_text)
             packets.append(row)
         return packets
 

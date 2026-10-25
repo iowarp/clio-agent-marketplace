@@ -244,6 +244,28 @@ def of(ctx: ScriptedCtx, target: str) -> list[dict[str, Any]]:
 
 
 # --------------------------------------------------------------------- tests
+def test_the_critic_receives_public_evidence_before_the_final_addendum() -> None:
+    packet = "A substantive finding, primary source and limitation.\n" * 350
+    addendum = "The last source finished."
+
+    def children(target: str, payload: Any) -> dict[str, Any]:
+        if target == "researcher":
+            return {
+                "answer": addendum,
+                "response_parts": [
+                    {"id": "packet", "type": "text", "text": packet},
+                    {"id": "addendum", "type": "text", "text": addendum},
+                ],
+            }
+        assert target == "critic"
+        assert payload["packets"][0]["evidence"] == packet + "\n\n" + addendum
+        return audit([claim(1)])
+
+    ctx = ScriptedCtx(children)
+    result = run(make_flow(Planner(["a"])), ctx)
+    assert result["verified"] == [claim(1)]
+
+
 def test_plan_research_verify_report() -> None:
     planner, writer = Planner(["a", "b"]), Writer()
     ctx = ScriptedCtx(Children([audit([claim(1), claim(2)])]))
