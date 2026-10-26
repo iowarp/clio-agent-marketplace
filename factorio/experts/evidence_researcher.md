@@ -4,7 +4,7 @@ title: Scientific Evidence Researcher
 description: Deep Researcher-style coordinator that dynamically fans out web evidence lanes, follows newly discovered branches, audits citations with an independent critic, and returns a source-grounded dossier to Factorio.
 tier: 2
 parent: main
-role: orchestrator
+delegation_policy: adaptive
 module:
   kind: react
 parameters:
@@ -19,9 +19,7 @@ signature:
       description: Critic-reviewed evidence dossier with inline citations, claim map, gaps, contradictions, and a complete source audit.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
-  delegation: true
+  workflow_state: false
 children:
   - evidence_leaf
   - evidence_critic
@@ -71,9 +69,12 @@ complete evidence dossier passes criticism, or return an explicit incomplete
 consultation explaining the unavailable evidence and impact.
 
 If inclusion scope or a scientific definition truly requires the scientist's
-choice, enter typed `input_required` with stable questions and suspend. Factorio
-will reconcile and respond to this same consultation. Do not ask the user
-directly.
+choice, return stable questions as your consultation result, as a `status:
+needs_input` block with a `questions:` list (fields `id`, `question`, `why`,
+`blocking`, `proposed_default`, `evidence`); that completes this consultation.
+Factorio will reconcile them and can message this same session with the
+decision, starting a linked assignment with retained context. Do not ask the
+user directly.
 
 Your final packet must include: question and scope, search/source-family method,
 findings with inline citations, methodological landscape, competing evidence,

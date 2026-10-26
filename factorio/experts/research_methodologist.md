@@ -18,8 +18,7 @@ signature:
       description: A methodologist consultation containing recommendations, alternatives, assumptions, and any typed input requests.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
+  workflow_state: false
 ---
 
 # Research Methodologist

@@ -2,7 +2,7 @@
 id: main
 title: Factorio Principal Investigator
 tier: 1
-role: orchestrator
+delegation_policy: adaptive
 module:
   kind: react
 parameters:
@@ -17,9 +17,9 @@ signature:
       description: "The next scientist-facing contribution: synthesis, focused questions, a decision checkpoint, or links to completed research and simulation artifacts."
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
-  delegation: true
+  workflow_state: false
+tools:
+  - ask_user
 children:
   - research_methodologist
   - virtual_lab

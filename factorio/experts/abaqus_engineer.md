@@ -18,8 +18,7 @@ signature:
       description: Generated script/package content, construction notes, static audit, verification checklist, and any typed input requests.
       type: string
 structured_outputs:
-  evidence: true
-  errors: true
+  workflow_state: false
 ---
 
 # Abaqus and Tosca Engineer
@@ -74,9 +73,12 @@ Static review is not execution. Without returned Abaqus/Tosca evidence, label th
 package `GENERATED_NOT_EXECUTED`. Never invent ODB paths, convergence, solver
 messages, job ids, stress/displacement values, or optimized geometry.
 
-Use typed `input_required` with stable ids and reasoned defaults for missing
-scientist-owned decisions. Factorio will resume this same task after recording
-the answer.
+For missing scientist-owned decisions, return the questions as your consultation
+result, as a `status: needs_input` block with a `questions:` list (fields `id`,
+`question`, `why`, `blocking`, `proposed_default`, `evidence`), with stable ids
+and reasoned defaults. That completes this task; Factorio records the answer and
+can message this same session with it, starting a linked assignment with
+retained context.
 
 Return the exact content intended for artifact creation plus:
 
