@@ -123,8 +123,71 @@ def test_mirror_uses_local_copy_and_rejects_bad_step(capture: tuple[dict[str, An
         "file:///remote/node/workflow/chatcmpl-test-abcd_g0.safetensors"
     )
     assert read_rows(record, root, [0])[0] == 4
-    with pytest.raises(ProvenanceError):
+    with pytest.raises(ProvenanceError) as raised:
         read_rows(record, root, [2])
+    assert raised.value.code == "invalid_argument"
+
+
+@pytest.mark.parametrize("steps", [None, []])
+def test_omitted_steps_inspect_the_whole_response(
+    capture: tuple[dict[str, Any], Path], steps: list[int] | None
+) -> None:
+    """A caller that does not know the step indices still gets the whole response."""
+    record, root = capture
+    result = AttentionEvidence(Query([record]), root).inspect("chatcmpl-test", steps, UNIFORM_MEAN)
+    assert result["steps"] == [0, 1]
+    assert result["selection"] == "every captured decode step"
+
+
+def test_out_of_range_steps_are_an_argument_error_naming_the_range(
+    capture: tuple[dict[str, Any], Path],
+) -> None:
+    """A bad step is the caller's to fix (with the valid range), never malformed evidence."""
+    record, root = capture
+    with pytest.raises(ProvenanceError) as raised:
+        AttentionEvidence(Query([record]), root).inspect("chatcmpl-test", [0, 7], UNIFORM_MEAN)
+    assert raised.value.code == "invalid_argument"
+    assert raised.value.details["decode_steps"] == 2
+    assert raised.value.details["out_of_range"] == [7]
+    assert "0..1" in raised.value.message and "omit steps" in raised.value.message
+
+
+def test_missing_capture_says_so(tmp_path: Path) -> None:
+    """A response without a descriptor is unavailable evidence, not an ambiguity."""
+    with pytest.raises(ProvenanceError, match="No attention capture"):
+        AttentionEvidence(Query([]), tmp_path).inspect("chatcmpl-none", None, UNIFORM_MEAN)
+
+
+class RoutedQuery(Query):
+    """Answers call listings and capture joins from separate rows."""
+
+    def __init__(self, calls: list[dict[str, Any]], captures: list[dict[str, Any]]) -> None:
+        super().__init__(calls)
+        self.captures = captures
+
+    def query_attention_tasks(self, match: dict[str, Any], limit: int) -> list[dict[str, Any]]:
+        self.queries.append(match)
+        rows = self.captures if match.get("activity_id") == "decode_attention" else self.rows
+        return rows[:limit]
+
+
+def test_call_listing_reports_decode_steps(capture: tuple[dict[str, Any], Path]) -> None:
+    """The listing tells the caller how many steps each captured response has."""
+    record, root = capture
+    call = {
+        "custom_metadata": {
+            "clio": {
+                "event_type": "lm.call",
+                "event_id": "call-1",
+                "payload": {"response_id": "chatcmpl-test", "model": "model"},
+            }
+        }
+    }
+    listed = AttentionEvidence(RoutedQuery([call], [record]), root).list_calls("session-1")
+    assert listed["calls"][0]["capture_available"] is True
+    assert listed["calls"][0]["decode_steps"] == 2
+    missing = AttentionEvidence(RoutedQuery([call], []), root).list_calls("session-1")
+    assert missing["calls"][0] == {**missing["calls"][0], "capture_available": False}
 
 
 def test_ambiguous_capture_is_not_selected_arbitrarily(
@@ -189,3 +252,6 @@ async def test_attention_mcp_is_read_only(
         )
         assert result.structured_content is not None
         assert result.structured_content["profile_revision"] == UNIFORM_MEAN.revision
+        whole = await client.call_tool("inspect_attention", {"response_id": "chatcmpl-test"})
+        assert whole.structured_content is not None
+        assert whole.structured_content["steps"] == [0, 1]

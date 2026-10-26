@@ -54,6 +54,8 @@ class AttentionEvidence:
                     "model": payload.get("model") or clio.get("model"),
                 }
             )
+        for call in calls:
+            call.update(self._capture_summary(call["response_id"]))
         return {
             "calls": calls,
             "truncated": len(rows) > limit,
@@ -61,19 +63,8 @@ class AttentionEvidence:
             "capture_verified": False,
         }
 
-    def inspect(
-        self,
-        response_id: str,
-        steps: list[int],
-        profile: AttentionProfile,
-    ) -> dict[str, Any]:
-        """Reduce explicit captured decode steps, preserving mass and missingness.
-
-        Coordinates are captured token positions, not inferred image patches or
-        transcript character offsets. Attention strength alone proves no attack.
-        """
-        if not response_id or len(response_id) > 256:
-            raise ProvenanceError("invalid_argument", "Provide an exact provider response ID")
+    def _group_zero(self, response_id: str) -> list[dict[str, Any]]:
+        """The group-zero capture descriptors joined to one provider response ID."""
         records = self.source.query_attention_tasks(
             {
                 "activity_id": "decode_attention",
@@ -83,10 +74,47 @@ class AttentionEvidence:
         )
         if len(records) > 32:
             raise ProvenanceError("attention_record_unavailable", "Capture join exceeds its bound")
-        records = [row for row in records if str(row.get("task_id", "")).endswith(":g0")]
+        return [row for row in records if str(row.get("task_id", "")).endswith(":g0")]
+
+    def _capture_summary(self, response_id: str) -> dict[str, Any]:
+        """Whether a capture descriptor exists and how many decode steps it records."""
+        try:
+            records = self._group_zero(response_id)
+        except ProvenanceError:
+            return {"capture_available": False, "decode_steps": None}
+        if len(records) != 1:
+            return {"capture_available": False, "decode_steps": None}
+        used = records[0].get("used") or {}
+        steps = used.get("num_decode_tokens")
+        return {
+            "capture_available": True,
+            "decode_steps": int(steps) if isinstance(steps, int | float) else None,
+        }
+
+    def inspect(
+        self,
+        response_id: str,
+        steps: list[int] | None,
+        profile: AttentionProfile,
+    ) -> dict[str, Any]:
+        """Reduce captured decode steps (all of them when ``steps`` is empty), preserving
+        mass and missingness.
+
+        Coordinates are captured token positions, not inferred image patches or
+        transcript character offsets. Attention strength alone proves no attack.
+        """
+        if not response_id or len(response_id) > 256:
+            raise ProvenanceError(
+                "invalid_argument",
+                "Provide an exact provider response ID from spotter_list_attention_calls",
+            )
+        records = self._group_zero(response_id)
         if len(records) != 1:
             raise ProvenanceError(
-                "attention_record_unavailable", "Expected one unambiguous group-zero capture"
+                "attention_record_unavailable",
+                "Expected one unambiguous group-zero capture"
+                if records
+                else "No attention capture is recorded for this response ID",
             )
         record = records[0]
         total, rows, segments, token_ids = read_rows(record, self.files_dir, steps)
@@ -118,6 +146,7 @@ class AttentionEvidence:
             "profile": profile.model_dump(mode="json"),
             "profile_revision": profile.revision,
             "steps": list(reduced.steps),
+            "selection": "explicit steps" if steps else "every captured decode step",
             "weights": list(reduced.weights),
             "residual_mass": reduced.residual,
             "sources": sections,

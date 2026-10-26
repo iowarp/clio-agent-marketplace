@@ -30,8 +30,9 @@ that something was blocked, quarantined or lifted unless a tool result says so.
 An alert needs:
 
 - the deviation, stated in one sentence;
-- stable ids from the stores (workflow, task, execution, artifact, correlation
-  or response ids) and the provider that returned each;
+- stable ids from `review_activity` (message, tool call or response ids) or
+  from the stores (workflow, task, execution, artifact, correlation ids) and
+  the provider that returned each;
 - the recorded evidence that it departs from the person's request, and what the
   stores do not cover.
 

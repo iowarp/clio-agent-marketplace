@@ -20,6 +20,8 @@ HEALTH_KEYS = (
     "decode_steps_nonfinite",
     "restarts",
 )
+#: Upper bound on decode steps read by one inspection.
+MAX_STEPS = 4096
 
 
 def verified_path(record: dict[str, Any], root: Path) -> Path:
@@ -63,12 +65,39 @@ def verified_path(record: dict[str, Any], root: Path) -> Path:
     return path
 
 
+def select_steps(steps: list[int] | None, count: int) -> list[int]:
+    """The decode steps to read; a bad argument is ``invalid_argument``, not malformed data."""
+    if not steps:
+        if count > MAX_STEPS:
+            raise ProvenanceError(
+                "invalid_argument",
+                f"This response has {count} decode steps; select at most {MAX_STEPS} of them "
+                f"(indices 0..{count - 1}) instead of the whole response",
+                {"decode_steps": count, "max_steps": MAX_STEPS},
+            )
+        return list(range(count))
+    selected = sorted(set(steps))
+    outside = [step for step in selected if step < 0 or step >= count]
+    if outside or len(selected) > MAX_STEPS:
+        raise ProvenanceError(
+            "invalid_argument",
+            f"steps must be decode-step indices within 0..{count - 1} (this response has "
+            f"{count} decode steps, at most {MAX_STEPS} per call); omit steps to inspect "
+            "the whole response",
+            {"decode_steps": count, "max_steps": MAX_STEPS, "out_of_range": outside[:10]},
+        )
+    return selected
+
+
 def read_rows(
     record: dict[str, Any],
     root: Path,
-    steps: list[int],
+    steps: list[int] | None,
 ) -> tuple[int, list[SparseAttentionRow], list[tuple[int, int]], list[int]]:
-    """Read selected decode rows only, refusing partial or inconsistent captures."""
+    """Read selected decode rows only, refusing partial or inconsistent captures.
+
+    ``steps`` empty or ``None`` selects every captured decode step (the whole response).
+    """
     try:
         stats, used = record["attention_stats"], record["used"]
         if stats.get("format") != "safetensors":
@@ -81,13 +110,7 @@ def read_rows(
         total, count = int(used["num_prompt_tokens"]), int(used["num_decode_tokens"])
         if not 0 < total <= 1_000_000 or not count > 0:
             raise ValueError("invalid capture dimensions")
-        selected = sorted(set(steps))
-        if (
-            not selected
-            or len(selected) > 4096
-            or any(step < 0 or step >= count for step in selected)
-        ):
-            raise ValueError("select 1 to 4096 in-range decode steps")
+        selected = select_steps(steps, count)
         path = verified_path(record, root)
         with safe_open(str(path), framework="np") as capture:
             if (capture.metadata() or {}).get("request_id") != used["request_id"]:

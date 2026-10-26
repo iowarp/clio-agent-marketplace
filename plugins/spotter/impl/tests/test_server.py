@@ -53,13 +53,11 @@ async def test_exposes_purpose_specific_tools_without_provider_arguments(native_
         "query_tasks",
         "summarize_tasks",
         "get_timeline",
-        "list_pipelines",
         "list_executions",
         "list_artifact_types",
         "list_artifacts",
         "get_execution_lineage",
         "get_artifact_lineage",
-        "get_model_card",
         "trace_correlation",
     }
     for tool in tools:
@@ -82,11 +80,64 @@ async def test_capabilities_name_the_active_providers(native_server) -> None:
     assert "campaign_forensics" not in result.data
 
 
-async def test_unsupported_semantics_fail_instead_of_falling_back(native_server) -> None:
-    """A missing native capability is an explicit typed tool error."""
+async def test_unsupported_artifact_semantics_are_not_served(native_server) -> None:
+    """A lineage operation the artifact provider cannot answer is off the menu, not faked."""
     async with Client(native_server) as client:
-        with pytest.raises(ToolError, match="capability_unavailable"):
+        names = {tool.name for tool in await client.list_tools()}
+        capabilities = await client.call_tool("capabilities", {})
+        with pytest.raises(ToolError):
             await client.call_tool("get_model_card", {"model_id": "model-1"})
+
+    assert "get_model_card" not in names
+    assert "get_model_card" not in capabilities.data["artifact"]["capabilities"]
+
+
+async def test_artifact_tools_follow_the_artifact_providers_operations(tmp_path: Path) -> None:
+    """Recorded pipeline/model-card evidence serves those tools; no artifact lane serves none."""
+    journal = tmp_path / "events.jsonl"
+    journal.write_text(
+        "\n".join(
+            json.dumps(row)
+            for row in (
+                {"schema_version": "spotter.provenance.v1", "record_type": "pipeline"},
+                {"schema_version": "spotter.provenance.v1", "record_type": "model_card"},
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
+    async with Client(create_server(service=ProvenanceService(provider, provider))) as client:
+        served = {tool.name for tool in await client.list_tools()}
+    assert {"list_pipelines", "get_model_card", "trace_correlation"} <= served
+
+    class NoArtifacts:
+        name = "none"
+
+        def capabilities(self) -> set[str]:
+            return set()
+
+        def health(self) -> dict[str, str]:
+            return {"provider": self.name, "status": "ready"}
+
+        def close(self) -> None:
+            return None
+
+    service = ProvenanceService(provider, NoArtifacts())  # type: ignore[arg-type]
+    async with Client(create_server(service=service)) as client:
+        served = {tool.name for tool in await client.list_tools()}
+    artifact_tools = {
+        "list_pipelines",
+        "list_executions",
+        "list_artifact_types",
+        "list_artifacts",
+        "get_execution_lineage",
+        "get_artifact_lineage",
+        "get_model_card",
+        "trace_correlation",
+    }
+    assert not served & artifact_tools
+    assert {"capabilities", "query_tasks", "get_timeline"} <= served
 
 
 async def test_cross_domain_correlation_uses_same_native_evidence_once(native_server) -> None:
@@ -151,3 +202,15 @@ async def test_a_configured_lane_gives_no_defaulted_hint(native_server) -> None:
 
     assert result.data["lane"]["provider"] == "native"
     assert "hint" not in result.data["lane"]
+
+
+async def test_an_unreadable_store_keeps_its_tools_and_reports_its_error(tmp_path: Path) -> None:
+    """Startup never hides the lineage tools when the store cannot list its operations."""
+    journal = tmp_path / "events.jsonl"
+    journal.write_text(json.dumps({"record_type": "pipeline"}) + "\n", encoding="utf-8")
+    provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
+    async with Client(create_server(service=ProvenanceService(provider, provider))) as client:
+        served = {tool.name for tool in await client.list_tools()}
+        with pytest.raises(ToolError, match="invalid_query"):
+            await client.call_tool("list_artifacts", {})
+    assert {"list_pipelines", "get_model_card", "trace_correlation"} <= served

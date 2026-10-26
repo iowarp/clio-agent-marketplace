@@ -41,6 +41,8 @@ def test_watcher_guidance_names_only_tools_that_exist() -> None:
         "spotter_list_attention_calls",
         "spotter_inspect_attention",
         "raise_alert_card",
+        "review_activity",
+        "attention_sources",
     ):
         assert f"`{tool}`" in guidance, tool
     for skill in ("investigate-provenance", "inspect-attention", "contain-anomaly"):
@@ -74,7 +76,17 @@ async def test_every_spotter_tool_named_in_the_guidance_is_served(tmp_path: Path
         ]
     )
     named = set(re.findall(r"`spotter_([a-z_]+)`", guidance))
-    provider = JsonlProvider(NativeQueryConfig(tmp_path / "events.jsonl", tmp_path))
+    # Artifact tools are served only when the provider answers them: record the
+    # evidence that makes the native lane answer every artifact operation.
+    journal = tmp_path / "events.jsonl"
+    journal.write_text(
+        "".join(
+            json.dumps({"schema_version": "spotter.provenance.v1", "record_type": kind}) + "\n"
+            for kind in ("pipeline", "model_card")
+        ),
+        encoding="utf-8",
+    )
+    provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
     async with Client(create_server(service=ProvenanceService(provider, provider))) as client:
         served = {tool.name for tool in await client.list_tools()}
 
