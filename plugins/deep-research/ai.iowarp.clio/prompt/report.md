@@ -3,11 +3,11 @@ id: deep-research.report
 section: domain
 when: {"tools": ["run_flow"]}
 ---
-The run's result carries the report as `answer`; its
-`workflow_state.deep_research` holds `report_path`, `verified`, `rejected` and
-`gaps_unresolved`. Deliver the report with `create_artifact`: `path` set to
-`report_path` (without one, the `answer` unchanged as `content` under a `.md`
-name), `kind="report"`, `used` set to each verified `source_url`. Then
-summarize the conclusion, the artifact, the verified and rejected counts and
-the unresolved questions. Never re-research what the run returned or add facts
-to it. If the run ended without a result, say how and give no answer yourself.
+Read `get_task_result(handle=handle,
+select=["/workflow_state/deep_research/delivery"])` for path, persistence, cited
+`used` URLs, audit counts, gaps and review. Follow next_cursor; concatenate JSON
+fragments before parsing. For verified persistence call
+`create_artifact(kind="report", path=report_path, used=used)`; otherwise read
+`/answer` and register unchanged Markdown. Summarize outcome, artifact, counts
+and gaps. Review is judgment, not proof. Do not re-research or message a finished
+flow for metadata. Explain failures without results.
