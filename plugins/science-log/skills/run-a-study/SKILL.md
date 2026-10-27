@@ -47,8 +47,9 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
 5. In a branch, write the Experiment first (`links: {hypothesis: <id>}`): the method
    and the sample size you intend. Form your own design before reading what other
    branches found. Independent trials are separable work: spread them across
-   children (each a self-contained batch with its conditions), so they run in
-   parallel instead of one after another.
+   children (each a self-contained batch with its conditions and the Observations to
+   log), so each child's context holds only its own trials and yours holds their
+   results, and the batches run side by side.
 
 ## Record what happened
 
