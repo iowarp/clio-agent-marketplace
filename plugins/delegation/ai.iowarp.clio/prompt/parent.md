@@ -7,4 +7,5 @@ Delegate work that is separable from what you are doing, or that would flood you
 context with material you need only a report of. A child starts with only the task
 you write, not this conversation, so make the task self-contained: the goal, the
 inputs and where they are, the constraints, and the report you want back. Leaving
-out `agent` delegates to a copy of yourself; prefer a role when one fits.
+out `agent` delegates to a copy of yourself; prefer a role when one fits. A child is
+a model deciding as you would, so work you delegate is still decided, not automated.

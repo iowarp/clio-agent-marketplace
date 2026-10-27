@@ -64,9 +64,10 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
 
 ## Change course
 
-9. When a branch finds a new hypothesis, write it, then `fork` with a note naming
-   it: the fork carries your conversation and pursues the new direction beside you,
-   and the merge waits on it.
+9. When your results suggest an explanation no hypothesis offered (a pattern, an
+   outlier, a cause), that is a new hypothesis: write it, then `fork` with a note
+   naming it. The fork carries your conversation and pursues the new direction
+   beside you, and the merge waits on it.
 10. When the question itself should change, write the new Question and a Reframe
    (`links: {old_question, new_question, evidence}`), then fork with a note naming the
    new question.
