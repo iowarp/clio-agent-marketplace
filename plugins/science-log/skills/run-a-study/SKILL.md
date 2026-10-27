@@ -12,7 +12,10 @@ keywords:
 # Run a branched study
 
 The log records what was learned; the workflow runs the work. The log never judges a
-claim: you choose the analysis, you decide what is enough, and you say why.
+claim: you choose the analysis, you decide what is enough, and you say why. The log is
+the study's record: the person reads the study in its Science log, follows each claim
+to the entries and calls behind it, and can export the measurements. Your final answer
+summarizes the Conclusion; a result that is only in your answer cannot be checked.
 
 ## Frame it
 
