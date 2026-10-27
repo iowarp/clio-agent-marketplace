@@ -72,9 +72,11 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
    outlier, a cause), that is a new hypothesis: write it, then `fork` with a note
    naming it. The fork carries your conversation and pursues the new direction
    beside you, and the merge waits on it.
-10. When the question itself should change, write the new Question and a Reframe
-   (`links: {old_question, new_question, evidence}`), then fork with a note naming the
-   new question.
+10. When the question itself should change (its premise is false, or each answer
+   holds only under conditions the question did not name), write the new Question
+   and a Reframe (`links: {old_question, new_question, evidence}`). In a workflow,
+   fork with a note naming the new question; otherwise carry on with it. The
+   Conclusion answers the question the study ended with.
 
 ## Close it
 
@@ -83,5 +85,6 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
     rests on, a quantitative claim cites its analysis call, `confidence` and
     `caveats` are explicit, and `relation` says whether it answers the question,
     refutes its premise or replaces it. Record a Conflict for each disagreement
-    between branches you do not resolve, citing both sides.
+    you do not resolve, citing both sides: between branches, or between two results
+    (a measurement and a calculation, two methods) that should agree.
 12. Show the comparison as a chart from the measurements, not as prose alone.
