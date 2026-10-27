@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://iowarp.ai/a2ui/catalogs/bench/v1",
   "title": "Bench Catalog",
-  "description": "The hidden-law-bench readings view: every reading a study took, seconds per cycle against each input, coloured by branch. It fills itself from the measure results.",
+  "description": "The hidden-law-bench readings view: every reading a study took, seconds per cycle against each input, coloured by branch, with the study's current law (its shadow) drawn as open diamonds. It fills itself from the measure results.",
   "catalogId": "https://iowarp.ai/a2ui/catalogs/bench/v1",
   "components": {
     "Readings": {
       "type": "object",
-      "description": "Every reading of a study against each input, coloured by the branch that took it.",
+      "description": "Every reading of a study against each input, coloured by the branch that took it, with the study's current law drawn beside them as open diamonds when the rows carry it.",
       "allOf": [
         {
           "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/ComponentCommon"
@@ -58,62 +58,152 @@
                 "spec": {
                   "width": 260,
                   "height": 170,
-                  "mark": {
-                    "type": "point",
-                    "filled": true,
-                    "opacity": 0.75
-                  },
-                  "encoding": {
-                    "x": {
-                      "field": "setting",
-                      "type": "quantitative",
-                      "title": null
-                    },
-                    "y": {
-                      "field": "period_s",
-                      "type": "quantitative",
-                      "title": "seconds per cycle",
-                      "scale": {
-                        "zero": false
+                  "layer": [
+                    {
+                      "mark": {
+                        "type": "point",
+                        "filled": true,
+                        "opacity": 0.75
+                      },
+                      "encoding": {
+                        "x": {
+                          "field": "setting",
+                          "type": "quantitative",
+                          "title": null
+                        },
+                        "y": {
+                          "field": "period_s",
+                          "type": "quantitative",
+                          "title": "seconds per cycle",
+                          "scale": {
+                            "zero": false
+                          }
+                        },
+                        "color": {
+                          "field": "branch",
+                          "type": "nominal",
+                          "title": "branch"
+                        },
+                        "tooltip": [
+                          {
+                            "field": "branch",
+                            "type": "nominal"
+                          },
+                          {
+                            "field": "reading",
+                            "type": "quantitative"
+                          },
+                          {
+                            "field": "arm_length_m",
+                            "type": "quantitative"
+                          },
+                          {
+                            "field": "bob_mass_kg",
+                            "type": "quantitative"
+                          },
+                          {
+                            "field": "release_angle_deg",
+                            "type": "quantitative"
+                          },
+                          {
+                            "field": "ambient_temp_c",
+                            "type": "quantitative"
+                          },
+                          {
+                            "field": "ten_cycles_s",
+                            "type": "quantitative",
+                            "title": "ten cycles (s)"
+                          }
+                        ]
                       }
                     },
-                    "color": {
-                      "field": "branch",
-                      "type": "nominal",
-                      "title": "branch"
-                    },
-                    "tooltip": [
-                      {
-                        "field": "branch",
-                        "type": "nominal"
+                    {
+                      "transform": [
+                        {
+                          "filter": "isValid(datum.shadow) && isFinite(datum.shadow) && (datum.shadow_of === 'ten_cycles_s' || datum.shadow_of === 'period_s')"
+                        },
+                        {
+                          "calculate": "datum.shadow_of === 'ten_cycles_s' ? datum.shadow / 10 : datum.shadow",
+                          "as": "law_period_s"
+                        },
+                        {
+                          "calculate": "'current law ' + split(datum.shadow_law, ':')[0]",
+                          "as": "law"
+                        }
+                      ],
+                      "mark": {
+                        "type": "point",
+                        "filled": false,
+                        "strokeWidth": 1.5,
+                        "size": 80
                       },
-                      {
-                        "field": "reading",
-                        "type": "quantitative"
-                      },
-                      {
-                        "field": "arm_length_m",
-                        "type": "quantitative"
-                      },
-                      {
-                        "field": "bob_mass_kg",
-                        "type": "quantitative"
-                      },
-                      {
-                        "field": "release_angle_deg",
-                        "type": "quantitative"
-                      },
-                      {
-                        "field": "ambient_temp_c",
-                        "type": "quantitative"
-                      },
-                      {
-                        "field": "ten_cycles_s",
-                        "type": "quantitative",
-                        "title": "ten cycles (s)"
+                      "encoding": {
+                        "x": {
+                          "field": "setting",
+                          "type": "quantitative",
+                          "title": null
+                        },
+                        "y": {
+                          "field": "law_period_s",
+                          "type": "quantitative",
+                          "title": "seconds per cycle",
+                          "scale": {
+                            "zero": false
+                          }
+                        },
+                        "color": {
+                          "field": "branch",
+                          "type": "nominal",
+                          "title": "branch"
+                        },
+                        "shape": {
+                          "field": "law",
+                          "type": "nominal",
+                          "title": "shadow",
+                          "scale": {
+                            "range": [
+                              "diamond"
+                            ]
+                          },
+                          "legend": {
+                            "labelLimit": 320
+                          }
+                        },
+                        "tooltip": [
+                          {
+                            "field": "law",
+                            "type": "nominal",
+                            "title": "shadow"
+                          },
+                          {
+                            "field": "shadow_law",
+                            "type": "nominal",
+                            "title": "law"
+                          },
+                          {
+                            "field": "law_period_s",
+                            "type": "quantitative",
+                            "title": "law's seconds per cycle",
+                            "format": ".4~r"
+                          },
+                          {
+                            "field": "period_s",
+                            "type": "quantitative",
+                            "title": "reading's seconds per cycle",
+                            "format": ".4~r"
+                          },
+                          {
+                            "field": "branch",
+                            "type": "nominal"
+                          },
+                          {
+                            "field": "reading",
+                            "type": "quantitative"
+                          }
+                        ]
                       }
-                    ]
-                  }
+                    }
+                  ]
                 }
               },
               "description": "The readings view's fixed chart specification."
@@ -124,7 +214,7 @@
               "items": {
                 "type": "object"
               },
-              "description": "Reading rows: reading, branch, the four inputs, ten_cycles_s, period_s."
+              "description": "Reading rows: reading, branch, the four inputs, ten_cycles_s, period_s; the UI may add shadow, shadow_of and shadow_law (the study's current law for the row)."
             }
           },
           "required": [

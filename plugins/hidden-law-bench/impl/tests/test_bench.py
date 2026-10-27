@@ -40,8 +40,7 @@ def test_every_drawn_law_has_the_familys_four_properties(secret: str) -> None:
     assert law.period({**base, law.regime: high}) > below * 1.05
     # A recalled textbook law is measurably wrong across the held-out settings.
     errors = [
-        abs(10 * (law.period(s) - textbook_period(s))) / NOISE_S
-        for s in held_out_settings(secret)
+        abs(10 * (law.period(s) - textbook_period(s))) / NOISE_S for s in held_out_settings(secret)
     ]
     assert sum(errors) / len(errors) > 3
 
@@ -75,9 +74,7 @@ async def test_measurements_are_strict_kept_per_study_and_carry_their_event() ->
 
 def test_the_law_is_in_no_plugin_file_and_no_workspace_file(tmp_path: Path) -> None:
     facts = draw_law(SECRET).facts()
-    probes = [SECRET] + [
-        repr(value) for value in facts.values() if isinstance(value, float)
-    ]
+    probes = [SECRET] + [repr(value) for value in facts.values() if isinstance(value, float)]
     for path in [*PLUGIN.rglob("*"), *tmp_path.rglob("*")]:
         if not path.is_file() or ".venv" in path.parts or path.suffix == ".pyc":
             continue
@@ -85,3 +82,23 @@ def test_the_law_is_in_no_plugin_file_and_no_workspace_file(tmp_path: Path) -> N
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         assert not any(probe in text for probe in probes), path
+
+
+def test_the_catalog_pins_the_readings_spec_and_its_shadow_layer() -> None:
+    folder = PLUGIN / "ai.iowarp.clio" / "a2ui" / "bench"
+    spec = json.loads((folder / "readings_spec.json").read_text(encoding="utf-8"))
+    catalog = json.loads((folder / "catalog.json").read_text(encoding="utf-8"))
+    pinned = catalog["components"]["Readings"]["allOf"][2]["properties"]["spec"]["const"]
+    assert pinned == spec
+    readings, shadow = spec["spec"]["layer"]
+    assert readings["encoding"]["y"]["field"] == "period_s"
+    # The shadow is drawn in the view's units: a law of ten cycles is divided by ten.
+    calculate = {
+        step["as"]: step["calculate"] for step in shadow["transform"] if "calculate" in step
+    }
+    assert "datum.shadow_of === 'ten_cycles_s' ? datum.shadow / 10" in calculate["law_period_s"]
+    assert shadow["encoding"]["y"]["field"] == "law_period_s"
+    # Open marks of their own shape, named in a legend as the current law.
+    assert shadow["mark"]["filled"] is False
+    assert shadow["encoding"]["shape"]["field"] == "law"
+    assert calculate["law"].startswith("'current law '")

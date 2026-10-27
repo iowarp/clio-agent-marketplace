@@ -10,20 +10,46 @@
   "spec": {
     "width": 260,
     "height": 170,
-    "mark": {"type": "point", "filled": true, "opacity": 0.75},
-    "encoding": {
-      "x": {"field": "setting", "type": "quantitative", "title": null},
-      "y": {"field": "period_s", "type": "quantitative", "title": "seconds per cycle", "scale": {"zero": false}},
-      "color": {"field": "branch", "type": "nominal", "title": "branch"},
-      "tooltip": [
-        {"field": "branch", "type": "nominal"},
-        {"field": "reading", "type": "quantitative"},
-        {"field": "arm_length_m", "type": "quantitative"},
-        {"field": "bob_mass_kg", "type": "quantitative"},
-        {"field": "release_angle_deg", "type": "quantitative"},
-        {"field": "ambient_temp_c", "type": "quantitative"},
-        {"field": "ten_cycles_s", "type": "quantitative", "title": "ten cycles (s)"}
-      ]
-    }
+    "layer": [
+      {
+        "mark": {"type": "point", "filled": true, "opacity": 0.75},
+        "encoding": {
+          "x": {"field": "setting", "type": "quantitative", "title": null},
+          "y": {"field": "period_s", "type": "quantitative", "title": "seconds per cycle", "scale": {"zero": false}},
+          "color": {"field": "branch", "type": "nominal", "title": "branch"},
+          "tooltip": [
+            {"field": "branch", "type": "nominal"},
+            {"field": "reading", "type": "quantitative"},
+            {"field": "arm_length_m", "type": "quantitative"},
+            {"field": "bob_mass_kg", "type": "quantitative"},
+            {"field": "release_angle_deg", "type": "quantitative"},
+            {"field": "ambient_temp_c", "type": "quantitative"},
+            {"field": "ten_cycles_s", "type": "quantitative", "title": "ten cycles (s)"}
+          ]
+        }
+      },
+      {
+        "transform": [
+          {"filter": "isValid(datum.shadow) && isFinite(datum.shadow) && (datum.shadow_of === 'ten_cycles_s' || datum.shadow_of === 'period_s')"},
+          {"calculate": "datum.shadow_of === 'ten_cycles_s' ? datum.shadow / 10 : datum.shadow", "as": "law_period_s"},
+          {"calculate": "'current law ' + split(datum.shadow_law, ':')[0]", "as": "law"}
+        ],
+        "mark": {"type": "point", "filled": false, "strokeWidth": 1.5, "size": 80},
+        "encoding": {
+          "x": {"field": "setting", "type": "quantitative", "title": null},
+          "y": {"field": "law_period_s", "type": "quantitative", "title": "seconds per cycle", "scale": {"zero": false}},
+          "color": {"field": "branch", "type": "nominal", "title": "branch"},
+          "shape": {"field": "law", "type": "nominal", "title": "shadow", "scale": {"range": ["diamond"]}, "legend": {"labelLimit": 320}},
+          "tooltip": [
+            {"field": "law", "type": "nominal", "title": "shadow"},
+            {"field": "shadow_law", "type": "nominal", "title": "law"},
+            {"field": "law_period_s", "type": "quantitative", "title": "law's seconds per cycle", "format": ".4~r"},
+            {"field": "period_s", "type": "quantitative", "title": "reading's seconds per cycle", "format": ".4~r"},
+            {"field": "branch", "type": "nominal"},
+            {"field": "reading", "type": "quantitative"}
+          ]
+        }
+      }
+    ]
   }
 }
