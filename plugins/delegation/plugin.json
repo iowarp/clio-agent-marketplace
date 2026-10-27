@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "delegation",
-  "version": "1.0.0",
-  "description": "Start general subagents (any installed agent, or one of this agent's defined subagents) with a task prompt.",
+  "version": "1.1.0",
+  "description": "Delegate work: to a copy of the delegating agent, to the generic read-only explore, planner and review roles, to one of the agent's defined subagents, or to any installed agent.",
   "author": {
     "name": "IoWarp Team"
   },

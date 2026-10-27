@@ -1,7 +1,7 @@
 ---
 id: abaqus.views
 section: capabilities
-when: {"tools": ["create_a2ui_surface"]}
+when: {"tools": ["create_a2ui_surface"], "session": "root"}
 ---
 Abaqus geometry and results are shown, not described: `abaqus-visualization`
 exports meshes for the 3D view and renders report figures. For a Tosca

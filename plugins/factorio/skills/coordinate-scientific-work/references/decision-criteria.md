@@ -34,7 +34,7 @@ Choose the least coordination that improves the scientific answer.
 | What is the part actually like: XCT, porosity, roughness, microstructure, fracture surfaces | `characterization_expert` |
 | What should be tested and how, and what do the test data say | `mechanical_testing_expert` |
 | How long will it last, and why did it fail | `fatigue_failure_expert` |
-| Statistics, uncertainty and figures for a result set | `data_analysis_expert` |
+| Statistics, uncertainty and figures for a result set | A copy of yourself (delegate without naming an agent): it carries the `statistics`, `uncertainty-quantification` and `data-visualization` skills and the shell |
 | Is the package coherent and ready for the scientist? (before any readiness claim) | `independent_reviewer` |
 
 Programs other than Abaqus (for example Morphorm) and batch scheduling are

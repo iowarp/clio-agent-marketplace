@@ -39,9 +39,10 @@ declares every plugin whose skills its prompt or those skills reference:
 `materials_scientist` (materials), `manufacturing_expert`
 (manufacturing-processes), `characterization_expert` (characterization),
 `mechanical_testing_expert` (mechanical-testing), `fatigue_failure_expert`
-(fatigue), `data_analysis_expert` (scientific-method), and `abaqus_engineer`
-(abaqus). Every subagent can read and list files; the ones whose job is to
-compute or build (data analysis, characterization, testing, fatigue, the
+(fatigue), and `abaqus_engineer` (abaqus). Statistics and figures for a result
+set go to a copy of the coordinator, which carries the scientific-method skills.
+Every subagent can read and list files; the ones whose job is to
+compute or build (characterization, testing, fatigue, the
 Abaqus engineer, the simulation methodologist) can also write files and run
 the shell. `evidence_leaf` and `evidence_critic` are lanes of
 `evidence_researcher`; CLIO has no children-only flag (`internal` hides a
