@@ -46,7 +46,10 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
    step fails, or when it runs as a step: put a step targeting `review` after the
    merge to read its result and, when the evidence cannot decide, add the steps
    that would (a larger sample, a new condition) and a merge after them. Each step's
-   task names its hypothesis id and asks it to design and run the test.
+   task names its hypothesis id and asks it to design, run and analyze the test. The
+   branch is where a result no hypothesis offered is first seen and pursued (steps 9
+   and 10); a branch told only to gather data and report it back has no results of
+   its own to change course from.
 5. In a branch, write the Experiment first (`links: {hypothesis: <id>}`): the method
    and the sample size you intend. Form your own design before reading what other
    branches found. Independent trials are separable work: spread them across
@@ -71,7 +74,8 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
    (`links: {observation: [...], supports | refutes: <hypothesis>}`). Give `strength`
    honestly, and say so when the sample is too small to separate two hypotheses.
    Record a hypothesis's fate with `set_status` (supported, refuted, superseded) and
-   the reason.
+   the reason. A branch analyzes its own results before it ends, even when the merge
+   will compare all of them.
 
 ## Change course
 
