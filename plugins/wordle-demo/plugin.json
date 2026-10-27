@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "wordle-demo",
+  "version": "0.1.0",
+  "description": "A Wordle bench for studies of solving strategy: a generated, versioned list of pronounceable five-letter pseudo-words, games whose answers are drawn from a secret seed the agent never sees, strict per-guess feedback, and a live board wall.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "wordle",
+    "game",
+    "study",
+    "demo"
+  ]
+}

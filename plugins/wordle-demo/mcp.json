@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "wordle": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--project", "${PLUGIN_ROOT}/impl", "wordle-demo-mcp"],
+      "env": {
+        "WORDLE_SECRET_SEED": "${CLIO_SECRET_WORDLE_SEED}"
+      }
+    }
+  }
+}

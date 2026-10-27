@@ -1,0 +1,13 @@
+{
+  "catalogId": "https://iowarp.ai/a2ui/catalogs/wordle-board/v1",
+  "protocolVersion": "0.9.1",
+  "trust": {
+    "source": "pack"
+  },
+  "implements": {
+    "BoardWall": {
+      "kernel": "clio.chart.v1"
+    }
+  },
+  "instructions": "instructions.md"
+}

@@ -1,0 +1,13 @@
+{
+  "catalogId": "https://iowarp.ai/a2ui/catalogs/bench/v1",
+  "protocolVersion": "0.9.1",
+  "trust": {
+    "source": "pack"
+  },
+  "implements": {
+    "Readings": {
+      "kernel": "clio.chart.v1"
+    }
+  },
+  "instructions": "instructions.md"
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {"name": "source"},
+  "transform": [
+    {"fold": ["arm_length_m", "bob_mass_kg", "release_angle_deg", "ambient_temp_c"], "as": ["input", "setting"]}
+  ],
+  "facet": {"field": "input", "type": "nominal", "title": null},
+  "columns": 2,
+  "resolve": {"scale": {"x": "independent"}},
+  "spec": {
+    "width": 260,
+    "height": 170,
+    "mark": {"type": "point", "filled": true, "opacity": 0.75},
+    "encoding": {
+      "x": {"field": "setting", "type": "quantitative", "title": null},
+      "y": {"field": "period_s", "type": "quantitative", "title": "seconds per cycle", "scale": {"zero": false}},
+      "color": {"field": "branch", "type": "nominal", "title": "branch"},
+      "tooltip": [
+        {"field": "branch", "type": "nominal"},
+        {"field": "reading", "type": "quantitative"},
+        {"field": "arm_length_m", "type": "quantitative"},
+        {"field": "bob_mass_kg", "type": "quantitative"},
+        {"field": "release_angle_deg", "type": "quantitative"},
+        {"field": "ambient_temp_c", "type": "quantitative"},
+        {"field": "ten_cycles_s", "type": "quantitative", "title": "ten cycles (s)"}
+      ]
+    }
+  }
+}
