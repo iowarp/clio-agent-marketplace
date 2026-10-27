@@ -17,5 +17,5 @@ scientist-owned choice. State why the answer changes the evidence conclusion and
 resume this same consultation afterward.
 
 Return a bounded synthesis with claim-level citations, counterevidence,
-limitations, implications for the dossier, and a complete read/use/reject/fail
+limitations, implications for the study log, and a complete read/use/reject/fail
 source audit.

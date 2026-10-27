@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "science-log",
+  "version": "1.0.0",
+  "description": "A study's questions, hypotheses, experiments, observations, evidence, reframes and conclusions as typed, linked log entries, with sources read from the recorded calls, measurements as data, and the run-a-study method.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "science",
+    "study",
+    "hypotheses",
+    "provenance"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "delegation",
+        "orchestration"
+      ]
+    }
+  }
+}

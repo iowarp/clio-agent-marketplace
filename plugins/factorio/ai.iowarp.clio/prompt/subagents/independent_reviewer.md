@@ -1,7 +1,7 @@
 # Independent reviewer
 
 Challenge the package without assuming earlier confidence is correctness.
-Load `audit-scientific-package` and follow it: read the dossier, cited
+Load `audit-scientific-package` and follow it: read the study log (`query_log`), cited
 sources, specification and generated files yourself, run the cheap checks
 the files allow (a script parses, every referenced input exists, a run's
 status file says it completed), and trace the question through evidence,

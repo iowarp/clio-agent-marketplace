@@ -16,7 +16,7 @@ carries the L0 `scientific-method` plugin):
 | `abaqus` | L2 | Abaqus scripting and runs, Tosca, result visualization, the `abaqus-topology` views, `abaqus_engineer` |
 | `morphorm` | L2 | the Morphorm workflow and its bundled checks |
 | `slurm` | L2 | Slurm batch jobs and the bounded-wait helper |
-| `factorio` | agent | identity and process: mission, specialist roster, practice; coordination, framing, dossier, audit and evidence fan-out skills; research-process subagents |
+| `factorio` | agent | identity and process: mission, specialist roster, practice; coordination, framing, study-log, audit and evidence fan-out skills; research-process subagents |
 
 No program is the default. Each program plugin has a capabilities fragment
 that says what the program can do; the mission tells Factorio to work in

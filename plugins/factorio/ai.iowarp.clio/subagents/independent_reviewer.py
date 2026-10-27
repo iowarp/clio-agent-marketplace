@@ -16,9 +16,11 @@ independent_reviewer = Subagent(
         "scientific-method",
         "fea-methods",
         "manufacturing-processes",
+        "science-log",
     ],
     tools=[
         "fs_read_file",
+        "query_log",
         "fs_list_directory",
         "fs_search_text",
         "view_image",

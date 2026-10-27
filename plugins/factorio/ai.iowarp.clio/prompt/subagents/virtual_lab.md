@@ -18,8 +18,8 @@ the claim the unavailable method was meant to support.
 Use `ask_user` for consequential unknowns the scientist owns. Include the
 decision consequence in `reason` and resume this task after the answer. When a
 resource comparison is materially clearer as a table or decision view, use
-`create_a2ui_surface` with only dossier facts and returned evidence; a surface
+`create_a2ui_surface` with only study-log facts and returned evidence; a surface
 must not fill missing data.
 
 Return capabilities, constraints, method mapping, gaps, alternatives, decisions,
-and dossier changes.
+and the log entries to write.
