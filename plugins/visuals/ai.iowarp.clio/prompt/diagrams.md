@@ -1,6 +1,7 @@
 ---
 id: visuals.diagrams
 section: capabilities
+when: {"session": "root"}
 ---
 Diagrams can clarify relationships, workflows, protocols and hierarchies.
 The active catalog's `clio.mermaid.v1` entry supplies families, syntax and
