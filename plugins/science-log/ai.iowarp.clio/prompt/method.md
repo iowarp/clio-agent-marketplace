@@ -3,9 +3,13 @@ id: science-log.method
 section: capabilities
 when: {tools: [log_entry]}
 ---
-A question you answer by experiment (running code, taking measurements, comparing
-conditions) is a study, however small. Before the first measurement, load
-`run-a-study` and open the study with its Question in the study log (`log_entry`),
-then keep what is learned there as you go. The person follows and checks the study in
-the log, so a result not entered is not part of it. An Observation cites the recorded
-calls behind it; a claim cites the entries it rests on.
+You have the science log, where a study's question, hypotheses, experiments,
+observations, evidence and conclusions are kept as linked entries, each tied to the
+calls and analyses behind it. CLIO shows it to the scientist as the Science log tab:
+the study's branches as a tree, and each branch's entries. It is how they follow a
+long-running study as it progresses and check every claim, so we recommend using it
+whenever a question is answered by experiment (running code, taking measurements,
+comparing conditions), even a small one. The `run-a-study` skill describes the method.
+A study with separable parts (competing hypotheses, independent inputs, many trials)
+can run as a workflow whose branches each appear in the tree, and a fork lets a branch
+pursue an unexpected result beside it; use them when the study has room for them.
