@@ -1,19 +1,17 @@
 """The wordle-demo MCP server: ``word_list``, ``new_game``, ``guess``, ``game_state``.
 
-Every ``new_game`` and ``guess`` result carries a board-wall event in its result
-``_meta`` (``ai.iowarp.clio/ui_event``), which CLIO records for the UI and never shows
-the model: the game's tiles so far, keyed by game and grouped by the calling branch
-(CLIO stamps the calling session in each call's ``_meta`` as
-``ai.iowarp.clio/caller``). Games appear on the wall as they are played without the
-agent narrating them. A game's first event also carries the wall's chart component,
-the ``BoardWall`` of this plugin's ``wordle-board`` catalog.
+Every ``new_game`` and ``guess`` result carries a board record in its result
+``_meta`` (``ai.iowarp.clio/ui_event``), which CLIO keeps and never shows the model:
+the game's tiles so far, keyed by game and grouped by the calling branch (CLIO stamps
+the calling session in each call's ``_meta`` as ``ai.iowarp.clio/caller``), so games
+are recorded as they are played without the agent narrating them. A study reads them as ``study://<study>/records/board``, and its
+agent decides whether and how a view draws them.
 """
 
 from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 from typing import Any
 
 from fastmcp import Context, FastMCP
@@ -25,10 +23,7 @@ from wordle_demo.game import Bench, Game, GuessRejected
 
 CALLER_META_KEY = "ai.iowarp.clio/caller"
 UI_EVENT_META_KEY = "ai.iowarp.clio/ui_event"
-CATALOG_ID = "https://iowarp.ai/a2ui/catalogs/wordle-board/v1"
-VIEW = "wordle-board/wall"
-_ROOT = Path(os.environ.get("PLUGIN_ROOT") or Path(__file__).resolve().parents[3])
-_SPEC = _ROOT / "ai.iowarp.clio" / "a2ui" / "wordle-board"
+VIEW = "board"
 
 
 def caller(ctx: Context | None) -> dict[str, str]:
@@ -45,15 +40,8 @@ def caller(ctx: Context | None) -> dict[str, str]:
     return {k: str(v) for k, v in value.items()} if isinstance(value, dict) else {}
 
 
-def wall_component() -> dict[str, Any]:
-    """The wall's A2UI component: ``BoardWall`` (the chart kernel with the board spec)."""
-
-    spec = json.loads((_SPEC / "board_spec.json").read_text(encoding="utf-8"))
-    return {"id": "wall", "component": "BoardWall", "spec": spec, "title": "Board wall"}
-
-
-def board_event(game: Game, *, with_component: bool = False) -> dict[str, Any]:
-    """The wall's event for ``game``: all of its tiles so far (the latest event wins)."""
+def board_event(game: Game) -> dict[str, Any]:
+    """The board record of ``game``: all of its tiles so far (the latest event wins)."""
 
     rows = [
         {
@@ -70,20 +58,11 @@ def board_event(game: Game, *, with_component: bool = False) -> dict[str, Any]:
         for turn, (word, marks) in enumerate(zip(game.guesses, game.marks, strict=True), 1)
         for pos, (letter, mark) in enumerate(zip(word, marks, strict=True))
     ]
-    event: dict[str, Any] = {
-        "view": VIEW,
-        "catalog": CATALOG_ID,
-        "key": game.id,
-        "group": game.branch,
-        "rows": rows,
-    }
-    if with_component:
-        event["component"] = wall_component()
-    return event
+    return {"view": VIEW, "key": game.id, "group": game.branch, "rows": rows}
 
 
 def _result(payload: dict[str, Any], event: dict[str, Any]) -> ToolResult:
-    """The model sees ``payload``; the wall's event rides in the result ``_meta``."""
+    """The model sees ``payload``; the board record rides in the result ``_meta``."""
 
     return ToolResult(
         content=[TextContent(type="text", text=json.dumps(payload))],
@@ -112,7 +91,7 @@ def create_server(secret: str | None = None) -> FastMCP:
 
         who = caller(ctx)
         game = bench.new_game(seed, who.get("session", ""), who.get("root", ""))
-        return _result(game.state(), board_event(game, with_component=True))
+        return _result(game.state(), board_event(game))
 
     @mcp.tool
     def guess(game_id: str, word: str) -> ToolResult:

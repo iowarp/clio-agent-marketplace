@@ -63,10 +63,10 @@ async def test_measurements_are_strict_kept_per_study_and_carry_their_event() ->
         readings = first.data["readings"]
         assert len(readings) == 3 and len({r["ten_cycles_s"] for r in readings}) == 3
         event = first.meta[UI_EVENT_META_KEY]
-        assert event["group"] == "sess_a" and event["component"]["component"] == "Readings"
+        assert event["view"] == "readings" and event["group"] == "sess_a"
+        assert set(event) == {"view", "key", "group", "rows"}  # records only, no chart
         assert len(event["rows"]) == 3 and "branch" not in json.dumps(first.data)
-        again = await client.call_tool("measure", {"settings": MID}, meta=one)
-        assert "component" not in again.meta[UI_EVENT_META_KEY]
+        await client.call_tool("measure", {"settings": MID}, meta=one)
         await client.call_tool("measure", {"settings": MID}, meta=two)
         history = (await client.call_tool("history", {}, meta=one)).data
         assert history["count"] == 4 and list(history["branches"]) == ["sess_a"]
@@ -82,23 +82,3 @@ def test_the_law_is_in_no_plugin_file_and_no_workspace_file(tmp_path: Path) -> N
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         assert not any(probe in text for probe in probes), path
-
-
-def test_the_catalog_pins_the_readings_spec_and_its_shadow_layer() -> None:
-    folder = PLUGIN / "ai.iowarp.clio" / "a2ui" / "bench"
-    spec = json.loads((folder / "readings_spec.json").read_text(encoding="utf-8"))
-    catalog = json.loads((folder / "catalog.json").read_text(encoding="utf-8"))
-    pinned = catalog["components"]["Readings"]["allOf"][2]["properties"]["spec"]["const"]
-    assert pinned == spec
-    readings, shadow = spec["spec"]["layer"]
-    assert readings["encoding"]["y"]["field"] == "period_s"
-    # The shadow is drawn in the view's units: a law of ten cycles is divided by ten.
-    calculate = {
-        step["as"]: step["calculate"] for step in shadow["transform"] if "calculate" in step
-    }
-    assert "datum.shadow_of === 'ten_cycles_s' ? datum.shadow / 10" in calculate["law_period_s"]
-    assert shadow["encoding"]["y"]["field"] == "law_period_s"
-    # Open marks of their own shape, named in a legend as the current law.
-    assert shadow["mark"]["filled"] is False
-    assert shadow["encoding"]["shape"]["field"] == "law"
-    assert calculate["law"].startswith("'current law '")

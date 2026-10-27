@@ -2,10 +2,9 @@
 
 Every ``measure`` result carries a readings event in its result ``_meta``
 (``ai.iowarp.clio/ui_event``), which CLIO records for the UI and never shows the
-model; the first one also carries the ``Readings`` component of this plugin's
-``bench`` catalog. Readings are kept per study (the root of the calling session's
-task tree, stamped by CLIO in each call's ``_meta`` as ``ai.iowarp.clio/caller``) and
-labelled with the branch that took them.
+model; a study reads them as ``study://<study>/records/readings``. Readings are kept
+per study (the root of the calling session's task tree, stamped by CLIO in each call's
+``_meta`` as ``ai.iowarp.clio/caller``) and labelled with the branch that took them.
 """
 
 from __future__ import annotations
@@ -13,7 +12,6 @@ from __future__ import annotations
 import json
 import os
 import random
-from pathlib import Path
 from typing import Any
 
 from fastmcp import Context, FastMCP
@@ -25,11 +23,8 @@ from hidden_law_bench.law import CYCLES, INPUTS, NOISE_S, Law, digest, draw_law
 
 CALLER_META_KEY = "ai.iowarp.clio/caller"
 UI_EVENT_META_KEY = "ai.iowarp.clio/ui_event"
-CATALOG_ID = "https://iowarp.ai/a2ui/catalogs/bench/v1"
-VIEW = "hidden-law-bench/readings"
+VIEW = "readings"
 MAX_REPEATS = 20
-_ROOT = Path(os.environ.get("PLUGIN_ROOT") or Path(__file__).resolve().parents[3])
-_CATALOG = _ROOT / "ai.iowarp.clio" / "a2ui" / "bench"
 
 
 def caller(ctx: Context | None) -> dict[str, str]:
@@ -66,11 +61,6 @@ def validate(settings: Any) -> dict[str, float]:
     return clean
 
 
-def readings_component() -> dict[str, Any]:
-    spec = json.loads((_CATALOG / "readings_spec.json").read_text(encoding="utf-8"))
-    return {"id": "readings", "component": "Readings", "spec": spec, "title": "Bench readings"}
-
-
 class Apparatus:
     """The bench: the hidden law and every reading taken, per study."""
 
@@ -102,7 +92,6 @@ class Apparatus:
 
 def create_server(secret: str | None = None) -> FastMCP:
     bench = Apparatus(secret if secret is not None else os.environ.get("BENCH_SECRET_SEED", ""))
-    shown: set[str] = set()
     mcp = FastMCP("bench")
 
     @mcp.tool(annotations={"readOnlyHint": True, "idempotentHint": True})
@@ -135,14 +124,10 @@ def create_server(secret: str | None = None) -> FastMCP:
         taken = bench.measure(clean, int(repeats), who.get("session", ""), study)
         event: dict[str, Any] = {
             "view": VIEW,
-            "catalog": CATALOG_ID,
             "key": f"r{taken[0]['reading']}",
             "group": who.get("session", ""),
             "rows": [{**row, "period_s": row["ten_cycles_s"] / CYCLES} for row in taken],
         }
-        if study not in shown:
-            shown.add(study)
-            event["component"] = readings_component()
         payload = {"readings": [{k: v for k, v in r.items() if k != "branch"} for r in taken]}
         return ToolResult(
             content=[TextContent(type="text", text=json.dumps(payload))],

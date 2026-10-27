@@ -55,7 +55,8 @@ async def test_guesses_are_strict_and_each_carries_its_board_event() -> None:
         game_id = started["game_id"]
         opened = call.meta[UI_EVENT_META_KEY]
         assert started["status"] == "playing" and opened["group"] == "sess_branch"
-        assert opened["component"]["component"] == "BoardWall" and opened["rows"] == []
+        assert opened["view"] == "board" and opened["rows"] == []
+        assert set(opened) == {"view", "key", "group", "rows"}  # records only, no chart
         assert "ui_event" not in json.dumps(started)  # the model never sees the event
         listed = (await client.call_tool("word_list", {})).data["words"]
         with pytest.raises(ToolError, match="wrong_length"):
@@ -68,7 +69,7 @@ async def test_guesses_are_strict_and_each_carries_its_board_event() -> None:
         result = call.data
         assert len(result["feedback"]) == 5 and result["turns_left"] == 5
         event = call.meta[UI_EVENT_META_KEY]
-        assert event["key"] == game_id and "component" not in event
+        assert event["key"] == game_id
         assert "".join(row["letter"] for row in event["rows"]).lower() == listed[0]
         assert [row["state"] for row in event["rows"]] == result["feedback"]
         # No result names the answer.

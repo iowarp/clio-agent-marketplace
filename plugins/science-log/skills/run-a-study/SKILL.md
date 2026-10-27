@@ -99,3 +99,26 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
     you do not resolve, citing both sides: between branches, or between two results
     (a measurement and a calculation, two methods) that should agree.
 12. Show the comparison as a chart from the measurements, not as prose alone.
+
+## Views
+
+A study's views are where the scientist watches it run and checks its conclusion.
+They are your dashboards, built around the question: what would show whether a
+hypothesis holds, how the branches compare, where the study is now. Make one with
+`create_a2ui_surface` and attach it with `log_entry` (`type: view`, its `surface_id`,
+a `title`, the `purpose` it serves, `links: {serves: <question or hypothesis>}`).
+
+A chart or table in a view can read the study directly, and it shows new entries as
+they arrive without you rebuilding it:
+
+- `study://<study>/measurements`: every measured value with its conditions, branch
+  and status; when a standing hypothesis gives a `formula` in the data's own names,
+  each row also carries the law's prediction (`law_value`) and the law (`law`).
+- `study://<study>/entries`: every entry with its type, branch, status and summary.
+- `study://<study>/records/<name>`: records a plugin's tools keep (for example a
+  game's board or a bench's readings), by branch.
+
+The study id is the root question's id. Revise a view's surface as the study changes
+course, and add a view when it takes a new direction; withdraw one that no longer
+serves with `set_status` (`withdrawn`). A branch may attach drill-down views of its
+own.
