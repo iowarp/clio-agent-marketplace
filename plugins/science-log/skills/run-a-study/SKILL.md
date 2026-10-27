@@ -24,7 +24,10 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
    question as `budget` (amount and unit); every Observation then states its `cost`.
 2. Write one Hypothesis per competing answer (`links: {question: <id>}`), each with
    the `refuting_prediction` that would show it wrong. When a hypothesis states a law,
-   give it as `formula` too.
+   give it as `formula` too, written `<measured> = <expression>` in the names the
+   data use (the apparatus's inputs, a table's columns), with numbers, `+ - * / ^`,
+   parentheses, `pi` and `sqrt exp log abs min max`; a threshold is a `max` or `min`.
+   A formula in the data's own names can be drawn against every reading.
 3. Size the study from the claims it must support. A claim that one approach beats
    another needs each approach tried under shared conditions (the same inputs, seeds
    or settings), often enough that the difference stands out from the run-to-run
