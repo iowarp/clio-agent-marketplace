@@ -28,8 +28,12 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
 3. Size the study from the claims it must support. A claim that one approach beats
    another needs each approach tried under shared conditions (the same inputs, seeds
    or settings), often enough that the difference stands out from the run-to-run
-   spread; a single trial supports neither. A claim about a law needs measurements
-   across the range it covers. Write the intended sample size on each Experiment.
+   spread; a single trial supports neither. Estimate that spread first (a short pilot
+   or the first trials): a sample whose interval stays wider than the difference worth
+   reporting cannot decide between the hypotheses, so when nothing limits the study,
+   enlarge it rather than conclude. A claim about a law needs measurements across the
+   range it covers. Write the intended sample size on each Experiment; a sample too
+   large for one conversation is work to spread across children (step 5).
 
 ## Branch it
 
