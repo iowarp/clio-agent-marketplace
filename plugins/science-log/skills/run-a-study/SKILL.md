@@ -42,8 +42,11 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
 
 4. Run the study as a workflow with `run_workflow`, started with `isolate: true` so
    each step writes in its own folder: one step per hypothesis with target `self`,
-   a merge step after them, and `review` as an editor. Each step's task names its
-   hypothesis id and asks it to design and run the test.
+   a merge step after them, and `review` named in `editors`. An editor acts when a
+   step fails, or when it runs as a step: put a step targeting `review` after the
+   merge to read its result and, when the evidence cannot decide, add the steps
+   that would (a larger sample, a new condition) and a merge after them. Each step's
+   task names its hypothesis id and asks it to design and run the test.
 5. In a branch, write the Experiment first (`links: {hypothesis: <id>}`): the method
    and the sample size you intend. Form your own design before reading what other
    branches found. Independent trials are separable work: spread them across
