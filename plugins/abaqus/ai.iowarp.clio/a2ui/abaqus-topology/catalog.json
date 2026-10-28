@@ -293,58 +293,13 @@
         {
           "properties": {
             "camera": {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicValue",
-              "description": "Bind to a path; the view keeps its current camera there so a button can send it to the agent."
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicValue"
             },
             "component": {
               "const": "TopologyViewport"
             },
             "field": {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString",
-              "description": "Field to color by: S_MISES (von Mises stress, MPa), U_MAG (displacement magnitude, mm), or DENSITY (Tosca relative density, 0 to 1)."
-            },
-            "frame": {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber",
-              "description": "Design cycle to show, as an index into the file's frames; bind it to the cycle slider."
-            },
-            "meshUri": {
-              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
-              "type": "string",
-              "description": "artifact:// id of the registered .glb for this design state."
-            },
-            "showField": {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicBoolean",
-              "description": "Whether the field coloring is on; bind it to the stress toggle."
-            },
-            "syncGroup": {
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
-              "type": "string",
-              "description": "Views with the same group share one camera and one color scale."
-            },
-            "thresholdField": {
-              "type": "string",
-              "description": "Cell field to threshold by, normally DENSITY."
-            },
-            "thresholdMax": {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber",
-              "description": "Highest value kept; 1 for density."
-            },
-            "thresholdMin": {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber",
-              "description": "Lowest value kept; bind it to the density slider."
-            },
-            "title": {
-              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString",
-              "description": "Short label for the design state shown."
-            },
-            "upAxis": {
-              "enum": [
-                "x",
-                "y",
-                "z"
-              ],
-              "type": "string",
-              "description": "Model axis that points up on screen (Abaqus models are usually y-up)."
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
             },
             "format": {
               "enum": [
@@ -361,8 +316,89 @@
               ],
               "type": "string"
             },
+            "frame": {
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+            },
+            "height": {
+              "maximum": 2000,
+              "minimum": 160,
+              "type": "integer"
+            },
             "materialUri": {
-              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
+              "oneOf": [
+                {
+                  "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
+                  "type": "string"
+                },
+                {
+                  "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DataBinding"
+                },
+                {
+                  "allOf": [
+                    {
+                      "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/FunctionCall"
+                    },
+                    {
+                      "properties": {
+                        "returnType": {
+                          "const": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "meshUri": {
+              "oneOf": [
+                {
+                  "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
+                  "type": "string"
+                },
+                {
+                  "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DataBinding"
+                },
+                {
+                  "allOf": [
+                    {
+                      "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/FunctionCall"
+                    },
+                    {
+                      "properties": {
+                        "returnType": {
+                          "const": "string"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "showField": {
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicBoolean"
+            },
+            "syncGroup": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+              "type": "string"
+            },
+            "thresholdField": {
+              "type": "string"
+            },
+            "thresholdMax": {
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+            },
+            "thresholdMin": {
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicNumber"
+            },
+            "title": {
+              "$ref": "https://a2ui.org/specification/v0_9/common_types.json#/$defs/DynamicString"
+            },
+            "upAxis": {
+              "enum": [
+                "x",
+                "y",
+                "z"
+              ],
               "type": "string"
             }
           },
@@ -373,9 +409,9 @@
           "type": "object"
         }
       ],
+      "description": "An orbitable 3D view of one registered Abaqus/Tosca mesh (.glb from the abaqus-visualization exporter), colored, thresholded, and stepped through design cycles by its fields.",
       "type": "object",
-      "unevaluatedProperties": false,
-      "description": "An orbitable 3D view of one registered Abaqus/Tosca mesh (.glb from the abaqus-visualization exporter), colored, thresholded, and stepped through design cycles by its fields."
+      "unevaluatedProperties": false
     },
     "DesignMetric": {
       "allOf": [
@@ -435,7 +471,7 @@
               "const": "ConvergencePlot"
             },
             "data": {
-              "description": "Inline rows (at most 10000) — this array rides the surface's own wire message, so it is capped for transfer size; for a larger or growing dataset use dataUri instead, unbounded and paged/downsampled by the viewer.",
+              "description": "Inline rows (at most 10000) â€” this array rides the surface's own wire message, so it is capped for transfer size; for a larger or growing dataset use dataUri instead, unbounded and paged/downsampled by the viewer.",
               "items": {
                 "additionalProperties": {
                   "anyOf": [
@@ -458,11 +494,11 @@
               "type": "array"
             },
             "dataUri": {
-              "description": "A workspace file path or artifact:// reference; CLIO registers a path as an artifact before validation.",
+              "description": "A workspace file path or artifact:// reference; CLIO registers a path as an artifact before validation. Or a live study source, study://<study>/measurements, study://<study>/entries or study://<study>/records/<view>, which updates as the study records entries.",
               "not": {
                 "pattern": "\\s"
               },
-              "pattern": "^artifact://artifact_[A-Za-z0-9_-]+$",
+              "pattern": "^(artifact://artifact_[A-Za-z0-9_-]+|study://[A-Za-z0-9_-]+/(measurements|entries|records/[A-Za-z0-9_.-]+))$",
               "type": "string"
             },
             "entityField": {
@@ -1230,7 +1266,7 @@
       ]
     },
     "GeoJsonGeometry": {
-      "description": "A GeoJSON Geometry object (RFC 7946 §3.1), strictly shaped: Point/MultiPoint/LineString/MultiLineString/Polygon/MultiPolygon carry coordinates; GeometryCollection carries geometries. Never a Feature/FeatureCollection, never a bare coordinate array.",
+      "description": "A GeoJSON Geometry object (RFC 7946 Â§3.1), strictly shaped: Point/MultiPoint/LineString/MultiLineString/Polygon/MultiPolygon carry coordinates; GeometryCollection carries geometries. Never a Feature/FeatureCollection, never a bare coordinate array.",
       "oneOf": [
         {
           "additionalProperties": false,

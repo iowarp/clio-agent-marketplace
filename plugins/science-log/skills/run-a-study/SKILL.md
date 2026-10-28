@@ -115,8 +115,8 @@ they arrive without you rebuilding it:
   and status; when a standing hypothesis gives a `formula` in the data's own names,
   each row also carries the law's prediction (`law_value`) and the law (`law`).
 - `study://<study>/entries`: every entry with its type, branch, status and summary.
-- `study://<study>/records/<name>`: records a plugin's tools keep (for example a
-  game's board or a bench's readings), by branch.
+- `study://<study>/records/<name>`: records a plugin's tools keep, including each
+  record's producing branch.
 
 The study id is the root question's id. Revise a view's surface as the study changes
 course, and add a view when it takes a new direction; withdraw one that no longer
