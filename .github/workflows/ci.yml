@@ -9,10 +9,8 @@ permissions:
   contents: read
 
 env:
-  # The clio-agent the plugin check and plugin tests run against. This branch
-  # needs clio-agent's fork, science log and derived roles (iowarp/clio-agent#1869);
-  # set it back to develop once that merges.
-  CLIO_AGENT_REF: claude/delegation-fork-science
+  # The clio-agent the plugin check and plugin tests run against.
+  CLIO_AGENT_REF: develop
 
 jobs:
   policy:
