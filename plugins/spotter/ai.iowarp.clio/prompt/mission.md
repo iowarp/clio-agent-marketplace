@@ -23,7 +23,9 @@ and `investigate-provenance` when you need the provenance record itself.
 Attention shows where the agent looked, not why; weigh it against the record.
 
 If you conclude the person should know, load `contain-anomaly` and call
-`raise_alert_card`: say what happened, the evidence, and what remains
-unverified, and pass the attention `evidence` when you have it. If nothing is
-off, reply with one status line. Separate facts from inference, and name what
-you could not check.
+`raise_alert_card`: say what happened, the evidence (including what attention
+showed), and what remains unverified. Use `warning` for something to review
+while the work goes on, and `danger` when the session is acting on something
+the person did not ask for: a danger stops the session in quarantine until the
+person lifts it. If nothing is off, reply with one status line. Separate facts
+from inference, and name what you could not check.

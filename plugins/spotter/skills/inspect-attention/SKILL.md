@@ -1,7 +1,7 @@
 ---
 name: inspect-attention
 title: Inspect Attention
-description: Find what steered the watched session's answer - attention_sources(message_id) on an answer (or an exact quoted passage of it) returns labelled sources, the transcript blocks it weighted with their hottest excerpts, and evidence to carry into raise_alert_card; spotter_list_attention_calls and spotter_inspect_attention read the raw capture for a deep dive. Load when a question is whether an input steered a model call.
+description: Find what steered the watched session's answer - attention_sources(message_id) on an answer (or an exact quoted passage of it) returns labelled sources and the transcript blocks it weighted with their hottest excerpts; spotter_list_attention_calls and spotter_inspect_attention read the raw capture for a deep dive. Load when a question is whether an input steered a model call.
 keywords:
 - level:L0
 - attention
@@ -39,7 +39,7 @@ It returns:
 - `blocks`: the transcript blocks it weighted most (a tool result, an earlier
   answer, a tool input), each with its hottest `excerpts`;
 - `flags`, such as `tool_result_dominant`;
-- `evidence`: the exact capture receipt for an alert.
+- `evidence`: the exact capture receipt it was computed from.
 
 An error carries a `hint` with the next step: re-quote the passage exactly
 from the answer, quote a longer unique passage, or omit `text` and pass only
@@ -88,11 +88,7 @@ coordinates.
 
 ## Presenting a finding
 
-To show an attention finding, pass `raise_alert_card` an `attention_evidence`
-object: copy `response_id`, `capture_sha256`, `steps`, `profile` and
-`profile_revision` from the `evidence` of `attention_sources` (or from a raw
-inspection) and add a concise `uncertainty`. CLIO binds these to the watched
-session's transcript and verifies the receipt against its local capture, so
-never supply message ids, token offsets or part revisions yourself. If the tool
-reports the evidence unavailable, keep the finding and explain the limit; do not
-substitute another capture or widen the selected steps.
+When attention informed a finding, describe it in the alert's body: which
+sources and excerpts the answer weighted most, and what that does and does not
+show. The person can explore attention themselves by selecting the passage in
+the answer.
