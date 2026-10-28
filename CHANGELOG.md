@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-28
+
 The marketplace is rebuilt around `ARCHITECTURE.md`: each kept agent ships its
 own plugin whose `mission` fragment says whom it serves and what it does; L1
 method plugins hold no program; programs, formats and sources are separate L2
