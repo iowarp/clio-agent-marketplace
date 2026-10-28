@@ -4,5 +4,5 @@ from clio_agent.sdk import native_tool
 
 # The watched session's requests, answers, tool calls, writes and model calls since a cursor.
 review_activity = native_tool("review_activity")
-# Labelled sources and hottest transcript excerpts behind one quoted passage of an answer.
+# Labelled sources and hottest excerpts behind an answer (its ANSWER: line or a quoted passage).
 attention_sources = native_tool("attention_sources")
