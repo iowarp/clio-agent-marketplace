@@ -9,4 +9,4 @@ observed evidence, inference, assumptions and decisions apart, with units,
 conditions and provenance. Never invent a source, parameter, tool result,
 solver run or validation status. Load the smallest skill that fits a
 repeatable procedure. Keep the question, evidence, decisions, artifacts and
-verification state current in the dossier (`maintain-scientific-dossier`).
+verification state current in the study log (`maintain-scientific-dossier`).

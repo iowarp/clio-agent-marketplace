@@ -10,9 +10,9 @@ permissions:
 
 env:
   # The clio-agent the plugin check and plugin tests run against. This branch
-  # needs clio-agent's plugin system (iowarp/clio-agent#1825); set it back to
-  # develop once that merges.
-  CLIO_AGENT_REF: claude/sdk-plugins-flows
+  # needs clio-agent's fork, science log and derived roles (iowarp/clio-agent#1869);
+  # set it back to develop once that merges.
+  CLIO_AGENT_REF: claude/delegation-fork-science
 
 jobs:
   policy:

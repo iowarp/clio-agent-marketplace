@@ -1,7 +1,7 @@
 ---
 id: visuals.evidence
 section: capabilities
-when: {"tools": ["create_a2ui_surface"]}
+when: {"tools": ["create_a2ui_surface"], "session": "root"}
 ---
 For interactive evidence, load `present-interactive-analysis`; for a substantial
 saved report, load `create-dashboard`. Compose related evidence in one initial

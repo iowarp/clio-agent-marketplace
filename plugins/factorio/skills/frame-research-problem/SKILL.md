@@ -1,7 +1,7 @@
 ---
 name: frame-research-problem
 title: Frame a Research Problem
-description: Narrow a scientist's idea into answerable questions, hypotheses, scope boundaries and evidence needs without premature commitment, and record the chosen and rejected formulations in the dossier.
+description: Narrow a scientist's idea into answerable questions, hypotheses, scope boundaries and evidence needs without premature commitment, and record the chosen and rejected formulations in the study log.
 keywords:
 - level:L1
 - factorio
@@ -16,7 +16,7 @@ different formulations rather than cosmetic rewrites.
 For each candidate, state what result would answer it, what would weaken or
 falsify it, which methods discriminate among rivals, and what remains outside
 scope. Preserve the selected formulation and rejected alternatives with reasons
-in the dossier. Ask only high-information questions whose answers change the
+in the study log. Ask only high-information questions whose answers change the
 study. Treat novelty as an evidence question, not an assumption.
 
 Use `experimental-design` to turn the chosen formulation into a method and a

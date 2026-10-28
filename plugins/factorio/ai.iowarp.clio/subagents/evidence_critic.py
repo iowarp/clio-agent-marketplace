@@ -6,7 +6,7 @@ evidence_critic = Subagent(
     "evidence_critic",
     prompt=PromptFile("prompt/subagents/evidence_critic.md"),
     description=(
-        "Independently challenges evidence_researcher's draft dossier with fresh source "
+        "Independently challenges evidence_researcher's draft synthesis with fresh source "
         "checks. Started by evidence_researcher, not directly."
     ),
     plugins=["web", "workspace"],

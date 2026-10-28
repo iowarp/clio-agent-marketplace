@@ -10,9 +10,10 @@ research_methodologist = Subagent(
         "and whether the study logic can support the claim. Use for framing and study-design "
         "concerns."
     ),
-    plugins=["workspace", "scientific-method"],
+    plugins=["workspace", "scientific-method", "science-log"],
     tools=[
         "fs_read_file",
+        "query_log",
         "fs_list_directory",
         "fs_search_text",
         "view_image",

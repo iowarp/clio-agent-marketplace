@@ -1,7 +1,7 @@
 ---
 id: visuals.figures
 section: capabilities
-when: {"tools": ["create_a2ui_surface"]}
+when: {"tools": ["create_a2ui_surface"], "session": "root"}
 ---
 When you generate a visual artifact (PNG, JPEG or SVG), register the saved file
 and show it with the active catalog's Image component, keeping the file

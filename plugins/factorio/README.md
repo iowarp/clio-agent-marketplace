@@ -16,7 +16,7 @@ carries the L0 `scientific-method` plugin):
 | `abaqus` | L2 | Abaqus scripting and runs, Tosca, result visualization, the `abaqus-topology` views, `abaqus_engineer` |
 | `morphorm` | L2 | the Morphorm workflow and its bundled checks |
 | `slurm` | L2 | Slurm batch jobs and the bounded-wait helper |
-| `factorio` | agent | identity and process: mission, specialist roster, practice; coordination, framing, dossier, audit and evidence fan-out skills; research-process subagents |
+| `factorio` | agent | identity and process: mission, specialist roster, practice; coordination, framing, study-log, audit and evidence fan-out skills; research-process subagents |
 
 No program is the default. Each program plugin has a capabilities fragment
 that says what the program can do; the mission tells Factorio to work in
@@ -39,9 +39,10 @@ declares every plugin whose skills its prompt or those skills reference:
 `materials_scientist` (materials), `manufacturing_expert`
 (manufacturing-processes), `characterization_expert` (characterization),
 `mechanical_testing_expert` (mechanical-testing), `fatigue_failure_expert`
-(fatigue), `data_analysis_expert` (scientific-method), and `abaqus_engineer`
-(abaqus). Every subagent can read and list files; the ones whose job is to
-compute or build (data analysis, characterization, testing, fatigue, the
+(fatigue), and `abaqus_engineer` (abaqus). Statistics and figures for a result
+set go to a copy of the coordinator, which carries the scientific-method skills.
+Every subagent can read and list files; the ones whose job is to
+compute or build (characterization, testing, fatigue, the
 Abaqus engineer, the simulation methodologist) can also write files and run
 the shell. `evidence_leaf` and `evidence_critic` are lanes of
 `evidence_researcher`; CLIO has no children-only flag (`internal` hides a

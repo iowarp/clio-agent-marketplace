@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "scientific-method",
-  "version": "0.6.0",
-  "description": "General scientific practice for every science agent: method choice and study design, literature search and review, research gaps, citations, data analysis, statistics, uncertainty, figures, scientific writing, non-interactive task runs, and the data_analysis_expert subagent.",
+  "version": "0.8.0",
+  "description": "General scientific practice for every science agent: method choice and study design, literature search and review, research gaps, citations, data analysis, statistics, uncertainty, figures, scientific writing, and non-interactive task runs.",
   "author": {
     "name": "IoWarp Team"
   },

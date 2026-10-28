@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "bench": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--project", "${PLUGIN_ROOT}/impl", "hidden-law-bench-mcp"],
+      "env": {
+        "BENCH_SECRET_SEED": "${CLIO_SECRET_BENCH_SEED}"
+      }
+    }
+  }
+}

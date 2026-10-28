@@ -1,0 +1,31 @@
+[project]
+name = "wordle-demo"
+version = "0.1.0"
+description = "The wordle-demo plugin's MCP server: a generated word list and secret-seeded games"
+requires-python = ">=3.12"
+license = { text = "BSD-3-Clause" }
+dependencies = ["fastmcp>=4.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "ruff>=0.6"]
+
+[project.scripts]
+wordle-demo-mcp = "wordle_demo.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wordle_demo"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

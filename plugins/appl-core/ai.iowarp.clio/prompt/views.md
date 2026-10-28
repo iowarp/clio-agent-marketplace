@@ -1,7 +1,7 @@
 ---
 id: appl-core.views
 section: domain
-when: {"tools": ["create_a2ui_surface"]}
+when: {"tools": ["create_a2ui_surface"], "session": "root"}
 ---
 When a view helps more than prose, load `present-interactive-analysis` and use
 the generic components of the clio-workspace catalog: a preset when it explains
