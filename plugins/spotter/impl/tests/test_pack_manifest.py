@@ -33,13 +33,8 @@ def test_watcher_guidance_names_only_tools_that_exist() -> None:
     guidance = "\n".join(texts)
 
     for tool in (
-        "spotter_capabilities",
         "spotter_query_tasks",
-        "spotter_get_timeline",
-        "spotter_get_artifact_lineage",
         "spotter_trace_correlation",
-        "spotter_list_attention_calls",
-        "spotter_inspect_attention",
         "raise_alert_card",
         "review_activity",
         "attention_sources",

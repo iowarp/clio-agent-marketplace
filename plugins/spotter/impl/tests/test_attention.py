@@ -226,11 +226,11 @@ def test_call_listing_has_no_payload_or_secrets(tmp_path: Path) -> None:
     assert source.queries[0]["custom_metadata.clio.session_id"] == "session-1"
 
 
-async def test_attention_mcp_is_read_only(
+async def test_attention_evidence_is_not_served_to_the_watcher(
     capture: tuple[dict[str, Any], Path],
     tmp_path: Path,
 ) -> None:
-    """The real MCP contract returns versioned evidence and is annotated read-only."""
+    """Configured attention evidence stays off the watcher's MCP menu, still readable."""
     from spotter_ai.config import NativeQueryConfig
     from spotter_ai.providers.jsonl import JsonlProvider
     from spotter_ai.service import ProvenanceService
@@ -239,19 +239,11 @@ async def test_attention_mcp_is_read_only(
     journal = tmp_path / "events.jsonl"
     journal.write_text("", encoding="utf-8")
     provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
-    server = create_server(
-        service=ProvenanceService(provider, provider),
-        attention=AttentionEvidence(Query([record]), root),
-    )
+    evidence = AttentionEvidence(Query([record]), root)
+    server = create_server(service=ProvenanceService(provider, provider), attention=evidence)
     async with Client(server) as client:
-        tools = {tool.name: tool for tool in await client.list_tools()}
-        assert tools["inspect_attention"].annotations is not None
-        assert tools["inspect_attention"].annotations.readOnlyHint is True
-        result = await client.call_tool(
-            "inspect_attention", {"response_id": "chatcmpl-test", "steps": [0, 1]}
-        )
-        assert result.structured_content is not None
-        assert result.structured_content["profile_revision"] == UNIFORM_MEAN.revision
-        whole = await client.call_tool("inspect_attention", {"response_id": "chatcmpl-test"})
-        assert whole.structured_content is not None
-        assert whole.structured_content["steps"] == [0, 1]
+        served = {tool.name for tool in await client.list_tools()}
+    assert not served & {"inspect_attention", "list_attention_calls"}
+    result = evidence.inspect("chatcmpl-test", [0, 1], UNIFORM_MEAN)
+    assert result["profile_revision"] == UNIFORM_MEAN.revision
+    assert evidence.inspect("chatcmpl-test", None, UNIFORM_MEAN)["steps"] == [0, 1]

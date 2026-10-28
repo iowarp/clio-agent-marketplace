@@ -8,14 +8,14 @@ from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
 from spotter_ai.config import NativeQueryConfig, SpotterConfig
+from spotter_ai.errors import ProvenanceError
 from spotter_ai.providers.jsonl import JsonlProvider
-from spotter_ai.server import create_server
+from spotter_ai.server import WATCHER_TOOLS, create_server
 from spotter_ai.service import ProvenanceService
 
 
-@pytest.fixture
-def native_server(tmp_path: Path):
-    """Create a server backed by one real native provider."""
+def _native_provider(tmp_path: Path) -> JsonlProvider:
+    """One real native provider over a single correlated model-call event."""
     journal = tmp_path / "events.jsonl"
     journal.write_text(
         json.dumps(
@@ -33,33 +33,22 @@ def native_server(tmp_path: Path):
         + "\n",
         encoding="utf-8",
     )
-    provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
+    return JsonlProvider(NativeQueryConfig(journal, tmp_path))
+
+
+@pytest.fixture
+def native_server(tmp_path: Path):
+    """Create a server backed by one real native provider."""
+    provider = _native_provider(tmp_path)
     return create_server(service=ProvenanceService(provider, provider))
 
 
 async def test_exposes_purpose_specific_tools_without_provider_arguments(native_server) -> None:
-    """The agent selects a question, while configuration selects providers."""
+    """The watcher is offered only its provenance tools; configuration selects providers."""
     async with Client(native_server) as client:
         tools = await client.list_tools()
 
-    names = {tool.name for tool in tools}
-    assert names == {
-        "capabilities",
-        "list_attention_calls",
-        "inspect_attention",
-        "list_campaigns",
-        "list_workflows",
-        "list_agents",
-        "query_tasks",
-        "summarize_tasks",
-        "get_timeline",
-        "list_executions",
-        "list_artifact_types",
-        "list_artifacts",
-        "get_execution_lineage",
-        "get_artifact_lineage",
-        "trace_correlation",
-    }
+    assert {tool.name for tool in tools} == WATCHER_TOOLS
     for tool in tools:
         assert "provider" not in tool.inputSchema.get("properties", {})
         assert tool.annotations is not None
@@ -68,32 +57,35 @@ async def test_exposes_purpose_specific_tools_without_provider_arguments(native_
         assert tool.annotations.idempotentHint is True
 
 
-async def test_capabilities_name_the_active_providers(native_server) -> None:
+def test_capabilities_name_the_active_providers(tmp_path: Path) -> None:
     """Capability discovery reports both independent provider domains."""
-    async with Client(native_server) as client:
-        result = await client.call_tool("capabilities", {})
+    provider = _native_provider(tmp_path)
+    described = ProvenanceService(provider, provider).capabilities()
 
-    assert result.data["agentic"]["provider"] == "native"
-    assert result.data["artifact"]["provider"] == "native"
-    assert "get_timeline" in result.data["agentic"]["capabilities"]
-    assert "list_pipelines" not in result.data["artifact"]["capabilities"]
-    assert "campaign_forensics" not in result.data
+    assert described["agentic"]["provider"] == "native"
+    assert described["artifact"]["provider"] == "native"
+    assert "get_timeline" in described["agentic"]["capabilities"]
+    assert "list_pipelines" not in described["artifact"]["capabilities"]
+    assert "campaign_forensics" not in described
 
 
-async def test_unsupported_artifact_semantics_are_not_served(native_server) -> None:
+async def test_unsupported_artifact_semantics_are_not_served(native_server, tmp_path: Path) -> None:
     """A lineage operation the artifact provider cannot answer is off the menu, not faked."""
     async with Client(native_server) as client:
         names = {tool.name for tool in await client.list_tools()}
-        capabilities = await client.call_tool("capabilities", {})
         with pytest.raises(ToolError):
             await client.call_tool("get_model_card", {"model_id": "model-1"})
 
+    provider = _native_provider(tmp_path)
     assert "get_model_card" not in names
-    assert "get_model_card" not in capabilities.data["artifact"]["capabilities"]
+    assert (
+        "get_model_card"
+        not in ProvenanceService(provider, provider).capabilities()["artifact"]["capabilities"]
+    )
 
 
 async def test_artifact_tools_follow_the_artifact_providers_operations(tmp_path: Path) -> None:
-    """Recorded pipeline/model-card evidence serves those tools; no artifact lane serves none."""
+    """Recorded correlation evidence serves the trace; no artifact lane serves none."""
     journal = tmp_path / "events.jsonl"
     journal.write_text(
         "\n".join(
@@ -107,9 +99,10 @@ async def test_artifact_tools_follow_the_artifact_providers_operations(tmp_path:
         encoding="utf-8",
     )
     provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
+    assert {"list_pipelines", "get_model_card", "trace_correlation"} <= provider.capabilities()
     async with Client(create_server(service=ProvenanceService(provider, provider))) as client:
         served = {tool.name for tool in await client.list_tools()}
-    assert {"list_pipelines", "get_model_card", "trace_correlation"} <= served
+    assert served == WATCHER_TOOLS
 
     class NoArtifacts:
         name = "none"
@@ -126,18 +119,7 @@ async def test_artifact_tools_follow_the_artifact_providers_operations(tmp_path:
     service = ProvenanceService(provider, NoArtifacts())  # type: ignore[arg-type]
     async with Client(create_server(service=service)) as client:
         served = {tool.name for tool in await client.list_tools()}
-    artifact_tools = {
-        "list_pipelines",
-        "list_executions",
-        "list_artifact_types",
-        "list_artifacts",
-        "get_execution_lineage",
-        "get_artifact_lineage",
-        "get_model_card",
-        "trace_correlation",
-    }
-    assert not served & artifact_tools
-    assert {"capabilities", "query_tasks", "get_timeline"} <= served
+    assert served == {"query_tasks"}
 
 
 async def test_cross_domain_correlation_uses_same_native_evidence_once(native_server) -> None:
@@ -148,26 +130,6 @@ async def test_cross_domain_correlation_uses_same_native_evidence_once(native_se
     assert result.data["agentic"]["count"] == 1
     assert result.data["artifact"]["count"] == 1
     assert result.data["agentic"]["items"] == result.data["artifact"]["items"]
-
-
-async def test_capabilities_say_how_the_query_lane_was_chosen(tmp_path: Path) -> None:
-    """A defaulted native lane names the enabled provider it does not query."""
-    journal = tmp_path / "events.jsonl"
-    journal.write_text("", encoding="utf-8")
-    provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
-    config = SpotterConfig(
-        source_path=tmp_path / "clio.yaml",
-        agentic_provider="jsonl",
-        artifact_provider="native",
-        agentic_selected_by="default_jsonl",
-        agentic_alternatives=("flowcept",),
-    )
-    server = create_server(config, service=ProvenanceService(provider, provider))
-    async with Client(server) as client:
-        result = await client.call_tool("capabilities", {})
-
-    assert result.data["agentic"]["selected_by"] == "default_jsonl"
-    assert result.data["agentic"]["enabled_not_queried"] == ["flowcept"]
 
 
 async def test_every_query_result_names_its_lane(tmp_path: Path) -> None:
@@ -185,14 +147,12 @@ async def test_every_query_result_names_its_lane(tmp_path: Path) -> None:
     server = create_server(config, service=ProvenanceService(provider, provider))
     async with Client(server) as client:
         tasks = await client.call_tool("query_tasks", {})
-        artifacts = await client.call_tool("list_artifacts", {})
 
     assert tasks.data["count"] == 0
     assert tasks.data["lane"]["domain"] == "agentic"
     assert tasks.data["lane"]["provider"] == "native"
     assert tasks.data["lane"]["selected_by"] == "default_jsonl"
     assert tasks.data["lane"]["hint"].startswith("lane_defaulted: flowcept is enabled")
-    assert artifacts.data["lane"] == {"domain": "artifact", "provider": "native"}
 
 
 async def test_a_configured_lane_gives_no_defaulted_hint(native_server) -> None:
@@ -205,12 +165,16 @@ async def test_a_configured_lane_gives_no_defaulted_hint(native_server) -> None:
 
 
 async def test_an_unreadable_store_keeps_its_tools_and_reports_its_error(tmp_path: Path) -> None:
-    """Startup never hides the lineage tools when the store cannot list its operations."""
+    """Startup never hides the correlation trace when the store cannot list its operations."""
     journal = tmp_path / "events.jsonl"
     journal.write_text(json.dumps({"record_type": "pipeline"}) + "\n", encoding="utf-8")
     provider = JsonlProvider(NativeQueryConfig(journal, tmp_path))
-    async with Client(create_server(service=ProvenanceService(provider, provider))) as client:
+    service = ProvenanceService(provider, provider)
+    async with Client(create_server(service=service)) as client:
         served = {tool.name for tool in await client.list_tools()}
         with pytest.raises(ToolError, match="invalid_query"):
-            await client.call_tool("list_artifacts", {})
-    assert {"list_pipelines", "get_model_card", "trace_correlation"} <= served
+            await client.call_tool("trace_correlation", {"correlation_id": "c-1"})
+    with pytest.raises(ProvenanceError) as unreadable:
+        service.require_artifact("list_artifacts").list_artifacts(limit=10)
+    assert unreadable.value.code == "invalid_query"
+    assert served == WATCHER_TOOLS

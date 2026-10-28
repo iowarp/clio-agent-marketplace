@@ -1,7 +1,7 @@
 ---
 name: inspect-attention
 title: Inspect Attention
-description: Find what steered the watched session's answer - attention_sources(message_id) on an answer (or an exact quoted passage of it) returns labelled sources and the transcript blocks it weighted with their hottest excerpts; spotter_list_attention_calls and spotter_inspect_attention read the raw capture for a deep dive. Load when a question is whether an input steered a model call.
+description: Find what steered the watched session's answer - attention_sources(message_id) on an answer (or on an exact quoted passage of it) returns the labelled sources and the transcript blocks the answer weighted most, each with its hottest excerpts. Load when the question is whether an input steered a model call.
 keywords:
 - level:L0
 - attention
@@ -58,33 +58,6 @@ from the answer, quote a longer unique passage, or omit `text` and pass only
 - Sparse capture: an absent position is unretained, not zero attention. Shares
   are the uniform mean attention mass over the selected steps.
 - Separate observed evidence, hypotheses and uncertainty.
-
-## Raw capture (deep dive)
-
-`spotter_list_attention_calls` for the watched session's id lists recorded
-model response ids with `capture_available` and `decode_steps` (how many decode
-steps the capture holds); it does not verify the capture file itself.
-`spotter_capabilities` says whether this reader is configured; when it is not,
-these tools return `attention_not_configured`.
-
-`spotter_inspect_attention` takes:
-
-- an exact `response_id` from the listing;
-- optional `steps`: omit them to inspect the whole response. To narrow it, pass
-  decode-step indices within `0..decode_steps-1`; never estimate steps from
-  character offsets;
-- an optional versioned `profile` (the uniform mean is the default).
-
-An `invalid_argument` error names the valid range; fix the call and retry. Other
-codes (`attention_capture_partial`, `attention_file_mismatch`,
-`attention_record_malformed`) mean the evidence itself is unusable: say so.
-
-It verifies the local capture file and returns the capture hash, the resolved
-profile and its revision, per-source scores, top tokens, coverage and
-limitations. The profile's heat score is distinct from the uniform mean
-attention mass: report which one you are quoting. Coordinates are captured
-prompt tokens; never turn them into transcript, image-patch or A2UI
-coordinates.
 
 ## Presenting a finding
 

@@ -26,6 +26,13 @@ _READ_ONLY_ANNOTATIONS = {
 }
 
 
+#: The raw provenance tools SPOTTER's watcher is offered: Flowcept's task records for
+#: the watched session, and a correlation trace across them. Its routine review runs on
+#: CLIO's review_activity and attention_sources; listing, lineage and timeline tools only
+#: multiplied the menu a small model has to choose from.
+WATCHER_TOOLS = frozenset({"query_tasks", "trace_correlation"})
+
+
 def _invoke[Result](callback: Callable[[], Result]) -> Result:
     """Translate provider errors to stable JSON FastMCP errors."""
     try:
@@ -67,6 +74,12 @@ def create_server(
         attention = AttentionEvidence(reader, resolved.attention_files_dir)
     active = service
     mcp = FastMCP("spotter")
+
+    def tool(**kwargs: Any) -> Callable[[Callable[..., Any]], Any]:
+        """Serve only the watcher's provenance tools (see :data:`WATCHER_TOOLS`)."""
+        register = mcp.tool(**kwargs)
+        return lambda func: register(func) if func.__name__ in WATCHER_TOOLS else func
+
     artifact_ops = _operations(active.artifact)
     agentic_ops = _operations(active.agentic)
 
@@ -84,7 +97,7 @@ def create_server(
             agentic and agentic_ops is not None and operation not in agentic_ops
         ):
             return lambda func: func
-        return mcp.tool(title=title, annotations=_READ_ONLY_ANNOTATIONS)
+        return tool(title=title, annotations=_READ_ONLY_ANNOTATIONS)
 
     def answer(domain: Literal["agentic", "artifact"], callback: Callable[[], Any]) -> Any:
         """Stamp a query result with the lane that answered it, never silently."""
@@ -106,7 +119,7 @@ def create_server(
                 )
         return {**result, "lane": lane} if isinstance(result, dict) else result
 
-    @mcp.tool(title="Inspect provenance capabilities", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Inspect provenance capabilities", annotations=_READ_ONLY_ANNOTATIONS)
     def capabilities() -> dict[str, Any]:
         """Report active agentic/artifact providers, health, and exact operations."""
         described = active.capabilities()
@@ -132,13 +145,13 @@ def create_server(
             )
         return attention
 
-    @mcp.tool(title="List captured model-call identities", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="List captured model-call identities", annotations=_READ_ONLY_ANNOTATIONS)
     def list_attention_calls(session_id: str, limit: int = 100) -> dict[str, Any]:
         """Find model response IDs with ``capture_available`` and ``decode_steps`` per call;
         listing does not verify the capture file itself."""
         return _invoke(lambda: require_attention().list_calls(session_id, limit))
 
-    @mcp.tool(title="Inspect captured attention", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Inspect captured attention", annotations=_READ_ONLY_ANNOTATIONS)
     def inspect_attention(
         response_id: str,
         steps: list[int] | None = None,
@@ -155,7 +168,7 @@ def create_server(
             lambda: require_attention().inspect(response_id, steps, profile or AttentionProfile())
         )
 
-    @mcp.tool(title="List provenance campaigns", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="List provenance campaigns", annotations=_READ_ONLY_ANNOTATIONS)
     def list_campaigns(campaign_id: str | None = None, limit: int = 100) -> dict[str, Any]:
         """List distributed campaign groupings from the agentic provider."""
         return answer(
@@ -163,7 +176,7 @@ def create_server(
             lambda: active.require_agentic("list_campaigns").list_campaigns(campaign_id, limit),
         )
 
-    @mcp.tool(title="List workflow executions", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="List workflow executions", annotations=_READ_ONLY_ANNOTATIONS)
     def list_workflows(
         campaign_id: str | None = None,
         status: str | None = None,
@@ -177,14 +190,14 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="List workflow agents", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="List workflow agents", annotations=_READ_ONLY_ANNOTATIONS)
     def list_agents(workflow_id: str | None = None, limit: int = 100) -> dict[str, Any]:
         """List agents recorded globally or within one workflow."""
         return answer(
             "agentic", lambda: active.require_agentic("list_agents").list_agents(workflow_id, limit)
         )
 
-    @mcp.tool(title="Query execution tasks", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Query execution tasks", annotations=_READ_ONLY_ANNOTATIONS)
     def query_tasks(
         workflow_id: str | None = None,
         task_id: str | None = None,
@@ -208,7 +221,7 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="Summarize execution tasks", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Summarize execution tasks", annotations=_READ_ONLY_ANNOTATIONS)
     def summarize_tasks(workflow_id: str | None = None) -> dict[str, Any]:
         """Aggregate task status, activity, duration, and time-range evidence."""
         return answer(
@@ -216,7 +229,7 @@ def create_server(
             lambda: active.require_agentic("summarize_tasks").summarize_tasks(workflow_id),
         )
 
-    @mcp.tool(title="Get execution timeline graph", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Get execution timeline graph", annotations=_READ_ONLY_ANNOTATIONS)
     def get_timeline(workflow_id: str, limit: int = 1000) -> dict[str, Any]:
         """Return spans plus parent/dependency nodes and edges for one workflow."""
         return answer(
