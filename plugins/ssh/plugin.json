@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ssh",
+  "version": "1.0.0",
+  "description": "Run commands on a configured remote host over SSH.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "ssh",
+    "hpc",
+    "remote"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "shell"
+      ]
+    }
+  }
+}

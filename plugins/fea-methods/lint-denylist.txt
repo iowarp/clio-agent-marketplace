@@ -1,0 +1,5 @@
+# Literals from runs this stack was tuned on (L3). They must never appear in
+# this plugin's skills. Read by scripts/check_skill_literals.py.
+exp10
+IN718
+Inconel 718

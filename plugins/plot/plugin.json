@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "plot",
+  "version": "1.0.0",
+  "description": "Render static plots (line, scatter, histogram, heatmap, time series) through clio-kit's plot MCP server.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "plot",
+    "figures"
+  ]
+}

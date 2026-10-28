@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "materials",
+  "version": "0.6.0",
+  "description": "Materials science method for metallic parts: processing-structure-property reasoning, metallic material classes, nickel superalloys as a family, microstructure description and measurement, heat treatment and material property claims, and the materials_scientist subagent.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "materials",
+    "metallurgy",
+    "microstructure"
+  ]
+}

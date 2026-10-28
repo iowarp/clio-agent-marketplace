@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ndp",
+  "version": "1.0.0",
+  "description": "Search National Data Platform datasets and stage their resources through clio-kit's ndp MCP server.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "ndp",
+    "datasets"
+  ]
+}

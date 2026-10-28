@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Reject dataset-specific literals ("L3 leakage") in marketplace pack prompts.
+"""Reject dataset-specific literals ("L3 leakage") in marketplace plugin prompts.
 
-Skills and experts should encode checks, not facts about one dataset or
-experiment. Two mechanisms catch leaked facts:
+Skills, prompt fragments and subagent prompts should encode checks, not facts
+about one dataset or experiment. Every plugin under ``plugins/`` is scanned:
+its ``skills/`` tree and its ``ai.iowarp.clio/prompt/`` Markdown. Two
+mechanisms catch leaked facts:
 
-* ``<pack>/lint-denylist.txt`` -- one literal per line (``#`` starts a comment
-  line). Any occurrence in a scanned file is an error. Always enforced.
+* ``plugins/<id>/lint-denylist.txt`` -- one literal per line (``#`` starts a
+  comment line). Any occurrence in a scanned file is an error. Always enforced.
 * Generic strict rules (ISO dates, measured magnitudes, sample keys, concrete
-  dataset file names). Enforced only for packs that contain a ``.lint-l3``
+  dataset file names). Enforced only for plugins that contain a ``.lint-l3``
   marker file or are named with ``--strict-pack``.
 
 A line containing ``lint: allow-literal`` is never reported.
@@ -26,9 +28,9 @@ DENYLIST_FILE = "lint-denylist.txt"
 STRICT_MARKER = ".lint-l3"
 ALLOW_MARKER = "lint: allow-literal"
 
-# Top-level repository directories that are not packs.
-_NON_PACK_DIRS = frozenset({"old", "scripts", "tests"})
-# Directories inside a pack that hold test data rather than shipped prompts.
+PLUGINS_DIR = "plugins"
+PROMPT_DIR = ("ai.iowarp.clio", "prompt")
+# Directories inside a plugin that hold test data rather than shipped prompts.
 _SKIPPED_PACK_DIRS = frozenset({"tests", "evals", "fixtures", "fixture", "__pycache__"})
 _BINARY_PROBE_BYTES = 8192
 
@@ -54,7 +56,7 @@ _TEMPLATE_CHARS = frozenset("<>{}*$")
 
 @dataclass(frozen=True)
 class LiteralFinding:
-    """One dataset-specific literal found in a scanned pack file."""
+    """One dataset-specific literal found in a scanned plugin file."""
 
     path: Path
     line: int
@@ -63,13 +65,14 @@ class LiteralFinding:
 
 
 def discover_packs(root: Path) -> list[Path]:
-    """Return pack directories directly under ``root``, sorted by name."""
+    """Return plugin directories under ``root/plugins``, sorted by name."""
+    plugins = root / PLUGINS_DIR
+    if not plugins.is_dir():
+        return []
     return sorted(
         child
-        for child in root.iterdir()
-        if child.is_dir()
-        and not child.name.startswith(".")
-        and child.name not in _NON_PACK_DIRS
+        for child in plugins.iterdir()
+        if child.is_dir() and not child.name.startswith(".") and (child / "plugin.json").is_file()
     )
 
 
@@ -95,17 +98,14 @@ def _is_skipped(path: Path, pack: Path) -> bool:
 
 
 def iter_scanned_files(pack: Path) -> Iterator[Path]:
-    """Yield the pack files whose text is checked for leaked literals."""
-    agent = pack / "AGENT.md"
-    if agent.is_file():
-        yield agent
-    experts = pack / "experts"
-    if experts.is_dir():
-        yield from sorted(p for p in experts.glob("*.md") if p.is_file())
+    """Yield the plugin files whose text is checked for leaked literals."""
+    prompt = pack.joinpath(*PROMPT_DIR)
+    if prompt.is_dir():
+        yield from sorted(p for p in prompt.rglob("*.md") if p.is_file())
     skills = pack / "skills"
     if skills.is_dir():
         for path in sorted(skills.rglob("*")):
-            if path.is_file() and not _is_skipped(path, pack):
+            if path.is_file() and not _is_skipped(path, pack) and "__pycache__" not in path.parts:
                 yield path
 
 
@@ -130,6 +130,11 @@ def _body_start(lines: Sequence[str]) -> int:
     return 0
 
 
+def prompt_file(path: Path, pack: Path) -> bool:
+    """Whether ``path`` is a prompt fragment or subagent prompt (frontmatter is not scanned)."""
+    return path.is_relative_to(pack.joinpath(*PROMPT_DIR))
+
+
 def _strict_hits(line: str) -> Iterator[tuple[str, str]]:
     """Yield ``(rule, matched_text)`` for each generic strict-rule hit."""
     for match in _ISO_DATE.finditer(line):
@@ -148,7 +153,7 @@ def _strict_hits(line: str) -> Iterator[tuple[str, str]]:
 
 
 def scan_pack(pack: Path, *, strict: bool) -> list[LiteralFinding]:
-    """Return literal findings for one pack."""
+    """Return literal findings for one plugin."""
     denylist = load_denylist(pack)
     findings: list[LiteralFinding] = []
     for path in iter_scanned_files(pack):
@@ -156,7 +161,7 @@ def scan_pack(pack: Path, *, strict: bool) -> list[LiteralFinding]:
         if text is None:
             continue
         lines = text.splitlines()
-        start = _body_start(lines) if path == pack / "AGENT.md" else 0
+        start = _body_start(lines) if path.suffix == ".md" and prompt_file(path, pack) else 0
         for index in range(start, len(lines)):
             line = lines[index]
             if ALLOW_MARKER in line:
@@ -168,9 +173,7 @@ def scan_pack(pack: Path, *, strict: bool) -> list[LiteralFinding]:
                 hits.extend(_strict_hits(line))
             for rule, matched in hits:
                 findings.append(
-                    LiteralFinding(
-                        path=path, line=index + 1, rule=rule, excerpt=matched
-                    )
+                    LiteralFinding(path=path, line=index + 1, rule=rule, excerpt=matched)
                 )
     return findings
 
@@ -178,7 +181,7 @@ def scan_pack(pack: Path, *, strict: bool) -> list[LiteralFinding]:
 def find_literals(
     root: Path, strict_packs: Sequence[str] = (), *, strict_all: bool = False
 ) -> list[LiteralFinding]:
-    """Scan every pack under ``root``; strict rules apply only where opted in."""
+    """Scan every plugin under ``root``; strict rules apply only where opted in."""
     forced = set(strict_packs)
     findings: list[LiteralFinding] = []
     for pack in discover_packs(root):
@@ -196,12 +199,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="append",
         default=[],
         metavar="NAME",
-        help="also apply the generic strict rules to this pack (repeatable)",
+        help="also apply the generic strict rules to this plugin (repeatable)",
     )
     parser.add_argument(
         "--strict-all",
         action="store_true",
-        help="apply the generic strict rules to every pack",
+        help="apply the generic strict rules to every plugin",
     )
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
@@ -211,12 +214,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     known = {pack.name for pack in discover_packs(root)}
     unknown = sorted(set(args.strict_pack) - known)
     if unknown:
-        parser.error(f"unknown pack(s) for --strict-pack: {', '.join(unknown)}")
+        parser.error(f"unknown plugin(s) for --strict-pack: {', '.join(unknown)}")
     findings = find_literals(root, args.strict_pack, strict_all=args.strict_all)
     if not findings:
-        print("OK: no dataset-specific literals in marketplace pack prompts")
+        print("OK: no dataset-specific literals in marketplace plugin prompts")
         return 0
-    print("Dataset-specific literals in marketplace pack prompts:")
+    print("Dataset-specific literals in marketplace plugin prompts:")
     for finding in findings:
         print(
             f"  {finding.path.relative_to(root).as_posix()}:{finding.line}: "

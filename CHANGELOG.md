@@ -2,6 +2,149 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-28
+
+The marketplace is rebuilt around `ARCHITECTURE.md`: each kept agent ships its
+own plugin whose `mission` fragment says whom it serves and what it does; L1
+method plugins hold no program; programs, formats and sources are separate L2
+plugins; every plugin with domain content carries the skill-literal lint.
+
+### Added
+
+- `clio-data` (CLIO Data): inspects, checks and converts HDF5/netCDF-4, ADIOS2
+  BP4/BP5 and Parquet files, with a verified conversion script
+  (`convert_to_parquet.py`: written, read back, rows, nulls, NaNs and
+  per-column checksums compared). It replaces `data-semantics` and
+  `format-bridge`.
+- Plugins `adios` (clio-kit's adios server plus an `adios2` skill),
+  `data-onboarding` (L0, shared by clio-data and OPAL), `phenotyping` (L1),
+  `geodesy` (L1, with `fit_trajectory.py` and `station_catalog.py`),
+  `fea-methods` (L1), and the program plugins `morphorm` and `slurm`, which
+  carry DaisyQuach's factorio-flat 0.5.0 work: the Morphorm workflow, its
+  restart and bundled checks (`exo_summary.py`, `xml_params.py`,
+  `diag_summary.py`), `hpc-batch-jobs` with `wait_job.sh`, and their tests.
+- `parquet` gains its `parquet` skill; the `hdf5` skill carries the tool
+  guidance; `scientific-method` gains `run-non-interactive-task`.
+
+### Removed
+
+- The blueprint-era demo agents `genomics-review`, `geospatial-field-review`,
+  `hpc-io-regression`, `materials-crystal-review`, `ndp-environmental-hazards`,
+  `proteomics-mzml-review`, `remote-sensing-ogc-review`,
+  `seismic-waveform-review`, `terrain-suitability` and
+  `wildfire-smoke-impact-review` (with the `wildfire` plugin and its
+  smoke_review flow), with their plugins.
+- `phenotype`, the synthetic workload that APPL-CORE (OPAL) replaces, with its
+  plugin and the `phenotype-impl` CI job.
+- `data-semantics` and `format-bridge` (folded into `clio-data`),
+  `documents-review` (folded into `document-production`), `topology` (split
+  into `fea-methods` and the `abaqus` and `morphorm` programs), and the
+  leftover Codex `agents/openai.yaml` files.
+- The smoke-test agents `hook-smoke` and `mcp-calculator-smoke` and their
+  plugins leave the default marketplace, so people choosing an agent see only
+  agents meant for work. They live in `testing/`, a separate marketplace named
+  `clio-testing` that CLIO's own checks install; CI checks it alongside the
+  default one.
+- The blueprint-era topology experiments, superseded by the flat agents that
+  load procedures on demand: the Factorio principal-investigator agent and the
+  EarthScope GNSS region agents (`earthscope-gnss-region`, `earthscope-flat`
+  and the archived depth and width topology variants), with the plugins only
+  they used (`earthscope`, `earthscope-flat`, `earthscope-gnss`,
+  `earthscope-gnss-region-depth`, `earthscope-gnss-region-width`).
+- `base-agent` (now the `standard` agent), `cluster-operator` (retired relay
+  reference with no tools left to provide) and wildfire's declared `workflow:`
+  block, now the `smoke-review` flow, which runs the stages on the core
+  `workflow` flow.
+
+### Changed
+
+- deep-researcher 0.3.0 runs deep research as the `deep-research` flow,
+  shipped in its plugin (0.3.0) and started with `run_flow` (the agent adds
+  `orchestration`). The flow plans directions (a recorded model step that
+  chooses how many, up to `max_directions`, default 6), researches them in
+  parallel (`concurrency`), has the critic verify them, researches the gaps the
+  critic names for at most `max_rounds` (default 2) more rounds, and writes the
+  report (a recorded model step) from verified claims only, appending the
+  unresolved questions and rejected claims; the report is written to the
+  workspace and its typed fields ride the result's `workflow_state`.
+  `researcher_model` and `critic_model` choose each subagent's model. The
+  critic returns a typed audit in `workflow_state.audit` (verified claims with
+  fetched source and quote, rejected claims with reasons, gaps), which the flow
+  validates. The coordinator answers simple questions directly and delivers the
+  flow's report with `create_artifact`; its fragments are gated on `run_flow`
+  so the subagents never read them. The `rounds`, `sources` and `verification`
+  fragments and the `deep-research-report` skill are removed: the flow and the
+  writer's instructions now hold that method.
+- Factorio 0.6.0: its identity no longer repeats its name; `factorio.mission`
+  says whom it serves, that no simulation program is the default, and that it
+  runs meshes, solves and batch jobs itself when it can; a roster fragment
+  makes consulting a specialist an ordinary tool call. Every Factorio subagent
+  can read files, and those that compute or build can write and run them;
+  each declares the plugins its skills reference.
+- `manufacturing` is an L1 method pack with no program: `materials`,
+  `manufacturing-processes` (was `am-process`), `characterization`,
+  `mechanical-testing`, `fatigue` and `fea-methods`. `abaqus` is the Abaqus
+  program plugin with Tosca, the topology views, the `abaqus-topology` catalog
+  (instance values scrubbed) and `abaqus_engineer`.
+- Skill merges: inconel-718 removed; pbf-lb → am-process-parameters;
+  surface-finishing → post-processing; microstructure-characterization →
+  microstructure; porosity-analysis → xct; fatigue-testing →
+  mechanical-testing; mts-test-systems → load-frame-capability;
+  scientific-plotting → data-visualization; research-methodology →
+  experimental-design; formulate-abaqus-package → abaqus.
+- `scientific-method` is part of the CLIO Science base, with domain-neutral
+  examples; Factorio's own process skills moved into `factorio`.
+- EarthScope 0.6.0: `earthscope-skills` is renamed `earthscope` (an L2 source
+  plugin with a mission and discovery-based acquisition, no hardcoded resource
+  literals); GNSS methods live in `geodesy`; `pandas` and `plot` are dropped.
+- APPL-CORE 0.3.0 is shown as "OPAL": split into `data-onboarding`,
+  `phenotyping` and `appl-core`; the export contract is version 6 and other
+  versions are refused; inputs are described by convention, not as read-only;
+  the `appl-instruments` placeholder is removed and `geometry-to-glb` moved to
+  `visuals`.
+- SPOTTER (`spotter-ai` 0.5.0) watches any CLIO session: the eight phenotype
+  campaign tools are gone; alerts go through `raise_alert_card` and
+  containment through CLIO's SPOTTER clearance; one mission fragment, with the
+  skills investigate-provenance, inspect-attention and contain-anomaly.
+- deep-researcher 0.2.0 has web only in its researcher and critic subagents and
+  a mission-first coordinator prompt; document-production 0.2.0 and
+  clio-search 0.2.0 lead with a mission that describes their actual tools.
+- The `workspace` plugin (1.1.0) carries CLIO's read-only repository inspection
+  tools `fs_list_directory` and `fs_search_text` in place of `fs_glob` and
+  `fs_grep`, matching CLIO's file server.
+- The `visuals` plugin's diagram guidance points at the active catalog's
+  `clio.mermaid.v1` entry for families, syntax and viewer capabilities, as
+  0.6.13 did for the blueprint agents; `create-diagram` covers choice and review.
+- HDF5 guidance lives in the `hdf5` plugin (1.1.0) as one `hdf5` skill by the
+  HDF5 team: a router plus 22 guides under `references/`, audited against HDF5
+  2.0–2.2 and h5py 3.12–3.16 (from iowarp/clio-agent#1736, which proposed it
+  as a CLIO built-in). Every agent that adds `hdf5` gets it. `data-semantics`
+  (0.2.0) drops its 21 older `hdf5-*` skills, and its HDF5 subagent loads the
+  new guides, `references/clio_core_ingest.md` for clio-core ingest.
+- The marketplace moves from Agent Blueprints (`AGENT.md` plus `experts/*.md`)
+  to native Agent Plugins 1.0.0 packages under `plugins/` and Python agent
+  classes under `agents/`. Every agent keeps its id; experts become defined
+  subagents of the plugin they belong to, root prompts become domain
+  fragments, and skills move to hyphenated folders in the plugin that owns
+  them. Shared capabilities (workspace, shell, web, documents, visuals,
+  delegation, connected data, the clio-kit servers) are single plugins the
+  agents depend on, so `create-pdf-report` and the document skills have one
+  home.
+- The spotter and phenotype MCP projects move to `plugins/<id>/impl` and
+  launch from `${PLUGIN_ROOT}`. The archived `old/` agents are converted too;
+  tools no MCP server in the repository provides are not carried. hook-smoke's
+  `pre_message` is an SDK `prompt_submit` hook.
+- CI runs `clio-agent plugin check .`; the policy scripts check the plugin
+  layout instead of `AGENT.md`.
+
+### Renamed
+
+- `factorio-flat` is now `factorio` (agent and plugin, 0.5.0): the flat
+  research partner replaces the earlier Factorio agent under its name.
+- `earthscope-single-agent` is now `earthscope` (0.5.0): one agent loading the
+  `earthscope-skills` procedures on demand. Refs to the old ids no longer
+  resolve; use `clio/factorio` and `clio/earthscope`.
+
 ## [0.6.13] - 2026-10-21
 
 ### Changed

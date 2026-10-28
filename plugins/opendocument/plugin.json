@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "opendocument",
+  "version": "1.0.0",
+  "description": "Create and edit OpenDocument text, spreadsheets and presentations.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "opendocument",
+    "odt",
+    "ods",
+    "odp",
+    "documents"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "document-runtime"
+      ]
+    }
+  }
+}

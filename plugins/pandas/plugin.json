@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "pandas",
+  "version": "1.0.0",
+  "description": "Load, profile, filter and summarize tabular data through clio-kit's pandas MCP server.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "pandas",
+    "tables",
+    "csv"
+  ]
+}

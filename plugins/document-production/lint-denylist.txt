@@ -1,0 +1,2 @@
+# Literals from one document or review that must never appear in this plugin's
+# prompts or skills (scripts/check_skill_literals.py). One literal per line.

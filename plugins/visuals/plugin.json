@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "visuals",
+  "version": "1.2.1",
+  "description": "Interactive analysis, dashboards, diagrams, 3D geometry for the mesh viewport (geometry-to-glb) and rendered visual review in CLIO's side panel.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "a2ui",
+    "visuals",
+    "dashboards",
+    "diagrams",
+    "3d"
+  ]
+}

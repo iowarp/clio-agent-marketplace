@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "adios",
+  "version": "1.0.0",
+  "description": "Inspect ADIOS2 BP4 and BP5 output through clio-kit's adios MCP server (list, variables, steps, attributes, one variable at one step), with the adios2 skill: directory layout, steps and variables, shape/start/count, global and local arrays, blocks, attributes, the Python FileReader and Stream APIs, bpls, engines and operators.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "adios2",
+    "bp5",
+    "scientific-data"
+  ]
+}

@@ -1,73 +1,105 @@
 #!/usr/bin/env python3
-"""Reject undocumented model overrides in marketplace pack frontmatter."""
+"""Reject undocumented model pins in marketplace agents, subagents and plugins.
+
+Every agent and subagent inherits the provider and model selected for the
+session. A pin is a ``Prefers(model=...)`` (or ``provider=``) in
+``agents/*.py`` or a plugin's ``ai.iowarp.clio/**/*.py`` (a subagent's
+``prefers``, a plugin declaration's ``prefers``), or a ``prefers.model`` /
+``prefers.provider`` in a plugin.json ``ai.iowarp.clio`` extension. A pin is
+allowed only with an adjacent ``# model-pin-justification: <reason>`` comment
+(on the line before the call or on any line of it); a plugin.json pin cannot
+carry a comment, so it is always reported.
+
+Dependency-free: the Python files are parsed, never imported.
+"""
 
 from __future__ import annotations
 
 import argparse
+import ast
+import json
 import re
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
-_PIN_PATTERN = re.compile(r"^\s*default_model\s*:\s*(?P<model>[^#]+?)\s*(?:#.*)?$")
-_JUSTIFICATION_PATTERN = re.compile(
-    r"^\s*#\s*model-pin-justification\s*:\s*\S.*$",
-    re.IGNORECASE,
-)
+PINNED_FIELDS = ("model", "provider")
+_JUSTIFICATION_PATTERN = re.compile(r"#\s*model-pin-justification\s*:\s*\S", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
 class ModelPinViolation:
-    """One undocumented model override found in active YAML frontmatter."""
+    """One undocumented model or provider pin."""
 
     path: Path
     line: int
     model: str
 
 
-def _frontmatter_end(lines: Sequence[str]) -> int | None:
-    """Return the closing frontmatter line index, or ``None`` when absent."""
-    if not lines or lines[0].strip() != "---":
-        return None
-    for index, line in enumerate(lines[1:], start=1):
-        if line.strip() == "---":
-            return index
-    return None
+def _python_files(root: Path) -> Iterator[Path]:
+    agents = root / "agents"
+    if agents.is_dir():
+        yield from sorted(agents.glob("*.py"))
+    plugins = root / "plugins"
+    if plugins.is_dir():
+        for path in sorted(plugins.glob("*/ai.iowarp.clio/**/*.py")):
+            if "__pycache__" not in path.parts:
+                yield path
 
 
-def _has_adjacent_justification(lines: Sequence[str], index: int, end: int) -> bool:
-    """Return whether a pin has the required adjacent explanatory comment."""
-    adjacent = (candidate for candidate in (index - 1, index + 1) if 0 < candidate < end)
-    return any(_JUSTIFICATION_PATTERN.match(lines[candidate]) for candidate in adjacent)
+def _is_prefers(call: ast.Call) -> bool:
+    func = call.func
+    name = func.id if isinstance(func, ast.Name) else getattr(func, "attr", "")
+    return name == "Prefers"
+
+
+def _python_pins(path: Path) -> Iterator[ModelPinViolation]:
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    tree = ast.parse(text, filename=str(path))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not _is_prefers(node):
+            continue
+        pinned = [
+            kw
+            for kw in node.keywords
+            if kw.arg in PINNED_FIELDS
+            and not (isinstance(kw.value, ast.Constant) and not kw.value.value)
+        ]
+        if not pinned:
+            continue
+        first = node.lineno - 1
+        last = (node.end_lineno or node.lineno) - 1
+        window = lines[max(first - 1, 0) : last + 1]
+        if any(_JUSTIFICATION_PATTERN.search(line) for line in window):
+            continue
+        value = pinned[0].value
+        model = value.value if isinstance(value, ast.Constant) else ast.unparse(value)
+        yield ModelPinViolation(path=path, line=node.lineno, model=str(model))
+
+
+def _manifest_pins(root: Path) -> Iterator[ModelPinViolation]:
+    for path in sorted((root / "plugins").glob("*/plugin.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        ext = (data.get("extensions") or {}).get("ai.iowarp.clio") or {}
+        prefers = ext.get("prefers") or {}
+        for field in PINNED_FIELDS:
+            if prefers.get(field):
+                yield ModelPinViolation(path=path, line=0, model=str(prefers[field]))
 
 
 def find_unjustified_pins(root: Path) -> list[ModelPinViolation]:
-    """Find active pack frontmatter pins without an adjacent justification."""
+    """Find model or provider pins without an adjacent justification."""
     violations: list[ModelPinViolation] = []
-    for path in sorted(root.rglob("*.md")):
-        if ".git" in path.parts:
-            continue
-        lines = path.read_text(encoding="utf-8").splitlines()
-        end = _frontmatter_end(lines)
-        if end is None:
-            continue
-        for index, line in enumerate(lines[1:end], start=1):
-            match = _PIN_PATTERN.match(line)
-            if match is None or _has_adjacent_justification(lines, index, end):
-                continue
-            violations.append(
-                ModelPinViolation(
-                    path=path,
-                    line=index + 1,
-                    model=match.group("model").strip().strip("'\""),
-                )
-            )
+    for path in _python_files(root):
+        violations.extend(_python_pins(path))
+    violations.extend(_manifest_pins(root))
     return violations
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the model-pin policy check and return a process exit status."""
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("root", nargs="?", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
     root = args.root.resolve()
@@ -79,7 +111,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     for violation in violations:
         print(
             f"  {violation.path.relative_to(root)}:{violation.line}: "
-            f"default_model={violation.model!r} requires an adjacent "
+            f"model={violation.model!r} requires an adjacent "
             "# model-pin-justification: ... comment"
         )
     return 1

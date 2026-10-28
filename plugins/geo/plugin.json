@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "geo",
+  "version": "1.0.0",
+  "description": "Geocode places, filter points by radius and query geospatial features through clio-kit's geo MCP server.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "geo",
+    "geospatial"
+  ]
+}

@@ -1,0 +1,5 @@
+# Literals from studies this stack was tuned on (L3). Read by
+# scripts/check_skill_literals.py. One literal per line.
+exp10
+IN718
+Inconel 718

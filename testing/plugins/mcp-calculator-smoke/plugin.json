@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "mcp-calculator-smoke",
+  "version": "0.1.0",
+  "description": "Archived: Minimal smoke-test plugin that packages a plugin-local MCP server for marketplace launch-semantics validation.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "archived",
+    "mcp",
+    "calculator",
+    "smoke"
+  ]
+}
