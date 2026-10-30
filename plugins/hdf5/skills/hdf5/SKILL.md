@@ -77,7 +77,6 @@ its build, not of the user's system.
 | `references/dimension_scales.md` | Dimension scales and coordinate variables |
 | `references/cf_compliance.md` | Whether a netCDF-4/HDF5 file meets the CF conventions |
 | `references/region_references.md` | Object and region references |
-| `references/map_objects.md` | HDF5 map objects (key-value stores) |
 
 **Layout and performance**
 
