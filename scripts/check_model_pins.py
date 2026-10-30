@@ -2,10 +2,15 @@
 """Reject undocumented model pins in marketplace agents, subagents and plugins.
 
 Every agent and subagent inherits the provider and model selected for the
-session. A pin is a ``Prefers(model=...)`` (or ``provider=``) in
-``agents/*.py`` or a plugin's ``ai.iowarp.clio/**/*.py`` (a subagent's
-``prefers``, a plugin declaration's ``prefers``), or a ``prefers.model`` /
-``prefers.provider`` in a plugin.json ``ai.iowarp.clio`` extension. A pin is
+session. A pin is a ``model`` or ``provider`` preference in ``agents/*.py`` or
+a plugin's ``ai.iowarp.clio/**/*.py`` (a subagent's ``prefers``, a plugin
+declaration's ``prefers``), in every spelling the clio-agent SDK accepts:
+``Prefers(model=...)``, ``Prefers("model", "provider")`` (positional),
+``Prefers(**{...})``, ``Prefers.from_dict({...})`` and a ``prefers={...}``
+dict literal. A ``Prefers(**name)`` or ``Prefers.from_dict(name)`` whose value
+the check cannot read is reported too. A ``prefers.model`` /
+``prefers.provider`` in a plugin.json ``ai.iowarp.clio`` extension is a pin as
+well. A pin is
 allowed only with an adjacent ``# model-pin-justification: <reason>`` comment
 (on the line before the call or on any line of it); a plugin.json pin cannot
 carry a comment, so it is always reported.
@@ -47,10 +52,61 @@ def _python_files(root: Path) -> Iterator[Path]:
                 yield path
 
 
-def _is_prefers(call: ast.Call) -> bool:
-    func = call.func
-    name = func.id if isinstance(func, ast.Name) else getattr(func, "attr", "")
+def _named_prefers(node: ast.expr) -> bool:
+    name = node.id if isinstance(node, ast.Name) else getattr(node, "attr", "")
     return name == "Prefers"
+
+
+def _is_prefers(call: ast.Call) -> bool:
+    return _named_prefers(call.func)
+
+
+def _is_from_dict(call: ast.Call) -> bool:
+    func = call.func
+    return (
+        isinstance(func, ast.Attribute)
+        and func.attr == "from_dict"
+        and _named_prefers(func.value)
+    )
+
+
+def _set(value: ast.expr) -> bool:
+    """Whether a preference value pins something: empty constants do not."""
+    return not (isinstance(value, ast.Constant) and not value.value)
+
+
+def _dict_pins(node: ast.expr) -> list[ast.expr] | None:
+    """Pinned values in a dict literal, or ``None`` when ``node`` cannot be read."""
+    if not isinstance(node, ast.Dict):
+        return None
+    pins: list[ast.expr] = []
+    for key, value in zip(node.keys, node.values, strict=True):
+        if key is None:  # {**other}: unreadable
+            return None
+        if isinstance(key, ast.Constant) and key.value in PINNED_FIELDS and _set(value):
+            pins.append(value)
+    return pins
+
+
+def _call_pins(call: ast.Call) -> list[ast.expr]:
+    """The pinned values of one call; the call itself when a value is unreadable."""
+    if _is_prefers(call):
+        pins = [arg for arg in call.args[: len(PINNED_FIELDS)] if _set(arg)]
+        for kw in call.keywords:
+            if kw.arg in PINNED_FIELDS and _set(kw.value):
+                pins.append(kw.value)
+            elif kw.arg is None:
+                read = _dict_pins(kw.value)
+                pins.extend(read if read is not None else [kw.value])
+        return pins
+    if _is_from_dict(call) and call.args:
+        read = _dict_pins(call.args[0])
+        return read if read is not None else [call.args[0]]
+    pins = []
+    for kw in call.keywords:
+        if kw.arg == "prefers" and isinstance(kw.value, ast.Dict):
+            pins.extend(_dict_pins(kw.value) or [])
+    return pins
 
 
 def _python_pins(path: Path) -> Iterator[ModelPinViolation]:
@@ -58,14 +114,9 @@ def _python_pins(path: Path) -> Iterator[ModelPinViolation]:
     lines = text.splitlines()
     tree = ast.parse(text, filename=str(path))
     for node in ast.walk(tree):
-        if not isinstance(node, ast.Call) or not _is_prefers(node):
+        if not isinstance(node, ast.Call):
             continue
-        pinned = [
-            kw
-            for kw in node.keywords
-            if kw.arg in PINNED_FIELDS
-            and not (isinstance(kw.value, ast.Constant) and not kw.value.value)
-        ]
+        pinned = _call_pins(node)
         if not pinned:
             continue
         first = node.lineno - 1
@@ -73,7 +124,7 @@ def _python_pins(path: Path) -> Iterator[ModelPinViolation]:
         window = lines[max(first - 1, 0) : last + 1]
         if any(_JUSTIFICATION_PATTERN.search(line) for line in window):
             continue
-        value = pinned[0].value
+        value = pinned[0]
         model = value.value if isinstance(value, ast.Constant) else ast.unparse(value)
         yield ModelPinViolation(path=path, line=node.lineno, model=str(model))
 

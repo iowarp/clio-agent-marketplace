@@ -91,7 +91,7 @@ Controls when disk space is physically reserved for a dataset:
 | `H5D_ALLOC_TIME_INCR` | As chunks written | Chunked | Normal chunked datasets |
 | `H5D_ALLOC_TIME_LATE` | At first write | Contiguous | Space-efficient sparse data |
 
-Set via `H5Pset_alloc_time()` on the dataset creation property list. Parallel HDF5 **requires** `EARLY` to avoid serialization during collective writes.
+Set via `H5Pset_alloc_time()` on the dataset creation property list. Parallel HDF5 uses `EARLY` by default; keep it, since later allocation would serialize collective writes.
 
 ## Do / Do Not
 

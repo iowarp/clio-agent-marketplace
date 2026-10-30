@@ -90,6 +90,49 @@ class ModelPinPolicyTests(unittest.TestCase):
 
         self.assertEqual(violations, [])
 
+    def test_reports_every_spelling_the_sdk_accepts(self) -> None:
+        """from_dict, positional, ** and a prefers dict literal pin as surely as model=."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write(
+                root / "plugins" / "p" / "ai.iowarp.clio" / "subagents" / "s.py",
+                "from clio_agent.sdk.model import Prefers\n\n"
+                "A = Prefers.from_dict({'model': 'from-dict'})\n"
+                "B = Prefers('positional')\n"
+                "C = Prefers(**{'provider': 'splat'})\n"
+                "D = Subagent('d', prefers={'model': 'literal'})\n"
+                "E = Prefers.from_dict(SAVED)\n"
+                "F = Prefers(**SAVED)\n"
+                "G = Prefers.from_dict({'effort': 'high'})\n"
+                "H = Prefers('', '')\n",
+            )
+
+            violations = find_unjustified_pins(root)
+
+        self.assertEqual(
+            [(v.line, v.model) for v in violations],
+            [
+                (3, "from-dict"),
+                (4, "positional"),
+                (5, "splat"),
+                (6, "literal"),
+                (7, "SAVED"),
+                (8, "SAVED"),
+            ],
+        )
+
+    def test_a_justification_covers_the_other_spellings(self) -> None:
+        """The escape hatch works for from_dict as it does for model=."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write(
+                root / "agents" / "a.py",
+                "# model-pin-justification: exported backup keeps the user's choice\n"
+                "P = Prefers.from_dict({'model': 'kept'})\n",
+            )
+
+            self.assertEqual(find_unjustified_pins(root), [])
+
 
 if __name__ == "__main__":
     unittest.main()

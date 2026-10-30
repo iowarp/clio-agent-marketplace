@@ -31,6 +31,8 @@ Traditional HDF5 requires exclusive access for writing - readers must wait until
 **Creating New SWMR File**:
 
 ```python
+import time
+
 import h5py
 import numpy as np
 
@@ -219,7 +221,8 @@ h5clear -s data.h5  # Clear status flags
 
 **h5format_convert**: Convert file formats
 ```bash
-h5format_convert -d data.h5  # Downgrade for compatibility
+h5format_convert data.h5  # Rewrite 1.10 chunk indexes so HDF5 1.8 tools can read it
+h5format_convert -d /dset data.h5  # The same for one dataset only
 ```
 
 ## Performance Considerations
