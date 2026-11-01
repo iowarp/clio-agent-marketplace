@@ -5,7 +5,7 @@ started by a manufacturing agent can read what that agent reads. All three are
 read-only: tools that declare no side effects run, every other tool is refused.
 """
 
-from clio_agent.sdk import PromptFile, Subagent
+from clio_agent.sdk import Prefers, PromptFile, Subagent
 
 explore = Subagent(
     "explore",
@@ -17,6 +17,8 @@ explore = Subagent(
     ),
     derive="caller",
     effects="read",
+    # The fleet's explore role (Fleet settings) picks a fast model; unset, it inherits.
+    prefers=Prefers(role="explore"),
 )
 
 planner = Subagent(
