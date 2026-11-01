@@ -11,9 +11,9 @@ explore = Subagent(
     "explore",
     prompt=PromptFile("prompt/subagents/explore.md"),
     description=(
-        "Read-only survey: finds what exists (files, data, task records, sources) and "
-        "reports each finding with where it came from, so you get the findings without "
-        "the raw material."
+        "Fast read-only search: finds what exists (files, data, task records, sources) and "
+        "reports each finding with where it came from, so you get conclusions without the "
+        "raw material. Say how thorough to be: quick, medium or thorough."
     ),
     derive="caller",
     effects="read",
