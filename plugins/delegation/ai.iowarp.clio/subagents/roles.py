@@ -11,9 +11,12 @@ explore = Subagent(
     "explore",
     prompt=PromptFile("prompt/subagents/explore.md"),
     description=(
-        "Fast read-only search: finds what exists (files, data, task records, sources) and "
-        "reports each finding with where it came from, so you get conclusions without the "
-        "raw material. Say how thorough to be: quick, medium or thorough."
+        "Use when answering means sweeping many files, folders, datasets or naming "
+        "conventions, or you do not know where something lives, and you need only the "
+        "conclusion, not the material. Read-only and fast: it locates and reads excerpts and "
+        "reports each finding with its path and line; it does not review or judge. Say how "
+        "thorough: quick, medium or thorough. For a lookup whose file you already know, "
+        "search or read it yourself."
     ),
     derive="caller",
     effects="read",
