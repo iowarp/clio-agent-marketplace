@@ -1,7 +1,7 @@
 ---
 name: parquet
 title: Parquet
-description: Use for Apache Parquet files and partitioned Parquet datasets - what the footer states (schema, row groups, column statistics), physical versus logical types (timestamps with unit and UTC flag, decimals, unsigned integers, float16, dictionary, nested lists and structs), hive partitioning, bounded scans with pyarrow.dataset or DuckDB, write options, and the limits of the parquet tools.
+description: Use for Apache Parquet files and partitioned datasets - footer schema and statistics, physical versus logical types, hive partitioning, bounded scans, write options.
 keywords:
 - level:L2
 - parquet

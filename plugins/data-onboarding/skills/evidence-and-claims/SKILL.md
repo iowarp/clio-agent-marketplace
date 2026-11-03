@@ -1,7 +1,7 @@
 ---
 name: evidence-and-claims
 title: Evidence and Claims
-description: Explain what source documents say, what the analysis checked, and what remains uncertain in natural language, with specific clickable supporting references. Use for findings, reports and optional experiment notes.
+description: Use when writing findings or reports that explain what sources say, what the analysis checked and what remains uncertain, with clickable supporting references.
 keywords:
 - level:L0
 - provenance

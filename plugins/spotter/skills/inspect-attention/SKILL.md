@@ -1,7 +1,7 @@
 ---
 name: inspect-attention
 title: Inspect Attention
-description: Read captured model attention for the watched session with spotter_list_attention_calls and spotter_inspect_attention - exact response ids, recorded decode steps, versioned profiles, coverage and uncertainty - and carry the evidence into a finding or an alert card without guessing coordinates. Load when a question is whether an input steered a model call.
+description: Use when the question is whether an input steered a model call in the watched session, to read its captured attention with the spotter attention tools.
 keywords:
 - level:L0
 - attention

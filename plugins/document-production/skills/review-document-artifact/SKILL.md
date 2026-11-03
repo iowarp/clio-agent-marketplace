@@ -1,6 +1,6 @@
 ---
 name: review-document-artifact
-description: Apply a CLIO artifact_review instruction to the exact Markdown, PDF-backed source, LaTeX, HTML, OOXML, or OpenDocument version and create a new immutable artifact revision. Use when the turn contains an artifact_review part, a selected quote/region/cell/shape, or a native @clio comment.
+description: Use when the turn has an artifact_review part, a selected quote, region, cell or shape, or a native @clio comment, to apply it to the exact document version as a new revision.
 ---
 
 # Review Document Artifact

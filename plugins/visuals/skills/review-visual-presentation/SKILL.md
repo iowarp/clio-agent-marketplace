@@ -1,7 +1,7 @@
 ---
 name: review-visual-presentation
 title: Review figures and layouts
-description: Inspect, control, capture and refine complex data views before presenting them. Review matching pixels at the user's viewing size; preserve coherent composition, linked evidence and consistent meanings. Use during visual investigation or for substantial dashboards.
+description: Use during visual investigation or for substantial dashboards, to inspect, capture and refine complex data views at the user's viewing size before presenting them.
 ---
 
 Use visual interaction to investigate a question and to improve what a person

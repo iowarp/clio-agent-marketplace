@@ -1,6 +1,6 @@
 ---
 name: author-latex-pdf
-description: Create or revise LaTeX source, compile it locally to PDF, map PDF review selections back to source, and verify logs and rendered pages. Use for .tex sources, LaTeX-backed PDFs, mathematical or publication documents, and PDF review comments with source lineage.
+description: Use for .tex sources and LaTeX-backed PDFs - creating or revising, compiling locally, verifying, and mapping PDF review comments back to the source.
 ---
 
 # Author LaTeX and PDF

@@ -1,7 +1,7 @@
 ---
 name: topology-optimization
 title: Formulate, Run and Interpret a Topology Optimization Study
-description: State the optimization problem precisely (objective, constraints, design and frozen regions, manufacturing restrictions), check the analysis model before blaming the optimizer, and treat the converged result as a design proposal that still needs re-verification. Program-independent; the program plugin supplies the syntax.
+description: Use for topology optimization in any program, to state the problem precisely, check the analysis model, and treat the converged result as a design that still needs re-verification.
 keywords:
 - level:L1
 - topology-optimization

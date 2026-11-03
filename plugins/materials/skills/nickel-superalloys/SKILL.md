@@ -1,12 +1,15 @@
 ---
 name: nickel-superalloys
 title: Reason Over Nickel Superalloy Behavior
-description: Apply the strengthening-phase framework (gamma-prime, gamma-double-prime, solid solution), heat-treatment sensitivity, additive-manufacturing segregation and high-temperature service behavior of the nickel superalloy family. Grade-specific facts come from the scientist's data or cited sources, not from this skill.
+description: Use for nickel superalloys - gamma-prime and gamma-double-prime strengthening, heat-treatment sensitivity, additive-manufacturing segregation and high-temperature service.
 keywords:
 - level:L1
 - materials
 - nickel-superalloys
 ---
+
+Grade-specific facts come from the scientist's data or cited sources, not from
+this skill.
 
 ## Identify the strengthening family first
 

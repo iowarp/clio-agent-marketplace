@@ -1,6 +1,6 @@
 ---
 name: edit-markdown-html
-description: Create or revise Markdown and non-executing HTML document artifacts while preserving semantic structure, links, accessibility, and review anchors. Use for .md, .markdown, static .html/.htm, and lightweight rich document outputs; transition executable HTML to Live Web.
+description: Use to create or revise Markdown (.md, .markdown) or static HTML (.html, .htm) document artifacts, preserving structure, links, accessibility and review anchors.
 ---
 
 # Edit Markdown and Static HTML

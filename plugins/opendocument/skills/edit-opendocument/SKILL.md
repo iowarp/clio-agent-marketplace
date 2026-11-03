@@ -1,6 +1,6 @@
 ---
 name: edit-opendocument
-description: Create or revise ODT, ODS, and ODP files as native OpenDocument artifacts while preserving package metadata, styles, formulas, comments, and media. Use for LibreOffice-native document, spreadsheet, and presentation workflows or selected OpenDocument review comments.
+description: Use to create or revise ODT, ODS or ODP files natively, or apply OpenDocument review comments, preserving metadata, styles, formulas, comments and media.
 ---
 
 # Edit OpenDocument Files

@@ -1,7 +1,7 @@
 ---
 name: investigate-provenance
 title: Investigate Provenance
-description: Answer an execution or artifact-lineage question from the configured provenance stores (Flowcept, CMF or CLIO's native journal) with the spotter tools - discover what the active providers can answer, move from summaries to exact tasks and lineage graphs, join the two sides through a correlation id, and report coverage honestly. Load when a wake or a question needs evidence of what the watched session ran or produced.
+description: Use when a wake or question needs evidence of what the watched session ran or produced, from its provenance stores (Flowcept, CMF or CLIO's journal) through the spotter tools.
 keywords:
 - level:L0
 - provenance

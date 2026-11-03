@@ -1,7 +1,7 @@
 ---
 name: experimental-design
 title: Choose a Method and Design a Study Around Its Question
-description: Match a research question to a method that can answer it, state the method as a falsifiable procedure with its assumptions and scope, and design the study (variables, controls, sample size, acceptance criterion, confounds) before data is collected.
+description: Use before collecting data, to match a research question to a falsifiable method and design the study (variables, controls, sample size, acceptance criterion).
 keywords:
 - level:L0
 - methodology

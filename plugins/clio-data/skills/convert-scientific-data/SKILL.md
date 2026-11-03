@@ -1,7 +1,7 @@
 ---
 name: convert-scientific-data
 title: Convert Scientific Data
-description: Convert HDF5 (including netCDF-4) datasets or ADIOS2 BP4/BP5 variables to Parquet with an explicit dtype map, decide when a field is skipped and when to ask, and prove the result with row, null, NaN, dtype and per-column checksum checks. Bundles convert_to_parquet.py, which writes, reads back and verifies.
+description: Use to convert HDF5 or netCDF-4 datasets or ADIOS2 variables to Parquet with an explicit dtype map and a verified result (bundles convert_to_parquet.py).
 keywords:
 - level:L2
 - conversion

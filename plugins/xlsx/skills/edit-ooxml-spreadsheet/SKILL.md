@@ -1,6 +1,6 @@
 ---
 name: edit-ooxml-spreadsheet
-description: Create or revise Office-compatible XLSX workbooks while preserving formulas, styles, comments, charts, macros, and calculation semantics. Use for .xlsx creation, selected cell/range review, formula changes, or workbook deliverables that must open in Microsoft Excel.
+description: Use to create or revise .xlsx workbooks, or review selected cells and ranges, preserving formulas, styles, comments, charts and macros for Microsoft Excel.
 ---
 
 # Edit OOXML Spreadsheets

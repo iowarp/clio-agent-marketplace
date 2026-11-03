@@ -1,7 +1,7 @@
 ---
 name: station-catalogs
 title: Station Catalogs
-description: Read any station catalog (ids and coordinates of GNSS or other monitoring stations) without guessing columns - identify latitude, longitude and height by value range and documentation, handle unit-label rows and duplicate column names, and write a normalized copy for spatial filtering. Bundles station_catalog.py.
+description: Use to read a GNSS or other station catalog without guessing its columns and write a normalized copy for spatial filtering (bundles station_catalog.py).
 keywords:
 - level:L1
 - geodesy

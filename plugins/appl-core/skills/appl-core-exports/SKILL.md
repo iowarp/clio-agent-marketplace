@@ -1,7 +1,7 @@
 ---
 name: appl-core-exports
 title: APPL-CORE Exports
-description: The APPL-CORE export contract (format, supported export_version, refusal of other versions) and how to read an export from its own self-description and actual files, reconciling metadata with observed tables and finding what each sensor measures in the export's documentation.
+description: Use when reading an APPL-CORE export - its format and supported export_version, its own self-description and files, and what each sensor measures.
 keywords:
 - level:L2
 - appl-core

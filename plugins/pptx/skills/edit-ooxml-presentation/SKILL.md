@@ -1,6 +1,6 @@
 ---
 name: edit-ooxml-presentation
-description: Create or revise Office-compatible PPTX decks while preserving slide identity, layouts, masters, themes, notes, media, animations, and comments. Use for .pptx creation, selected slide/shape review, or presentation deliverables that must open in Microsoft PowerPoint.
+description: Use to create or revise .pptx decks, or review selected slides and shapes, preserving layouts, masters, notes, media and comments for Microsoft PowerPoint.
 ---
 
 # Edit OOXML Presentations

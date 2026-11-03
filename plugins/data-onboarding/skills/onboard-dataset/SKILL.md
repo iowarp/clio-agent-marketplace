@@ -1,7 +1,7 @@
 ---
 name: onboard-dataset
 title: Onboard a Dataset
-description: Inspect unfamiliar data for the user's question, adapt checks and code to its actual files and environment, and preserve evidence and unresolved meaning, writing derived files to the workspace so the source stays as delivered. Scripts and cards are optional aids.
+description: Use when inspecting unfamiliar data for the user's question, adapting checks to its actual files and keeping evidence, open questions and derived files in the workspace.
 keywords:
 - level:L0
 - data-onboarding

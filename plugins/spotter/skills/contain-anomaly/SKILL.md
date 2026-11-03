@@ -1,7 +1,7 @@
 ---
 name: contain-anomaly
 title: Contain an Anomaly
-description: How SPOTTER reports an unexplained deviation in the watched session - the evidence an alert needs, the raise_alert_card call, how CLIO's clearance barrier holds the session's next change while a review runs, and why the person decides what happens next. Load before raising an alert.
+description: Use before raising an alert about an unexplained deviation in the watched session - the evidence it needs, raise_alert_card, and the clearance barrier that holds the session.
 keywords:
 - level:L0
 - containment

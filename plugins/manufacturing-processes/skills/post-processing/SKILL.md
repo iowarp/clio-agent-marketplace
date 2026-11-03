@@ -1,7 +1,7 @@
 ---
 name: post-processing
 title: Track Post-Processing and Surface Finishing and the State Each Step Produces
-description: Treat each post-processing step (stress relief, HIP, heat treatment, support removal, machining, surface finishing, peening) as producing a distinct, traceable part state; state what each step changes and what it leaves untouched, and whether a finishing process reaches every surface it must.
+description: Use when a part goes through post-processing (stress relief, HIP, heat treatment, support removal, machining, finishing, peening), to record the part state each step produces.
 keywords:
 - level:L1
 - manufacturing

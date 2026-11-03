@@ -1,7 +1,7 @@
 ---
 name: tosca
 title: Set Up and Read a Tosca Optimization Run
-description: Tosca Structure, the SIMULIA optimization module that drives Abaqus solves from a .par parameter file (topology, sizing, shape and bead optimization). What it needs, what it writes, and what to look up in the installed documentation. Load with topology-optimization and abaqus.
+description: Use for Tosca Structure optimization (topology, sizing, shape, bead) driven by a .par file - its inputs, outputs and documentation lookups; load with topology-optimization and abaqus.
 keywords:
 - level:L2
 - abaqus

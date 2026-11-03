@@ -1,7 +1,7 @@
 ---
 name: acquire-earthscope-gnss
 title: Acquire EarthScope GNSS Data
-description: Find EarthScope GNSS station catalogs and per-station position time series in the National Data Platform, stage them with the ndp tools, let the user pick stations on a map, and hand a normalized catalog and a staged series to the geodesy skills - discovering resources, columns and units instead of assuming them.
+description: Use to find and stage EarthScope GNSS station catalogs and position time series from the National Data Platform, with stations picked on a map, for the geodesy skills.
 keywords:
 - level:L2
 - earthscope

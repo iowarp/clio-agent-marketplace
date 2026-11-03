@@ -1,7 +1,7 @@
 ---
 name: run-a-study
 title: Run a branched study
-description: "Run a study in the study log: a question, competing hypotheses with refuting predictions, branches that test them in parallel as a workflow, observations that cite their calls, evidence from your own analysis, forks when a branch finds something new, and a merged conclusion whose every claim cites entries."
+description: Use to run a study in the study log - competing hypotheses tested by parallel workflow branches, cited observations, forks, and a merged conclusion that cites its entries.
 keywords:
 - method
 - study

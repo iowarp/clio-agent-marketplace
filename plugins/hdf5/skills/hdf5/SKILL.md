@@ -1,7 +1,7 @@
 ---
 name: hdf5
 title: HDF5
-description: Use for HDF5 files (.h5, .hdf5, netCDF-4, NeXus, NWB, .h5ad and others) — what a file contains and where its main data is, reading and writing with h5py, chunking, compression and performance, cloud and S3 access, parallel I/O, file drivers, and ingest into clio-core.
+description: Use for HDF5 files (.h5, .hdf5, netCDF-4, NeXus, NWB, .h5ad) - contents, h5py reading and writing, chunking, compression, cloud access, parallel I/O and clio-core ingest.
 ---
 
 # HDF5
