@@ -11,5 +11,6 @@ description: Use to create or revise Markdown (.md, .markdown) or static HTML (.
 4. Use semantic HTML before presentational containers. Keep print styles useful so PDF rendition remains legible.
 5. Validate Markdown structure or HTML parsing and inspect links/assets that can be checked locally.
 6. Save the canonical source and allow CLIO to mint a new artifact version.
+7. For a print preview of a new Markdown or HTML deliverable, register it with `create_artifact(..., pdf_preview=true)`: the PDF is bound to that version and kept in lineage, not listed as another deliverable. In a batch, each item's `pdf_preview` overrides the call's default.
 
 See [document-quality.md](references/document-quality.md) for completion checks.

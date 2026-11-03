@@ -12,5 +12,6 @@ description: Use to create or revise ODT, ODS or ODP files natively, or apply Op
 5. Recalculate ODS and render all formats with headless LibreOffice when available. Inspect the affected pages/slides/sheets.
 6. Compare package parts with a narrow allowlist. Block rather than normalize unsupported features away.
 7. Save ODF as canonical. An exported OOXML or PDF is a derived compatibility rendition, not a replacement unless the user asks for conversion.
+8. Register the ODF file with `create_artifact`. It gets a version-bound PDF preview for Clio's viewer automatically, kept in lineage rather than as another deliverable (`pdf_preview=false` omits it). Do not register or list that PDF separately unless a PDF deliverable was asked for; check `pdf_previews` for a missing converter, which leaves the source registered.
 
 Read [opendocument-package.md](references/opendocument-package.md) for ODF-specific rules.
