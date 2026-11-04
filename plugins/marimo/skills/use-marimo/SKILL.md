@@ -40,8 +40,13 @@ person reads. You work in that same kernel through marimo's own agent interface,
    skill directory with `--url http://127.0.0.1:PORT`: first the `help(cm)` inspection it
    requires, then your code. Scratchpad code reads the live notebook; changes that should
    last go through `marimo._code_mode`, not edits to the `.py` file while it runs.
-5. **Look at what the person sees** when it matters: `await page.snapshot()` or
-   `await page.screenshot()` shows the rendered outputs and widgets. When a result says
+5. **Check results in the kernel, look in the page.** marimo draws tables and charts in
+   widgets whose text a page snapshot does not include, and it scrolls inside its own
+   panel, so a page screenshot shows only the top of the notebook. Read cell status,
+   errors and values through marimo-pair. To see an output as the person does, scroll it
+   into view and screenshot that element: `out = page.get_by_text("A HEADING OR LABEL
+   NEAR IT")`, `await out.scroll_into_view_if_needed()`, `await out.screenshot()`. Use
+   the page you opened; a second page joins the notebook as a reader. When a result says
    `person_acted`, the person changed something in the notebook; read it again.
 6. **Stop the server** (cancel its background task) when the person is done with it or
    asks; until then it keeps running between turns.
