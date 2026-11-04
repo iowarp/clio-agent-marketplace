@@ -29,9 +29,12 @@ person reads. You work in that same kernel through marimo's own agent interface,
      -p PORT --no-token --skip-update-check
    ```
 
-   Use the project's own marimo instead of `uvx` when the workspace has one (`uv run
-   marimo ...` in a uv project). Wait until `curl -sf http://127.0.0.1:PORT/api/sessions`
-   answers.
+   The shell waits for every process a command leaves running, so a server started with
+   `&` or `nohup` inside an ordinary command keeps that command, and the turn, waiting;
+   `background=true` returns a task handle and leaves the server running. `uvx` runs
+   marimo without changing the workspace's environment; when that environment already has
+   marimo (`uv run marimo --version` answers), `uv run marimo ...` uses it. Wait until
+   `curl -sf http://127.0.0.1:PORT/api/sessions` answers.
 3. **Open it in the shared browser** from `run_code`:
    `page = await browser.open("http://127.0.0.1:PORT/")`. Opening the page is what starts
    the notebook's kernel session; tell the person it is in the Browser tab. Without the
