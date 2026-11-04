@@ -45,8 +45,13 @@ person reads. You work in that same kernel through marimo's own agent interface,
    panel, so a page screenshot shows only the top of the notebook. Read cell status,
    errors and values through marimo-pair. To see an output as the person does, scroll it
    into view and screenshot that element: `out = page.get_by_text("A HEADING OR LABEL
-   NEAR IT")`, `await out.scroll_into_view_if_needed()`, `await out.screenshot()`. Use
-   the page you opened; a second page joins the notebook as a reader. When a result says
-   `person_acted`, the person changed something in the notebook; read it again.
-6. **Stop the server** (cancel its background task) when the person is done with it or
+   NEAR IT")`, `await out.scroll_into_view_if_needed()`, `path = await out.screenshot()`,
+   then look at `path` with `view_image`. Use the page you opened; a second page joins
+   the notebook as a reader. When a result says `person_acted`, the person changed
+   something in the notebook; read it again.
+6. **Review visual work by looking at it.** For a chart, a layout or anything judged by
+   eye, work in rounds: change the cell through marimo-pair, let it run, screenshot the
+   output, look at it, and decide the next change from what you saw. Say what you saw and
+   what you changed in each round.
+7. **Stop the server** (cancel its background task) when the person is done with it or
    asks; until then it keeps running between turns.
