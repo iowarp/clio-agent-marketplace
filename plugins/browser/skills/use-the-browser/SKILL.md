@@ -29,6 +29,9 @@ so a page survives a stopped script or a restarted kernel.
    the count: narrow it with `filter(has_text=...)`, `nth(i)`, `first` or `last`.
 4. Do the work in one script: loop over pages of a listing, collect rows into Python
    values, and print only what the answer needs.
+5. Reuse a page this conversation already has open for the site (`browser.pages()`)
+   instead of opening another, and `await page.close()` pages you no longer need: the
+   server keeps a limited number of pages open for every conversation together.
 
 ## Sites and sign-ins
 

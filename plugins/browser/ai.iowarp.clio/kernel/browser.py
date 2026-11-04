@@ -20,8 +20,8 @@ person; the call waits for the answer, and a refusal raises ``ToolError``.
 Where it differs from Playwright:
 
 - every method is async;
-- there are no element handles, ``page.on(...)`` events or routes; use the ``wait_for_*``
-  methods;
+- there are no element handles, ``page.on(...)`` events, ``expect_*`` waiters or routes;
+  use the ``wait_for_*`` methods, and ``set_input_files`` on a file input to upload;
 - ``screenshot`` returns a file path rather than bytes;
 - ``evaluate`` takes and returns JSON values only;
 - the agent never types into a password field: ask the person to sign in in the shared
@@ -393,6 +393,17 @@ class Page:
         until = "idle" if state == "networkidle" else "load"
         value = None if until == "idle" else state
         await self._run("browser_wait", until=until, value=value, timeout_s=_ms(timeout))
+
+    async def wait_for_selector(
+        self, selector: str, *, state: str = "visible", timeout: float | None = None
+    ) -> None:
+        await self.locator(selector).wait_for(state=state, timeout=timeout)
+
+    async def wait_for_timeout(self, timeout: float) -> None:
+        """Sleep ``timeout`` milliseconds (no call reaches the page)."""
+        import asyncio
+
+        await asyncio.sleep(float(timeout) / 1000)
 
     async def close(self) -> None:
         await _call("browser_close", page=self.id)
