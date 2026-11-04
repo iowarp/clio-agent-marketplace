@@ -4,6 +4,11 @@
 
 ### Added
 
+- `marimo` (1.0.0): pair with the person on a live marimo notebook. It vendors
+  marimo-team's own `marimo-pair` skill unchanged (Apache-2.0, pinned commit in its
+  `NOTICE`) and adds `use-marimo`: start the notebook server in the background, open it
+  in the shared browser (which starts its kernel session), then read and change the
+  running notebook through marimo-pair. The standard agent includes it (1.2.0).
 - `browser` (1.0.0): the in-app browser the agent drives from `run_code`. It claims
   CLIO's ten browser tools as script-only (`browser_evaluate` asks by default), ships
   the `browser` kernel binding (`ai.iowarp.clio/kernel/browser.py`, Playwright's names
