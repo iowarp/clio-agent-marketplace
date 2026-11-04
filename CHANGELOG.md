@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- `browser` (1.0.0): the in-app browser the agent drives from `run_code`. It claims
+  CLIO's ten browser tools as script-only (`browser_evaluate` asks by default), ships
+  the `browser` kernel binding (`ai.iowarp.clio/kernel/browser.py`, Playwright's names
+  over those tools), the `browser.use` fragment and the `use-the-browser` skill, and
+  joins the standard agent.
+
 ## [0.7.0] - 2026-10-28
 
 The marketplace is rebuilt around `ARCHITECTURE.md`: each kept agent ships its
