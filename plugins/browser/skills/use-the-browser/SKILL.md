@@ -47,8 +47,9 @@ so a page survives a stopped script or a restarted kernel.
 
 - When a result says `person_acted`, the person used the page since your last call:
   read it again before you act on what you saw.
-- `await page.screenshot()` returns a PNG path; look at it with `view_image` when the
-  layout matters.
+- `await page.screenshot()` returns a PNG path in the scratch folder; look at it with
+  `view_image` when the layout matters. The script prints the screenshot's
+  `artifact://` link, which shows the image in an answer.
 - Downloads land in the session's scratch folder; the call that triggered one lists it
   in `page.downloads`.
 - `page.evaluate(...)` runs JavaScript with the person's sign-ins, so it asks first; use

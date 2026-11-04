@@ -50,6 +50,17 @@ def _notice(text: str) -> None:
     print(f"[browser] {text}", file=sys.stderr)
 
 
+def _saved(result: dict[str, Any]) -> str:
+    """A screenshot's path; its artifact, when registered, is how an answer shows it."""
+    shot = result["screenshot"]
+    if shot.get("artifact_id"):
+        _notice(
+            f"screenshot {shot['path']} is artifact {shot['artifact_id']}; an answer shows it "
+            f"as ![what it shows](artifact://{shot['artifact_id']})"
+        )
+    return shot["path"]
+
+
 def _ms(timeout: float | None) -> float | None:
     return None if timeout is None else float(timeout) / 1000
 
@@ -218,7 +229,7 @@ class Locator:
 
     async def screenshot(self) -> str:
         result = await self._page._run("browser_screenshot", target=self._target())
-        return result["screenshot"]["path"]
+        return _saved(result)
 
     async def aria_snapshot(self, *, boxes: bool = False) -> str:
         result = await self._page._run("browser_snapshot", target=self._target(), boxes=boxes)
@@ -413,7 +424,7 @@ class Page:
     async def screenshot(self, *, full_page: bool = False) -> str:
         """Write a PNG to the session's scratch folder and return its path."""
         result = await self._run("browser_screenshot", full_page=full_page)
-        return result["screenshot"]["path"]
+        return _saved(result)
 
     async def evaluate(self, expression: str, arg: Any = None) -> Any:
         result = await self._run("browser_evaluate", expression=expression, arg=arg)
