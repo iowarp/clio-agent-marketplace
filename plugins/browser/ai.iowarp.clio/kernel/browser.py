@@ -44,6 +44,12 @@ async def _call(name: str, **args: Any) -> Any:
     return await tools.call(name, **args)  # noqa: F821 - bound by the kernel
 
 
+def _notice(text: str) -> None:
+    import sys
+
+    print(f"[browser] {text}", file=sys.stderr)
+
+
 def _ms(timeout: float | None) -> float | None:
     return None if timeout is None else float(timeout) / 1000
 
@@ -284,7 +290,7 @@ class Page:
     def __init__(self, info: dict[str, Any]) -> None:
         self.id = str(info.get("id") or "")
         self.url = str(info.get("url") or "")
-        self.title = str(info.get("title") or "")
+        self._title = str(info.get("title") or "")
         self.host = str(info.get("host") or "")
         #: From the last call: the person used this page since the agent's previous call.
         self.person_acted = False
@@ -308,11 +314,20 @@ class Page:
             return
         info = result.get("page") or {}
         self.url = str(info.get("url") or self.url)
-        self.title = str(info.get("title") or self.title)
+        self._title = str(info.get("title") or self._title)
         self.host = str(info.get("host") or self.host)
         self.person_acted = bool(result.get("person_acted"))
         self.navigation_blocked = result.get("navigation_blocked")
         self.downloads = list(result.get("downloads") or [])
+        # The model reads what the script prints, so what changed under the script is said.
+        if self.person_acted:
+            _notice(f"the person used page {self.id} since your last call on it; read it again")
+        if self.navigation_blocked:
+            blocked = self.navigation_blocked
+            _notice(
+                f"page {self.id} tried to open {blocked.get('host')}, which is not allowed "
+                f"here ({blocked.get('reason')}); the page stayed where it was"
+            )
 
     # ---- locators (no tool call) ---------------------------------------------------
     def _root(self, step: dict[str, Any]) -> Locator:
@@ -355,6 +370,26 @@ class Page:
         return FrameLocator(self, [{"by": "css", "css": selector}])
 
     # ---- the page ------------------------------------------------------------------
+    async def title(self) -> str:
+        """The page's title, as of the latest call on it."""
+        return self._title
+
+    async def content(self) -> str:
+        """The page's HTML."""
+        return await self.evaluate("() => document.documentElement.outerHTML")
+
+    async def inner_text(self, selector: str) -> str:
+        return await self.locator(selector).inner_text()
+
+    async def text_content(self, selector: str) -> str:
+        return await self.locator(selector).inner_text()
+
+    async def click(self, selector: str, **options: Any) -> None:
+        await self.locator(selector).click(**options)
+
+    async def fill(self, selector: str, value: str) -> None:
+        await self.locator(selector).fill(value)
+
     async def goto(self, url: str, *, wait_until: str = "load") -> int | None:
         result = await self._run("browser_navigate", url=url, action="goto", wait_until=wait_until)
         return result.get("status")
