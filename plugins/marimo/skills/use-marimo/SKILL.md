@@ -20,20 +20,24 @@ person reads. You work in that same kernel through marimo's own agent interface,
 
 1. **The notebook.** Use the file the person names. For a new one, pick a file name in the
    workspace: `marimo edit` on a name that does not exist yet starts an empty notebook. If
-   the file starts with a `# /// script` header, add `--sandbox` to the command below.
+   the file starts with a `# /// script` header, see `--sandbox` below.
 2. **Start the server in the background** with `shell_bash` and `background=true`, bound to
    this computer only, on a free port:
 
    ```bash
-   uvx --from "marimo>=0.21.1" marimo edit NOTEBOOK.py --headless --host 127.0.0.1 \
-     -p PORT --no-token --skip-update-check
+   uv run --no-project --python "${CLIO_EXECUTION_PYTHON:-python3}" --with "marimo>=0.21.1" \
+     marimo edit NOTEBOOK.py --headless --host 127.0.0.1 -p PORT --no-token --skip-update-check
    ```
+
+   This runs the notebook on CLIO's own Python, the interpreter `run_code` and the
+   shell's `python` use, so the notebook has the same packages your scripts do. uv adds
+   marimo in a layer of its cache; nothing is installed into CLIO's environment or the
+   workspace's. For a notebook with its own `# /// script` header, add `--sandbox` to the
+   `marimo edit` arguments: marimo then builds the environment the header declares.
 
    The shell waits for every process a command leaves running, so a server started with
    `&` or `nohup` inside an ordinary command keeps that command, and the turn, waiting;
-   `background=true` returns a task handle and leaves the server running. `uvx` runs
-   marimo without changing the workspace's environment; when that environment already has
-   marimo (`uv run marimo --version` answers), `uv run marimo ...` uses it. Wait until
+   `background=true` returns a task handle and leaves the server running. Wait until
    `curl -sf http://127.0.0.1:PORT/api/sessions` answers.
 3. **Open it in the shared browser** from `run_code`:
    `page = await browser.open("http://127.0.0.1:PORT/")`. Opening the page is what starts
