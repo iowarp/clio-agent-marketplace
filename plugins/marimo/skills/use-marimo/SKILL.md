@@ -25,15 +25,18 @@ person reads. You work in that same kernel through marimo's own agent interface,
    this computer only, on a free port:
 
    ```bash
-   uv run --no-project --python "${CLIO_EXECUTION_PYTHON:-python3}" --with "marimo>=0.21.1" \
+   "$CLIO_UV" run --no-project --python "$CLIO_PYTHON" --with "marimo>=0.21.1" \
      marimo edit NOTEBOOK.py --headless --host 127.0.0.1 -p PORT --no-token --skip-update-check
    ```
 
-   This runs the notebook on CLIO's own Python, the interpreter `run_code` and the
-   shell's `python` use, so the notebook has the same packages your scripts do. uv adds
-   marimo in a layer of its cache; nothing is installed into CLIO's environment or the
-   workspace's. For a notebook with its own `# /// script` header, add `--sandbox` to the
-   `marimo edit` arguments: marimo then builds the environment the header declares.
+   `CLIO_UV` and `CLIO_PYTHON` are the uv and the Python CLIO brings with it, so this
+   works on a computer with neither installed, and the notebook runs on the interpreter
+   `run_code` uses, with the same packages your scripts have. uv adds marimo in a layer
+   of CLIO's own cache; nothing is installed into the person's environments or into
+   CLIO's. For a notebook with its own `# /// script` header, add `--sandbox` to the
+   `marimo edit` arguments: marimo then builds the environment the header declares, with
+   the `uv` it finds on `PATH`, so start the command with
+   `PATH="$(dirname "$CLIO_UV"):$PATH"` to make that CLIO's.
 
    The shell waits for every process a command leaves running, so a server started with
    `&` or `nohup` inside an ordinary command keeps that command, and the turn, waiting;
