@@ -455,6 +455,12 @@ class Browser:
         result = await _call("browser_open", **({"url": url} if url else {}), label=label)
         page = Page(result["page"])
         page._update(result)
+        for other in result.get("already_open") or []:
+            _notice(
+                f"page {other.get('id')} already shows this address and keeps what was done "
+                f"on it; page {page.id} is a fresh load (await browser.page"
+                f"({other.get('id')!r}) reaches the earlier one)"
+            )
         return page
 
     async def pages(self) -> list[Page]:
