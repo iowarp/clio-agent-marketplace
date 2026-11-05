@@ -98,6 +98,13 @@ or charts through real analysis and normal artifact registration. Keep a
 derivation distinct from observed evidence. Do not repeat the dashboard's views
 inline in chat.
 
+A dashboard can follow data that keeps changing. A chart or table whose `dataUri` is
+`study://<study>/measurements`, `/entries` or `/records/<name>` reads a science-log
+study as it is now and shows new entries as they arrive, so a dashboard that is a
+study's view (attached with `log_entry`, `type: view`, `dashboard_id`) needs no
+republishing to stay current. A source with no rows yet is accepted and reported in
+the result as `study_sources_unchecked`: its columns are checked once rows exist.
+
 Call `publish_dashboard_report(definition_path="reports/design.dashboard.document.json")`
 to validate and publish an immutable artifact version. Return its artifact
 reference so the person can open the dashboard in the side panel. Keep the

@@ -103,10 +103,13 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
 ## Views
 
 A study's views are where the scientist watches it run and checks its conclusion.
-They are your dashboards, built around the question: what would show whether a
-hypothesis holds, how the branches compare, where the study is now. Make one with
-`create_a2ui_surface` and attach it with `log_entry` (`type: view`, its `surface_id`,
-a `title`, the `purpose` it serves, `links: {serves: <question or hypothesis>}`).
+They are dashboards, built around the question: what would show whether a
+hypothesis holds, how the branches compare, where the study is now. Build each one
+as a dashboard with the `create-dashboard` skill (and review it with
+`review-visual-presentation`), publish it with `publish_dashboard_report`, and attach
+it with `log_entry` (`type: view`, `dashboard_id`: the report id it returned, a
+`title`, the `purpose` it serves, `links: {serves: <question or hypothesis>}`). A chat
+surface is for a quick look in the conversation, not a study view.
 
 A chart or table in a view can read the study directly, and it shows new entries as
 they arrive without you rebuilding it:
@@ -118,7 +121,8 @@ they arrive without you rebuilding it:
 - `study://<study>/records/<name>`: records a plugin's tools keep, including each
   record's producing branch.
 
-The study id is the root question's id. Revise a view's surface as the study changes
-course, and add a view when it takes a new direction; withdraw one that no longer
+The study id is the root question's id. Revise a view by publishing its dashboard
+again with its `report_id` as the study changes course (the view shows the latest
+version), and add a view when it takes a new direction; withdraw one that no longer
 serves with `set_status` (`withdrawn`). A branch may attach drill-down views of its
 own.
