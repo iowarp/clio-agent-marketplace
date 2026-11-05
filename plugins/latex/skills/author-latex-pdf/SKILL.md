@@ -12,5 +12,6 @@ description: Use for .tex sources and LaTeX-backed PDFs - creating or revising, 
 5. `missing_package` and `shell_escape_unsupported` are reported as written: a package that could not be downloaded needs network access the first time, and shell escape is never enabled (use a package that does not need it, such as `listings` instead of `minted`). `unsupported_bibliography_backend` means biblatex with biber; offer to switch the paper to BibTeX.
 6. For a venue, build with `venue` set to the template's name and fix every failed check. Checks marked `to_check` need the person's judgement; name them.
 7. Look at the affected pages with `view_pdf`; check overflow, fonts, figures, equations and links.
+8. To find "Figure 3" or "Section 4.2" in the source, use `latex_outline`; to find what a PDF place is in the source, or where a source line lands, use `latex_locate`.
 
 Read [latex-review.md](references/latex-review.md) for review and tracked-source rules.

@@ -20,6 +20,12 @@ If the file changed since, say so and ask before carrying a mark to new content.
 - `Source` maps a mark on an Office rendition back to the file: the paragraph and its
   heading in Word, the slide and shapes in PowerPoint, the cells in Excel.
   OpenDocument renditions give the page only, with a `source_unmapped` note.
+- On a LaTeX paper's PDF, `Source` names the `.tex` file, the lines and the outline
+  node the mark falls in (for example `sections/eval.tex, lines 112 to 113, in
+  Section "Scaling"`). Edit those lines; never the PDF. A region on a figure adds
+  `Figure` (the environment, its label and lines) and `Graphics` (its
+  `\includegraphics` file). When `Made by` names the figure's script, change the
+  script, rerun it, then rebuild the paper.
 - `Picture` names a picture the region covers. When its bytes are a workspace image,
   the line names that image, and `Made by` names the call and script that made it:
   change the script, rerun it, then rebuild the document so it embeds the new

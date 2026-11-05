@@ -31,7 +31,11 @@
   and venue rules (page limit, references, double-blind, packages, paper size), and a
   starting project that builds with its citation resolved. The new `start-a-paper`
   skill says how to begin from a template, and the `latex.build` fragment says the
-  templates and venue checks exist.
+  templates and venue checks exist. `latex_outline` (sections, figures, tables and
+  equations with their source lines and PDF pages) and `latex_locate` (a PDF point to
+  its source line and back) are declared too.
+- `document-production` (0.2.2): the anchor reference reads the Source, Figure and
+  Graphics lines of a mark on a LaTeX paper's PDF.
 - `document-production` (0.2.1): `review-document-artifact` and its anchor reference
   read the comment entries CLIO now sends: a header naming the version and what to
   edit, a labelled overview and crops, and one entry per mark (S1, S2, ...) with its
