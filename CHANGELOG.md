@@ -21,6 +21,11 @@
 
 ### Changed
 
+- `latex` (1.2.0): a build makes the paper, one artifact shown by its title and built from
+  the versions of the source files it read. Each `template.yaml` names the paper's
+  `document_type` and its `venue`, which the paper's card shows ("Paper", "IEEE
+  conference"). `author-latex-pdf`, `start-a-paper` and the `latex.build` fragment say
+  that the paper is the deliverable, set `\title` early, and leave the PDF's path out.
 - `latex` (1.1.0): builds go through CLIO's `latex_build` tool, which CLIO implements
   with the pinned Tectonic 0.17.0. The tool reports every problem by file and line, and
   with a venue it also checks the paper against that template's rules.

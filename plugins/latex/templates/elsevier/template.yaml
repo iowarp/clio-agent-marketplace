@@ -1,5 +1,8 @@
 name: elsevier
 title: Elsevier article (elsarticle)
+# What the paper's card shows: its type, and the venue it is written for.
+document_type: Paper
+venue: Elsevier journal
 class: elsarticle
 options: []
 entry: main.tex

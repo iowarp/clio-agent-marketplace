@@ -1,5 +1,8 @@
 name: ieee-journal
 title: IEEE journal article
+# What the paper's card shows: its type, and the venue it is written for.
+document_type: Paper
+venue: IEEE journal
 class: IEEEtran
 options: [journal]
 entry: main.tex

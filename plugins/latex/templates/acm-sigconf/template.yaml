@@ -1,5 +1,8 @@
 name: acm-sigconf
 title: ACM conference paper (sigconf, review and anonymous)
+# What the paper's card shows: its type, and the venue it is written for.
+document_type: Paper
+venue: ACM conference
 class: acmart
 options: [sigconf, review, anonymous]
 entry: main.tex

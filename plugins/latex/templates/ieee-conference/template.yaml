@@ -1,5 +1,8 @@
 name: ieee-conference
 title: IEEE conference paper
+# What the paper's card shows: its type, and the venue it is written for.
+document_type: Paper
+venue: IEEE conference
 class: IEEEtran
 options: [conference]
 entry: main.tex

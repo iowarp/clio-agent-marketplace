@@ -1,5 +1,8 @@
 name: springer-lncs
 title: Springer LNCS paper
+# What the paper's card shows: its type, and the venue it is written for.
+document_type: Paper
+venue: Springer LNCS
 class: llncs
 options: []
 entry: main.tex

@@ -1,5 +1,8 @@
 name: acm-journal
 title: ACM journal article (acmsmall)
+# What the paper's card shows: its type, and the venue it is written for.
+document_type: Paper
+venue: ACM journal
 class: acmart
 options: [acmsmall]
 entry: main.tex
