@@ -1,7 +1,7 @@
 ---
 name: run-a-study
-title: Run a branched study
-description: Use to run a study in the study log - competing hypotheses tested by parallel workflow branches, cited observations, forks, and a merged conclusion that cites its entries.
+title: Run a study
+description: Use to run a study in the study log, from a small experiment run in this conversation to competing hypotheses tested by parallel workflow branches - cited observations, measurements as data, a view of the results, and a conclusion that cites its entries.
 keywords:
 - method
 - study
@@ -9,7 +9,7 @@ keywords:
 - workflow
 ---
 
-# Run a branched study
+# Run a study
 
 The log records what was learned; the workflow runs the work. The log never judges a
 claim: you choose the analysis, you decide what is enough, and you say why. The log is
@@ -37,6 +37,15 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
    enlarge it rather than conclude. A claim about a law needs measurements across the
    range it covers. Write the intended sample size on each Experiment; a sample too
    large for one conversation is work to spread across children (step 5).
+
+## Small or branched
+
+A small study, one experiment that fits in this conversation, needs no workflow: you
+write its entries yourself as you go (steps 1-3, then 5, 6, 8, 11 and 12, with no
+branches to read or merge) and attach a view of its measurements. The record costs a
+few calls; what it gives the person is a result they can check and data they can
+reuse. Branch a study (steps 4 onward) when it has separable parts: competing
+hypotheses that each need their own test, independent inputs, many trials.
 
 ## Branch it
 
