@@ -38,6 +38,17 @@ Keep docked and expanded findings separate: readability in an expanded image
 does not establish readability in a narrow pane. When text remains too small,
 revise the view or state that limitation instead of declaring the review clear.
 
+## Acting on a figure comment
+
+A comment on a figure arrives as a "Review of ..." block: an overview with each
+mark labelled, a crop of each mark at twice its size, and a "Produced by" line
+naming the call and script that made the image. Look at the crops first; they show
+what the person means. Change the producing script or `run_code` cell, not the
+image, and run it again so the figure is written to the same path. Then look at the
+new output with `view_image` and check each comment against it before replying by
+label (S1, S2, ...). When the producer is unknown, say so and ask which script makes
+the figure rather than editing pixels.
+
 Read the current surface with `inspect_a2ui_surface` and load the relevant
 active catalog schemas. `update_a2ui_components` replaces complete definitions
 for the named components; preserve the other properties, references and links.

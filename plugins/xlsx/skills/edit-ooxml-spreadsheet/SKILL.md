@@ -6,7 +6,7 @@ description: Use to create or revise .xlsx workbooks, or review selected cells a
 # Edit OOXML Spreadsheets
 
 1. Preflight existing workbooks with `$inspect-office-package`. Record sheets, tables, named ranges, formulas, charts, external links, macros, comments, and calculation settings.
-2. Resolve `sheet-range` anchors by exact worksheet identity and cell range. Never redirect an anchor to a renamed or similarly labeled sheet without user confirmation.
+2. When a comment entry names cells (`Source: sheet Data, cells B2:D9`, or `In file: cell B2` for a native comment), resolve them by exact worksheet identity and cell range. Never redirect an anchor to a renamed or similarly labeled sheet without user confirmation.
 3. Use `openpyxl` with formulas intact (`data_only=False`) for supported workbooks; use `keep_vba=True` for macro-enabled input. If package comparison shows unrelated drift, use targeted worksheet XML mutation or stop.
 4. Never replace formulas with cached values. Preserve number formats, validation, conditional formatting, protection, tables, merged ranges, names, and external-link semantics unless explicitly changed.
 5. Recalculate through headless LibreOffice when available. A library save does not prove cached results, chart ranges, or calculation chains are correct.

@@ -19,6 +19,18 @@
   host is unreachable from the agent's computer), and the facade notes when the browser
   restarted under a page to trust a certificate.
 
+### Changed
+
+- `document-production` (0.2.1): `review-document-artifact` and its anchor reference
+  read the comment entries CLIO now sends: a header naming the version and what to
+  edit, a labelled overview and crops, and one entry per mark (S1, S2, ...) with its
+  Selected, Under, Source, Picture and Made by lines. The answer is stored as the reply
+  on each comment, so it goes by label.
+- `visuals` (1.2.2): `review-visual-presentation` says how to act on a figure comment:
+  change the producing script, rerun it, look at the new image with `view_image`.
+- `pptx` and `xlsx` (1.0.1): their editing skills find a comment's slide shape or cells
+  from the entry's Source line, since comments no longer carry raw anchor profiles.
+
 ## [0.7.0] - 2026-10-28
 
 The marketplace is rebuilt around `ARCHITECTURE.md`: each kept agent ships its

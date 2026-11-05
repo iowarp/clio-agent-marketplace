@@ -6,7 +6,7 @@ description: Use to create or revise .pptx decks, or review selected slides and 
 # Edit OOXML Presentations
 
 1. Preflight an existing deck with `$inspect-office-package`. Inventory masters, layouts, themes, notes, comments, charts, media, embedded objects, transitions, and animations.
-2. Resolve a `slide-shape` anchor using the exact slide relationship and shape ID. Position or visible text alone is not identity.
+2. When a comment entry's Source line names a slide and shapes (`slide 2, shape 4 "Chart 3"`), edit that shape by its ID on that slide. Position or visible text alone is not identity.
 3. Use `python-pptx` for new decks and supported edits. For an existing sophisticated deck, prefer targeted slide XML edits; its unsupported features must not disappear on save.
 4. Preserve theme-based formatting, placeholder bindings, crop/fill settings, alt text, notes, and relationship IDs. Do not flatten editable charts or diagrams into images unless explicitly requested.
 5. Compare the package with only the affected slide/comment/media parts allowed.
