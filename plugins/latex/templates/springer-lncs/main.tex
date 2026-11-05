@@ -1,0 +1,19 @@
+\documentclass{llncs}
+\usepackage{graphicx}
+\begin{document}
+% Tectonic's default paper is letter; LNCS papers are A4. Set the page after the
+% packages load, since they reset it.
+\pdfpagewidth=210mm \pdfpageheight=297mm
+\title{Paper Title}
+\author{First Author}
+\institute{Institution, City, Country\\ \email{email@example.org}}
+\maketitle
+\begin{abstract}
+One paragraph stating the problem, approach and main result.
+\keywords{keyword one \and keyword two}
+\end{abstract}
+\input{sections/body}
+
+\bibliographystyle{splncs04}
+\bibliography{refs}
+\end{document}

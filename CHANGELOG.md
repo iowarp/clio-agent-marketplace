@@ -21,6 +21,17 @@
 
 ### Changed
 
+- `latex` (1.1.0): builds go through CLIO's `latex_build` tool, which CLIO implements
+  with the pinned Tectonic 0.17.0. The tool reports every problem by file and line, and
+  with a venue it also checks the paper against that template's rules.
+  `author-latex-pdf` is rewritten around the tool, and its `scripts/render_latex.py`, a
+  second Tectonic call, is deleted. The plugin now ships `templates/`:
+  `ieee-conference`, `ieee-journal`, `acm-sigconf` (review, anonymous), `acm-journal`,
+  `springer-lncs` and `elsevier`. Each has a `template.yaml` with its class, options
+  and venue rules (page limit, references, double-blind, packages, paper size), and a
+  starting project that builds with its citation resolved. The new `start-a-paper`
+  skill says how to begin from a template, and the `latex.build` fragment says the
+  templates and venue checks exist.
 - `document-production` (0.2.1): `review-document-artifact` and its anchor reference
   read the comment entries CLIO now sends: a header naming the version and what to
   edit, a labelled overview and crops, and one entry per mark (S1, S2, ...) with its

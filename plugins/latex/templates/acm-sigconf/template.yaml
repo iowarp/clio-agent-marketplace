@@ -1,0 +1,15 @@
+name: acm-sigconf
+title: ACM conference paper (sigconf, review and anonymous)
+class: acmart
+options: [sigconf, review, anonymous]
+entry: main.tex
+files: [main.tex, sections/body.tex, refs.bib]
+# The rules below are this kind of venue's usual defaults. Set them from the
+# call for papers of the venue the paper goes to.
+rules:
+  page_limit: 12
+  references_count: false
+  double_blind: true
+  required_packages: []
+  forbidden_packages: []
+  paper_size: letter
