@@ -37,8 +37,10 @@ so a page survives a stopped script or a restarted kernel.
 
 - Loading a site this conversation has not used asks the person once. If they refuse,
   the call raises `ToolError` with `browser_host_denied`; say so and go on without it.
-- When a result's page has `navigation_blocked`, the page tried to go to a site that is
-  not allowed; tell the person, who can allow it from the Browser tab.
+- When a result's page has `navigation_blocked`, the page was refused: a scheme the
+  browser does not open (its `reason` is `browser_scheme_refused`) or a failure of the
+  host check (`browser_host_gate_error`, with `detail`). Tell the person what was
+  refused and why; a site they did not allow raises `browser_host_denied` instead.
 - Never type into a password field (it is refused with `browser_password_field`). Ask
   the person to sign in in the Browser tab, wait for them to say they are done, then read
   the page again. The sign-in is kept for later conversations.

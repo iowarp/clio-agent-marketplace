@@ -107,7 +107,9 @@ the result as `study_sources_unchecked`: its columns are checked once rows exist
 
 A source can also be a file or a stream. `artifact://artifact_<id>` shows one fixed
 version. `artifact://<workspace>/<name>@latest` follows the newest version of that
-file, and a `dataUri` path written as `data/status.csv@latest` binds it that way. A
+file, and a `dataUri` path written as `data/status.csv@latest` binds it that way.
+Writing the file does not make a version: register it with `create_artifact(path=...)`
+after each rewrite (a script that rewrites it often gets one version per interval). A
 stream's `view_uri` (from `open_stream`) is such a reference: its chart or table
 updates from the stream's rows while the dashboard is open. The result's
 `data_bindings` says which views are `live` and which are `pinned`.
