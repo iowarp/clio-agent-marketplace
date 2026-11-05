@@ -14,7 +14,10 @@
   CLIO's ten browser tools as script-only (`browser_evaluate` asks by default), ships
   the `browser` kernel binding (`ai.iowarp.clio/kernel/browser.py`, Playwright's names
   over those tools), the `browser.use` fragment and the `use-the-browser` skill, and
-  joins the standard agent.
+  joins the standard agent. The skill says what `browser_certificate_untrusted` and
+  `browser_host_unreachable` mean (only the person trusts a certificate; an unreachable
+  host is unreachable from the agent's computer), and the facade notes when the browser
+  restarted under a page to trust a certificate.
 
 ## [0.7.0] - 2026-10-28
 

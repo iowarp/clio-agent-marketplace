@@ -333,6 +333,11 @@ class Page:
         # The model reads what the script prints, so what changed under the script is said.
         if self.person_acted:
             _notice(f"the person used page {self.id} since your last call on it; read it again")
+        if result.get("browser_restarted"):
+            _notice(
+                f"the browser restarted under page {self.id} to trust a certificate the "
+                "person accepted; it reopened at its address, so read it again"
+            )
         if self.navigation_blocked:
             blocked = self.navigation_blocked
             _notice(

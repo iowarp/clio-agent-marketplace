@@ -42,6 +42,13 @@ so a page survives a stopped script or a restarted kernel.
 - Never type into a password field (it is refused with `browser_password_field`). Ask
   the person to sign in in the Browser tab, wait for them to say they are done, then read
   the page again. The sign-in is kept for later conversations.
+- A device on a home or lab network often has a certificate the browser does not trust:
+  the call raises `browser_certificate_untrusted` and the page stays on the browser's
+  warning. Only the person can trust it, from the Browser tab. Ask them, with the host and
+  fingerprint the error names, and wait; never try to get around the warning.
+- `browser_host_unreachable` means the host did not answer the computer the agent runs on.
+  Tell the person what the error says about where that is; do not blame the address or
+  retry it.
 
 ## Sharing the page
 
