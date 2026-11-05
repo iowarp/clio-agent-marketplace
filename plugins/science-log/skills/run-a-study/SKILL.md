@@ -42,9 +42,10 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
 
 A small study, one experiment that fits in this conversation, needs no workflow: you
 write its entries yourself as you go (steps 1-3, then 5, 6, 8, 11 and 12, with no
-branches to read or merge) and attach a view of its measurements. The record costs a
-few calls; what it gives the person is a result they can check and data they can
-reuse. Branch a study (steps 4 onward) when it has separable parts: competing
+branches to read or merge). Record the values as `measurements`, so its view can
+chart them: for a small study one dashboard holding the chart that answers the
+question is the whole view (a few calls with `create-dashboard`). The record costs a
+few calls; what it gives the person is a result they can check, see and reuse. Branch a study (steps 4 onward) when it has separable parts: competing
 hypotheses that each need their own test, independent inputs, many trials.
 
 ## Branch it
