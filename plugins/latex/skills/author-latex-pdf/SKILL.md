@@ -1,6 +1,6 @@
 ---
 name: author-latex-pdf
-description: Use for .tex sources and LaTeX-backed PDFs - creating or revising, building with latex_build, verifying, and mapping PDF review comments back to the source.
+description: Use for .tex sources and LaTeX-backed PDFs - creating or revising, building with latex_build, checking whether a paper is ready for a venue (its page limit, double-blind review, required packages, paper size), verifying, and mapping PDF review comments back to the source.
 ---
 
 # Author LaTeX and PDF

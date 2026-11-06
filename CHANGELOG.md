@@ -21,6 +21,11 @@
 
 ### Changed
 
+- `latex` (1.2.1): `author-latex-pdf` covers checking whether a paper is ready for a venue
+  (page limit, double-blind review, required packages, paper size), and the `latex.build`
+  fragment says page counts and venue checks are measured on the built PDF, not read from
+  the source. Asked whether a paper was ready for a venue, the agent had answered from the
+  source without building.
 - `latex` (1.2.0): a build makes the paper, one artifact shown by its title and built from
   the versions of the source files it read. Each `template.yaml` names the paper's
   `document_type` and its `venue`, which the paper's card shows ("Paper", "IEEE
