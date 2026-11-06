@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "prompts-fixture",
+  "version": "0.1.0",
+  "description": "Test plugin with an MCP server that offers prompts and deferred tools, for MCP prompts as commands and server summoning.",
+  "author": {"name": "IoWarp Team"},
+  "license": "BSD-3-Clause",
+  "keywords": ["testing", "mcp", "prompts"],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "servers": {
+        "fixture_docs": {
+          "defer": true,
+          "description": "The fixture's glossary: term lookups, word counts and note listings."
+        }
+      }
+    }
+  }
+}
