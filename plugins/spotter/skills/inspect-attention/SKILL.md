@@ -1,7 +1,7 @@
 ---
 name: inspect-attention
 title: Inspect Attention
-description: Read captured model attention for the watched session with spotter_list_attention_calls and spotter_inspect_attention - exact response ids, recorded decode steps, versioned profiles, coverage and uncertainty - and carry the evidence into a finding or an alert card without guessing coordinates. Load when a question is whether an input steered a model call.
+description: Find what steered the watched session's answer - attention_sources(message_id) on an answer (or on an exact quoted passage of it) returns the labelled sources and the transcript blocks the answer weighted most, each with its hottest excerpts. Load when the question is whether an input steered a model call.
 keywords:
 - level:L0
 - attention
@@ -10,50 +10,58 @@ keywords:
 
 # Inspect attention
 
-Attention capture is optional. It needs Flowcept among the provenance providers
-and a local capture directory (`provenance.attention.files_dir`).
-`spotter_capabilities` says whether it is configured; when it is not, the tools
-return `attention_not_configured`. Say so and continue with the other evidence.
+Attention capture is optional: it needs a model served with capture, Flowcept
+among the provenance providers and a local capture directory
+(`provenance.attention.files_dir`). When it is unavailable, the tools say so
+with a typed reason. Say so and continue with the other evidence.
 
-## Find the call
+## Ask about a passage
 
-Start with `spotter_list_attention_calls` for the watched session's id. It lists
-recorded model response ids; listing does not verify that a capture exists or is
-intact.
+When an answer or an action looks off, call `attention_sources`:
 
-## Inspect it
+- the simplest call passes only `message_id` from
+  `review_activity.assistant_answers` and omits `text`: it explains that whole
+  answer (bounded); omit both to explain the latest answer;
+- to check one claim, add `text`: the passage quoted exactly as it appears in
+  the assistant's answer or in the reasoning behind a tool call (one
+  contiguous sentence or claim). Never quote the user's message or a tool
+  result: they have no attention, and the call returns
+  `selection_not_located`.
 
-`spotter_inspect_attention` takes:
+`selection.basis` says what was explained (`answer`, `reasoning`, a `_tail`
+when bounded, or `quoted`).
 
-- an exact `response_id` from the listing;
-- `steps`: recorded decode-step indices. Use recorded mappings; never estimate
-  steps from character offsets;
-- an optional versioned `profile` (the uniform mean is the default).
+It returns:
 
-It verifies the local capture file and returns the capture hash, the resolved
-profile and its revision, per-source scores, top tokens, coverage and
-limitations. Carry `capture_sha256` and `profile_revision` into every finding.
+- `sources`: the share of attention per source domain (`user`, `tool_result`,
+  `system`, `tool_call`, `thinking`, ...), largest first;
+- `sections`: the top labelled prompt sections (for example one tool's result);
+- `blocks`: the transcript blocks it weighted most (a tool result, an earlier
+  answer, a tool input), each with its hottest `excerpts`;
+- `flags`, such as `tool_result_dominant`;
+- `evidence`: the exact capture receipt it was computed from.
+
+An error carries a `hint` with the next step: re-quote the passage exactly
+from the answer, quote a longer unique passage, or omit `text` and pass only
+`message_id`.
 
 ## Reading the result
 
-- The profile's heat score is distinct from the uniform mean attention mass.
-  Report which one you are quoting.
-- Sparse capture: an absent position is unretained, not zero attention.
-- Coordinates are captured prompt tokens. Never turn token positions into
-  transcript, image-patch or A2UI coordinates; when the mapping you need is
-  absent, say so and ask for the recorded mapping.
+- Read the hottest excerpts: are they the person's request and the evidence
+  the answer should rest on, or something else?
+- Pasted data or a replayed tool output inside a user message is labelled
+  `user` because it sits in the user's turn; look at the excerpt itself to
+  tell the person's words from the data they supplied.
 - Attention strength alone is neither evidence of poisoning nor a reason to
-  raise an alert. It supports a finding only next to provenance evidence that
-  the steered action departed from the request.
+  raise an alert. It supports a finding only next to recorded evidence that the
+  steered action or answer departed from the request.
+- Sparse capture: an absent position is unretained, not zero attention. Shares
+  are the uniform mean attention mass over the selected steps.
 - Separate observed evidence, hypotheses and uncertainty.
 
 ## Presenting a finding
 
-To show an attention finding, pass `raise_alert_card` an `attention_evidence`
-object copied from the inspection result: `response_id`, `capture_sha256`,
-`steps`, the resolved `profile`, `profile_revision` and a concise `uncertainty`.
-CLIO binds these to the watched session's transcript and verifies the receipt
-against its local capture, so never supply message ids, token offsets or part
-revisions yourself. If the tool reports the evidence unavailable, keep the
-finding and explain the limit; do not substitute another capture or widen the
-selected steps.
+When attention informed a finding, describe it in the alert's body: which
+sources and excerpts the answer weighted most, and what that does and does not
+show. The person can explore attention themselves by selecting the passage in
+the answer.
