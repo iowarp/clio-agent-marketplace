@@ -11,4 +11,5 @@ checks the paper against that venue's rules. A paper's page count and its venue 
 measured on the built PDF; the source alone cannot tell them. The `start-a-paper` skill says how to begin
 from one. `latex_outline` names the paper's sections, figures, tables and equations with
 their source lines and PDF pages; `latex_locate` maps a PDF point to its source line and
-back.
+back. A comment on a figure names the script that drew it when the figure was registered
+with `create_artifact` and the script in `used`.
