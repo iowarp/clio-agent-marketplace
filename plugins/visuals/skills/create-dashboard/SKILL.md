@@ -111,8 +111,10 @@ file, and a `dataUri` path written as `data/status.csv@latest` binds it that way
 Writing the file does not make a version: register it with `create_artifact(path=...)`
 after each rewrite (a script that rewrites it often gets one version per interval). A
 stream's `view_uri` (from `open_stream`) is such a reference: its chart or table
-updates from the stream's rows while the dashboard is open. The result's
-`data_bindings` says which views are `live` and which are `pinned`.
+updates from the stream's newest record entries while the dashboard is open. A stream
+is read as it is stored, with no `dataQuery`: reshape its records in the chart spec
+(for example a fold or a time axis). The result's `data_bindings` says which views
+are `live` and which are `pinned`.
 
 Call `publish_dashboard_report(definition_path="reports/design.dashboard.document.json")`
 to validate and publish an immutable artifact version. Return its artifact
