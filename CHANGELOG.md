@@ -21,6 +21,9 @@
 
 ### Changed
 
+- `latex` (1.2.2): `author-latex-pdf` says to register a figure a script draws with
+  `create_artifact` and its script and data in `used`, so a comment on the figure in the PDF
+  names the script. Unregistered, the comment said the figure's producer was unknown.
 - `latex` (1.2.1): `author-latex-pdf` covers checking whether a paper is ready for a venue
   (page limit, double-blind review, required packages, paper size), and the `latex.build`
   fragment says page counts and venue checks are measured on the built PDF, not read from
