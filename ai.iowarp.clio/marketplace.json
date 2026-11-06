@@ -1,4 +1,16 @@
 {
   "name": "clio",
-  "description": "CLIO's default marketplace: the standard agent, shared capability plugins and domain agents."
+  "description": "CLIO's default marketplace: the standard agent, shared capability plugins and domain agents.",
+  "plugins": [
+    {
+      "name": "wtfp",
+      "description": "Write a scientific paper from evidence with WTF-P's method; the paper's LaTeX is built by the latex plugin.",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/JaimeCernuda/wtf-p",
+        "path": "clio-plugin",
+        "sha": "e23d3cf8f1967053ecedade0522b1a7dff6fe180"
+      }
+    }
+  ]
 }

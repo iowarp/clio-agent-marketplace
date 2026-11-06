@@ -4,6 +4,12 @@
 
 ### Added
 
+- `wtfp` (0.9.0), pinned from `JaimeCernuda/wtf-p` (`clio-plugin/` at `e23d3cf8`): WTF-P's
+  method for writing a scientific paper from evidence, as a CLIO plugin. Its project
+  records, 36 actions as `/wtfp:*` commands, 7 skills, 11 roles as subagents and write
+  guard; the paper's LaTeX is built by `latex`, which it requires. The index lists it in
+  `plugins[]` with its git source and commit. No agent includes it by default; add it to
+  a conversation's agent.
 - `marimo` (1.0.0): pair with the person on a live marimo notebook. It vendors
   marimo-team's own `marimo-pair` skill unchanged (Apache-2.0, pinned commit in its
   `NOTICE`) and adds `use-marimo`: start the notebook server in the background, open it
@@ -21,6 +27,9 @@
 
 ### Changed
 
+- `latex` (1.2.3): `start-a-paper` keeps only the template's mechanics (`main.tex`
+  `\input`s the files under `sections/`); how to divide a paper into sections is the
+  writing method's choice, which `wtfp` makes.
 - `latex` (1.2.2): `author-latex-pdf`, `start-a-paper` and the `latex.build` fragment say to register a figure a script draws with
   `create_artifact` and its script and data in `used`, so a comment on the figure in the PDF
   names the script. Unregistered, the comment said the figure's producer was unknown.
