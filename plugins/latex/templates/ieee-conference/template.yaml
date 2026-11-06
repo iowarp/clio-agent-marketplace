@@ -1,0 +1,18 @@
+name: ieee-conference
+title: IEEE conference paper
+# What the paper's card shows: its type, and the venue it is written for.
+document_type: Paper
+venue: IEEE conference
+class: IEEEtran
+options: [conference]
+entry: main.tex
+files: [main.tex, sections/body.tex, refs.bib]
+# The rules below are this kind of venue's usual defaults. Set them from the
+# call for papers of the venue the paper goes to.
+rules:
+  page_limit: 8
+  references_count: true
+  double_blind: false
+  required_packages: []
+  forbidden_packages: []
+  paper_size: letter

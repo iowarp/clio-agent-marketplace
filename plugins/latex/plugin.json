@@ -1,16 +1,19 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "latex",
-  "version": "1.0.0",
-  "description": "Author LaTeX documents and build them to PDF.",
+  "version": "1.2.2",
+  "description": "Author LaTeX papers from venue templates, and build them to PDF with diagnostics and venue checks.",
   "author": {
     "name": "IoWarp Team"
   },
   "license": "BSD-3-Clause",
   "keywords": [
+    "acm",
+    "documents",
+    "ieee",
     "latex",
     "pdf",
-    "documents"
+    "templates"
   ],
   "extensions": {
     "ai.iowarp.clio": {

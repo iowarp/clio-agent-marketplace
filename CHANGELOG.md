@@ -19,6 +19,46 @@
   host is unreachable from the agent's computer), and the facade notes when the browser
   restarted under a page to trust a certificate.
 
+### Changed
+
+- `latex` (1.2.2): `author-latex-pdf`, `start-a-paper` and the `latex.build` fragment say to register a figure a script draws with
+  `create_artifact` and its script and data in `used`, so a comment on the figure in the PDF
+  names the script. Unregistered, the comment said the figure's producer was unknown.
+- `latex` (1.2.1): `author-latex-pdf` covers checking whether a paper is ready for a venue
+  (page limit, double-blind review, required packages, paper size), and the `latex.build`
+  fragment says page counts and venue checks are measured on the built PDF, not read from
+  the source. Asked whether a paper was ready for a venue, the agent had answered from the
+  source without building.
+- `latex` (1.2.0): a build makes the paper, one artifact shown by its title and built from
+  the versions of the source files it read. Each `template.yaml` names the paper's
+  `document_type` and its `venue`, which the paper's card shows ("Paper", "IEEE
+  conference"). `author-latex-pdf`, `start-a-paper` and the `latex.build` fragment say
+  that the paper is the deliverable, set `\title` early, and leave the PDF's path out.
+- `latex` (1.1.0): builds go through CLIO's `latex_build` tool, which CLIO implements
+  with the pinned Tectonic 0.17.0. The tool reports every problem by file and line, and
+  with a venue it also checks the paper against that template's rules.
+  `author-latex-pdf` is rewritten around the tool, and its `scripts/render_latex.py`, a
+  second Tectonic call, is deleted. The plugin now ships `templates/`:
+  `ieee-conference`, `ieee-journal`, `acm-sigconf` (review, anonymous), `acm-journal`,
+  `springer-lncs` and `elsevier`. Each has a `template.yaml` with its class, options
+  and venue rules (page limit, references, double-blind, packages, paper size), and a
+  starting project that builds with its citation resolved. The new `start-a-paper`
+  skill says how to begin from a template, and the `latex.build` fragment says the
+  templates and venue checks exist. `latex_outline` (sections, figures, tables and
+  equations with their source lines and PDF pages) and `latex_locate` (a PDF point to
+  its source line and back) are declared too.
+- `document-production` (0.2.2): the anchor reference reads the Source, Figure and
+  Graphics lines of a mark on a LaTeX paper's PDF.
+- `document-production` (0.2.1): `review-document-artifact` and its anchor reference
+  read the comment entries CLIO now sends: a header naming the version and what to
+  edit, a labelled overview and crops, and one entry per mark (S1, S2, ...) with its
+  Selected, Under, Source, Picture and Made by lines. The answer is stored as the reply
+  on each comment, so it goes by label.
+- `visuals` (1.2.2): `review-visual-presentation` says how to act on a figure comment:
+  change the producing script, rerun it, look at the new image with `view_image`.
+- `pptx` and `xlsx` (1.0.1): their editing skills find a comment's slide shape or cells
+  from the entry's Source line, since comments no longer carry raw anchor profiles.
+
 ## [0.7.0] - 2026-10-28
 
 The marketplace is rebuilt around `ARCHITECTURE.md`: each kept agent ships its

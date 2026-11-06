@@ -9,7 +9,9 @@ permissions:
   contents: read
 
 env:
-  # The clio-agent the plugin check and plugin tests run against.
+  # The clio-agent the plugin check and plugin tests run against: develop, unless the PR's
+  # branch also exists in clio-agent (a change made in both, where that clio-agent pins this
+  # marketplace). Then the paired branch is the clio-agent this marketplace ships with.
   CLIO_AGENT_REF: develop
 
 jobs:
@@ -36,6 +38,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      - name: The clio-agent this marketplace ships with
+        run: |
+          ref="${GITHUB_HEAD_REF:-}"
+          if [ -n "$ref" ] && git ls-remote --exit-code --heads \
+              https://github.com/iowarp/clio-agent "refs/heads/$ref" > /dev/null; then
+            echo "CLIO_AGENT_REF=$ref" >> "$GITHUB_ENV"
+            echo "Checking against clio-agent $ref, the paired branch."
+          else
+            echo "Checking against clio-agent $CLIO_AGENT_REF."
+          fi
       - name: clio-agent plugin check
         env:
           CLIO_PLUGIN_STORE: ${{ runner.temp }}/clio-plugin-store
@@ -61,6 +73,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      - name: The clio-agent this marketplace ships with
+        run: |
+          ref="${GITHUB_HEAD_REF:-}"
+          if [ -n "$ref" ] && git ls-remote --exit-code --heads \
+              https://github.com/iowarp/clio-agent "refs/heads/$ref" > /dev/null; then
+            echo "CLIO_AGENT_REF=$ref" >> "$GITHUB_ENV"
+            echo "Checking against clio-agent $ref, the paired branch."
+          else
+            echo "Checking against clio-agent $CLIO_AGENT_REF."
+          fi
       - name: Run the plugin tests
         run: |
           uv run --python 3.14 --prerelease=allow \
