@@ -2,9 +2,9 @@
 """The prompts-fixture MCP server: two prompts and three tools, for CLIO's tests.
 
 Prompts: ``define_term`` (one required argument) and ``show_figure`` (returns text, an
-embedded resource and an image). Tools: ``lookup_term``, ``count_words`` and
-``list_notes``. With ``serve --extra-prompt`` it adds a third prompt a minute after
-starting and tells its clients, for the prompt-list-changed test.
+embedded resource, an image and an assistant message). Tools: ``lookup_term``,
+``count_words``, ``list_notes`` and ``publish_summary_prompt``, which adds a third
+prompt and tells its clients the prompt list changed (the prompt-list-changed test).
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import base64
 import json
 import sys
 
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 from fastmcp.prompts import Message
 from mcp.types import EmbeddedResource, ImageContent, TextResourceContents
 
@@ -78,25 +78,27 @@ def list_notes() -> dict[str, list[str]]:
     return {"notes": ["figure-data", "glossary"]}
 
 
-def _add_extra_prompt_later() -> None:
-    import threading  # noqa: PLC0415
+@mcp.tool()
+async def publish_summary_prompt(ctx: Context) -> str:
+    """Add the summarize_notes prompt to this server and tell its clients the list changed."""
 
-    def add() -> None:
+    if "summarize_notes" not in {prompt.name for prompt in await mcp.list_prompts()}:
+
         @mcp.prompt()
         def summarize_notes() -> str:
             """Summarize the fixture's notes (added while the server runs)."""
             return "Summarize the fixture notes: figure-data and glossary."
 
-    threading.Timer(60.0, add).start()
+    # fastmcp announces a visibility change to this session (prompts/list_changed among them).
+    await ctx.enable_components(names={"summarize_notes"})
+    return "summarize_notes is now offered; clients were told the prompt list changed"
 
 
 def main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] == "serve":
-        if "--extra-prompt" in sys.argv:
-            _add_extra_prompt_later()
         mcp.run(transport="stdio", show_banner=False)
         return 0
-    print(json.dumps({"name": "fixture-docs", "prompts": ["define_term", "show_figure"], "tools": ["lookup_term", "count_words", "list_notes"]}))
+    print(json.dumps({"name": "fixture-docs", "prompts": ["define_term", "show_figure"], "tools": ["lookup_term", "count_words", "list_notes", "publish_summary_prompt"]}))
     return 0
 
 

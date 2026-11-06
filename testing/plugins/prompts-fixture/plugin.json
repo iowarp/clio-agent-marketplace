@@ -9,7 +9,7 @@
   "extensions": {
     "ai.iowarp.clio": {
       "servers": {
-        "fixture_docs": {
+        "fixture-docs": {
           "defer": true,
           "description": "The fixture's glossary: term lookups, word counts and note listings."
         }
