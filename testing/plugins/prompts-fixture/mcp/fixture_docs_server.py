@@ -3,63 +3,28 @@
 
 Prompts: ``define_term`` (one required argument) and ``show_figure`` (returns text, an
 embedded resource, an image and an assistant message). Tools: ``lookup_term``,
-``count_words``, ``list_notes`` and ``publish_summary_prompt``, which publishes a third
-prompt (the prompt-list-changed test).
-
-Publishing leaves a marker in the plugin's data folder and announces
-``notifications/prompts/list_changed`` in the call's own reply. Every running copy of
-the server watches for the marker and adds ``summarize_notes``, so a client that calls
-tools on one connection and lists prompts on another sees the new prompt on both.
+``count_words``, ``list_notes`` and ``publish_summary_prompt``, which adds a third
+prompt to this server process and announces ``notifications/prompts/list_changed``
+(the prompt-list-changed test). A client sees it only if it lists prompts on the
+process its tool call ran on.
 """
 
 from __future__ import annotations
 
-import asyncio
 import base64
 import json
-import os
 import sys
-from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastmcp import Context, FastMCP
 from fastmcp.prompts import Message
 from mcp.types import EmbeddedResource, ImageContent, TextResourceContents
 
-MARKER = Path(os.environ.get("PLUGIN_DATA") or ".") / "summary-prompt-published"
-
-
 def _summarize_notes() -> str:
-    """Summarize the fixture's notes (published while the server runs)."""
+    """Summarize the fixture's notes (added while the server runs)."""
     return "Summarize the fixture notes: figure-data and glossary."
 
 
-_published = False
-
-
-def _publish_here() -> None:
-    global _published
-    if not _published:
-        mcp.prompt(name="summarize_notes")(_summarize_notes)
-        _published = True
-
-
-async def _watch_marker() -> None:
-    while not MARKER.exists():
-        await asyncio.sleep(0.5)
-    _publish_here()
-
-
-@asynccontextmanager
-async def _lifespan(_server):
-    watcher = asyncio.create_task(_watch_marker())
-    try:
-        yield {}
-    finally:
-        watcher.cancel()
-
-
-mcp = FastMCP("fixture-docs", lifespan=_lifespan)
+mcp = FastMCP("fixture-docs")
 
 GLOSSARY = {
     "burst buffer": "A fast storage tier that absorbs I/O bursts before draining them to the parallel file system.",
@@ -128,14 +93,13 @@ def list_notes() -> dict[str, list[str]]:
 
 @mcp.tool()
 async def publish_summary_prompt(ctx: Context) -> str:
-    """Publish the summarize_notes prompt and tell the client the prompt list changed."""
+    """Add the summarize_notes prompt to this server and tell its clients the list changed."""
 
-    MARKER.parent.mkdir(parents=True, exist_ok=True)
-    MARKER.write_text("published\n", encoding="utf-8")
-    _publish_here()
+    if "summarize_notes" not in {prompt.name for prompt in await mcp.list_prompts()}:
+        mcp.prompt(name="summarize_notes")(_summarize_notes)
     # fastmcp announces a visibility change in this reply (prompts/list_changed among them).
     await ctx.enable_components(names={"summarize_notes"})
-    return "summarize_notes is published; the client was told the prompt list changed"
+    return "summarize_notes is now offered; clients were told the prompt list changed"
 
 
 def main() -> int:
