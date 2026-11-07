@@ -77,13 +77,14 @@ class ModelPinPolicyTests(unittest.TestCase):
         self.assertEqual(sorted(v.model for v in violations), ["gpt", "openai"])
 
     def test_ignores_prose_and_effort_only_preferences(self) -> None:
-        """Documentation and non-model preferences are not pins."""
+        """Documentation and non-model preferences (an effort, a fleet role) are not pins."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             _write(root / "plugins" / "p" / "README.md", "`Prefers(model='sonnet')`\n")
             _write(
                 root / "agents" / "a.py",
-                "from clio_agent.sdk import Prefers\n\nX = Prefers(effort='high', model='')\n",
+                "from clio_agent.sdk import Prefers\n\nX = Prefers(effort='high', model='')\n"
+                "Y = Prefers(role='explore')\n",
             )
 
             violations = find_unjustified_pins(root)

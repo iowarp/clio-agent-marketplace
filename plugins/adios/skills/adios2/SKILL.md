@@ -1,7 +1,7 @@
 ---
 name: adios2
 title: ADIOS2 BP files
-description: Use for ADIOS2 output (a .bp directory written by the BP4 or BP5 engine) - layout, steps versus variables, shape/start/count selections, global and local arrays and values, blocks, attributes, reading with the adios2 Python FileReader and Stream APIs (2.10 and later) or adios2.open (2.9), bpls, engines and compression operators, and the limits of the adios tools.
+description: Use for ADIOS2 output (.bp directories from the BP4 or BP5 engine) - layout, steps, selections, blocks, attributes, the adios2 Python APIs, bpls, engines and compression.
 keywords:
 - level:L2
 - adios2

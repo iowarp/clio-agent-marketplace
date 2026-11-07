@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "commands-clash",
+  "version": "0.1.0",
+  "description": "Test plugin whose command shares a name with commands-fixture's, for the command table's clash rules.",
+  "author": {"name": "IoWarp Team"},
+  "license": "BSD-3-Clause",
+  "keywords": ["testing", "commands"]
+}

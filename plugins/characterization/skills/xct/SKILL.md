@@ -1,7 +1,7 @@
 ---
 name: xct
 title: Characterize Internal Defects and Porosity With X-Ray Computed Tomography
-description: Connect XCT acquisition and segmentation choices to what the resulting pore and defect statistics can support, classify porosity by formation mechanism, and report size and location distributions rather than one volume fraction.
+description: Use when interpreting XCT pore and defect statistics - what acquisition and segmentation allow, porosity by formation mechanism, and size and location distributions.
 keywords:
 - level:L1
 - characterization

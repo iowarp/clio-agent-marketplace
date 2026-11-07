@@ -1,9 +1,11 @@
 ---
 name: inspect-office-package
-description: Inventory and compare OOXML or OpenDocument ZIP packages so edits preserve unknown parts, relationships, macros, comments, tracked changes, media, and metadata. Use before and after any agent edit to .docx, .xlsx, .pptx, .odt, .ods, or .odp, especially files created outside CLIO.
+description: Use before and after editing .docx, .xlsx, .pptx, .odt, .ods or .odp files, to inventory and compare their packages so unknown parts, macros, comments and tracked changes survive.
 ---
 
 # Inspect Office Package
+
+Use this before and after any agent edit, especially to files created outside CLIO.
 
 1. Run `scripts/package_guard.py inventory INPUT --output before.json`.
 2. Identify the exact package parts the chosen edit method is expected to change. Review [part-ownership.md](references/part-ownership.md).

@@ -1,7 +1,7 @@
 ---
 name: present-interactive-analysis
 title: Present Interactive Analysis
-description: Use for explorable answers, generated images and SVG figures, illustrated guides, image collections, video, editable message drafts, and follow-ups about selected evidence. Show registered media through the active A2UI catalog's Image component, Carousel and Video. Load this skill alongside the active catalog index, then batch any exact component schemas in one lookup.
+description: Use for explorable answers, generated images and SVG figures, illustrated guides, image collections, video and editable message drafts shown through the active A2UI catalog.
 ---
 
 Use this skill when interaction or structure helps the person use the answer.

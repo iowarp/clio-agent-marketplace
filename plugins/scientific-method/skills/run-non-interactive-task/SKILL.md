@@ -1,7 +1,7 @@
 ---
 name: run-non-interactive-task
 title: Run a Self-Contained Task With No One to Ask
-description: Work through a self-contained task packet (workspace rules, required outputs and paths, no person available during the run) directly and economically - batch independent calls, read manuals once and search them, verify with bundled checks, keep a facts log, write the required reports once, and confirm every required output before stopping.
+description: Use when working through a self-contained task packet (workspace rules, required outputs and paths) with no person available during the run.
 keywords:
 - level:L0
 - workflow

@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "UserPromptExpansion": [
+      {
+        "matcher": "^commands-fixture:deny-me$",
+        "hooks": [{ "type": "command", "command": "python3 ${PLUGIN_ROOT}/hooks/deny_expansion.py" }]
+      }
+    ]
+  }
+}

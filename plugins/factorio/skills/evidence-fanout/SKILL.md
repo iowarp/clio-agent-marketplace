@@ -1,7 +1,7 @@
 ---
 name: evidence-fanout
 title: Coordinate Scientific Evidence Fan-out
-description: Decompose one evidence question into independent source lanes, follow consequential leads, obtain independent criticism, and return a complete source audit. Used by evidence_researcher, which starts evidence_leaf and evidence_critic.
+description: Use (as evidence_researcher) to split one evidence question into independent source lanes, follow leads, obtain criticism and return a complete source audit.
 keywords:
 - level:L1
 - factorio

@@ -1,7 +1,7 @@
 ---
 name: am-process-parameters
 title: Record AM Process Parameters and Trace Them to Melt-Pool Regime and Defects
-description: Treat the complete additive process parameter set, not one energy-density number, as what determines part quality; record nominal versus verified values and qualification, and for laser powder bed fusion trace parameters to melt-pool regime, defect mechanism and texture.
+description: Use when relating additive manufacturing process parameters to part quality, including laser powder bed fusion melt-pool regimes, defects and texture.
 keywords:
 - level:L1
 - additive-manufacturing

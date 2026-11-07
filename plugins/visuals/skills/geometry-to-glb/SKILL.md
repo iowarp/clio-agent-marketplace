@@ -1,7 +1,7 @@
 ---
 name: geometry-to-glb
 title: Geometry to GLB
-description: Convert headerless text geometry (vertices/faces/colours triplets), PLY meshes, or point clouds into a .glb that clio's 3D mesh viewport can show, with per-vertex colour segments as a field. Use when a 3D surface or scan should be looked at rather than described.
+description: Use when a 3D surface, mesh or point cloud (text triplets, PLY) should be looked at, to convert it to a .glb for the 3D mesh viewport.
 keywords:
 - level:L0
 - 3d

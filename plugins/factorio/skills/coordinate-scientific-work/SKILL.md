@@ -1,7 +1,7 @@
 ---
 name: coordinate-scientific-work
 title: Coordinate Scientific Work
-description: Decide whether to answer, clarify, load a method, run the work yourself or consult Factorio's specialists, pick the right specialist, brief it, and synthesize only settled results. Greetings and ordinary conceptual questions are answered directly and do not need this skill.
+description: Use for scientific requests beyond greetings and conceptual questions, to decide whether to answer, clarify, load a method, do the work or brief one of Factorio's specialists.
 keywords:
 - level:L1
 - factorio

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "marimo",
+  "version": "1.0.0",
+  "description": "Pair with the person on a live marimo notebook: start its server, open it in the shared browser, and read and change the running notebook through marimo's own agent interface (marimo-pair).",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "marimo",
+    "notebook",
+    "python",
+    "reactive"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "shell"
+      ]
+    }
+  }
+}

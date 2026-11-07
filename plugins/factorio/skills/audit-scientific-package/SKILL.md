@@ -1,7 +1,7 @@
 ---
 name: audit-scientific-package
 title: Audit a Scientific Simulation Package
-description: Review a research and simulation package across evidence, physics, traceability, construction and validation by reading the actual files, and return severity-ranked, evidence-linked findings with a readiness verdict that never claims solver verification it does not have.
+description: Use to review a research or simulation package from its actual files, returning severity-ranked, evidence-linked findings and a readiness verdict.
 keywords:
 - level:L1
 - factorio

@@ -1,7 +1,7 @@
 ---
 name: size-and-growth-traits
 title: Size and Growth Traits
-description: Check and analyse plant size and growth from image- or scan-derived traits - pixel vs metric units, projected (2D) vs 3D size, saturation and clipping, and growth curves over repeated measures. Use for any question about plant size, biomass proxies, or growth rate.
+description: Use for questions about plant size, biomass proxies or growth rate from image- or scan-derived traits.
 keywords:
 - level:L1
 - phenotyping
