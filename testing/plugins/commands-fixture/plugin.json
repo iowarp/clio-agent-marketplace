@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "commands-fixture",
+  "version": "0.1.0",
+  "description": "Test plugin for CLIO's command table and summoning: a subfolder command with positional arguments and an include, a command that summons a subagent, a skill, a hidden skill and a subagent.",
+  "author": {"name": "IoWarp Team"},
+  "license": "BSD-3-Clause",
+  "keywords": ["testing", "commands", "summoning"]
+}
