@@ -26,12 +26,31 @@ _READ_ONLY_ANNOTATIONS = {
 }
 
 
+#: The raw provenance tools SPOTTER's watcher is offered: Flowcept's task records for
+#: the watched session, and a correlation trace across them. Its routine review runs on
+#: CLIO's review_activity and attention_sources; listing, lineage and timeline tools only
+#: multiplied the menu a small model has to choose from.
+WATCHER_TOOLS = frozenset({"query_tasks", "trace_correlation"})
+
+
 def _invoke[Result](callback: Callable[[], Result]) -> Result:
     """Translate provider errors to stable JSON FastMCP errors."""
     try:
         return callback()
     except ProvenanceError as exc:
         raise exc.as_tool_error() from exc
+
+
+def _operations(provider: Any) -> frozenset[str] | None:
+    """A provider's operations at startup, or ``None`` when its store cannot say yet.
+
+    ``None`` serves the domain's tools unconditionally: each call then reports
+    the store's own typed error instead of the tool silently disappearing.
+    """
+    try:
+        return frozenset(provider.capabilities())
+    except ProvenanceError:
+        return None
 
 
 def create_server(
@@ -56,6 +75,30 @@ def create_server(
     active = service
     mcp = FastMCP("spotter")
 
+    def tool(**kwargs: Any) -> Callable[[Callable[..., Any]], Any]:
+        """Serve only the watcher's provenance tools (see :data:`WATCHER_TOOLS`)."""
+        register = mcp.tool(**kwargs)
+        return lambda func: register(func) if func.__name__ in WATCHER_TOOLS else func
+
+    artifact_ops = _operations(active.artifact)
+    agentic_ops = _operations(active.agentic)
+
+    def artifact_tool(
+        operation: str, title: str, *, agentic: bool = False
+    ) -> Callable[[Callable[..., Any]], Any]:
+        """Serve an artifact-lineage tool only when the configured provider answers it.
+
+        A tool the active artifact provider (and, for joins, the agentic one)
+        cannot answer would only invite ``capability_unavailable`` round trips,
+        so it is left off the menu; ``capabilities`` still names every provider
+        operation, and a store that cannot answer is never silently substituted.
+        """
+        if (artifact_ops is not None and operation not in artifact_ops) or (
+            agentic and agentic_ops is not None and operation not in agentic_ops
+        ):
+            return lambda func: func
+        return tool(title=title, annotations=_READ_ONLY_ANNOTATIONS)
+
     def answer(domain: Literal["agentic", "artifact"], callback: Callable[[], Any]) -> Any:
         """Stamp a query result with the lane that answered it, never silently."""
         result = _invoke(callback)
@@ -76,7 +119,7 @@ def create_server(
                 )
         return {**result, "lane": lane} if isinstance(result, dict) else result
 
-    @mcp.tool(title="Inspect provenance capabilities", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Inspect provenance capabilities", annotations=_READ_ONLY_ANNOTATIONS)
     def capabilities() -> dict[str, Any]:
         """Report active agentic/artifact providers, health, and exact operations."""
         described = active.capabilities()
@@ -102,27 +145,30 @@ def create_server(
             )
         return attention
 
-    @mcp.tool(title="List captured model-call identities", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="List captured model-call identities", annotations=_READ_ONLY_ANNOTATIONS)
     def list_attention_calls(session_id: str, limit: int = 100) -> dict[str, Any]:
-        """Find model response IDs in the configured store; listing does not verify a capture."""
+        """Find model response IDs with ``capture_available`` and ``decode_steps`` per call;
+        listing does not verify the capture file itself."""
         return _invoke(lambda: require_attention().list_calls(session_id, limit))
 
-    @mcp.tool(title="Inspect captured attention", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Inspect captured attention", annotations=_READ_ONLY_ANNOTATIONS)
     def inspect_attention(
         response_id: str,
-        steps: list[int],
+        steps: list[int] | None = None,
         profile: AttentionProfile | None = None,
     ) -> dict[str, Any]:
         """Read verified local capture rows with CLIO's versioned profile semantics.
 
-        Supply recorded decode-step indices, never estimated character or image
+        Omit ``steps`` to inspect the whole response. To narrow it, pass decode-step
+        indices within ``0..decode_steps-1`` (``list_attention_calls`` reports
+        ``decode_steps`` per response), never estimated character or image
         coordinates. Returns evidence, coverage and uncertainty; it changes nothing.
         """
         return _invoke(
             lambda: require_attention().inspect(response_id, steps, profile or AttentionProfile())
         )
 
-    @mcp.tool(title="List provenance campaigns", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="List provenance campaigns", annotations=_READ_ONLY_ANNOTATIONS)
     def list_campaigns(campaign_id: str | None = None, limit: int = 100) -> dict[str, Any]:
         """List distributed campaign groupings from the agentic provider."""
         return answer(
@@ -130,7 +176,7 @@ def create_server(
             lambda: active.require_agentic("list_campaigns").list_campaigns(campaign_id, limit),
         )
 
-    @mcp.tool(title="List workflow executions", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="List workflow executions", annotations=_READ_ONLY_ANNOTATIONS)
     def list_workflows(
         campaign_id: str | None = None,
         status: str | None = None,
@@ -144,14 +190,14 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="List workflow agents", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="List workflow agents", annotations=_READ_ONLY_ANNOTATIONS)
     def list_agents(workflow_id: str | None = None, limit: int = 100) -> dict[str, Any]:
         """List agents recorded globally or within one workflow."""
         return answer(
             "agentic", lambda: active.require_agentic("list_agents").list_agents(workflow_id, limit)
         )
 
-    @mcp.tool(title="Query execution tasks", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Query execution tasks", annotations=_READ_ONLY_ANNOTATIONS)
     def query_tasks(
         workflow_id: str | None = None,
         task_id: str | None = None,
@@ -175,7 +221,7 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="Summarize execution tasks", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Summarize execution tasks", annotations=_READ_ONLY_ANNOTATIONS)
     def summarize_tasks(workflow_id: str | None = None) -> dict[str, Any]:
         """Aggregate task status, activity, duration, and time-range evidence."""
         return answer(
@@ -183,21 +229,21 @@ def create_server(
             lambda: active.require_agentic("summarize_tasks").summarize_tasks(workflow_id),
         )
 
-    @mcp.tool(title="Get execution timeline graph", annotations=_READ_ONLY_ANNOTATIONS)
+    @tool(title="Get execution timeline graph", annotations=_READ_ONLY_ANNOTATIONS)
     def get_timeline(workflow_id: str, limit: int = 1000) -> dict[str, Any]:
         """Return spans plus parent/dependency nodes and edges for one workflow."""
         return answer(
             "agentic", lambda: active.require_agentic("get_timeline").timeline(workflow_id, limit)
         )
 
-    @mcp.tool(title="List artifact pipelines", annotations=_READ_ONLY_ANNOTATIONS)
+    @artifact_tool("list_pipelines", "List artifact pipelines")
     def list_pipelines(limit: int = 100) -> dict[str, Any]:
         """List artifact-lineage pipelines known to the artifact provider."""
         return answer(
             "artifact", lambda: active.require_artifact("list_pipelines").list_pipelines(limit)
         )
 
-    @mcp.tool(title="List pipeline executions", annotations=_READ_ONLY_ANNOTATIONS)
+    @artifact_tool("list_executions", "List pipeline executions")
     def list_executions(
         pipeline: str | None = None,
         stage: str | None = None,
@@ -211,7 +257,7 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="List artifact types", annotations=_READ_ONLY_ANNOTATIONS)
+    @artifact_tool("list_artifact_types", "List artifact types")
     def list_artifact_types(
         pipeline: str | None = None, stage: str | None = None
     ) -> dict[str, Any]:
@@ -223,7 +269,7 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="List provenance artifacts", annotations=_READ_ONLY_ANNOTATIONS)
+    @artifact_tool("list_artifacts", "List provenance artifacts")
     def list_artifacts(
         pipeline: str | None = None,
         stage: str | None = None,
@@ -241,7 +287,7 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="Get execution lineage", annotations=_READ_ONLY_ANNOTATIONS)
+    @artifact_tool("get_execution_lineage", "Get execution lineage")
     def get_execution_lineage(execution_id: str, pipeline: str | None = None) -> dict[str, Any]:
         """Return the artifact graph rooted at one producing execution."""
         return answer(
@@ -251,7 +297,7 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="Get artifact lineage", annotations=_READ_ONLY_ANNOTATIONS)
+    @artifact_tool("get_artifact_lineage", "Get artifact lineage")
     def get_artifact_lineage(artifact_id: str, pipeline: str | None = None) -> dict[str, Any]:
         """Return the artifact graph rooted at one stable artifact identifier."""
         return answer(
@@ -261,14 +307,14 @@ def create_server(
             ),
         )
 
-    @mcp.tool(title="Get model card evidence", annotations=_READ_ONLY_ANNOTATIONS)
+    @artifact_tool("get_model_card", "Get model card evidence")
     def get_model_card(model_id: str) -> dict[str, Any]:
         """Return recorded model, execution, input, and output evidence."""
         return answer(
             "artifact", lambda: active.require_artifact("get_model_card").model_card(model_id)
         )
 
-    @mcp.tool(title="Trace cross-provider correlation", annotations=_READ_ONLY_ANNOTATIONS)
+    @artifact_tool("trace_correlation", "Trace cross-provider correlation", agentic=True)
     def trace_correlation(correlation_id: str, limit: int = 100) -> dict[str, Any]:
         """Join agentic and artifact evidence using an exact CLIO correlation id."""
         return _invoke(lambda: active.trace_correlation(correlation_id, limit))
