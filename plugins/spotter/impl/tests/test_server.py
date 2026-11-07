@@ -175,6 +175,8 @@ async def test_an_unreadable_store_keeps_its_tools_and_reports_its_error(tmp_pat
         with pytest.raises(ToolError, match="invalid_query"):
             await client.call_tool("trace_correlation", {"correlation_id": "c-1"})
     with pytest.raises(ProvenanceError) as unreadable:
-        service.require_artifact("list_artifacts").list_artifacts(limit=10)
+        service.require_artifact("list_artifacts").list_artifacts(
+            pipeline=None, stage=None, artifact_type=None, limit=10
+        )
     assert unreadable.value.code == "invalid_query"
     assert served == WATCHER_TOOLS
