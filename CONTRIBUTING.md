@@ -17,7 +17,10 @@ This marketplace uses the native Agent Plugins 1.0.0 format with CLIO's
 - `agents/*.py` holds one Python class per agent (`clio_agent.sdk.Agent`, or
   `StandardAgent`/`ScienceAgent` from `agents/standard.py`). An agent owns only
   its identity (`id`, `version`, `name`, `role`, `description`) and its plugin
-  list, which always extends a parent's list so it carries `core`.
+  list, which extends a parent's list so it carries `core`. An agent that drops
+  a parent plugin replaces the list with a literal one that names `core`
+  (`plugins = ["core", "spotter"]`), so the layout test can read it without
+  clio-agent.
 
 Put a capability in the plugin that owns it and depend on shared plugins
 (`workspace`, `shell`, `web`, `pdf`, `documents`, `visuals`, `delegation`, the
