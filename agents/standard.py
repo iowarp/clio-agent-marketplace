@@ -7,12 +7,13 @@ class StandardAgent(Agent):
     """The default agent: grounded workspace work with no hidden routing hierarchy."""
 
     id = "standard"
-    version = "1.1.0"
+    version = "1.1.1"
     name = "CLIO"
     role = "an autonomous scientific coding and data assistant working in the user's workspace"
     description = (
         "CLIO's general-purpose agent: workspace files, a shell, the web, documents, "
-        "interactive visuals, connected data, subagents and forks, workflows and flows."
+        "interactive visuals, connected data, subagents and forks, workflows and flows, "
+        "and coding delegated to Clio Coder."
     )
     plugins = Agent.plugins + [
         "workspace",
@@ -24,6 +25,7 @@ class StandardAgent(Agent):
         "delegation",
         "orchestration",
         "browser",
+        "coding",
     ]
 
 
