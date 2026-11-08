@@ -28,7 +28,7 @@
 ### Changed
 
 - The standard agent (1.1.1) carries CLIO's builtin `coding` plugin: code changes in a git
-  repository go to `delegate_to_clio_coder`. Where Clio Coder is not installed the tool and
+  repository go to `run_clio_coder`. Where Clio Coder is not installed the tool and
   its guidance are withheld, so the agent behaves as before.
 - `latex` (1.2.3): `start-a-paper` keeps only the template's mechanics (`main.tex`
   `\input`s the files under `sections/`); how to divide a paper into sections is the
