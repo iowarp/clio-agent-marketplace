@@ -99,7 +99,11 @@ it also determines visibility, destination and whether a remote change is wanted
 
 - **Discovery:** `connected_data_ndp_organizations` and
   `connected_data_search_ndp` return publisher/dataset/resource identities. Search
-  pages contain 50 datasets; follow `next_offset` or narrow the query.
+  pages contain 50 datasets; follow `next_offset` or narrow the query. Results
+  deliberately omit resource URLs, and a catalog `size` of 0 means "not recorded".
+  For real sizes, bytes or contents, connect the resources and list them with
+  `connected_data_open` (or download them); report dataset/resource IDs rather
+  than guessing a URL or catalog host.
 - **Access:** `connected_data_connect(provider="ndp", ...)` selects the actual
   dataset/resources. `connected_data_open` lists/opens approved relative paths;
   `connected_data_download` starts a durable transfer task for shell analysis.
@@ -125,7 +129,9 @@ semantics: field-level search (`owner_org`, `resource_format`,
 bounded resource staging. Use them inside one script to filter or join many
 records instead of paging search results through the conversation. If the
 `run_code` index lists no `ndp` group, the server is not running: continue with
-the built-in tools and do not tell the user the server is required.
+the built-in tools and do not tell the user the server is required. If a
+`tools.ndp.*` call fails with a connection or request error, its backend is
+unreachable: do not retry variants of the call; finish with the built-in tools.
 
 ## Access and execution
 
