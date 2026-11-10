@@ -39,6 +39,9 @@ EXTENSION_FIELDS = {
     "prefers",
     "workflow_state",
     "catalogs",
+    "connections",
+    "defer",
+    "servers",
     "kernel_bindings",
 }
 SKILL_NAME = re.compile(r"^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$")

@@ -1,12 +1,16 @@
 # earthscope
 
-The L2 source plugin behind the `earthscope` agent (`agents/earthscope.py`):
-its mission and views fragments, `acquire-earthscope-gnss` (finding and
-staging EarthScope GNSS station catalogs and position series through the
-National Data Platform), the typed `workflow_state` vocabulary, and this
-plugin's own A2UI catalog. The GNSS methods (time series, station catalogs,
-regions, coverage comparison) live in the `geodesy` plugin, which works for
-any network.
+The L2 source plugin behind the `earthscope` agent (`agents/earthscope.py`).
+It needs the `ndp` plugin and adds only what is specific to the EarthScope
+organization: its mission and views fragments, `acquire-earthscope-gnss`
+(which NDP datasets are EarthScope's GNSS station catalogs and per-station
+position series, and how to find and stage them with the built-in NDP
+tools), the typed `workflow_state` vocabulary, and this plugin's own A2UI
+catalog. What an NDP organization, dataset or resource is lives in the `ndp`
+plugin's `work-with-ndp` skill. The GNSS methods (time series, station
+catalogs, regions, coverage comparison) live in the `geodesy` plugin, which
+works for any network. No MCP server is required: the `ndp` and `geo` MCP
+servers add optional `run_code` and geocoding helpers when they are running.
 
 ```
 earthscope/

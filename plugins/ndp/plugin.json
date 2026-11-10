@@ -1,14 +1,29 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "ndp",
-  "version": "1.0.0",
-  "description": "Search National Data Platform datasets and stage their resources through clio-kit's ndp MCP server.",
+  "version": "2.0.0",
+  "description": "Work with the National Data Platform (NDP): find organizations, datasets and resources with CLIO's built-in NDP catalog tools, attach and download the selected resources, query NDP Endpoints and publish results. The work-with-ndp skill needs no MCP server; when clio-kit's ndp MCP server is available, its tools add richer catalog records to run_code scripts.",
   "author": {
     "name": "IoWarp Team"
   },
   "license": "BSD-3-Clause",
   "keywords": [
     "ndp",
-    "datasets"
-  ]
+    "national-data-platform",
+    "datasets",
+    "catalog"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "connected-data"
+      ],
+      "servers": {
+        "ndp": {
+          "callers": "code",
+          "description": "Optional NDP catalog records for run_code scripts: a dataset's full record with each resource's URL, format, size and description, field-level search filters, and bounded staging of a public resource URL. CLIO's built-in NDP tools work without it."
+        }
+      }
+    }
+  }
 }

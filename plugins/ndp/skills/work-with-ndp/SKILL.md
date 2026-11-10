@@ -1,10 +1,16 @@
 ---
 name: work-with-ndp
-title: Find, access and analyze scientific data
-description: Use for National Data Platform (NDP) work - finding and analyzing data, provenance and coverage, streams, connecting catalogs or services, and publishing outputs through approved connections.
+title: Working with NDP
+description: Use this skill when working with the National Data Platform (NDP) - finding organizations, datasets and resources, attaching and analyzing data, provenance and coverage, Endpoints and streams, and publishing outputs through approved connections.
 ---
 
-# Work with NDP
+# Working with NDP
+
+The National Data Platform is a federated catalog of scientific datasets that
+organizations publish, plus Endpoints: services that host catalogs, data,
+queries and streams. This skill is everything you need to work with it; no MCP
+server is required. Your NDP tools are built into CLIO and work in any
+workspace, including an empty one: search first, then attach what you found.
 
 Start from the scientific outcome and supplied references, not an API menu. Use
 the approved tools to acquire and analyze the data yourself. A scientific request
@@ -33,14 +39,12 @@ For a request to connect an NDP Endpoint on a named SSH host without a URL,
 existing API through the approved connector. Do not guess its port or attempt
 shell SSH to perform that setup. Read `references/services-and-streams.md` for
 custom routes, explicit URLs and discovery limits.
-The main agent's Endpoint connection tool is available before any dataset or
-Endpoint is attached. Use it for an explicit request to connect a supplied API
-or SSH destination; do not hand that connection task back to the user. Other
-NDP discovery and operation tools activate on the next turn once this workspace
-has a connected NDP dataset or visible saved Endpoint. A saved account alone
-does not activate them. If the user needs to choose an unspecified dataset,
-**Attach > NDP** remains available. Do not work around missing capabilities with
-raw HTTP or credential access.
+Discovery (`connected_data_ndp_organizations`, `connected_data_search_ndp`)
+needs no attached dataset, saved Endpoint or sign-in; use it yourself rather
+than sending the user to **Attach > NDP**, which remains their way to pick a
+dataset by hand. Use the Endpoint connection tool for an explicit request to
+connect a supplied API or SSH destination; do not hand that task back to the
+user. Do not work around a missing capability with raw HTTP or credential access.
 Connecting starts a metadata index. After its task completes, list and read the
 selected resources with `connected_data_open` using its default `linked=true`.
 For shell/Python analysis, use the approved `connected_data_download` task, then
@@ -69,7 +73,7 @@ reference rather than combining a revision with a different access mode.
 | Dataset | A described scientific collection: observations, simulation output or analysis results. It can contain several resources and formats, including HDF5, NetCDF and CSV. The research collection determines the grouping, not the file extension. |
 | Resource | A dataset's data or supporting material: a hosted file, service, stream, notebook or preview. Inspect its role; a preview is not the measurements. |
 | Catalog | Metadata and resource locations. Finding a record does not fetch its data. Central/federated, Endpoint-local and staging catalogs are different scopes. |
-| Organization | A catalog publisher/owner. Finding or creating one does not join an account group or confer Endpoint roles. |
+| Organization | A catalog publisher/owner: the institution or program whose datasets carry its id (for example a consortium, agency or lab). Resolve its id with `connected_data_ndp_organizations` and pass it as `organization` to narrow a search. An organization's own conventions - which datasets are its products, how it names stations or files, what it leaves unowned - come from that organization's package when one is installed, not from this skill. Not every relevant dataset is owned by its organization; retry without the filter before concluding something is absent. Finding or creating an organization does not join an account group or confer Endpoint roles. |
 | Endpoint | A saved direct-URL or SSH route to a running service. It may expose a local catalog, queries, storage or streams; discover its actual capabilities. Connecting does not start a producer. |
 | Link / download | A link reads selected resources through their source; a download materializes a local copy. Neither uploads analysis results back to NDP. |
 | Store / register / publish | Store transfers bytes, register describes their locations in a catalog, and publish exposes a record to its requested federation/audience. Verify the requested stages separately. |
@@ -95,7 +99,11 @@ it also determines visibility, destination and whether a remote change is wanted
 
 - **Discovery:** `connected_data_ndp_organizations` and
   `connected_data_search_ndp` return publisher/dataset/resource identities. Search
-  pages contain 50 datasets; follow `next_offset` or narrow the query.
+  pages contain 50 datasets; follow `next_offset` or narrow the query. Results
+  deliberately omit resource URLs, and a catalog `size` of 0 means "not recorded".
+  For real sizes, bytes or contents, connect the resources and list them with
+  `connected_data_open` (or download them); report dataset/resource IDs rather
+  than guessing a URL or catalog host.
 - **Access:** `connected_data_connect(provider="ndp", ...)` selects the actual
   dataset/resources. `connected_data_open` lists/opens approved relative paths;
   `connected_data_download` starts a durable transfer task for shell analysis.
@@ -108,6 +116,22 @@ it also determines visibility, destination and whether a remote change is wanted
   returns a resource descriptor; it does not create a dataset.
 - **Inspection:** use `workspace_resource_read` / `workspace_resource_inspect`
   for immutable resources. Register useful derived outputs with `create_artifact`.
+
+## Optional: the ndp MCP server through `run_code`
+
+Everything above works without it. When the `ndp` MCP server is running, its
+tools are not in your tool list; they are callable inside `run_code` as
+`tools.ndp.search_datasets(...)`, `tools.ndp.list_organizations(...)`,
+`tools.ndp.get_dataset_details(...)` and `tools.ndp.stage_resource(...)`
+(`help(tools.ndp.search_datasets)` shows each signature). They add richer
+semantics: field-level search (`owner_org`, `resource_format`,
+`dataset_description`, ...), full dataset details including resource URLs, and
+bounded resource staging. Use them inside one script to filter or join many
+records instead of paging search results through the conversation. If the
+`run_code` index lists no `ndp` group, the server is not running: continue with
+the built-in tools and do not tell the user the server is required. If a
+`tools.ndp.*` call fails with a connection or request error, its backend is
+unreachable: do not retry variants of the call; finish with the built-in tools.
 
 ## Access and execution
 

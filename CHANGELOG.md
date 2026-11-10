@@ -4,6 +4,11 @@
 
 ### Added
 
+- `ndp` agent (1.0.0): the standard agent plus the `ndp` plugin, for National Data
+  Platform work.
+- `geodesy` (1.1.0): `station_catalog.py within` lists a normalized catalog's stations
+  within a great-circle radius (nearest first, with input rows and invalid skips), so
+  the region and coverage skills work when the geo MCP server is not running.
 - `wtfp` (0.9.0), pinned from `JaimeCernuda/wtf-p` (`clio-plugin/` at `e23d3cf8`): WTF-P's
   method for writing a scientific paper from evidence, as a CLIO plugin. Its project
   records, 36 actions as `/wtfp:*` commands, 7 skills, 11 roles as subagents and write
@@ -27,6 +32,25 @@
 
 ### Changed
 
+- `ndp` (2.0.0) is now the NDP package. It claims CLIO's built-in NDP tools
+  (organization lookup and dataset search directly; Endpoint connect, operations,
+  request and upload deferred) and owns the `work-with-ndp` skill, retitled "Working
+  with NDP" and moved from `connected-data`. The skill no longer says the tools
+  activate after an attached dataset or saved Endpoint, explains what an NDP
+  organization is, and needs no MCP server; the clio-kit `ndp` server is declared
+  `callers: "code"`, an optional `run_code` extra (`tools.ndp.*`).
+- `connected-data` (2.0.0) keeps generic sources and knowledge stores; its NDP tool
+  claims moved to `ndp`. `connect-data` says to load `work-with-ndp` when the agent has
+  the `ndp` plugin and otherwise not to claim an NDP search it cannot run. The
+  standard agent therefore no longer carries NDP search; use the `ndp` agent or add
+  the `ndp` plugin.
+- `earthscope` (0.6.0) adds only EarthScope's organization conventions on top of
+  `ndp`: `acquire-earthscope-gnss` uses the built-in NDP tools instead of the `ndp_*`
+  MCP tools and says which records are EarthScope's per-station position series,
+  station catalog (which can lack an organization) and services. The `earthscope`
+  agent (0.7.0) builds on the `ndp` agent.
+- `geodesy` skills use `geo_geocode` / `geo_filter_points_by_radius` when available and
+  otherwise a cited lookup and `station_catalog.py within`.
 - `latex` (1.2.3): `start-a-paper` keeps only the template's mechanics (`main.tex`
   `\input`s the files under `sections/`); how to divide a paper into sections is the
   writing method's choice, which `wtfp` makes.
