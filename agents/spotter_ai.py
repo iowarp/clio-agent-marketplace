@@ -1,7 +1,6 @@
 """SPOTTER: a forensic watcher over a working CLIO session."""
 
 from clio_agent.sdk import Agent
-from clio_agent.sdk.agent import CORE_PLUGIN
 
 
 class SpotterAI(Agent):
@@ -19,4 +18,4 @@ class SpotterAI(Agent):
     # No memory plugin: its memory and session-recall tools are not how SPOTTER reads the
     # watched session (review_activity is), and a small model wanders into them. Every
     # agent must carry core.
-    plugins = [CORE_PLUGIN, "spotter"]
+    plugins = ["core", "spotter"]
