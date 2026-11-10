@@ -18,10 +18,12 @@ missing, return that as the blocker instead of inferring it from another
 region. Do not stage any time series and do not create views; the parent
 owns the comparison.
 
-1. Resolve the place with `geo_geocode`; retry once with a more specific name
-   only when the first result is empty or ambiguous.
-2. Call `geo_filter_points_by_radius` with the assigned radius, catalog path
-   and columns.
+1. Resolve the place with `resolve-region` (with `geo_geocode` when it is
+   available); retry once with a more specific name only when the first
+   result is empty or ambiguous.
+2. Count with `geo_filter_points_by_radius` when it is available, else with
+   `station_catalog.py within` from the `station-catalogs` skill, using the
+   assigned radius, catalog path and columns.
 3. Return the resolved label and center, the radius, `within_radius_count`,
    the input rows, the invalid skips, the filter status and the tool
    evidence. If a tool fails structurally, return the failure, not a zero.

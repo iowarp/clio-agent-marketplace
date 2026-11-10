@@ -28,12 +28,16 @@ may keep only the last of two same-named columns.
    `id,latitude,longitude[,height]`), to the workspace. It keeps only rows
    with coordinates in range and reports every dropped row by reason, wrapped
    longitudes and duplicate ids. Record which source columns you chose and why.
-4. Use the normalized copy for every spatial filter, and the raw file only as
-   the cited source.
+4. **Filter by place** with the normalized copy, and use the raw file only as
+   the cited source. `station_catalog.py within` lists the stations within a
+   great-circle radius of a center, nearest first, with input rows and invalid
+   skips; `geo_filter_points_by_radius` does the same when the geo tools are
+   available.
 
 ```text
 uv run --no-project "SKILL_ROOT/scripts/station_catalog.py" profile CATALOG.csv --out PROFILE.json
 uv run --no-project "SKILL_ROOT/scripts/station_catalog.py" write CATALOG.csv --id COL --lat COL --lon COL [--height COL] [--wrap-longitude] -o NORMALIZED.csv --out REPORT.json
+uv run --no-project "SKILL_ROOT/scripts/station_catalog.py" within NORMALIZED.csv --lat LAT --lon LON --radius-km KM --out WITHIN.json
 ```
 
 A filter result is trustworthy only if the input rows were nonzero and few

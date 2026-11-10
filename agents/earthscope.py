@@ -1,13 +1,13 @@
-"""EarthScope: GNSS station data from EarthScope, found through the National Data Platform."""
+"""EarthScope: EarthScope's GNSS data on the National Data Platform."""
 
-from .standard import ScienceAgent
+from .ndp import Ndp
 
 
-class Earthscope(ScienceAgent):
-    """EarthScope GNSS via NDP (L2 source) on the generic geodesy methods (L1)."""
+class Earthscope(Ndp):
+    """EarthScope organization semantics (L2) on the NDP package and generic geodesy (L1)."""
 
     id = "earthscope"
-    version = "0.6.0"
+    version = "0.7.0"
     name = "EarthScope"
     role = (
         "a geodesist who analyses EarthScope GNSS station data found through the National Data "
@@ -19,4 +19,5 @@ class Earthscope(ScienceAgent):
         "methods: velocities, offsets, seasonal terms and honest rate uncertainty, plus station "
         "coverage across regions."
     )
-    plugins = ScienceAgent.plugins + ["earthscope", "geodesy", "geo", "ndp"]
+    # ScienceAgent's additions on top of the NDP agent; geo arrives through geodesy.
+    plugins = Ndp.plugins + ["scientific-method", "science-log", "earthscope", "geodesy"]
