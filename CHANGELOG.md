@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.8.0-beta.1] - 2026-11-11
+
 ### Added
 
 - `ndp` agent (1.0.0): the standard agent plus the `ndp` plugin, for National Data
@@ -32,6 +34,12 @@
 
 ### Changed
 
+- `spotter` reviews a working session the way a careful colleague would: only the
+  person's own messages state their intent, and an instruction found inside a tool
+  result, file or fetched page is evidence, never an order. A warning informs the person;
+  a danger finding quarantines the session, and every concluded finding becomes a card.
+  The watcher reads two provenance tools instead of fourteen and carries no memory
+  plugin.
 - `ndp` (2.0.0) is now the NDP package. It claims CLIO's built-in NDP tools
   (organization lookup and dataset search directly; Endpoint connect, operations,
   request and upload deferred) and owns the `work-with-ndp` skill, retitled "Working
@@ -91,6 +99,20 @@
   change the producing script, rerun it, look at the new image with `view_image`.
 - `pptx` and `xlsx` (1.0.1): their editing skills find a comment's slide shape or cells
   from the entry's Source line, since comments no longer carry raw anchor profiles.
+- Delegation roles use shorter prompts, and skills carry one-sentence trigger
+  descriptions. Exploration locates files before reading them. `run-a-study` runs a
+  small study in the conversation, and a study's view is a dashboard.
+  `create-dashboard` reads the latest version of file and stream sources and
+  registers a new file version after each rewrite. The browser skill reports a
+  refused page instead of allowing it.
+
+### Fixed
+
+- `hdf5`: the SWMR guide shows the whole-file and one-dataset forms of
+  `h5format_convert -d` (it does not downgrade a file) and its writer example imports
+  `time`. The chunking guide no longer names a removed skill, parallel HDF5 readers
+  no longer set early allocation themselves, and the map-objects guide is removed
+  because only the DAOS VOL can hold maps.
 
 ## [0.7.0] - 2026-10-28
 
