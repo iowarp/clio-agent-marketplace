@@ -1,7 +1,7 @@
 ---
 name: mechanical-testing
 title: Design and Report a Mechanical Test or Fatigue Campaign Against a Named Standard
-description: Specify a mechanical test's type, governing standard, control mode and specimen before running or interpreting it; for fatigue campaigns, define loading, failure and runout criteria and treat runouts as censored data.
+description: Use to specify or interpret a mechanical test (type, standard, control mode, specimen), including fatigue campaigns with failure and runout criteria.
 keywords:
 - level:L1
 - mechanical-testing

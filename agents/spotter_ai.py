@@ -15,4 +15,7 @@ class SpotterAI(Agent):
         "CLIO's native journal, plus captured attention), investigates unexplained deviations "
         "and raises evidence-backed alerts for the person to decide on."
     )
-    plugins = Agent.plugins + ["spotter"]
+    # No memory plugin: its memory and session-recall tools are not how SPOTTER reads the
+    # watched session (review_activity is), and a small model wanders into them. Every
+    # agent must carry core.
+    plugins = ["core", "spotter"]

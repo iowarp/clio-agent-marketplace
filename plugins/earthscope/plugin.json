@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "earthscope",
-  "version": "0.5.0",
-  "description": "The earthscope agent's L2 source plugin: its mission, acquisition of EarthScope GNSS station catalogs and position time series from the National Data Platform (discovered, never assumed), the earthscope-stations A2UI catalog for picking stations on a map, and the typed workflow_state for acquisition. GNSS methods come from the geodesy plugin.",
+  "version": "0.6.0",
+  "description": "The earthscope agent's L2 source plugin: EarthScope's conventions on top of the ndp package - which NDP datasets are EarthScope's GNSS station catalogs and per-station position series, how they are named and staged (discovered, never assumed) - plus the earthscope-stations A2UI catalog for picking stations on a map and the typed workflow_state for acquisition. NDP tools and organizations come from the ndp plugin; GNSS methods from the geodesy plugin. No MCP server is required.",
   "author": {
     "name": "IoWarp Team"
   },

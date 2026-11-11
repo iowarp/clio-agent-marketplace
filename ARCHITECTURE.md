@@ -63,13 +63,14 @@ Rules:
 | Agent | Identity | Composition (beyond its base) | Level |
 |---|---|---|---|
 | `standard` (CLIO) | the general workspace assistant | workspace, shell, web, documents, visuals, connected-data, delegation, orchestration | L0 |
+| `ndp` (NDP) | the standard agent working with the National Data Platform | standard + `ndp` (built-in NDP tools, `work-with-ndp`; the `ndp` MCP server only as an optional `run_code` extra) | L2 source |
 | `science` (CLIO Science) | base for the science agents | standard + `scientific-method` | L0 |
 | `deep-researcher` | cited web research with independent verification, run as the `deep-research` flow (plan, parallel research, critic audit, bounded gap rounds, report from verified claims) | `orchestration` + `deep-research` (only its researcher and critic subagents carry `web`) | L0 |
 | `document-production` | documents in every office and publishing format | `document-production` (with review) | L0 |
 | `clio-search` | answers from CLIO's own conversations and files | `clio-search` | L0 |
 | `clio-data` | inspects, converts and validates scientific data files | science + `clio-data`, `data-onboarding`, `hdf5`, `adios`, `parquet` | L2 formats |
 | `factorio` | manufacturing and materials research partner | science + `manufacturing` pack + `abaqus`, `morphorm`, `slurm` + `factorio` | L1 domain, L2 programs |
-| `earthscope` | EarthScope GNSS analysis through NDP | science + `geodesy`, `geo`, `ndp` + `earthscope` | L2 source |
+| `earthscope` | EarthScope GNSS analysis through NDP | ndp + science + `geodesy` (with optional `geo`) + `earthscope` (EarthScope's organization conventions only) | L2 source |
 | `appl-core` (OPAL) | APPL-CORE plant-phenotyping exports | science + `data-onboarding`, `phenotyping`, `parquet` + `appl-core` | L2 source (export version 6) |
 | `spotter-ai` (SPOTTER) | forensic watcher over a working CLIO session | `spotter` (provenance and attention tools; alerts and containment through CLIO) | L0 |
 

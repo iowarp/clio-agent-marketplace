@@ -1,7 +1,7 @@
 ---
 name: microstructure
 title: Describe and Measure Microstructure in Terms That Predict Behavior
-description: Describe a material's microstructure quantitatively (phases and fractions, grain size and morphology, texture, precipitates, defect population), measure it from optical, electron or EBSD images with preparation artifacts, calibration and sampling controlled, and connect it to the process that made it and the properties it controls.
+description: Use to describe or measure a material's microstructure (phases, grains, texture, precipitates, defects) from optical, electron or EBSD images and relate it to process and properties.
 keywords:
 - level:L1
 - materials

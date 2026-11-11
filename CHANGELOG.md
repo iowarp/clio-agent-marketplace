@@ -2,6 +2,118 @@
 
 ## [Unreleased]
 
+## [0.8.0-beta.1] - 2026-11-11
+
+### Added
+
+- `ndp` agent (1.0.0): the standard agent plus the `ndp` plugin, for National Data
+  Platform work.
+- `geodesy` (1.1.0): `station_catalog.py within` lists a normalized catalog's stations
+  within a great-circle radius (nearest first, with input rows and invalid skips), so
+  the region and coverage skills work when the geo MCP server is not running.
+- `wtfp` (0.9.0), pinned from `JaimeCernuda/wtf-p` (`clio-plugin/` at `e23d3cf8`): WTF-P's
+  method for writing a scientific paper from evidence, as a CLIO plugin. Its project
+  records, 36 actions as `/wtfp:*` commands, 7 skills, 11 roles as subagents and write
+  guard; the paper's LaTeX is built by `latex`, which it requires. The index lists it in
+  `plugins[]` with its git source and commit. No agent includes it by default; add it to
+  a conversation's agent.
+- `marimo` (1.0.0): pair with the person on a live marimo notebook. It vendors
+  marimo-team's own `marimo-pair` skill unchanged (Apache-2.0, pinned commit in its
+  `NOTICE`) and adds `use-marimo`: start the notebook server in the background, open it
+  in the shared browser (which starts its kernel session), then read and change the
+  running notebook through marimo-pair.
+  No agent includes it by default; add it to the agents that should pair on notebooks.
+- `browser` (1.0.0): the in-app browser the agent drives from `run_code`. It claims
+  CLIO's ten browser tools as script-only (`browser_evaluate` asks by default), ships
+  the `browser` kernel binding (`ai.iowarp.clio/kernel/browser.py`, Playwright's names
+  over those tools), the `browser.use` fragment and the `use-the-browser` skill, and
+  joins the standard agent. The skill says what `browser_certificate_untrusted` and
+  `browser_host_unreachable` mean (only the person trusts a certificate; an unreachable
+  host is unreachable from the agent's computer), and the facade notes when the browser
+  restarted under a page to trust a certificate.
+
+### Changed
+
+- `spotter` reviews a working session the way a careful colleague would: only the
+  person's own messages state their intent, and an instruction found inside a tool
+  result, file or fetched page is evidence, never an order. A warning informs the person;
+  a danger finding quarantines the session, and every concluded finding becomes a card.
+  The watcher reads two provenance tools instead of fourteen and carries no memory
+  plugin.
+- `ndp` (2.0.0) is now the NDP package. It claims CLIO's built-in NDP tools
+  (organization lookup and dataset search directly; Endpoint connect, operations,
+  request and upload deferred) and owns the `work-with-ndp` skill, retitled "Working
+  with NDP" and moved from `connected-data`. The skill no longer says the tools
+  activate after an attached dataset or saved Endpoint, explains what an NDP
+  organization is, and needs no MCP server; the clio-kit `ndp` server is declared
+  `callers: "code"`, an optional `run_code` extra (`tools.ndp.*`).
+- `connected-data` (2.0.0) keeps generic sources and knowledge stores; its NDP tool
+  claims moved to `ndp`. `connect-data` says to load `work-with-ndp` when the agent has
+  the `ndp` plugin and otherwise not to claim an NDP search it cannot run. The
+  standard agent therefore no longer carries NDP search; use the `ndp` agent or add
+  the `ndp` plugin.
+- `earthscope` (0.6.0) adds only EarthScope's organization conventions on top of
+  `ndp`: `acquire-earthscope-gnss` uses the built-in NDP tools instead of the `ndp_*`
+  MCP tools and says which records are EarthScope's per-station position series,
+  station catalog (which can lack an organization) and services. The `earthscope`
+  agent (0.7.0) builds on the `ndp` agent.
+- `geodesy` skills use `geo_geocode` / `geo_filter_points_by_radius` when available and
+  otherwise a cited lookup and `station_catalog.py within`.
+- `latex` (1.2.3): `start-a-paper` keeps only the template's mechanics (`main.tex`
+  `\input`s the files under `sections/`); how to divide a paper into sections is the
+  writing method's choice, which `wtfp` makes.
+- `latex` (1.2.2): `author-latex-pdf`, `start-a-paper` and the `latex.build` fragment say to register a figure a script draws with
+  `create_artifact` and its script and data in `used`, so a comment on the figure in the PDF
+  names the script. Unregistered, the comment said the figure's producer was unknown.
+- `latex` (1.2.1): `author-latex-pdf` covers checking whether a paper is ready for a venue
+  (page limit, double-blind review, required packages, paper size), and the `latex.build`
+  fragment says page counts and venue checks are measured on the built PDF, not read from
+  the source. Asked whether a paper was ready for a venue, the agent had answered from the
+  source without building.
+- `latex` (1.2.0): a build makes the paper, one artifact shown by its title and built from
+  the versions of the source files it read. Each `template.yaml` names the paper's
+  `document_type` and its `venue`, which the paper's card shows ("Paper", "IEEE
+  conference"). `author-latex-pdf`, `start-a-paper` and the `latex.build` fragment say
+  that the paper is the deliverable, set `\title` early, and leave the PDF's path out.
+- `latex` (1.1.0): builds go through CLIO's `latex_build` tool, which CLIO implements
+  with the pinned Tectonic 0.17.0. The tool reports every problem by file and line, and
+  with a venue it also checks the paper against that template's rules.
+  `author-latex-pdf` is rewritten around the tool, and its `scripts/render_latex.py`, a
+  second Tectonic call, is deleted. The plugin now ships `templates/`:
+  `ieee-conference`, `ieee-journal`, `acm-sigconf` (review, anonymous), `acm-journal`,
+  `springer-lncs` and `elsevier`. Each has a `template.yaml` with its class, options
+  and venue rules (page limit, references, double-blind, packages, paper size), and a
+  starting project that builds with its citation resolved. The new `start-a-paper`
+  skill says how to begin from a template, and the `latex.build` fragment says the
+  templates and venue checks exist. `latex_outline` (sections, figures, tables and
+  equations with their source lines and PDF pages) and `latex_locate` (a PDF point to
+  its source line and back) are declared too.
+- `document-production` (0.2.2): the anchor reference reads the Source, Figure and
+  Graphics lines of a mark on a LaTeX paper's PDF.
+- `document-production` (0.2.1): `review-document-artifact` and its anchor reference
+  read the comment entries CLIO now sends: a header naming the version and what to
+  edit, a labelled overview and crops, and one entry per mark (S1, S2, ...) with its
+  Selected, Under, Source, Picture and Made by lines. The answer is stored as the reply
+  on each comment, so it goes by label.
+- `visuals` (1.2.2): `review-visual-presentation` says how to act on a figure comment:
+  change the producing script, rerun it, look at the new image with `view_image`.
+- `pptx` and `xlsx` (1.0.1): their editing skills find a comment's slide shape or cells
+  from the entry's Source line, since comments no longer carry raw anchor profiles.
+- Delegation roles use shorter prompts, and skills carry one-sentence trigger
+  descriptions. Exploration locates files before reading them. `run-a-study` runs a
+  small study in the conversation, and a study's view is a dashboard.
+  `create-dashboard` reads the latest version of file and stream sources and
+  registers a new file version after each rewrite. The browser skill reports a
+  refused page instead of allowing it.
+
+### Fixed
+
+- `hdf5`: the SWMR guide shows the whole-file and one-dataset forms of
+  `h5format_convert -d` (it does not downgrade a file) and its writer example imports
+  `time`. The chunking guide no longer names a removed skill, parallel HDF5 readers
+  no longer set early allocation themselves, and the map-objects guide is removed
+  because only the DAOS VOL can hold maps.
+
 ## [0.7.0] - 2026-10-28
 
 The marketplace is rebuilt around `ARCHITECTURE.md`: each kept agent ships its

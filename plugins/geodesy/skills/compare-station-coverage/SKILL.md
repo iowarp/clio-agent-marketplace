@@ -20,10 +20,12 @@ station metadata only: do not stage any station's time series for it.
    copy, by its literal path. The raw staged catalog is never that copy.
 2. **One radius.** Resolve each region with `resolve-region` and use the same
    user-given (or once-assumed) radius for all of them.
-3. **Count.** Call `geo_filter_points_by_radius` per region with the
-   normalized path and the explicit `latitude`, `longitude` and `id` columns.
-   Keep `within_radius_count`, the input rows and the invalid skips. A region
-   whose filter failed structurally is shown as unavailable, never as zero.
+3. **Count.** Per region, filter the normalized path with the explicit
+   `latitude`, `longitude` and `id` columns: `geo_filter_points_by_radius`
+   when it is available, else `station_catalog.py within`. Use one method for
+   every region. Keep `within_radius_count`, the input rows and the invalid
+   skips. A region whose filter failed structurally is shown as unavailable,
+   never as zero.
 4. **Fan out only when it pays.** For three or more independent regions you
    may count each in a child with `count-stations-in-region`, passing the
    full place name, the radius, the normalized catalog path and the column

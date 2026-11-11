@@ -1,7 +1,7 @@
 ---
 name: morphorm
 title: Set Up, Run and Check a Morphorm Topology Optimization
-description: Run a Morphorm study end to end (Cubit mesh, input deck, XMLGenerator, batch run, delivery), confirm every declared setting reached the generated XML, pick and check the saved state for a restart, and verify each step with the bundled checks instead of new one-off programs.
+description: Use to run a Morphorm study end to end (Cubit mesh, input deck, XMLGenerator, batch run, restart, delivery) and verify each step with the bundled checks.
 keywords:
 - level:L2
 - morphorm

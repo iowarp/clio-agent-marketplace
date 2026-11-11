@@ -14,7 +14,8 @@ recipe, not the field-by-field reference.
 1. **`StationMap`** (id `stationsMap`) renders the ranked, tool-returned
    points. Its `points` array is a plain literal list — the A2UI wire format
    for `clio.map.v1` does not support a data-model binding for `points` — so
-   inline the exact points you just observed from `geo_filter_points_by_radius`
+   inline the exact points you just observed from the radius filter
+   (`station_catalog.py within` or `geo_filter_points_by_radius`)
    directly on the component. Also mirror the same points into the data model
    at `/stations` so later revisions (and the picker's options) have one
    place to read them back from without re-deriving them.
@@ -59,7 +60,8 @@ recipe, not the field-by-field reference.
 
 Every id in `/stations`, every `StationMap` point `id`, and every
 `StationPicker` option `value` MUST be a station id returned by a tool
-(`geo_filter_points_by_radius` or the station catalog search) in this turn.
+(`station_catalog.py within`, `geo_filter_points_by_radius` or the station
+catalog search) in this turn.
 Never invent, guess, or carry over a station id from a different region or a
 prior unrelated search. `searchId` may be any stable opaque string you mint,
 but `stationIds` in the delivered event must be a subset of the ids you just

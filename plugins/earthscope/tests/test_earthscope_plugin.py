@@ -43,6 +43,19 @@ def test_workflow_state_keeps_only_what_core_reads() -> None:
     )
 
 
+def test_acquisition_needs_no_mcp_server() -> None:
+    """The built-in NDP tools are the path; MCP tools appear only as optional helpers."""
+
+    text = (PLUGIN / "skills" / "acquire-earthscope-gnss" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    for builtin in ("connected_data_search_ndp", "connected_data_ndp_organizations"):
+        assert builtin in text
+    for mcp_only in ("ndp_search_datasets", "ndp_get_dataset_details", "ndp_stage_resource"):
+        assert f"`{mcp_only}" not in text
+    assert "station_catalog.py within" in text
+
+
 def test_no_denylisted_literal_anywhere_shipped() -> None:
     literals = _denylist()
     assert literals

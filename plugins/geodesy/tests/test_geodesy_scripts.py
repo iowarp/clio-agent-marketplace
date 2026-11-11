@@ -117,6 +117,55 @@ def test_write_uses_the_chosen_columns_and_reports_drops(
     assert hashlib.sha256(messy_catalog.read_bytes()).hexdigest() == before
 
 
+def test_within_ranks_stations_by_distance_and_reports_skips(tmp_path: Path) -> None:
+    normalized = tmp_path / "normalized.csv"
+    with normalized.open("w", newline="", encoding="utf-8") as handle:
+        csv.writer(handle).writerows(
+            [
+                ["id", "latitude", "longitude"],
+                ["NEAR", "32.80", "-117.10"],
+                ["NEXT", "33.00", "-117.20"],
+                ["FARR", "34.05", "-118.25"],
+                ["BADD", "x", "-117.0"],
+            ]
+        )
+    out = tmp_path / "within.json"
+
+    assert (
+        catalog.main(
+            [
+                "within",
+                str(normalized),
+                "--lat",
+                "32.7157",
+                "--lon",
+                "-117.1611",
+                "--radius-km",
+                "50",
+                "--out",
+                str(out),
+            ]
+        )
+        == 0
+    )
+
+    report = json.loads(out.read_text())
+    assert report["status"] == "ok"
+    assert report["input_rows"] == 4 and report["invalid_skipped"] == 1
+    assert report["within_radius_count"] == 2
+    assert [s["id"] for s in report["stations"]] == ["NEAR", "NEXT"]
+    assert report["stations"][0]["distance_km"] == pytest.approx(11.0, abs=0.5)
+
+
+def test_within_marks_an_unparsed_catalog_as_failed_not_empty(tmp_path: Path) -> None:
+    normalized = tmp_path / "normalized.csv"
+    normalized.write_text("id,latitude,longitude\nAAAA,n/a,n/a\n", encoding="utf-8")
+    out = tmp_path / "within.json"
+    argv = ["within", str(normalized), "--lat", "0", "--lon", "0", "--radius-km", "10"]
+    assert catalog.main([*argv, "--out", str(out)]) == 0
+    report = json.loads(out.read_text())
+    assert report["status"] == "filter_failed" and report["within_radius_count"] == 0
+
 def _series(tmp_path: Path, years: float = 6.0) -> Path:
     rng = np.random.default_rng(7)
     start = date(2010, 1, 1)

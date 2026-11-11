@@ -1,7 +1,7 @@
 ---
 name: data-visualization
 title: Choose and Execute a Scientific Figure That Makes the Comparison Visible
-description: Pick the chart type and encoding from the comparison being made, then execute it with labelled axes and units, visible uncertainty and a self-contained caption, without implying more precision or a stronger effect than the data supports.
+description: Use when choosing and drawing a chart, to match its type and encoding to the comparison, with labelled units, visible uncertainty and a self-contained caption.
 keywords:
 - level:L0
 - visualization

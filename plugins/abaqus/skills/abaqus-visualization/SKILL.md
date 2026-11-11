@@ -1,7 +1,7 @@
 ---
 name: abaqus-visualization
 title: Visualize Abaqus Geometry and Results
-description: Show any Abaqus-generated geometry or result (.inp mesh, .odb fields, Tosca STL) as an interactive 3D view or a report figure. Use whenever a model, mesh, or solver result should be looked at rather than described.
+description: Use when an Abaqus mesh (.inp), result fields (.odb) or Tosca STL should be shown as an interactive 3D view or a report figure rather than described.
 keywords:
 - level:L2
 - abaqus

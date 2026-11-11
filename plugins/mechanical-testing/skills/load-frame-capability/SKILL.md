@@ -1,7 +1,7 @@
 ---
 name: load-frame-capability
 title: Check What a Load Frame, Load Cell and Extensometer Can Resolve
-description: Check what a servo-hydraulic or electromechanical load frame, its load cell and its strain measurement can actually resolve before treating a test result as valid at the required precision. Vendor-neutral; read the specific system's specifications and calibration records.
+description: Use before trusting a mechanical test result at a required precision, to check what the load frame, load cell and strain measurement can resolve.
 keywords:
 - level:L1
 - mechanical-testing

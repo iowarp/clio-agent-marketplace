@@ -13,10 +13,15 @@ duplicate names, and lists which columns *could* be a latitude or a longitude.
 ``write`` takes the columns you chose (from the profile and the catalog's
 documentation) and writes ``id,latitude,longitude[,height]`` with only rows
 whose coordinates are in range, reporting every dropped row by reason.
+``within`` lists a normalized catalog's stations within a great-circle radius of
+a center, nearest first, with the input rows and invalid skips that make a
+zero count trustworthy.
 
     uv run --no-project station_catalog.py profile CATALOG.csv [--out profile.json]
     uv run --no-project station_catalog.py write CATALOG.csv --id COL --lat COL --lon COL \
         [--height COL] [--wrap-longitude] -o NORMALIZED.csv [--out report.json]
+    uv run --no-project station_catalog.py within NORMALIZED.csv --lat LAT --lon LON \
+        --radius-km KM [--out within.json]
 
 A column is named by its header text or by ``#N`` (zero-based position), which
 is the only way to pick one of two columns that share a name. The input file is
@@ -198,6 +203,60 @@ def write(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def within(args: argparse.Namespace) -> dict[str, Any]:
+    """Rank a normalized catalog's stations by great-circle distance from a center."""
+    source = Path(args.catalog).resolve()
+    if args.radius_km <= 0:
+        raise SystemExit("--radius-km must be positive")
+    if not (-90 <= args.lat <= 90 and -180 <= args.lon <= 180):
+        raise SystemExit("--lat must be in [-90, 90] and --lon in [-180, 180]")
+    header, rows, _ = read_rows(source)
+    index = {
+        role: column_index(header, ref)
+        for role, ref in (("id", args.id), ("latitude", args.lat_col), ("longitude", args.lon_col))
+    }
+    invalid = 0
+    found: list[dict[str, Any]] = []
+    lat0, lon0 = math.radians(args.lat), math.radians(args.lon)
+    for row in rows:
+        if max(index.values()) >= len(row):
+            invalid += 1
+            continue
+        lat, lon = number(row[index["latitude"]]), number(row[index["longitude"]])
+        if lat is None or lon is None or not -90 <= lat <= 90 or not -180 <= lon <= 180:
+            invalid += 1
+            continue
+        phi, lam = math.radians(lat), math.radians(lon)
+        h = (
+            math.sin((phi - lat0) / 2) ** 2
+            + math.cos(lat0) * math.cos(phi) * math.sin((lam - lon0) / 2) ** 2
+        )
+        distance = 2 * 6371.0088 * math.asin(min(1.0, math.sqrt(h)))
+        if distance <= args.radius_km:
+            found.append(
+                {
+                    "id": row[index["id"]].strip(),
+                    "latitude": lat,
+                    "longitude": lon,
+                    "distance_km": round(distance, 3),
+                }
+            )
+    found.sort(key=lambda item: item["distance_km"])
+    valid = len(rows) - invalid
+    return {
+        "source": str(source),
+        "center": {"latitude": args.lat, "longitude": args.lon},
+        "radius_km": args.radius_km,
+        "distance": "great-circle (haversine, mean Earth radius 6371.0088 km)",
+        "input_rows": len(rows),
+        "invalid_skipped": invalid,
+        "status": "ok" if valid else "filter_failed",
+        "within_radius_count": len(found),
+        "stations": found[: args.limit],
+        "truncated": len(found) > args.limit,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -213,8 +272,23 @@ def main(argv: list[str] | None = None) -> int:
     w.add_argument("--wrap-longitude", action="store_true", help="map (180, 360) to (-180, 0)")
     w.add_argument("-o", "--output", required=True)
     w.add_argument("--out")
+    r = sub.add_parser("within", help="stations of a normalized catalog within a radius")
+    r.add_argument("catalog")
+    r.add_argument("--lat", type=float, required=True, help="center latitude (degrees)")
+    r.add_argument("--lon", type=float, required=True, help="center longitude (degrees)")
+    r.add_argument("--radius-km", type=float, required=True)
+    r.add_argument("--id", default="id")
+    r.add_argument("--lat-col", default="latitude")
+    r.add_argument("--lon-col", default="longitude")
+    r.add_argument("--limit", type=int, default=200)
+    r.add_argument("--out")
     args = parser.parse_args(argv)
-    report = profile(Path(args.catalog)) if args.command == "profile" else write(args)
+    if args.command == "profile":
+        report = profile(Path(args.catalog))
+    elif args.command == "write":
+        report = write(args)
+    else:
+        report = within(args)
     text = json.dumps(report, indent=2)
     if args.out:
         Path(args.out).write_text(text + "\n", encoding="utf-8")

@@ -7,7 +7,7 @@ class StandardAgent(Agent):
     """The default agent: grounded workspace work with no hidden routing hierarchy."""
 
     id = "standard"
-    version = "1.0.1"
+    version = "1.1.0"
     name = "CLIO"
     role = "an autonomous scientific coding and data assistant working in the user's workspace"
     description = (
@@ -23,6 +23,7 @@ class StandardAgent(Agent):
         "connected-data",
         "delegation",
         "orchestration",
+        "browser",
     ]
 
 

@@ -5,5 +5,6 @@ when: {session: delegated}
 ---
 Another agent started this session to do one assignment, and no person reads this
 conversation. Stay inside the assignment; work outside it goes back to the agent that
-delegated it. End with a report that agent can act on: what you found or did, the
-evidence for it (paths, handles, entry ids), and what remains open or uncertain.
+delegated it. Your final report is the only thing that agent reads, so make it carry
+the answer and its evidence: what you found or did, where it came from (paths and
+lines, handles, entry ids), and what remains open or uncertain.

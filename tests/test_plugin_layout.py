@@ -31,7 +31,19 @@ MANIFEST_FIELDS = {
     "keywords",
     "extensions",
 }
-EXTENSION_FIELDS = {"kind", "requires", "members", "model", "prefers", "workflow_state", "catalogs"}
+EXTENSION_FIELDS = {
+    "kind",
+    "requires",
+    "members",
+    "model",
+    "prefers",
+    "workflow_state",
+    "catalogs",
+    "connections",
+    "defer",
+    "servers",
+    "kernel_bindings",
+}
 SKILL_NAME = re.compile(r"^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 

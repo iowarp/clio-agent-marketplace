@@ -1,7 +1,7 @@
 ---
 name: treatment-response
 title: Treatment Response
-description: Analyse how traits respond to treatments in a phenotyping experiment - dose-response vs categorical contrasts, genotype x treatment interaction, replicates, repeated measures, and tray/position effects. Use for questions comparing treatments or genotypes.
+description: Use for questions comparing treatments or genotypes in a phenotyping experiment (dose-response, genotype x treatment interaction, replicates, position effects).
 keywords:
 - level:L1
 - phenotyping

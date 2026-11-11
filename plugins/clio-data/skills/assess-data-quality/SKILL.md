@@ -1,7 +1,7 @@
 ---
 name: assess-data-quality
 title: Assess Data Quality
-description: Judge whether variables in HDF5, netCDF-4, ADIOS2 or Parquet files can be trusted and compared - what a variable states about itself, the checks to run with bounded reads, how to compare two variables, and which visual checks reveal problems.
+description: Use to judge whether variables in HDF5, netCDF-4, ADIOS2 or Parquet files can be trusted and compared, with bounded-read and visual checks.
 keywords:
 - level:L2
 - data-quality

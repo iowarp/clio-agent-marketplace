@@ -1,7 +1,7 @@
 ---
 name: hdf5
 title: HDF5
-description: Use for HDF5 files (.h5, .hdf5, netCDF-4, NeXus, NWB, .h5ad and others) — what a file contains and where its main data is, reading and writing with h5py, chunking, compression and performance, cloud and S3 access, parallel I/O, file drivers, and ingest into clio-core.
+description: Use for HDF5 files (.h5, .hdf5, netCDF-4, NeXus, NWB, .h5ad) - contents, h5py reading and writing, chunking, compression, cloud access, parallel I/O and clio-core ingest.
 ---
 
 # HDF5
@@ -77,7 +77,6 @@ its build, not of the user's system.
 | `references/dimension_scales.md` | Dimension scales and coordinate variables |
 | `references/cf_compliance.md` | Whether a netCDF-4/HDF5 file meets the CF conventions |
 | `references/region_references.md` | Object and region references |
-| `references/map_objects.md` | HDF5 map objects (key-value stores) |
 
 **Layout and performance**
 

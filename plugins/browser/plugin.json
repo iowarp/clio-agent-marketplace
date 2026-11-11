@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "browser",
+  "version": "1.0.0",
+  "description": "A web browser the agent drives from Python in run_code and the person sees live: pages shared with the person, sites granted per host, sign-ins kept in the profile.",
+  "author": {"name": "IoWarp Team"},
+  "license": "BSD-3-Clause",
+  "keywords": ["browser", "web", "pages", "playwright", "run_code"],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "kernel_bindings": {
+        "browser": {
+          "source": "ai.iowarp.clio/kernel/browser.py",
+          "requires": ["browser_open", "browser_act"]
+        }
+      }
+    }
+  }
+}

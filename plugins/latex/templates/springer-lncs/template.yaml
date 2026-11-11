@@ -1,0 +1,18 @@
+name: springer-lncs
+title: Springer LNCS paper
+# What the paper's card shows: its type, and the venue it is written for.
+document_type: Paper
+venue: Springer LNCS
+class: llncs
+options: []
+entry: main.tex
+files: [main.tex, sections/body.tex, refs.bib]
+# The rules below are this kind of venue's usual defaults. Set them from the
+# call for papers of the venue the paper goes to.
+rules:
+  page_limit: 16
+  references_count: true
+  double_blind: false
+  required_packages: []
+  forbidden_packages: []
+  paper_size: a4

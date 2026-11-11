@@ -14,16 +14,20 @@ Use this before filtering stations or data by place, unless the current
 region in the conversation already matches the request.
 
 - **Coordinates given:** keep them verbatim; do not geocode.
-- **A place name:** call `geo_geocode` once with the full name (with state or
-  country when known). If the result is empty or ambiguous, try once more with
-  a more specific name. A failed lookup is a blocker to report, never a gap to
+- **A place name:** when `geo_geocode` is available, call it once with the
+  full name (with state or country when known); if the result is empty or
+  ambiguous, try once more with a more specific name. Without it, take the
+  center from a cited source you look up (an official gazetteer or the
+  place's own page, via the web tools) and record that source. A failed
+  lookup is a blocker to report or a question for the user, never a gap to
   fill from memory.
 - **Radius:** use the user's radius exactly. Without one, choose one
   conservative radius for the kind of question (a city, a fault segment, a
   region), label it as an assumption, and keep it fixed for every later
   filter in the same analysis.
 
-Record the resolved label, center, radius or bounds, the geocoder's result,
-and any assumption. Make no claim about stations or data in this step. A
+Record the resolved label, center, radius or bounds, the geocoder's result or
+cited source, and any assumption. Make no claim about stations or data in this
+step. A
 small map of the center helps only when the place could be confused; load
 `present-interactive-analysis` for it.

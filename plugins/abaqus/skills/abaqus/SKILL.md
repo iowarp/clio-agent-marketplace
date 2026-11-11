@@ -1,7 +1,7 @@
 ---
 name: abaqus
 title: Script, Run and Audit an Abaqus Package
-description: Turn an approved simulation formulation into a complete Abaqus package (Python scripts or input decks), run it when Abaqus is reachable, and report exactly what was generated, executed and checked. Load for any Abaqus/Standard, Abaqus/Explicit or Abaqus/CAE scripting work.
+description: Use for Abaqus/Standard, Abaqus/Explicit or Abaqus/CAE scripting work - building a complete package from an approved formulation, running it when Abaqus is reachable, and reporting what ran.
 keywords:
 - level:L2
 - abaqus

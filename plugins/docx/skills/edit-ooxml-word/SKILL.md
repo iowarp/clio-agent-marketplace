@@ -1,6 +1,6 @@
 ---
 name: edit-ooxml-word
-description: Create or revise Office-compatible DOCX files, including comments and requested tracked changes, while preserving unknown OOXML parts. Use for .docx creation, anchored Word review comments, or edits that must open correctly in Microsoft Word.
+description: Use to create or revise .docx files, including anchored Word comments and tracked changes, that must open correctly in Microsoft Word.
 ---
 
 # Edit OOXML Word Documents

@@ -1,7 +1,7 @@
 ---
 name: phenotyping-onboarding-checks
 title: Phenotyping Onboarding Checks
-description: Inspect actual design, identities, methods, units, coverage and timing in phenotyping data. Adapt checks and derived representations to the supplied files and question; bundled schemas are optional examples.
+description: Use when first inspecting phenotyping data, to check its actual design, identities, methods, units, coverage and timing.
 keywords:
 - level:L1
 - phenotyping

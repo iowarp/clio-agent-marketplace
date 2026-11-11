@@ -1,7 +1,7 @@
 ---
 name: run-a-study
-title: Run a branched study
-description: "Run a study in the study log: a question, competing hypotheses with refuting predictions, branches that test them in parallel as a workflow, observations that cite their calls, evidence from your own analysis, forks when a branch finds something new, and a merged conclusion whose every claim cites entries."
+title: Run a study
+description: Use to run a study in the study log, from a small experiment run in this conversation to competing hypotheses tested by parallel workflow branches - cited observations, measurements as data, a view of the results, and a conclusion that cites its entries.
 keywords:
 - method
 - study
@@ -9,7 +9,7 @@ keywords:
 - workflow
 ---
 
-# Run a branched study
+# Run a study
 
 The log records what was learned; the workflow runs the work. The log never judges a
 claim: you choose the analysis, you decide what is enough, and you say why. The log is
@@ -37,6 +37,16 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
    enlarge it rather than conclude. A claim about a law needs measurements across the
    range it covers. Write the intended sample size on each Experiment; a sample too
    large for one conversation is work to spread across children (step 5).
+
+## Small or branched
+
+A small study, one experiment that fits in this conversation, needs no workflow: you
+write its entries yourself as you go (steps 1-3, then 5, 6, 8, 11 and 12, with no
+branches to read or merge). Record the values as `measurements`, so its view can
+chart them: for a small study one dashboard holding the chart that answers the
+question is the whole view (a few calls with `create-dashboard`). The record costs a
+few calls; what it gives the person is a result they can check, see and reuse. Branch a study (steps 4 onward) when it has separable parts: competing
+hypotheses that each need their own test, independent inputs, many trials.
 
 ## Branch it
 
@@ -103,10 +113,13 @@ summarizes the Conclusion; a result that is only in your answer cannot be checke
 ## Views
 
 A study's views are where the scientist watches it run and checks its conclusion.
-They are your dashboards, built around the question: what would show whether a
-hypothesis holds, how the branches compare, where the study is now. Make one with
-`create_a2ui_surface` and attach it with `log_entry` (`type: view`, its `surface_id`,
-a `title`, the `purpose` it serves, `links: {serves: <question or hypothesis>}`).
+They are dashboards, built around the question: what would show whether a
+hypothesis holds, how the branches compare, where the study is now. Build each one
+as a dashboard with the `create-dashboard` skill (and review it with
+`review-visual-presentation`), publish it with `publish_dashboard_report`, and attach
+it with `log_entry` (`type: view`, `dashboard_id`: the report id it returned, a
+`title`, the `purpose` it serves, `links: {serves: <question or hypothesis>}`). A chat
+surface is for a quick look in the conversation, not a study view.
 
 A chart or table in a view can read the study directly, and it shows new entries as
 they arrive without you rebuilding it:
@@ -118,7 +131,8 @@ they arrive without you rebuilding it:
 - `study://<study>/records/<name>`: records a plugin's tools keep, including each
   record's producing branch.
 
-The study id is the root question's id. Revise a view's surface as the study changes
-course, and add a view when it takes a new direction; withdraw one that no longer
+The study id is the root question's id. Revise a view by publishing its dashboard
+again with its `report_id` as the study changes course (the view shows the latest
+version), and add a view when it takes a new direction; withdraw one that no longer
 serves with `set_status` (`withdrawn`). A branch may attach drill-down views of its
 own.

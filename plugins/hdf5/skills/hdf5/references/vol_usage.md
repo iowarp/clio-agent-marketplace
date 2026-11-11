@@ -20,7 +20,7 @@ Intercept storage-oriented HDF5 API calls and redirect to alternative backends. 
 | async | 512 | Non-blocking I/O |
 | cache | 513 | Multi-tier caching |
 | log | 514 | Sequential write optimization |
-| daos | 4004 | Distributed object storage (DAOS) |
+| daos | 4004 | Distributed object storage (DAOS); the only connector that stores HDF5 map objects (`H5M`) |
 | rest | 520 | Web-based REST API access |
 | lowfive | 521 | In situ workflows (memory+file) |
 | pdc | 519 | Parallel Data Caching system |

@@ -5,18 +5,23 @@ started by a manufacturing agent can read what that agent reads. All three are
 read-only: tools that declare no side effects run, every other tool is refused.
 """
 
-from clio_agent.sdk import PromptFile, Subagent
+from clio_agent.sdk import Prefers, PromptFile, Subagent
 
 explore = Subagent(
     "explore",
     prompt=PromptFile("prompt/subagents/explore.md"),
     description=(
-        "Read-only survey: finds what exists (files, data, task records, sources) and "
-        "reports each finding with where it came from, so you get the findings without "
-        "the raw material."
+        "Use when answering means sweeping many files, folders, datasets or naming "
+        "conventions, or you do not know where something lives, and you need only the "
+        "conclusion, not the material. Read-only and fast: it locates and reads excerpts and "
+        "reports each finding with its path and line; it does not review or judge. Say how "
+        "thorough: quick, medium or thorough. For a lookup whose file you already know, "
+        "search or read it yourself."
     ),
     derive="caller",
     effects="read",
+    # The fleet's explore role (Fleet settings) picks a fast model; unset, it inherits.
+    prefers=Prefers(role="explore"),
 )
 
 planner = Subagent(

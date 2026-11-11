@@ -1,7 +1,7 @@
 ---
 name: hpc-batch-jobs
 title: Run and Wait on Slurm Batch Jobs Safely
-description: Submit Slurm jobs, record their ids, and wait on them in bounded, low-output steps so no single tool call outlives the tool timeout or the turn's no-progress watchdog. Read the job's output before any resubmission and report every job id.
+description: Use to submit Slurm jobs and wait on them in bounded, low-output steps, reporting every job id.
 keywords:
 - level:L2
 - slurm

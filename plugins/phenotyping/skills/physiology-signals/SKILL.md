@@ -1,7 +1,7 @@
 ---
 name: physiology-signals
 title: Physiology Signals
-description: Physics and pitfalls of physiology sensors in plant phenotyping - chlorophyll fluorescence (dark vs light adapted), reflectance spectra and vegetation indices, red edge, water bands, and relative units. Use before interpreting fluorescence, multispectral, or hyperspectral traits.
+description: Use before interpreting plant fluorescence, multispectral or hyperspectral traits (chlorophyll fluorescence, vegetation indices, red edge, water bands).
 keywords:
 - level:L1
 - phenotyping

@@ -1,7 +1,7 @@
 ---
 name: gnss-time-series
 title: GNSS Position Time Series
-description: Analyse GNSS station position time series from any network - east/north/up components, reference frames, trajectory models (rate, offsets, annual and semiannual terms), outliers, noise and rate uncertainty, and how to present them. Bundles fit_trajectory.py.
+description: Use to analyse GNSS station position time series - components, reference frames, trajectory models, outliers, noise and rate uncertainty (bundles fit_trajectory.py).
 keywords:
 - level:L1
 - geodesy

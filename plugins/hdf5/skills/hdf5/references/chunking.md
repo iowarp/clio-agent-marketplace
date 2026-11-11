@@ -49,7 +49,7 @@ h5repack -l /dataset:CHUNK=100x200 input.h5 output.h5
 # Multiple datasets
 h5repack -l /raw:CHUNK=100x1x1 -l /grid:CHUNK=1x100x100 input.h5 output.h5
 
-# With compression (see hdf5_filters)
+# With compression (see references/filters.md)
 h5repack -l /dataset:CHUNK=100x100 -f /dataset:SHUF -f /dataset:GZIP=3 input.h5 output.h5
 ```
 

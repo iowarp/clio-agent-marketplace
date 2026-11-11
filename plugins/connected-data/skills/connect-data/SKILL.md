@@ -21,15 +21,13 @@ attached sources, and signed-in provider accounts. This read returns status,
 not a setup control. If this tool is absent in a child session, return to the
 main session for setup.
 
-For National Data Platform requests, load `work-with-ndp`. The main agent can
-connect an explicitly requested Endpoint with
-`connected_data_ndp_endpoint_connect`, even in an empty workspace. A supplied SSH
-destination can be discovered without asking for an API URL. The normal approval
-gate still applies. Do not send the user to Attach to do a connection the tool
-can perform. The other NDP discovery/operation tools activate on the next turn
-after an NDP dataset or visible Endpoint is connected. Attach > NDP remains an
-option when the user needs to choose a dataset. Discovery resolves organizations,
-datasets and resource IDs; do not invent private selection configuration.
+For National Data Platform requests, load `work-with-ndp` when this agent has
+it (the `ndp` plugin). An NDP dataset someone attached with **Attach > NDP**
+is an ordinary connected source here: list, open and download it with the
+tools below. Without the `ndp` plugin you cannot search the NDP catalog or
+connect an Endpoint; say so, and offer Attach > NDP or the NDP agent rather
+than claiming a search you cannot run. Do not invent private selection
+configuration.
 
 When an account needs sign-in, explain the need in your answer and use its
 returned `login_action` as an ordinary A2UI Button's action. Load the active
