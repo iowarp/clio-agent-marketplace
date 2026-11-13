@@ -483,7 +483,7 @@ deep_research = sequence(terminal("plan"),
                 {"question": question, "direction": target, "round": round_no},
                 key=f"research:{target['id']}",
                 model=self.researcher_model,
-                label=str(target.get("name") or "").strip() or target["id"],
+                label=_child_label(target),
             )
             for target in targets
         ]
@@ -691,6 +691,18 @@ _BOUNDS = {
     "max_rounds": (0, MAX_ROUNDS_CEILING),
     "concurrency": (0, DIRECTIONS_BACKSTOP),
 }
+
+
+def _child_label(target: dict[str, Any]) -> str:
+    """The name a researcher is shown under: its direction's name, else its question, short."""
+
+    name = " ".join(str(target.get("name") or "").split())
+    if name:
+        return name
+    question = " ".join(str(target.get("question") or "").split())
+    if len(question) <= 48:
+        return question or target["id"]
+    return question[:48].rsplit(" ", 1)[0].rstrip(",;:") + "…"
 
 
 def _capabilities(ctx: Any) -> dict[str, Any]:
