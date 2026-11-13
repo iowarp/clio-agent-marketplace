@@ -612,14 +612,15 @@ deep_research = sequence(terminal("plan"),
 
 
 async def _record_claim_repairs(ctx: Any, audit: Any, round_no: int, critic: str) -> None:
-    """Record claim IDs derived from their text in place of the critic's (no silent fix)."""
-    if audit is not None and audit._claim_id_repairs:
+    """Record IDs derived from claims' text and gaps' fields in place of the critic's."""
+    if audit is not None and (audit._claim_id_repairs or audit._gap_id_repairs):
         await ctx.record_event(
             {
-                "event": "critic_claim_id_repaired",
+                "event": "critic_id_repaired",
                 "round": round_no,
                 "critic": critic,
-                "repairs": audit._claim_id_repairs,
+                "claim_id_repairs": audit._claim_id_repairs,
+                "gap_id_repairs": audit._gap_id_repairs,
             }
         )
 

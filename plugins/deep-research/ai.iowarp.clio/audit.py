@@ -105,6 +105,8 @@ class Audit(BaseModel):
     _sources: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
     #: Submitted claim IDs that did not identify their claim's text, as derived.
     _claim_id_repairs: list[dict[str, Any]] = PrivateAttr(default_factory=list)
+    #: Submitted gap IDs that did not identify their gap's fields, as derived.
+    _gap_id_repairs: list[dict[str, Any]] = PrivateAttr(default_factory=list)
 
 
 def canonical_claim_ids(section: Any) -> tuple[Any, list[dict[str, Any]]]:
@@ -128,6 +130,29 @@ def canonical_claim_ids(section: Any) -> tuple[Any, list[dict[str, Any]]]:
                 row = {**row, "claim_id": canonical}
         rows.append(row)
     return {**section, "verified": rows}, repairs
+
+
+def canonical_gap_ids(section: Any) -> tuple[Any, list[dict[str, Any]]]:
+    """Derive each gap's ID from its typed fields, as :func:`repair_context` does.
+
+    A gap whose fields are themselves invalid keeps its row, so the strict check
+    reports the real problem.
+    """
+    if not isinstance(section, Mapping) or not isinstance(section.get("gaps"), list):
+        return section, []
+    repairs: list[dict[str, Any]] = []
+    rows: list[Any] = []
+    for index, row in enumerate(section["gaps"]):
+        if isinstance(row, Mapping) and row.get("gap_id"):
+            try:
+                canonical = Gap.model_validate({**row, "gap_id": ""}).gap_id
+            except (ValidationError, ValueError):
+                canonical = ""
+            if canonical and row["gap_id"] != canonical:
+                repairs.append({"row": index, "submitted": row["gap_id"], "canonical": canonical})
+                row = {**row, "gap_id": canonical}
+        rows.append(row)
+    return {**section, "gaps": rows}, repairs
 
 
 def repair_context(
@@ -268,6 +293,7 @@ def _audit_of(
     if not isinstance(section, Mapping):
         return None, ["workflow_state.audit is missing or not an object"]
     section, claim_repairs = canonical_claim_ids(section)
+    section, gap_repairs = canonical_gap_ids(section)
     try:
         audit = Audit.model_validate(section)
     except ValidationError as exc:
@@ -276,6 +302,7 @@ def _audit_of(
             for error in exc.errors()
         ]
     audit._claim_id_repairs = claim_repairs
+    audit._gap_id_repairs = gap_repairs
     known = {gap.gap_id: gap for gap in pending}
     remaining = {gap.gap_id: gap for gap in audit.gaps}
     _merge_ledger(audit, earlier)
