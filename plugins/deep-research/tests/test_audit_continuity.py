@@ -70,9 +70,21 @@ def test_same_round_empty_repair_retains_bound_claims_rejections_and_all_require
     ]
 
 
-def test_repaired_audit_that_repeats_an_unbound_claim_is_still_rejected() -> None:
+def test_a_claim_still_unbound_after_the_repair_is_rejected_not_a_stall() -> None:
     bad = audit([claim(1), misquoted()], gaps=[limit("stack")])
     ctx = ScriptedCtx(Children([bad, bad]))
+    result = run(make_flow(Planner(["sources"])), ctx)
+    assert len(of(ctx, "critic")) == 2  # the critic had its one repair
+    assert result["verified"] == [claim(1)]
+    rejected = next(row for row in result["rejected"] if row["claim"] == "misquoted claim")
+    assert "quotation is absent" in rejected["reason"]
+    event = next(row for row in ctx.events if row["event"] == "critic_unbound_claims_rejected")
+    assert event["excluded"][0]["claim"] == "misquoted claim"
+
+
+def test_a_repaired_audit_that_is_still_malformed_stalls() -> None:
+    malformed = audit([{"claim": "no evidence at all", "evidence": []}])
+    ctx = ScriptedCtx(Children([malformed, malformed]))
     with pytest.raises(FlowStall) as failure:
         run(make_flow(Planner(["sources"])), ctx)
     assert failure.value.stall == "critic_audit_invalid"

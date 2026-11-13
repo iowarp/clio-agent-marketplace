@@ -255,6 +255,50 @@ def repair_context(
     }
 
 
+def exclude_unbound(
+    audit: Audit,
+    records: dict[str, dict[str, Any]],
+    pending: list[Gap],
+    operational_evidence: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Reject verified claims whose evidence does not bind; return what was excluded.
+
+    Used after the critic's one repair: a claim whose quoted passage is not in its
+    fetched source (or whose fetch is not the critic's) is not verified. It moves
+    to ``rejected`` with the binding problem as its reason, so the report lists it
+    instead of the whole run stalling. A resolution that relied only on an excluded
+    claim's sources no longer holds, so its gap is open again.
+    """
+    excluded: list[dict[str, Any]] = []
+    kept: list[VerifiedClaim] = []
+    for claim in audit.verified:
+        problems = bind_claims([claim], records)
+        if not problems:
+            kept.append(claim)
+            continue
+        url = claim.evidence[0].source_url if claim.evidence else ""
+        reason = "The quoted evidence did not check out: " + "; ".join(problems)
+        audit.rejected.append(RejectedClaim(claim=claim.claim, reason=reason[:600], source_url=url))
+        excluded.append({"claim_id": claim.claim_id, "claim": claim.claim, "problems": problems})
+    if not excluded:
+        return []
+    audit.verified = kept
+    known = {gap.gap_id: gap for gap in pending}
+    remaining = {gap.gap_id: gap for gap in audit.gaps}
+    holding = []
+    for resolution in audit.resolved_gaps:
+        alone = Audit(verified=audit.verified, resolved_gaps=[resolution])
+        if _resolution_problems(alone, known, remaining, operational_evidence):
+            if resolution.gap_id in known:
+                remaining.setdefault(resolution.gap_id, known[resolution.gap_id])
+            excluded.append({"reopened_gap": resolution.gap_id})
+        else:
+            holding.append(resolution)
+    audit.resolved_gaps = holding
+    audit.gaps = list(remaining.values())
+    return excluded
+
+
 def _merge_ledger(audit: Audit, earlier: Audit | None) -> None:
     """Carry earlier assertions unless the auditor explicitly reconsiders them."""
     if earlier is not None:

@@ -35,6 +35,7 @@ from ..audit import (
     Direction,
     Gap,
     _audit_of,
+    exclude_unbound,
     repair_context,
 )
 from ..audit import (
@@ -593,8 +594,19 @@ deep_research = sequence(terminal("plan"),
                 rows = await ctx.tool_results(auditor)
                 records.update(source_records(rows, auditors))
                 papers.update(paper_records(rows))
-            if audit is not None:
-                problems += bind_claims(audit.verified, records)
+            if audit is not None and not problems:
+                # The critic had its repair; claims whose evidence still does not
+                # bind are rejected with their reason rather than stalling the run.
+                excluded = exclude_unbound(audit, records, pending, request["operational_evidence"])
+                if excluded:
+                    await ctx.record_event(
+                        {
+                            "event": "critic_unbound_claims_rejected",
+                            "round": round_no,
+                            "critic": result.handle,
+                            "excluded": excluded,
+                        }
+                    )
         if audit is None or problems:
             raise FlowStall(
                 "critic_audit_invalid",
