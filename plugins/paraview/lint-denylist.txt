@@ -1,0 +1,7 @@
+# Instance literals that must never ship in this pack: test-cluster hosts,
+# ports and fixture datasets. Hosts and data come from the person at runtime.
+ares-compute-08
+node08
+wavelet.vti
+pulse_series.pvd
+11111
