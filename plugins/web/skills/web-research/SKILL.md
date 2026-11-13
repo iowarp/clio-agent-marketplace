@@ -40,6 +40,12 @@ excerpts; read it with the file tools before running a near-identical search.
 These are facts about the search, not about the topic. Mention them only when
 they limit what you could find.
 
+A failed search says why in `error.advice`. A source that did not answer twice in
+a row (`search_source_temporarily_down`) has a temporary problem; it does not mean
+nothing matches. Call `web_search` again with the same query: the call waits
+`retry_after_s` and asks that source again, and if it fails again CLIO moves the
+search to `next_source`. Read pages you already found while you wait, if useful.
+
 ## Read a page
 
 `web_fetch` returns the page as Markdown in `content`, with the final `url`

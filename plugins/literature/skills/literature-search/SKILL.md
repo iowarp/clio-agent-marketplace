@@ -17,8 +17,11 @@ with `web_fetch` on its `readable_url`.
 - Write keywords, not questions: the main terms of the topic and their common
   synonyms. Run separate searches for distinct vocabularies rather than one
   long query.
-- Set `field` when the topic sits in one area; it adds the sources that cover
-  it. Leave it `any` for cross-disciplinary topics.
+- `field="any"` (the default) asks every broad source: OpenAlex, Crossref,
+  arXiv, Europe PMC, OSTI.gov and DataCite. Set `field` only to narrow a search to
+  one area's sources.
+- A source missing from the results is named in `notes` with what happened and
+  what to do; the other sources' works are complete.
 - Set `kind` to `preprint`, `review` or `dataset` when that is what you need;
   `after`/`before` bound the publication date.
 - `found_in` lists the sources that returned a work. Several sources agreeing
