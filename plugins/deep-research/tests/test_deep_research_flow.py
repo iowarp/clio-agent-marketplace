@@ -80,6 +80,7 @@ class ScriptedCtx:
         evidence: Any = None,
         key: str = "",
         model: str = "",
+        label: str = "",
     ) -> _Call:  # noqa: A002 - ctx.call's public parameter name
         row = {
             "target": target,
@@ -87,6 +88,7 @@ class ScriptedCtx:
             "evidence": list(evidence or []),
             "key": key,
             "model": model,
+            "label": label,
         }
         self.calls.append(row)
         return _Call(self, row)
@@ -415,7 +417,7 @@ def test_plan_research_verify_report() -> None:
     assert planner.asked == [
         {
             "question": "What changed?",
-            "max_directions": 6,
+            "max_directions": None,
             "capabilities": flow_module._capabilities(ctx),
             "operational_evidence": {"status": "available", "receipts": []},
         }
@@ -1373,8 +1375,8 @@ def test_options_are_checked_before_a_run_starts() -> None:
         ({"max_rounds": True}, "max_rounds must be int"),
         ({"researcher_model": 3}, "researcher_model must be str"),
         ({"max_rounds": 9}, "max_rounds must be between 0 and 5"),
-        ({"max_directions": 0}, "max_directions must be between 1 and 12"),
-        ({"concurrency": -1}, "concurrency must be between 0 and 12"),
+        ({"max_directions": 40}, "max_directions must be between 0 and 32"),
+        ({"concurrency": -1}, "concurrency must be between 0 and 32"),
         ({"max_direction": 2}, "max_direction is not an option"),
     ]:
         with pytest.raises(FlowOptionsInvalid) as refused:
@@ -1439,3 +1441,31 @@ def test_references_carry_the_bibliography_of_works_the_literature_tools_returne
     assert "*IPDPS*." in reference and reference.endswith("doi:10.1109/ipdps.2023.104")
     plain = evidence_module.render_report([block], [cited])
     assert plain.split("## References\n\n", 1)[1].startswith("- [Source 1]")
+
+
+def test_unset_limit_lets_the_planner_size_the_run_and_names_each_child() -> None:
+    named = [
+        {**gap("What is PTC?"), "name": "Anthropic PTC docs"},
+        {**gap("How is script provenance traced?"), "name": ""},
+    ]
+    planner = Planner(named)
+    ctx = ScriptedCtx(Children([audit()]))
+
+    run(make_flow(planner), ctx)
+
+    assert planner.asked[0]["max_directions"] is None
+    researchers = of(ctx, "researcher")
+    assert [r["label"] for r in researchers] == ["Anthropic PTC docs", "d2"]
+    assert "max_gaps" not in of(ctx, "critic")[0]["input"]
+    assert not [e for e in ctx.events if e.get("event") == "directions_capped"]
+
+
+def test_the_backstop_cuts_only_a_runaway_plan() -> None:
+    planner = Planner([f"q{n}" for n in range(1, 41)])
+    ctx = ScriptedCtx(Children([audit()]))
+
+    run(make_flow(planner), ctx)
+
+    assert len(of(ctx, "researcher")) == flow_module.DIRECTIONS_BACKSTOP
+    (capped,) = [e for e in ctx.events if e.get("event") == "directions_capped"]
+    assert capped["asked"] == 40 and capped["kept"] == flow_module.DIRECTIONS_BACKSTOP

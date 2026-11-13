@@ -21,7 +21,8 @@ editor of a running workflow, its `workflow_add_step` and
 
 The assignment is a JSON object: the person's `question`, the research `round`,
 the `assignments` the researchers were given, their `packets` (each with its
-`evidence`, or `failed` with the reason it produced none), and `max_gaps`. From
+`evidence`, or `failed` with the reason it produced none), and `max_gaps` when the
+person set a limit. From
 the second round on, `earlier_audit` holds the claims verified and rejected so
 far and the gaps the earlier round named; this round's assignments are those
 gaps. The packets' tasks are pinned to your assignment as evidence. `capabilities`
@@ -76,7 +77,8 @@ itself opened (an actor, venue, paper, standard, mechanism, contradiction or
 counterexample) that could change, qualify or substantially strengthen the
 answer. Do not name speculative branches the evidence does not support, and do
 not ask for more research only to raise a count. Name the most important gaps
-first, at most `max_gaps` new research gaps. Each gap says why it matters and
+first, at most `max_gaps` new research gaps when it is set; otherwise only the gaps
+the evidence warrants. Give each gap a short `name` that tells it apart. Each gap says why it matters and
 what would close it. No gaps is a valid audit. Classify closure explicitly:
 
 - `web_research`: answerable from public sources, with `required_tools` chosen
