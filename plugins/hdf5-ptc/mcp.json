@@ -4,7 +4,15 @@
     "h5": {
       "type": "stdio",
       "command": "uv",
-      "args": ["run", "--project", "${PLUGIN_ROOT}/impl", "hdf5-ptc-mcp"]
+      "args": [
+        "run",
+        "--project",
+        "${PLUGIN_ROOT}/impl",
+        "hdf5-ptc-mcp"
+      ],
+      "env": {
+        "CLIO_SOURCE_RANGE_ORIGIN": "${CLIO_SOURCE_RANGE_ORIGIN}"
+      }
     }
   }
 }
