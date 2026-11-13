@@ -1455,7 +1455,10 @@ def test_unset_limit_lets_the_planner_size_the_run_and_names_each_child() -> Non
 
     assert planner.asked[0]["max_directions"] is None
     researchers = of(ctx, "researcher")
-    assert [r["label"] for r in researchers] == ["Anthropic PTC docs", "d2"]
+    assert [r["label"] for r in researchers] == [
+        "Anthropic PTC docs",
+        "How is script provenance traced?",
+    ]
     assert "max_gaps" not in of(ctx, "critic")[0]["input"]
     assert not [e for e in ctx.events if e.get("event") == "directions_capped"]
 
@@ -1469,3 +1472,10 @@ def test_the_backstop_cuts_only_a_runaway_plan() -> None:
     assert len(of(ctx, "researcher")) == flow_module.DIRECTIONS_BACKSTOP
     (capped,) = [e for e in ctx.events if e.get("event") == "directions_capped"]
     assert capped["asked"] == 40 and capped["kept"] == flow_module.DIRECTIONS_BACKSTOP
+
+
+def test_a_long_unnamed_question_is_shortened_at_a_word() -> None:
+    label = flow_module._child_label(
+        {"id": "g2.1", "question": "What do the OpenTelemetry GenAI semantic conventions specify?"}
+    )
+    assert label == "What do the OpenTelemetry GenAI semantic…"
