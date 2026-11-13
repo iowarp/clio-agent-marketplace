@@ -2,6 +2,7 @@
 
 import hashlib
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -89,18 +90,19 @@ def test_successful_save_receipt_for_a_different_document_does_not_close() -> No
     assert not report.action_completed(action_gap("persist_report"), receipts)
 
 
-def test_invalid_gap_identity_is_recorded_before_repair_admission_failure() -> None:
-    invalid = action_gap("review_report")
-    invalid["gap_id"] = "gap_not_the_requirement_hash"
+def test_audit_problems_are_recorded_before_repair_admission_failure() -> None:
+    unbound = deepcopy(claim(1))
+    unbound["claim"], unbound["claim_id"] = "misquoted claim", ""
+    unbound["evidence"][0]["quote"] = "a passage that was never fetched"
 
     def children(target: str, payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get("repair"):
             raise CallFailed("repair admission failed", handle="task_failed")
-        return Children([audit([claim(1)], gaps=[invalid])])(target, payload)
+        return Children([audit([claim(1), unbound])])(target, payload)
 
     ctx = ScriptedCtx(children)
     with pytest.raises(CallFailed, match="repair admission failed"):
         run(make_flow(Planner(["source question"])), ctx)
     event = next(row for row in ctx.events if row["event"] == "critic_audit_repair")
     assert event["critic"] == "task_2"
-    assert any("gap_id does not identify" in problem for problem in event["problems"])
+    assert any("quotation is absent" in problem for problem in event["problems"])

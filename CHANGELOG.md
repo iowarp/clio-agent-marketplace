@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-13
+
+The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the beta.
+
+### Added
+
+- `literature` (1.0.0): searches scholarly sources with CLIO's built-in
+  `literature_search` and `literature_lookup` (OpenAlex, Crossref, arXiv, Europe PMC,
+  OSTI.gov and DataCite), with a `literature-search` skill. The standard agent (1.2.0)
+  includes it (#133).
+- `deep-research`: researchers and the critic also search the scholarly literature, and
+  the report writes full references for the papers it cites (#133).
+
+### Changed
+
+- `web` (2.0.0) uses CLIO's built-in `web_search` and `web_fetch` instead of clio-kit's
+  Web Search MCP server (its `mcp.json` is removed), with a new `web-research` skill
+  (#133).
+- `deep_researcher` (0.4.0): a claim still unsupported after the repair is dropped with a
+  note instead of stopping the run, and the corrected report is delivered with the
+  reviewer's open notes (#133).
+
+### Fixed
+
+- `pdf`: the `create-pdf-report` skill writes the PDF where the person asked, under the
+  name they gave, and keeps intermediate renders out of the project (#131). When a page
+  was not shown to the model, it names the page instead of claiming visual
+  verification (#132).
+- `deep-research` no longer stalls deriving claim and gap IDs, and binds the critic's
+  evidence from inline fetches (#133).
+
 ## [0.8.0-beta.1] - 2026-11-11
 
 ### Added

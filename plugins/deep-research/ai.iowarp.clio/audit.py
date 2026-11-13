@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, PrivateAttr, ValidationError, model_valid
 
 from clio_agent.flows.outcomes import FlowStall
 
-from .evidence import VerifiedClaim, bind_claims, claim_urls, merge_claims
+from .evidence import VerifiedClaim, bind_claims, claim_identity, claim_urls, merge_claims
 
 
 class PermissionRequirement(BaseModel):
@@ -103,6 +103,58 @@ class Audit(BaseModel):
     gaps: list[Gap] = Field(default_factory=list)
     resolved_gaps: list[GapResolution] = Field(default_factory=list)
     _sources: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
+    #: Bibliographic records from the auditors' literature tool results (by identity).
+    _papers: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
+    #: Submitted claim IDs that did not identify their claim's text, as derived.
+    _claim_id_repairs: list[dict[str, Any]] = PrivateAttr(default_factory=list)
+    #: Submitted gap IDs that did not identify their gap's fields, as derived.
+    _gap_id_repairs: list[dict[str, Any]] = PrivateAttr(default_factory=list)
+
+
+def canonical_claim_ids(section: Any) -> tuple[Any, list[dict[str, Any]]]:
+    """Derive each verified claim's ID from its text, like gap IDs.
+
+    An ID identifies its exact proposition. A submitted ID that does not (a
+    reworded earlier claim kept its old ID) is replaced by the derived one: the
+    reworded text is a new proposition, and the earlier wording stays in the
+    ledger unless the critic rejects it. Each replacement is returned so the
+    flow records it; nothing else about the row changes.
+    """
+    if not isinstance(section, Mapping) or not isinstance(section.get("verified"), list):
+        return section, []
+    repairs: list[dict[str, Any]] = []
+    rows: list[Any] = []
+    for index, row in enumerate(section["verified"]):
+        if isinstance(row, Mapping) and isinstance(row.get("claim"), str) and row.get("claim_id"):
+            canonical = claim_identity(row["claim"])
+            if row["claim_id"] != canonical:
+                repairs.append({"row": index, "submitted": row["claim_id"], "canonical": canonical})
+                row = {**row, "claim_id": canonical}
+        rows.append(row)
+    return {**section, "verified": rows}, repairs
+
+
+def canonical_gap_ids(section: Any) -> tuple[Any, list[dict[str, Any]]]:
+    """Derive each gap's ID from its typed fields, as :func:`repair_context` does.
+
+    A gap whose fields are themselves invalid keeps its row, so the strict check
+    reports the real problem.
+    """
+    if not isinstance(section, Mapping) or not isinstance(section.get("gaps"), list):
+        return section, []
+    repairs: list[dict[str, Any]] = []
+    rows: list[Any] = []
+    for index, row in enumerate(section["gaps"]):
+        if isinstance(row, Mapping) and row.get("gap_id"):
+            try:
+                canonical = Gap.model_validate({**row, "gap_id": ""}).gap_id
+            except (ValidationError, ValueError):
+                canonical = ""
+            if canonical and row["gap_id"] != canonical:
+                repairs.append({"row": index, "submitted": row["gap_id"], "canonical": canonical})
+                row = {**row, "gap_id": canonical}
+        rows.append(row)
+    return {**section, "gaps": rows}, repairs
 
 
 def repair_context(
@@ -118,7 +170,7 @@ def repair_context(
     original submitted ID remains diagnostic evidence; the repaired audit still
     passes the ordinary strict validator. Unrepresentable requirements stall.
     """
-    raw = section if isinstance(section, Mapping) else {}
+    raw, claim_repairs = canonical_claim_ids(section if isinstance(section, Mapping) else {})
     ledger = Audit()
     excluded: list[dict[str, Any]] = []
     for field, model in (("verified", VerifiedClaim), ("rejected", RejectedClaim)):
@@ -197,9 +249,54 @@ def repair_context(
         "retained_rejections": [claim.model_dump() for claim in ledger.rejected],
         "open_gap_ids": [gap.gap_id for gap in ledger.gaps],
         "gap_id_repairs": identity_repairs,
+        "claim_id_repairs": claim_repairs,
         "excluded_rows": excluded,
         "retained_resolutions": [row.model_dump() for row in ledger.resolved_gaps],
     }
+
+
+def exclude_unbound(
+    audit: Audit,
+    records: dict[str, dict[str, Any]],
+    pending: list[Gap],
+    operational_evidence: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Reject verified claims whose evidence does not bind; return what was excluded.
+
+    Used after the critic's one repair: a claim whose quoted passage is not in its
+    fetched source (or whose fetch is not the critic's) is not verified. It moves
+    to ``rejected`` with the binding problem as its reason, so the report lists it
+    instead of the whole run stalling. A resolution that relied only on an excluded
+    claim's sources no longer holds, so its gap is open again.
+    """
+    excluded: list[dict[str, Any]] = []
+    kept: list[VerifiedClaim] = []
+    for claim in audit.verified:
+        problems = bind_claims([claim], records)
+        if not problems:
+            kept.append(claim)
+            continue
+        url = claim.evidence[0].source_url if claim.evidence else ""
+        reason = "The quoted evidence did not check out: " + "; ".join(problems)
+        audit.rejected.append(RejectedClaim(claim=claim.claim, reason=reason[:600], source_url=url))
+        excluded.append({"claim_id": claim.claim_id, "claim": claim.claim, "problems": problems})
+    if not excluded:
+        return []
+    audit.verified = kept
+    known = {gap.gap_id: gap for gap in pending}
+    remaining = {gap.gap_id: gap for gap in audit.gaps}
+    holding = []
+    for resolution in audit.resolved_gaps:
+        alone = Audit(verified=audit.verified, resolved_gaps=[resolution])
+        if _resolution_problems(alone, known, remaining, operational_evidence):
+            if resolution.gap_id in known:
+                remaining.setdefault(resolution.gap_id, known[resolution.gap_id])
+            excluded.append({"reopened_gap": resolution.gap_id})
+        else:
+            holding.append(resolution)
+    audit.resolved_gaps = holding
+    audit.gaps = list(remaining.values())
+    return excluded
 
 
 def _merge_ledger(audit: Audit, earlier: Audit | None) -> None:
@@ -241,6 +338,8 @@ def _audit_of(
     section = result.workflow_state.get("audit")
     if not isinstance(section, Mapping):
         return None, ["workflow_state.audit is missing or not an object"]
+    section, claim_repairs = canonical_claim_ids(section)
+    section, gap_repairs = canonical_gap_ids(section)
     try:
         audit = Audit.model_validate(section)
     except ValidationError as exc:
@@ -248,6 +347,8 @@ def _audit_of(
             f"audit.{'.'.join(str(p) for p in error['loc'])}: {error['msg']}"
             for error in exc.errors()
         ]
+    audit._claim_id_repairs = claim_repairs
+    audit._gap_id_repairs = gap_repairs
     known = {gap.gap_id: gap for gap in pending}
     remaining = {gap.gap_id: gap for gap in audit.gaps}
     _merge_ledger(audit, earlier)
