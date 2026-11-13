@@ -25,6 +25,10 @@ class Direction(BaseModel):
     """A model-selected question and the kind of work that could close it."""
 
     question: str = Field(min_length=1, description="One precise, self-contained question")
+    name: str = Field(
+        default="",
+        description="A short title of two to six words that tells this direction apart, shown to the person",
+    )
     why: str = Field(default="", description="Why its answer matters to the person's question")
     answer_looks_like: str = Field(
         default="",
