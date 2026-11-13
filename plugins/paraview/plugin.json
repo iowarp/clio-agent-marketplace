@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "paraview",
+  "version": "1.0.0",
+  "description": "Work with scenes in the ParaView connector: open data in a live view, look and measure before making a claim, and point the connector at another machine when the person names one. It follows the ParaView connector and joins agents when that connector is enabled.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "paraview",
+    "scientific-visualization",
+    "3d"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "follows": "paraview",
+      "connections": {
+        "paraview": "paraview"
+      }
+    }
+  }
+}
