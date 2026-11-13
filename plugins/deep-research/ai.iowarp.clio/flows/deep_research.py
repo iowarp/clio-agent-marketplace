@@ -364,6 +364,9 @@ deep_research = sequence(terminal("plan"),
                 await ctx.record_event({"event": "gap_rounds_stopped", "reason": "permission"})
                 break
             gaps = _researchable([gap.model_dump() for gap in audit.gaps], capabilities)
+            gaps, merged = _distinct_questions(gaps)
+            if merged:
+                await ctx.record_event({"event": "gaps_merged", "round": rounds + 1, "merged": merged})
             if not gaps:
                 break
             rounds += 1
@@ -703,6 +706,26 @@ _BOUNDS = {
     "max_rounds": (0, MAX_ROUNDS_CEILING),
     "concurrency": (0, DIRECTIONS_BACKSTOP),
 }
+
+
+def _distinct_questions(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
+    """One row per question (same words, ignoring case and spacing), and the dropped copies.
+
+    The critic can restate an open gap with other tools, which gives it a new
+    identity; researching the same question twice in one round adds nothing.
+    """
+
+    kept: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    merged: list[str] = []
+    for row in rows:
+        key = " ".join(str(row.get("question") or "").lower().split())
+        if key in seen:
+            merged.append(str(row.get("gap_id") or row.get("question")))
+            continue
+        seen.add(key)
+        kept.append(row)
+    return kept, merged
 
 
 def _child_label(target: dict[str, Any]) -> str:

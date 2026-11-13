@@ -136,7 +136,10 @@ Return the complete audit in `workflow_state.audit`, as an object:
   to the wrong page, or only a search snippet;
 - `gaps`: a list of `{"question", "why", "answer_looks_like", "closure_kind",
   "required_tools", "input_kind", "permission_requirement", "action", "gap_id"}`. Leave `gap_id` empty for a new gap;
-  preserve the flow-assigned ID for an existing one. `closure_kind` is one of the five values above;
+  preserve the flow-assigned ID for an existing one. An earlier gap stays open
+  on its own: return it with its ID unchanged, or leave it out. Restating it as a
+  new gap (reworded, or with other tools) sends a second researcher after the
+  same question. `closure_kind` is one of the five values above;
   `required_tools` is a list of needed tool names (required and nonempty for
   `web_research`); `action` is a registered action name for `workflow_action`,
   otherwise the empty string. Preserve unmet tool requirements instead of
