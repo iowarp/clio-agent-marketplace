@@ -20,8 +20,9 @@ SSH host name, empty for this machine), **Jump host** and **Command to run
 first** (for example a module load line). There is no connect tool.
 
 - When the person names another machine ("the ParaView on the compute node,
-  through the login node"), set those values with `set_connector_value`
-  (`address`, `via`, `prepare`), then call the scene tool. Use the host names
+  through the login node"), set those values with one `set_connector_value`
+  call (`values` with `address`, `via`, `prepare`), then call the scene tool.
+  Each call restarts the connector, so give the values together. Use the host names
   the person gives; do not guess them.
 - The first call on a machine prepares a folder there and can take a minute;
   later calls take seconds.
