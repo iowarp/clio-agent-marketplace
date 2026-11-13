@@ -115,7 +115,10 @@ Return the complete audit in `workflow_state.audit`, as an object:
   independently checkable proposition. Leave `claim_id` empty for a new claim;
   preserve the supplied ID for an unchanged earlier proposition. `evidence` is
   a nonempty list of `{"task_handle", "source_url", "source_title", "quote",
-  "supports", "source_id"}`. Use the exact CLIO handle of the successful fetch,
+  "supports", "source_id"}`. For `task_handle`, copy the CLIO reference of the
+  successful fetch: the `call:<session>/<call_id>` reference printed in brackets
+  after its result, or its `task_…` handle when the fetch ran as a task; never
+  the tool-call id from your own request. Use
   its actual page URL and verbatim supporting passage. `supports` says precisely
   what that passage establishes; it must collectively cover the whole claim.
   Include the relevant qualifications, version or population in the supporting

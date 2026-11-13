@@ -177,7 +177,8 @@ def source_records(
     for row in rows:
         task = row["task"]
         owner = task.get("owner") or {}
-        backend = task.get("backend") or {}
+        # An inline answer has no adopted backend; CLIO's submission names the server.
+        backend = task.get("backend") or task.get("submitted_backend") or {}
         if (
             task.get("kind") != "MCP"
             or task.get("status") != "completed"
@@ -212,6 +213,7 @@ def source_records(
         records[task["handle"]] = {
             "source_id": source_id,
             "task_handle": task["handle"],
+            "call_id": str(task.get("invocation_id") or ""),
             "auditor_handle": owner["assignment_id"],
             "result_reference": reference,
             "source_url": url,
@@ -225,11 +227,29 @@ def source_records(
     return records
 
 
+def resolve_handle(cited: str, records: dict[str, dict[str, Any]]) -> str:
+    """The fetch task a cited CLIO reference names.
+
+    A critic cites its fetch by task handle, or by the ``call:<session>/<call_id>``
+    reference CLIO prints after every tool result (an inline answer has no other
+    handle). Anything else is returned as cited and fails binding with its reason.
+    """
+    text = cited.strip().strip("[]").strip()
+    if text in records:
+        return text
+    call_id = text.removeprefix("call:").rpartition("/")[2]
+    for handle, record in records.items():
+        if call_id and record.get("call_id") == call_id:
+            return handle
+    return cited
+
+
 def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]]) -> list[str]:
     """Check source identity and passage integrity, without pretending to prove entailment."""
     problems = []
     for claim in claims:
         for evidence in claim.evidence:
+            evidence.task_handle = resolve_handle(evidence.task_handle, records)
             source = records.get(evidence.task_handle)
             prefix = f"{claim.claim_id} evidence {evidence.task_handle}"
             if source is None:

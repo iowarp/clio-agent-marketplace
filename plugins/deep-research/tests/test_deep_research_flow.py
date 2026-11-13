@@ -1159,6 +1159,32 @@ def test_source_binding_checks_actual_url_quote_and_unique_occurrence() -> None:
     assert flow_module.bind_claims([ambiguous], records) == []
 
 
+def test_an_inline_builtin_fetch_binds_by_its_call_reference() -> None:
+    """In-process web fetches answer inline: no adopted backend, cited by call reference."""
+    row = source_fixture(1, "critic")
+    row["task"]["backend"] = None
+    row["task"]["submitted_backend"] = {"owner": "external_mcp", "server": "web"}
+    row["task"]["invocation_id"] = "call_8f73cc6042d7"
+    records = flow_module.source_records([row], {"critic"})
+    assert list(records) == ["fetch_1"]
+    for cited in (
+        "call:sess_abc/call_8f73cc6042d7",
+        "[call:sess_abc/call_8f73cc6042d7]",
+        "call_8f73cc6042d7",
+    ):
+        bound = flow_module.VerifiedClaim.model_validate(claim(1))
+        bound.evidence[0].task_handle = cited
+        assert flow_module.bind_claims([bound], records) == []
+        assert bound.evidence[0].task_handle == "fetch_1"
+    unknown = flow_module.VerifiedClaim.model_validate(claim(1))
+    unknown.evidence[0].task_handle = "call_68b7df5f_5"  # the model's own tool-call id
+    assert "no successful critic-owned fetch" in flow_module.bind_claims([unknown], records)[0]
+    other = source_fixture(2, "critic")
+    other["task"]["backend"] = None
+    other["task"]["submitted_backend"] = {"owner": "external_mcp", "server": "files"}
+    assert flow_module.source_records([other], {"critic"}) == {}
+
+
 def test_merging_a_proposition_keeps_every_supporting_document() -> None:
     first = claim(1)
     second = claim(2)
