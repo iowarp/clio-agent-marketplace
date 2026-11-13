@@ -1,0 +1,5 @@
+# Instance literals that must never ship in this plugin.
+ERA5
+nsf-ncar-era5
+Helene
+CLWC

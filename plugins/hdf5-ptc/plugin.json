@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "hdf5-ptc",
+  "version": "0.1.0",
+  "description": "HDF5 and NetCDF-4 files for agents that work in scripts: files opened by handle (many at once, local or by byte range from a linked source), the cost of a read priced from the chunk index before data moves, exact reductions located in coordinates, whole arrays for run_code scripts, and subsets written with provenance for other tools and 3D views.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "hdf5",
+    "netcdf",
+    "scientific-data",
+    "run_code"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "kernel_bindings": {
+        "hdf5": {
+          "source": "ai.iowarp.clio/kernel/hdf5.py",
+          "requires": ["h5_open_file", "h5_read"]
+        }
+      }
+    }
+  }
+}
