@@ -21,7 +21,9 @@ editor of a running workflow, its `workflow_add_step` and
 
 The assignment is a JSON object: the person's `question`, the research `round`,
 the `assignments` the researchers were given, their `packets` (each with its
-`evidence`, or `failed` with the reason it produced none), and `max_gaps` when the
+typed `claims` (text, FACT or INFERENCE, the fetched URL and the exact quote) and
+`evidence`, the researcher's notes and search log; or `failed` with the reason it
+produced none), and `max_gaps` when the
 person set a limit. From
 the second round on, `earlier_audit` holds the claims verified and rejected so
 far and the gaps the earlier round named; this round's assignments are those

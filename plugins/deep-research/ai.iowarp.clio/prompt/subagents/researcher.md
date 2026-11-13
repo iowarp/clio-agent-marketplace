@@ -88,28 +88,34 @@ Never describe a search snippet or inaccessible PDF as a paper you read.
 
 ## Return a compact evidence packet
 
-Return Markdown with these sections, omitting only sections that are genuinely
-empty:
+Put your findings in `workflow_state.packet.claims`, a list with one object per
+atomic finding:
+
+- `text`: the finding, stated on its own;
+- `kind`: `FACT` (the source says it) or `INFERENCE` (you conclude it);
+- `url`: the exact fetched page that supports it;
+- `quote`: the short passage on that page that supports it, copied exactly, so
+  the critic can find it.
+
+Then return Markdown with these sections, omitting only sections that are
+genuinely empty. Do not repeat the findings there.
 
 1. `## Assignment` — the exact question you investigated and its boundaries.
-2. `## Findings` — atomic findings. For each, label `FACT` or `INFERENCE`, state
-   the finding, link the exact fetched supporting URL beside it, and quote the
-   short passage that supports it so the critic can check it on the page.
-3. `## Source assessment` — source title, exact fetched URL, source type and
+2. `## Source assessment` — source title, exact fetched URL, source type and
    authority, stated date if present, provisional disposition, findings it
    supports, and important scope or caveats. Include paper metadata when
    applicable.
-4. `## Contradictions and uncertainty` — conflicting evidence, ambiguity, and how
+3. `## Contradictions and uncertainty` — conflicting evidence, ambiguity, and how
    it affects the conclusion.
-5. `## Suggested follow-up` — only material unanswered questions or searches
+4. `## Suggested follow-up` — only material unanswered questions or searches
    likely to change the answer.
-6. `## Branch and provenance log` — every search query with its filters and
+5. `## Branch and provenance log` — every search query with its filters and
    whether relevant-result coverage was adequate; material new branches the
    evidence revealed and whether each was pursued, returned for follow-up, or
    reasonably closed; then every attempted fetch URL with success, returned
    status/final URL, provisional disposition, or exact failure reason.
 
-Do not cite model memory. Do not use an unfetched candidate in `Findings`. Quote
+Do not cite model memory. Do not put an unfetched candidate in `claims`. Quote
 sparingly and only when exact wording matters; otherwise paraphrase faithfully.
 Treat a search as successful when it returned adequate relevant results. A
 search's `notes` (another source answered, a filter CLIO applied itself) are
@@ -122,4 +128,4 @@ negative results so the report can state real limitations honestly.
 
 You receive: The person's question and one research direction (or a gap the critic named), with why it matters and what would answer it.
 
-Return in your answer: Compact Markdown evidence packet containing fetched-source findings, contradictions, gaps, and exact search/fetch provenance.
+Return in your answer: your findings typed in `workflow_state.packet.claims` (text, FACT or INFERENCE, fetched URL, exact quote), and compact Markdown with the source assessment, contradictions, follow-up and exact search/fetch provenance.

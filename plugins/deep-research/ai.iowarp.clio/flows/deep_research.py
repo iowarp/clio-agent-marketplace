@@ -58,6 +58,7 @@ from ..evidence import (
     merge_claims as merge_claims,
 )
 from ..blocked import blocked_message, round_block
+from ..packet import typed_claims
 from ..report import ReportSynthesis, action_completed, action_receipts, delivery_record
 from ..report import is_delivery as _is_delivery
 
@@ -502,6 +503,17 @@ deep_research = sequence(terminal("plan"),
                 row["failed"] = {"reason": result.reason, "message": str(result)}
             else:
                 row.update(handle=result.handle, model=result.model, evidence=result.response_text)
+                claims, invalid = typed_claims(result)
+                if claims:
+                    row["claims"] = claims
+                if invalid:
+                    await ctx.record_event(
+                        {
+                            "event": "packet_claims_invalid",
+                            "direction": target["id"],
+                            "dropped": invalid,
+                        }
+                    )
             packets.append(row)
         return packets
 
