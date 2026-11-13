@@ -43,6 +43,10 @@ After each meaningful layout change:
 4. Correct defects and repeat the checks. Content extraction alone is not
    evidence of visual correctness.
 
+If `view_image` did not show you a page, because it failed or reported that
+the image was not shown to the model, name the pages that were not visually
+checked. Never claim that visual verification passed for them.
+
 Use `uv` for Python execution and dependency management. Typical dependencies
 are `reportlab`, `pypdf`, and Pillow; use only the packages the report needs.
 Place final deliverables under `output/pdf/` when the workspace has no more
