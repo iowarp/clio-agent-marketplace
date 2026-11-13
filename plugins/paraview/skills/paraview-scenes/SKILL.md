@@ -68,6 +68,15 @@ Read field names from it; never guess one. Keep the scene id it returns: passing
 - `set_camera`, `fit_camera`, `remove_scene_object` do what they say.
 - Large geometry is drawn by ParaView and sent as images; the view says so.
 
+## In a dashboard
+
+The live view can sit in a dashboard beside charts: a `clio.mcp-app.v1` component
+with server `paraview`, tool `open_view` and the `scene` the view already has, so
+the dashboard shows that scene rather than a picture of it. The view reports its
+time step as `time` (with `time_index`), and `set_timestep` takes `time`, so the
+state channel `{key: "time", path: "/selection/time", tool: "set_timestep"}` links
+it to a chart that selects on the same path, both ways.
+
 ## Keep the result
 
 `export_artifact` writes a figure; `export_scene` writes the scene manifest and
