@@ -30,6 +30,11 @@ class SourceEvidence(BaseModel):
         return value
 
 
+def claim_identity(claim: str) -> str:
+    """The ID of a proposition: derived from its exact text, for continuity only."""
+    return "claim_" + hashlib.sha256(claim.strip().encode()).hexdigest()[:16]
+
+
 class VerifiedClaim(BaseModel):
     """An atomic proposition with every necessary supporting passage retained."""
 
@@ -47,7 +52,7 @@ class VerifiedClaim(BaseModel):
 
     @model_validator(mode="after")
     def identify(self) -> "VerifiedClaim":
-        expected = "claim_" + hashlib.sha256(self.claim.encode()).hexdigest()[:16]
+        expected = claim_identity(self.claim)
         if self.claim_id and self.claim_id != expected:
             raise ValueError("claim_id must identify the exact proposition")
         self.claim_id = expected

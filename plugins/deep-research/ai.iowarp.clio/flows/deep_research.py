@@ -534,6 +534,7 @@ deep_research = sequence(terminal("plan"),
         records = dict(prior_audit._sources) if prior_audit is not None else {}
         records.update(source_records(rows, auditors))
         audit, problems = _audit_of(result, pending, prior_audit, request["operational_evidence"])
+        await _record_claim_repairs(ctx, audit, round_no, result.handle)
         if audit is not None:
             problems += bind_claims(audit.verified, records)
         if audit is None or problems:
@@ -583,6 +584,7 @@ deep_research = sequence(terminal("plan"),
                 request["operational_evidence"],
                 carry_resolutions=True,
             )
+            await _record_claim_repairs(ctx, audit, round_no, result.handle)
             auditors.add(result.handle)
             for auditor in sorted(auditors):
                 rows = await ctx.tool_results(auditor)
@@ -607,6 +609,19 @@ deep_research = sequence(terminal("plan"),
             "evidence_review": bool(evidence_review),
             "source_auditors": sorted(auditors),
         }
+
+
+async def _record_claim_repairs(ctx: Any, audit: Any, round_no: int, critic: str) -> None:
+    """Record claim IDs derived from their text in place of the critic's (no silent fix)."""
+    if audit is not None and audit._claim_id_repairs:
+        await ctx.record_event(
+            {
+                "event": "critic_claim_id_repaired",
+                "round": round_no,
+                "critic": critic,
+                "repairs": audit._claim_id_repairs,
+            }
+        )
 
 
 _OPTIONS = ("max_directions", "max_rounds", "concurrency", "researcher_model", "critic_model")

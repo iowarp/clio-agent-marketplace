@@ -193,3 +193,22 @@ def test_resolution_without_bound_support_is_not_preserved() -> None:
     )
     assert ledger.resolved_gaps == [] and ledger.gaps == pending
     assert diagnostic["excluded_rows"][0]["field"] == "resolved_gaps"
+
+
+def test_a_claim_id_that_does_not_name_its_text_is_derived_and_recorded() -> None:
+    """A reworded earlier claim that kept its old ID is a new proposition, not a stall."""
+    from clio_agent.flows.values import CallResult
+
+    reworded = {**claim(1), "claim": claim(1)["claim"] + " (as of version 2)"}
+    reworded["claim_id"] = claim(1)["claim_id"]  # the critic kept the earlier ID
+    final, errors = owner._audit_of(
+        CallResult(audit([reworded]), handle="critic", target="critic", kind="subagent"), []
+    )
+    assert final is not None and not errors
+    canonical = flow_module.VerifiedClaim.model_validate({**reworded, "claim_id": ""}).claim_id
+    assert final.verified[0].claim_id == canonical != claim(1)["claim_id"]
+    assert final._claim_id_repairs == [
+        {"row": 0, "submitted": claim(1)["claim_id"], "canonical": canonical}
+    ]
+    _, diagnostics = owner.repair_context({"verified": [reworded]}, [], None, records())
+    assert diagnostics["claim_id_repairs"][0]["canonical"] == canonical

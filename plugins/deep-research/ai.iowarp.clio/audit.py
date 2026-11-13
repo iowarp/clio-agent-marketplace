@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, PrivateAttr, ValidationError, model_valid
 
 from clio_agent.flows.outcomes import FlowStall
 
-from .evidence import VerifiedClaim, bind_claims, claim_urls, merge_claims
+from .evidence import VerifiedClaim, bind_claims, claim_identity, claim_urls, merge_claims
 
 
 class PermissionRequirement(BaseModel):
@@ -103,6 +103,31 @@ class Audit(BaseModel):
     gaps: list[Gap] = Field(default_factory=list)
     resolved_gaps: list[GapResolution] = Field(default_factory=list)
     _sources: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
+    #: Submitted claim IDs that did not identify their claim's text, as derived.
+    _claim_id_repairs: list[dict[str, Any]] = PrivateAttr(default_factory=list)
+
+
+def canonical_claim_ids(section: Any) -> tuple[Any, list[dict[str, Any]]]:
+    """Derive each verified claim's ID from its text, like gap IDs.
+
+    An ID identifies its exact proposition. A submitted ID that does not (a
+    reworded earlier claim kept its old ID) is replaced by the derived one: the
+    reworded text is a new proposition, and the earlier wording stays in the
+    ledger unless the critic rejects it. Each replacement is returned so the
+    flow records it; nothing else about the row changes.
+    """
+    if not isinstance(section, Mapping) or not isinstance(section.get("verified"), list):
+        return section, []
+    repairs: list[dict[str, Any]] = []
+    rows: list[Any] = []
+    for index, row in enumerate(section["verified"]):
+        if isinstance(row, Mapping) and isinstance(row.get("claim"), str) and row.get("claim_id"):
+            canonical = claim_identity(row["claim"])
+            if row["claim_id"] != canonical:
+                repairs.append({"row": index, "submitted": row["claim_id"], "canonical": canonical})
+                row = {**row, "claim_id": canonical}
+        rows.append(row)
+    return {**section, "verified": rows}, repairs
 
 
 def repair_context(
@@ -118,7 +143,7 @@ def repair_context(
     original submitted ID remains diagnostic evidence; the repaired audit still
     passes the ordinary strict validator. Unrepresentable requirements stall.
     """
-    raw = section if isinstance(section, Mapping) else {}
+    raw, claim_repairs = canonical_claim_ids(section if isinstance(section, Mapping) else {})
     ledger = Audit()
     excluded: list[dict[str, Any]] = []
     for field, model in (("verified", VerifiedClaim), ("rejected", RejectedClaim)):
@@ -197,6 +222,7 @@ def repair_context(
         "retained_rejections": [claim.model_dump() for claim in ledger.rejected],
         "open_gap_ids": [gap.gap_id for gap in ledger.gaps],
         "gap_id_repairs": identity_repairs,
+        "claim_id_repairs": claim_repairs,
         "excluded_rows": excluded,
         "retained_resolutions": [row.model_dump() for row in ledger.resolved_gaps],
     }
@@ -241,6 +267,7 @@ def _audit_of(
     section = result.workflow_state.get("audit")
     if not isinstance(section, Mapping):
         return None, ["workflow_state.audit is missing or not an object"]
+    section, claim_repairs = canonical_claim_ids(section)
     try:
         audit = Audit.model_validate(section)
     except ValidationError as exc:
@@ -248,6 +275,7 @@ def _audit_of(
             f"audit.{'.'.join(str(p) for p in error['loc'])}: {error['msg']}"
             for error in exc.errors()
         ]
+    audit._claim_id_repairs = claim_repairs
     known = {gap.gap_id: gap for gap in pending}
     remaining = {gap.gap_id: gap for gap in audit.gaps}
     _merge_ledger(audit, earlier)
