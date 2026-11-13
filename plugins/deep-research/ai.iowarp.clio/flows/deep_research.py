@@ -35,6 +35,7 @@ from ..audit import (
     Direction,
     Gap,
     _audit_of,
+    exclude_unbound,
     repair_context,
 )
 from ..audit import (
@@ -49,6 +50,7 @@ from ..evidence import (
     ReviewReport,
     VerifiedClaim,
     bind_claims,
+    paper_records,
     public_sources,
     source_records,
 )
@@ -533,7 +535,10 @@ deep_research = sequence(terminal("plan"),
         rows = await ctx.tool_results(result.handle)
         records = dict(prior_audit._sources) if prior_audit is not None else {}
         records.update(source_records(rows, auditors))
+        papers = dict(prior_audit._papers) if prior_audit is not None else {}
+        papers.update(paper_records(rows))
         audit, problems = _audit_of(result, pending, prior_audit, request["operational_evidence"])
+        await _record_claim_repairs(ctx, audit, round_no, result.handle)
         if audit is not None:
             problems += bind_claims(audit.verified, records)
         if audit is None or problems:
@@ -583,12 +588,25 @@ deep_research = sequence(terminal("plan"),
                 request["operational_evidence"],
                 carry_resolutions=True,
             )
+            await _record_claim_repairs(ctx, audit, round_no, result.handle)
             auditors.add(result.handle)
             for auditor in sorted(auditors):
                 rows = await ctx.tool_results(auditor)
                 records.update(source_records(rows, auditors))
-            if audit is not None:
-                problems += bind_claims(audit.verified, records)
+                papers.update(paper_records(rows))
+            if audit is not None and not problems:
+                # The critic had its repair; claims whose evidence still does not
+                # bind are rejected with their reason rather than stalling the run.
+                excluded = exclude_unbound(audit, records, pending, request["operational_evidence"])
+                if excluded:
+                    await ctx.record_event(
+                        {
+                            "event": "critic_unbound_claims_rejected",
+                            "round": round_no,
+                            "critic": result.handle,
+                            "excluded": excluded,
+                        }
+                    )
         if audit is None or problems:
             raise FlowStall(
                 "critic_audit_invalid",
@@ -598,6 +616,7 @@ deep_research = sequence(terminal("plan"),
                 handle=result.handle,
             )
         audit._sources = records
+        audit._papers = papers
         return audit, {
             "round": round_no,
             "handle": result.handle,
@@ -607,6 +626,20 @@ deep_research = sequence(terminal("plan"),
             "evidence_review": bool(evidence_review),
             "source_auditors": sorted(auditors),
         }
+
+
+async def _record_claim_repairs(ctx: Any, audit: Any, round_no: int, critic: str) -> None:
+    """Record IDs derived from claims' text and gaps' fields in place of the critic's."""
+    if audit is not None and (audit._claim_id_repairs or audit._gap_id_repairs):
+        await ctx.record_event(
+            {
+                "event": "critic_id_repaired",
+                "round": round_no,
+                "critic": critic,
+                "claim_id_repairs": audit._claim_id_repairs,
+                "gap_id_repairs": audit._gap_id_repairs,
+            }
+        )
 
 
 _OPTIONS = ("max_directions", "max_rounds", "concurrency", "researcher_model", "critic_model")
