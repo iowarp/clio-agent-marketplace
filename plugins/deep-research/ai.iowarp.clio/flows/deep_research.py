@@ -49,6 +49,7 @@ from ..evidence import (
     ReviewReport,
     VerifiedClaim,
     bind_claims,
+    paper_records,
     public_sources,
     source_records,
 )
@@ -533,6 +534,8 @@ deep_research = sequence(terminal("plan"),
         rows = await ctx.tool_results(result.handle)
         records = dict(prior_audit._sources) if prior_audit is not None else {}
         records.update(source_records(rows, auditors))
+        papers = dict(prior_audit._papers) if prior_audit is not None else {}
+        papers.update(paper_records(rows))
         audit, problems = _audit_of(result, pending, prior_audit, request["operational_evidence"])
         await _record_claim_repairs(ctx, audit, round_no, result.handle)
         if audit is not None:
@@ -589,6 +592,7 @@ deep_research = sequence(terminal("plan"),
             for auditor in sorted(auditors):
                 rows = await ctx.tool_results(auditor)
                 records.update(source_records(rows, auditors))
+                papers.update(paper_records(rows))
             if audit is not None:
                 problems += bind_claims(audit.verified, records)
         if audit is None or problems:
@@ -600,6 +604,7 @@ deep_research = sequence(terminal("plan"),
                 handle=result.handle,
             )
         audit._sources = records
+        audit._papers = papers
         return audit, {
             "round": round_no,
             "handle": result.handle,

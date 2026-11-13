@@ -149,7 +149,7 @@ class ReportSynthesis:
             issues: list[dict[str, Any]] = []
             try:
                 typed = [ReportBlock.model_validate(row) for row in blocks]
-                report = render_report(typed, audit.verified)
+                report = render_report(typed, audit.verified, audit._papers)
             except (ValidationError, ValueError) as exc:
                 issues.append(
                     ReviewIssue(owner="report", excerpt=str(blocks), reason=str(exc)).model_dump()

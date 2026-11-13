@@ -103,6 +103,8 @@ class Audit(BaseModel):
     gaps: list[Gap] = Field(default_factory=list)
     resolved_gaps: list[GapResolution] = Field(default_factory=list)
     _sources: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
+    #: Bibliographic records from the auditors' literature tool results (by identity).
+    _papers: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
     #: Submitted claim IDs that did not identify their claim's text, as derived.
     _claim_id_repairs: list[dict[str, Any]] = PrivateAttr(default_factory=list)
     #: Submitted gap IDs that did not identify their gap's fields, as derived.
