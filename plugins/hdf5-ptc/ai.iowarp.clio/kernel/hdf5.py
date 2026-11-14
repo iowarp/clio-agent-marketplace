@@ -1,5 +1,7 @@
 """``hdf5``: HDF5 and NetCDF-4 files from a script, read as NumPy arrays.
 
+Every call is async: ``await`` each one (top-level ``await`` works in run_code).
+
     f = await hdf5.open("/data/run.nc")            # a local path, or a range URL from
                                                    # connected_data_open(range=True)
     print(await f.describe("/T"))                  # dims, units, chunks, packing
