@@ -186,7 +186,11 @@ class ReportSynthesis:
                 issues.append(
                     ReviewIssue(owner="report", excerpt=str(blocks), reason=str(exc)).model_dump()
                 )
-            outside = cited_outside(report, verified) if report else []
+            # Only the writer's own prose can cite outside the evidence: the citations
+            # and References the flow renders come from verified claims, and a fetched
+            # page's title can itself contain a URL (a funding note, 2026-11-14).
+            prose = "\n\n".join(str(row.get("text") or "") for row in blocks)
+            outside = cited_outside(prose, verified) if report else []
             document = (report + self.record(gaps, rejected)).replace("\r\n", "\n")
             if outside:
                 draft_citations += [url for url in outside if url not in draft_citations]

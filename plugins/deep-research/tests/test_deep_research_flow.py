@@ -1654,3 +1654,35 @@ def test_a_failed_coordinator_keeps_the_evidence_and_leaves_proposals_open() -> 
     assert result["verified"] == [claim(1)] and result["gaps_unresolved"] == [gap("left open")]
     (failed,) = [e for e in ctx.events if e["event"] == "coordinator_failed"]
     assert failed["reason"] == "ValueError: the reply was not the declared shape"
+
+
+def test_a_url_inside_a_fetched_title_is_neither_flagged_nor_printed_whole() -> None:
+    # 2026-11-14: an arXiv page's title carried its funding note and a DOE URL. The
+    # flow printed it as the citation label, then flagged the URL as the writer's.
+    title = (
+        "PROV-AGENT: Unified Provenance Thanks: Cite this paper as ... The DOE will "
+        "provide public access in accordance with the DOE Public Access Plan "
+        "(http://energy.gov/downloads/doe-public-access-plan)."
+    )
+    titled = claim(1)
+    titled["evidence"][0]["source_title"] = title
+
+    class Titled(Children):
+        def __call__(self, target: str, payload: Any) -> dict[str, Any]:
+            if target == "critic":
+                return audit([titled])
+            return super().__call__(target, payload)
+
+    class TitledCtx(ScriptedCtx):
+        async def tool_results(self, handle: str) -> list[dict[str, Any]]:
+            rows = await super().tool_results(handle)
+            for row in rows:
+                row["value"]["title"] = title
+            return rows
+
+    ctx = TitledCtx(Titled([]))
+    result = run(make_flow(Planner(["a"]), max_rounds=0), ctx)
+    assert result["citations_outside_verified"] == []
+    assert [r["status"] for r in result["report_reviews"]] == ["accepted_by_reviewer"]
+    assert "energy.gov" not in result["answer"]
+    assert "[PROV-AGENT: Unified Provenance Thanks: Cite this paper as" in result["answer"]

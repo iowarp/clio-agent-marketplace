@@ -409,7 +409,7 @@ def _reference(url: str, title: str, papers: Mapping[str, dict[str, Any]]) -> st
     paper = paper_for(url, papers)
     link = lambda label: f"[{_markdown_label(label)}](<{url.replace('>', '%3E')}>)"  # noqa: E731
     if paper is None:
-        return f"- {link(title)}"
+        return f"- {link(_short_title(title))}"
     authors = [str(a) for a in paper.get("authors") or [] if str(a) != "et al."]
     names = ", ".join(authors[:3])
     if names and (len(authors) > 3 or "et al." in (paper.get("authors") or [])):
@@ -451,7 +451,7 @@ def render_report(
         if citations:
             links = []
             for url, title in citations.items():
-                safe_title = _markdown_label(title)
+                safe_title = _markdown_label(_short_title(title))
                 links.append(f"[{safe_title}](<{url.replace('>', '%3E')}>)")
             text += ("\n\n" if "\n" in text else " ") + " ".join(links)
             used.update(citations)
@@ -462,6 +462,19 @@ def render_report(
             + "\n".join(_reference(url, title, papers or {}) for url, title in used.items())
         )
     return "\n\n".join(parts)
+
+
+#: Characters of a fetched page's title shown in a citation; the full title stays in
+#: the source record. Some pages put a whole funding or citation note in their title.
+TITLE_CHARS = 120
+
+
+def _short_title(title: str) -> str:
+    """A page title for display: whitespace collapsed, cut at a word past ``TITLE_CHARS``."""
+    text = " ".join(title.split())
+    if len(text) <= TITLE_CHARS:
+        return text
+    return text[:TITLE_CHARS].rsplit(" ", 1)[0].rstrip(",;:.") + "…"
 
 
 def _markdown_label(title: str) -> str:
