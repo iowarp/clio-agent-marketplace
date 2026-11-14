@@ -197,6 +197,60 @@ class Planner:
         )
 
 
+class Coordinator:
+    """Stands in for the coordinator.
+
+    Scripted with ``decisions`` (one per round), it returns them in order. Otherwise
+    it follows up every proposed web gap no assignment has asked yet while rounds
+    remain, and lists them as open questions when none do.
+    """
+
+    def __init__(self, decisions: list[dict[str, Any]] | None = None) -> None:
+        self.decisions = None if decisions is None else list(decisions)
+        self.given: list[dict[str, Any]] = []
+
+    def __call__(
+        self,
+        *,
+        question: str,
+        plan: list[dict[str, Any]],
+        assignments: list[dict[str, Any]],
+        verified: list[dict[str, Any]],
+        proposed_gaps: list[Any],
+        researcher_tools: list[str],
+        rounds_left: int,
+        max_follow_ups: int | None,
+    ) -> Any:
+        self.given.append(
+            {
+                "question": question,
+                "plan": plan,
+                "assignments": assignments,
+                "verified": verified,
+                "proposed_gaps": [row.model_dump() for row in proposed_gaps],
+                "researcher_tools": researcher_tools,
+                "rounds_left": rounds_left,
+                "max_follow_ups": max_follow_ups,
+            }
+        )
+        if self.decisions is not None:
+            decision = self.decisions.pop(0) if self.decisions else {}
+            return dspy.Prediction(
+                across=decision.get("across", []),
+                follow_ups=decision.get("follow_ups", []),
+                open_questions=decision.get("open_questions", []),
+            )
+        asked = {row["question"] for row in assignments}
+        rows = [
+            {k: v for k, v in row.model_dump().items() if k != "gap_id"}
+            for row in proposed_gaps
+            if row.closure_kind == "web_research" and row.question not in asked
+        ]
+        if rounds_left:
+            return dspy.Prediction(across=[], follow_ups=rows, open_questions=[])
+        return dspy.Prediction(across=[], follow_ups=[], open_questions=rows)
+
+
 class Writer:
     """Stands in for the writer module: cites every verified claim it was given."""
 
@@ -210,6 +264,7 @@ class Writer:
         *,
         question: str,
         verified: list[Any],
+        across: list[Any],
         unresolved_gaps: list[Any],
         delivery: dict[str, Any],
         operational_evidence: dict[str, Any],
@@ -221,6 +276,7 @@ class Writer:
             {
                 "question": question,
                 "verified": [c.model_dump() for c in verified],
+                "across": across,
                 "unresolved_gaps": [g.model_dump() for g in unresolved_gaps],
                 "delivery": delivery,
                 "operational_evidence": operational_evidence,
@@ -360,17 +416,22 @@ class Children:
                 raise CallFailed(f"researcher on {question!r} failed", handle="task_failed")
             return {"answer": f"packet for {question}"}
         if target == "critic":
-            return self.audits.pop(0)
+            return self.audits.pop(0) if self.audits else audit()
         raise AssertionError(f"unexpected target {target}")
 
 
 def make_flow(
-    planner: Planner, writer: Writer | None = None, reviewer: Reviewer | None = None, **options: Any
+    planner: Planner,
+    writer: Writer | None = None,
+    reviewer: Reviewer | None = None,
+    coordinator: Coordinator | None = None,
+    **options: Any,
 ) -> Any:
     flow = DeepResearch()
     for key, value in DeepResearch.checked_options(options).items():
         setattr(flow, key, value)
     flow.planner = planner
+    flow.coordinator = coordinator or Coordinator()
     flow.writer = writer or Writer()
     flow.reviewer = reviewer or Reviewer()
     return flow
@@ -408,9 +469,11 @@ def test_the_critic_receives_public_evidence_before_the_final_addendum() -> None
 
 
 def test_plan_research_verify_report() -> None:
-    planner, writer = Planner(["a", "b"]), Writer()
-    ctx = ScriptedCtx(Children([audit([claim(1), claim(2)])]))
-    flow = make_flow(planner, writer, researcher_model="acct/small", critic_model="acct/large")
+    planner, writer, coordinator = Planner(["a", "b"]), Writer(), Coordinator()
+    ctx = ScriptedCtx(Children([audit([claim(1)]), audit([claim(2)])]))
+    flow = make_flow(
+        planner, writer, coordinator=coordinator, researcher_model="acct/small", critic_model="acct/large"
+    )
 
     result = run(flow, ctx)
 
@@ -426,54 +489,77 @@ def test_plan_research_verify_report() -> None:
     assert [r["key"] for r in researchers] == ["research:d1", "research:d2"]
     assert [r["input"]["direction"]["question"] for r in researchers] == ["a", "b"]
     assert {r["model"] for r in researchers} == {"acct/small"}
-    (critic,) = of(ctx, "critic")
-    assert critic["key"] == "verify:1" and critic["model"] == "acct/large"
-    assert critic["evidence"] == ["task_1", "task_2"]
-    assert [p["evidence"] for p in critic["input"]["packets"]] == ["packet for a", "packet for b"]
-    assert ctx.steps == ["DeepResearch._plan", "DeepResearch._write", "DeepResearch._review"]
+    # One critic per researcher, each with only its researcher's packet.
+    critics = of(ctx, "critic")
+    assert [c["key"] for c in critics] == ["verify:1:d1", "verify:1:d2"]
+    assert [c["label"] for c in critics] == ["Check: a", "Check: b"]
+    assert {c["model"] for c in critics} == {"acct/large"}
+    assert [c["evidence"] for c in critics] == [["task_1"], ["task_2"]]
+    assert [[p["evidence"] for p in c["input"]["packets"]] for c in critics] == [
+        ["packet for a"],
+        ["packet for b"],
+    ]
+    assert "max_gaps" not in critics[0]["input"]
+    assert ctx.steps == [
+        "DeepResearch._plan",
+        "DeepResearch._coordinate",
+        "DeepResearch._write",
+        "DeepResearch._review",
+    ]
+    (seen,) = coordinator.given
+    assert seen["rounds_left"] == 1 and seen["max_follow_ups"] is None
+    assert [row["claim_id"] for row in seen["verified"]] == [
+        claim(1)["claim_id"],
+        claim(2)["claim_id"],
+    ]
+    assert seen["assignments"] == [
+        {"id": "d1", "question": "a", "round": 1, "outcome": {"verified": 1, "rejected": 0}},
+        {"id": "d2", "question": "b", "round": 1, "outcome": {"verified": 1, "rejected": 0}},
+    ]
     assert writer.given[0]["verified"] == [claim(1), claim(2)]
     assert result["verified"] == [claim(1), claim(2)]
     assert result["rejected"] == [] and result["gaps_unresolved"] == []
     assert result["rounds"] == 1 and result["citations_outside_verified"] == []
     assert [d["id"] for d in result["directions"]] == ["d1", "d2"]
     assert [r["handle"] for r in result["researchers"]] == ["task_1", "task_2"]
+    revision = flow_module._permission_revision({"status": "available", "receipts": []})
     assert result["critics"] == [
         {
             "round": 1,
-            "handle": "task_3",
+            "direction": direction,
+            "handle": handle,
             "model": "acct/large",
             "operational_update": False,
             "evidence_review": False,
-            "source_auditors": ["task_3"],
-            "permission_revision": flow_module._permission_revision(
-                {"status": "available", "receipts": []}
-            ),
+            "source_auditors": [handle],
+            "permission_revision": revision,
         }
+        for direction, handle in (("d1", "task_3"), ("d2", "task_4"))
     ]
     assert "## Unresolved questions" not in result["answer"]
     assert result["answer"].startswith("# Report")
 
 
-def test_a_named_gap_gets_exactly_one_targeted_round() -> None:
-    audits = [
-        audit([claim(1)], gaps=[gap("who ruled?")]),
-        audit([claim(1), claim(2)], resolved=["who ruled?"]),
-    ]
+def test_a_follow_up_the_coordinator_chooses_gets_one_targeted_round() -> None:
+    audits = [audit([claim(1)], gaps=[gap("who ruled?")]), audit(), audit([claim(2)])]
     ctx = ScriptedCtx(Children(audits))
+    coordinator = Coordinator()
 
-    result = run(make_flow(Planner(["a", "b"])), ctx)
+    result = run(make_flow(Planner(["a", "b"]), coordinator=coordinator), ctx)
 
     researchers = of(ctx, "researcher")
     assert [r["key"] for r in researchers] == ["research:d1", "research:d2", "research:g2.1"]
     assert researchers[2]["input"]["direction"]["question"] == "who ruled?"
     assert researchers[2]["input"]["round"] == 2
-    first, second = of(ctx, "critic")
-    assert second["key"] == "verify:2"
-    # The second critic reads only the new packet, with the first audit pinned and carried.
-    assert second["evidence"] == ["task_4", "task_3", "fetch_1"]
-    assert [p["id"] for p in second["input"]["packets"]] == ["g2.1"]
-    assert second["input"]["earlier_audit"]["verified"] == [claim(1)]
-    assert second["input"]["earlier_audit"]["gaps"] == [gap("who ruled?")]
+    third = of(ctx, "critic")[2]
+    assert third["key"] == "verify:2:g2.1"
+    # The follow-up's critic reads only the new packet; the ledger is merged by the flow.
+    assert third["evidence"] == ["task_5"] and "earlier_audit" not in third["input"]
+    assert [p["id"] for p in third["input"]["packets"]] == ["g2.1"]
+    first, last = coordinator.given
+    assert first["proposed_gaps"] == [gap("who ruled?")] and first["rounds_left"] == 1
+    assert [row["id"] for row in last["assignments"]] == ["d1", "d2", "g2.1"]
+    assert last["rounds_left"] == 0
     assert result["rounds"] == 2 and result["gaps_unresolved"] == []
     assert result["verified"] == [claim(1), claim(2)]
 
@@ -530,7 +616,9 @@ def test_planner_requirements_are_routed_using_the_actual_declared_allowlist() -
     assert [c["input"]["direction"]["question"] for c in of(ctx, "researcher")] == [
         "public documentation"
     ]
-    assert of(ctx, "critic")[0]["input"]["assignments"][0]["question"] == "Inspect a local report"
+    assert [row["question"] for row in of(ctx, "critic")[0]["input"]["assignments"]] == [
+        "public documentation"
+    ]
     assert result["gaps_unresolved"] == [filesystem, delivery]
     assert result["persistence"]["status"] == "unavailable"
 
@@ -543,7 +631,7 @@ def test_planner_requirements_are_routed_using_the_actual_declared_allowlist() -
     assert result["gaps_unresolved"] == [gap("public documentation")]
 
 
-def test_a_later_critic_sees_deferred_requirements_but_only_web_gaps_are_delegated(
+def test_the_coordinator_sees_deferred_requirements_but_only_web_follow_ups_run(
     tmp_path: Path,
 ) -> None:
     delivery = gap(
@@ -553,23 +641,16 @@ def test_a_later_critic_sees_deferred_requirements_but_only_web_gaps_are_delegat
         action="persist_report",
     )
     ctx = ScriptedCtx(
-        Children(
-            [
-                audit([claim(1)], gaps=[delivery, gap("contradiction")]),
-                audit([claim(1), claim(2)], gaps=[delivery], resolved=["contradiction"]),
-            ]
-        ),
+        Children([audit([claim(1)], gaps=[delivery, gap("contradiction")]), audit([claim(2)])]),
         workspace=tmp_path,
     )
-    result = run(make_flow(Planner(["a"])), ctx)
+    coordinator = Coordinator()
+    result = run(make_flow(Planner(["a"]), coordinator=coordinator), ctx)
     assert [r["input"]["direction"]["question"] for r in of(ctx, "researcher")] == [
         "a",
         "contradiction",
     ]
-    assert of(ctx, "critic")[1]["input"]["earlier_audit"]["gaps"] == [
-        delivery,
-        gap("contradiction"),
-    ]
+    assert coordinator.given[0]["proposed_gaps"] == [delivery, gap("contradiction")]
     assert result["gaps_unresolved"] == []
     assert sum(s.endswith("persist_report") for s in ctx.steps) == 1
 
@@ -645,7 +726,7 @@ def test_malformed_closure_requirements_are_not_silently_web_work(changes: dict[
 def test_a_gap_left_open_at_the_bound_is_reported_unresolved() -> None:
     audits = [
         audit([claim(1)], gaps=[gap("who ruled?")]),
-        audit([claim(1)], gaps=[gap("when?")], resolved=["who ruled?"]),
+        audit([claim(1)], gaps=[gap("when?")]),
     ]
     writer = Writer()
     ctx = ScriptedCtx(Children(audits))
@@ -658,17 +739,18 @@ def test_a_gap_left_open_at_the_bound_is_reported_unresolved() -> None:
     assert "## Unresolved questions\n\n- when? (it could change the answer)" in result["answer"]
 
 
-def test_omission_cannot_erase_an_unanswered_requirement_or_a_capped_web_gap() -> None:
+def test_a_capped_follow_up_and_an_unanswered_requirement_stay_open() -> None:
     external = gap("Operator input", closure_kind="external_input", required_tools=[])
     pending = [external, gap("selected follow-up"), gap("capped follow-up")]
     ctx = ScriptedCtx(Children([audit([claim(1)], gaps=pending), audit([claim(1)])]))
     result = run(make_flow(Planner(["a"]), max_directions=1, max_rounds=1), ctx)
-    assert result["gaps_unresolved"] == pending
+    assert result["gaps_unresolved"] == [external, gap("capped follow-up")]
     assert [r["input"]["direction"]["question"] for r in of(ctx, "researcher")] == [
         "a",
         "selected follow-up",
     ]
-    assert of(ctx, "critic")[1]["input"]["open_requirements"] == pending
+    (capped,) = [e for e in ctx.events if e["event"] == "follow_ups_capped"]
+    assert capped["dropped"] == ["capped follow-up"]
 
 
 def test_gap_closure_requires_prior_identity_and_verified_evidence_or_scope_reason() -> None:
@@ -963,18 +1045,17 @@ def test_prior_claims_cannot_disappear_without_an_explicit_audit_update() -> Non
 
 
 @pytest.mark.parametrize("max_rounds", [0, 1, 2, 3])
-def test_max_rounds_bounds_the_gap_rounds(max_rounds: int) -> None:
-    audits = [
-        audit([claim(1)], gaps=[gap(f"open {n}")], resolved=[f"open {n - 1}"] if n else [])
-        for n in range(10)
-    ]
+def test_max_rounds_bounds_the_follow_up_rounds(max_rounds: int) -> None:
+    audits = [audit([claim(1)], gaps=[gap(f"open {n}")]) for n in range(10)]
     ctx = ScriptedCtx(Children(audits))
+    coordinator = Coordinator()
 
-    result = run(make_flow(Planner(["a"]), max_rounds=max_rounds), ctx)
+    result = run(make_flow(Planner(["a"]), coordinator=coordinator, max_rounds=max_rounds), ctx)
 
     assert len(of(ctx, "critic")) == max_rounds + 1
     assert len(of(ctx, "researcher")) == max_rounds + 1
     assert result["rounds"] == max_rounds + 1
+    assert [row["rounds_left"] for row in coordinator.given] == list(range(max_rounds, -1, -1))
     assert result["gaps_unresolved"] == [gap(f"open {max_rounds}")]
 
 
@@ -983,9 +1064,11 @@ def test_max_directions_caps_the_plan_and_each_gap_round() -> None:
     audits = [audit(gaps=[gap(f"g{n}") for n in range(1, 5)]), audit()]
     ctx = ScriptedCtx(Children(audits))
 
-    result = run(make_flow(planner, max_directions=3, max_rounds=1), ctx)
+    coordinator = Coordinator()
+    result = run(make_flow(planner, coordinator=coordinator, max_directions=3, max_rounds=1), ctx)
 
     assert planner.asked[0]["max_directions"] == 3
+    assert coordinator.given[0]["max_follow_ups"] == 3
     assert [r["key"] for r in of(ctx, "researcher")] == [
         "research:d1",
         "research:d2",
@@ -995,10 +1078,9 @@ def test_max_directions_caps_the_plan_and_each_gap_round() -> None:
         "research:g2.3",
     ]
     assert [d["question"] for d in result["directions"]] == ["q1", "q2", "q3"]
-    assert of(ctx, "critic")[0]["input"]["max_gaps"] == 3
-    assert ctx.events[:2] == [
+    assert [e for e in ctx.events if e["event"].endswith("_capped")] == [
         {"event": "directions_capped", "round": 0, "asked": 5, "kept": 3, "dropped": ["q4", "q5"]},
-        {"event": "gaps_capped", "round": 2, "asked": 4, "kept": 3, "dropped": ["g4"]},
+        {"event": "follow_ups_capped", "round": 2, "asked": 4, "kept": 3, "dropped": ["g4"]},
     ]
 
 
@@ -1106,7 +1188,7 @@ def test_an_audit_off_schema_is_restated_once_then_stalls() -> None:
     result = run(make_flow(Planner(["a"])), ctx)
 
     first, repair = of(ctx, "critic")
-    assert repair["key"] == "verify:1:repair" and repair["evidence"] == ["task_2"]
+    assert repair["key"] == "verify:1:d1:repair" and repair["evidence"] == ["task_2"]
     assert any("evidence" in problem for problem in repair["input"]["repair"])
     assert result["verified"] == [claim(1)]
 
@@ -1327,12 +1409,15 @@ def test_source_repair_reobserves_the_original_auditor_without_inventing_fetch_s
     assert result["verified"] == [claim(1)]
 
 
-def test_a_failed_researcher_reaches_the_critic_and_all_failing_ends_the_run() -> None:
+def test_a_failed_researcher_reaches_the_coordinator_and_all_failing_ends_the_run() -> None:
     ctx = ScriptedCtx(Children([audit(gaps=[gap("b again")])], fail={"b"}))
-    result = run(make_flow(Planner(["a", "b"]), max_rounds=0), ctx)
-    packets = of(ctx, "critic")[0]["input"]["packets"]
-    assert packets[1]["failed"]["reason"] == "call_failed" and "evidence" not in packets[1]
-    assert of(ctx, "critic")[0]["evidence"] == ["task_1"]
+    coordinator = Coordinator()
+    result = run(make_flow(Planner(["a", "b"]), coordinator=coordinator, max_rounds=0), ctx)
+    # A failed researcher has nothing to check: only the other one gets a critic.
+    (critic,) = of(ctx, "critic")
+    assert [p["id"] for p in critic["input"]["packets"]] == ["d1"]
+    assert critic["evidence"] == ["task_1"]
+    assert coordinator.given[0]["assignments"][1]["outcome"] == {"failed": "call_failed"}
     assert result["researchers"][1]["failed"]["reason"] == "call_failed"
 
     ctx = ScriptedCtx(Children([], fail={"a", "b"}))
@@ -1340,11 +1425,14 @@ def test_a_failed_researcher_reaches_the_critic_and_all_failing_ends_the_run() -
         run(make_flow(Planner(["a", "b"])), ctx)
     assert of(ctx, "critic") == []
 
-    # A gap round whose researchers all fail still reaches the critic.
-    audits = [audit([claim(1)], gaps=[gap("b")]), audit([claim(1)], gaps=[gap("b")])]
-    ctx = ScriptedCtx(Children(audits, fail={"b"}))
-    result = run(make_flow(Planner(["a"]), max_rounds=1), ctx)
-    assert of(ctx, "critic")[1]["input"]["packets"][0]["failed"]["reason"] == "call_failed"
+    # A follow-up round whose researchers all fail keeps the ledger; the coordinator
+    # sees the failure and says what stays open.
+    decisions = [{"follow_ups": [gap("b")]}, {"open_questions": [gap("b")]}]
+    ctx = ScriptedCtx(Children([audit([claim(1)])], fail={"b"}))
+    coordinator = Coordinator(decisions)
+    result = run(make_flow(Planner(["a"]), coordinator=coordinator, max_rounds=1), ctx)
+    assert len(of(ctx, "critic")) == 1
+    assert coordinator.given[1]["assignments"][1]["outcome"] == {"failed": "call_failed"}
     assert result["verified"] == [claim(1)] and result["gaps_unresolved"] == [gap("b")]
 
 
@@ -1375,8 +1463,8 @@ def test_options_are_checked_before_a_run_starts() -> None:
         ({"max_rounds": True}, "max_rounds must be int"),
         ({"researcher_model": 3}, "researcher_model must be str"),
         ({"max_rounds": 9}, "max_rounds must be between 0 and 5"),
-        ({"max_directions": 40}, "max_directions must be between 0 and 32"),
-        ({"concurrency": -1}, "concurrency must be between 0 and 32"),
+        ({"max_directions": 40}, "max_directions must be between 0 and 20"),
+        ({"concurrency": -1}, "concurrency must be between 0 and 20"),
         ({"max_direction": 2}, "max_direction is not an option"),
     ]:
         with pytest.raises(FlowOptionsInvalid) as refused:
@@ -1481,11 +1569,88 @@ def test_a_long_unnamed_question_is_shortened_at_a_word() -> None:
     assert label == "What do the OpenTelemetry GenAI semantic…"
 
 
-def test_a_restated_gap_is_researched_once_per_round() -> None:
-    same = "What do the release notes say?"
-    first = audit(gaps=[gap(same), gap(same, required_tools=["web_search", "web_fetch"])])
-    ctx = ScriptedCtx(Children([first, audit()]))
-    run(make_flow(Planner(["a"]), max_rounds=1), ctx)
-    assert [r["key"] for r in of(ctx, "researcher")] == ["research:d1", "research:g2.1"]
-    (merged,) = [e for e in ctx.events if e.get("event") == "gaps_merged"]
-    assert merged["round"] == 2 and len(merged["merged"]) == 1
+def test_only_the_coordinator_sends_follow_ups() -> None:
+    # Critics propose; a coordinator that sees nothing worth researching ends the run.
+    ctx = ScriptedCtx(Children([audit([claim(1)], gaps=[gap("worth a look?")])]))
+    coordinator = Coordinator([{"open_questions": [gap("worth a look?")]}])
+    result = run(make_flow(Planner(["a"]), coordinator=coordinator, max_rounds=2), ctx)
+    assert [r["key"] for r in of(ctx, "researcher")] == ["research:d1"]
+    assert result["rounds"] == 1 and result["gaps_unresolved"] == [gap("worth a look?")]
+    (event,) = [e for e in ctx.events if e["event"] == "coordinated"]
+    assert event["follow_ups"] == [] and event["rounds_left"] == 2
+
+
+def test_follow_ups_that_cannot_run_stay_open_questions() -> None:
+    local = gap("read the lab notebook", required_tools=["fs_read"])
+    late = gap("one more angle")
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    coordinator = Coordinator([{"follow_ups": [local]}, {"follow_ups": [late]}])
+    result = run(make_flow(Planner(["a"]), coordinator=coordinator, max_rounds=0), ctx)
+    # rounds_left is 0: every follow-up it still asks for is an open question.
+    assert [r["key"] for r in of(ctx, "researcher")] == ["research:d1"]
+    assert result["gaps_unresolved"] == [local]
+    assert [e["event"] for e in ctx.events if e["event"].startswith("follow_ups")] == [
+        "follow_ups_after_last_round"
+    ]
+
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    coordinator = Coordinator([{"follow_ups": [local, late]}, {}])
+    result = run(make_flow(Planner(["a"]), coordinator=coordinator, max_rounds=1), ctx)
+    assert [r["input"]["direction"]["question"] for r in of(ctx, "researcher")] == [
+        "a",
+        "one more angle",
+    ]
+    (refused,) = [e for e in ctx.events if e["event"] == "follow_ups_not_researchable"]
+    assert refused["questions"] == ["read the lab notebook"]
+
+
+def test_across_reaches_the_writer_only_on_verified_claims() -> None:
+    finding = {
+        "kind": "corroboration",
+        "statement": "Two independent sources agree",
+        "claim_ids": [claim(1)["claim_id"], "claim_invented"],
+    }
+    writer = Writer()
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    coordinator = Coordinator([{"across": [finding]}])
+    result = run(make_flow(Planner(["a"]), writer, coordinator=coordinator, max_rounds=0), ctx)
+    kept = {**finding, "claim_ids": [claim(1)["claim_id"]]}
+    assert writer.given[0]["across"] == [kept] and result["across"] == [kept]
+    (cut,) = [e for e in ctx.events if e["event"] == "across_unverified_claims"]
+    assert cut["cut"] == [
+        {"statement": "Two independent sources agree", "unknown_claim_ids": ["claim_invented"]}
+    ]
+
+
+def test_critics_run_together_and_a_failed_critic_leaves_the_rest() -> None:
+    class Slow(Children):
+        def __call__(self, target: str, payload: Any) -> dict[str, Any]:
+            packets = payload.get("packets") or [{}]
+            if target == "critic" and (packets[0].get("id") == "d2" or "repair" in payload):
+                return {"answer": "prose, no audit"}
+            return super().__call__(target, payload)
+
+    ctx = ScriptedCtx(Slow([audit([claim(1)]), audit([claim(3)])]))
+    coordinator = Coordinator()
+    result = run(make_flow(Planner(["a", "b", "c"]), coordinator=coordinator, max_rounds=0), ctx)
+    assert ctx.most_in_flight >= 2
+    assert result["verified"] == [claim(1), claim(3)]
+    outcomes = [row["outcome"] for row in coordinator.given[0]["assignments"]]
+    assert outcomes[1] == {"check_failed": "critic_audit_invalid"}
+    (failed,) = [e for e in ctx.events if e["event"] == "check_failed"]
+    assert failed["direction"] == "d2"
+
+
+
+
+def test_a_failed_coordinator_keeps_the_evidence_and_leaves_proposals_open() -> None:
+    class Broken(Coordinator):
+        def __call__(self, **kwargs: Any) -> Any:
+            raise ValueError("the reply was not the declared shape")
+
+    ctx = ScriptedCtx(Children([audit([claim(1)], gaps=[gap("left open")])]))
+    result = run(make_flow(Planner(["a"]), coordinator=Broken(), max_rounds=2), ctx)
+    assert [r["key"] for r in of(ctx, "researcher")] == ["research:d1"]
+    assert result["verified"] == [claim(1)] and result["gaps_unresolved"] == [gap("left open")]
+    (failed,) = [e for e in ctx.events if e["event"] == "coordinator_failed"]
+    assert failed["reason"] == "ValueError: the reply was not the declared shape"

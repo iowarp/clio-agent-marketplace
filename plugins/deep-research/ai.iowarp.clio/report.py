@@ -141,7 +141,7 @@ class ReportSynthesis:
         self,
         question: str,
         audit: Any,
-        packets: list[dict[str, Any]],
+        across: list[dict[str, Any]],
         critics: list[dict[str, Any]],
         resolutions: list[dict[str, Any]],
         rounds: int,
@@ -168,6 +168,7 @@ class ReportSynthesis:
                 outside,
                 feedback,
                 blocks,
+                across,
             )
             blocks = written.get("blocks") or []
             if not blocks or not any(
@@ -266,11 +267,12 @@ class ReportSynthesis:
                         step="report",
                         observed={"draft": report, "reviews": reviews},
                     )
+                # The disputed claims, against the pinned sources: not the whole round again.
                 audit, critic = await self.flow._verify(
                     self.ctx,
                     question,
                     [],
-                    packets,
+                    [],
                     (audit, critics[-1]),
                     rounds,
                     evidence_review=[issue for issue in issues if issue["owner"] == "audit"],

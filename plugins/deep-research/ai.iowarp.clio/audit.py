@@ -303,6 +303,33 @@ def exclude_unbound(
     return excluded
 
 
+def merge_shards(shards: list[Audit], prior: Audit | None) -> Audit:
+    """One round's audit from its verifiers' audits, over the earlier ledger.
+
+    Each verifier audited one researcher. Their verified claims merge by
+    proposition (every source edge kept), rejections by claim and source, open
+    questions by gap ID; the earlier ledger is carried as :func:`_merge_ledger`
+    carries it, so a verifier can still withdraw an earlier claim explicitly.
+    """
+    ledgers = [*([prior] if prior is not None else []), *shards]
+    merged = Audit(
+        verified=[claim for audit in shards for claim in audit.verified],
+        rejected=list(
+            {(row.claim, row.source_url): row for audit in shards for row in audit.rejected}.values()
+        ),
+        gaps=list({gap.gap_id: gap for audit in ledgers for gap in audit.gaps}.values()),
+        resolved_gaps=[row for audit in shards for row in audit.resolved_gaps],
+    )
+    _merge_ledger(merged, prior)
+    # The earlier ledger reads first, in its order; this round's claims follow.
+    order = {claim.claim_id: n for n, claim in enumerate(prior.verified if prior else [])}
+    merged.verified.sort(key=lambda claim: order.get(claim.claim_id, len(order)))
+    for audit in ledgers:
+        merged._sources.update(audit._sources)
+        merged._papers.update(audit._papers)
+    return merged
+
+
 def _merge_ledger(audit: Audit, earlier: Audit | None) -> None:
     """Carry earlier assertions unless the auditor explicitly reconsiders them."""
     if earlier is not None:
