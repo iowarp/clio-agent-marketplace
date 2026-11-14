@@ -10,12 +10,10 @@ from pathlib import Path
 PLUGIN = Path(__file__).resolve().parents[1]
 SKILL = PLUGIN / "skills" / "paraview-scenes" / "SKILL.md"
 
-#: The tools of clio-kit's paraview server 3.0.0 (unprefixed MCP names).
+#: The tools of clio-kit's paraview server (unprefixed MCP names).
 TOOLS = {
     "open_view",
-    "create_filter",
-    "remove_scene_object",
-    "set_representation",
+    "run_scene_script",
     "set_timestep",
     "set_camera",
     "fit_camera",
@@ -23,6 +21,7 @@ TOOLS = {
     "measure_field",
     "capture",
     "export_artifact",
+    "export_animation",
     "export_scene",
     "scene_state",
 }
@@ -35,6 +34,11 @@ RETIRED = {
     "set_active_source",
     "get_active_source_names_by_type",
     "show_screenshot_preview",
+    # Building the scene moved to run_scene_script; these stay the view panel's own.
+    "create_filter",
+    "set_filter_property",
+    "remove_scene_object",
+    "set_representation",
 }
 
 

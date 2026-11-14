@@ -382,3 +382,24 @@ async def test_vtk_time_steps_keep_full_precision(era5_like, tmp_path) -> None:
         )
     steps = [float(d.get("timestep")) for d in ET.parse(out / "steps.pvd").iter("DataSet")]
     assert steps == [1093416.0, 1093417.0, 1093418.0, 1093419.0]  # four distinct hours
+
+
+def test_a_vtk_series_index_is_written_after_each_step(era5_like, tmp_path, monkeypatch) -> None:
+    """A view following the series sees each step as it lands: the index is rewritten
+    after every step, atomically, with the steps written so far."""
+    from hdf5_ptc import selection, writers
+
+    seen: list[int] = []
+    real = writers._write_index
+
+    def spy(index, entries):
+        real(index, entries)
+        seen.append(index.read_text().count("<DataSet"))
+
+    monkeypatch.setattr(writers, "_write_index", spy)
+    with h5py.File(era5_like) as f:
+        written = writers.write_vtk_series(
+            [(f["/T"], selection.parse(f["/T"], None, None, None), "T")], tmp_path / "s", None
+        )
+    assert seen == [1, 2, 3, 4] and written["steps"] == 4
+    assert not list((tmp_path / "s").glob("*.tmp"))

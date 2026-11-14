@@ -125,6 +125,18 @@ def _same_grid(coords: list, other: list, name: str, first: str) -> None:
             )
 
 
+def _write_index(index: Path, entries: list[str]) -> None:
+    """Write the series index atomically, so a reader never sees half of it."""
+    temporary = index.with_suffix(".pvd.tmp")
+    temporary.write_text(
+        '<?xml version="1.0"?>\n<VTKFile type="Collection" version="1.0">\n<Collection>\n'
+        + "\n".join(entries)
+        + "\n</Collection>\n</VTKFile>\n",
+        encoding="ascii",
+    )
+    temporary.replace(index)
+
+
 def write_vtk_series(
     items: list[tuple[h5py.Dataset, Selection, str]],
     out: Path,
@@ -169,19 +181,16 @@ def write_vtk_series(
         datas[name] = np.where(np.isfinite(data), data, 0.0)
     out.mkdir(parents=True, exist_ok=True)
     stem = out.name
-    entries = []
+    entries: list[str] = []
+    index = out / f"{stem}.pvd"
     for i, t in enumerate(times):
         piece = out / f"{stem}_{i:04d}.vtr"
         _vtr(piece, xc, yc, zc, {name: data[i] for name, data in datas.items()})
         # Full precision: ERA5 hours since 1900 (~1.09e6) need seven digits to stay distinct.
         entries.append(f'<DataSet timestep="{t!r}" part="0" file="{piece.name}"/>')
-    index = out / f"{stem}.pvd"
-    index.write_text(
-        '<?xml version="1.0"?>\n<VTKFile type="Collection" version="1.0">\n<Collection>\n'
-        + "\n".join(entries)
-        + "\n</Collection>\n</VTKFile>\n",
-        encoding="ascii",
-    )
+        # After every step: a view following the series (ParaView's growing open_view)
+        # shows each step as it lands, not only once the whole series is written.
+        _write_index(index, entries)
     meta = {
         "sources": [
             {"file": ds.file.filename, "variable": ds.name, "selection": s_.as_dict(), "name": n}
