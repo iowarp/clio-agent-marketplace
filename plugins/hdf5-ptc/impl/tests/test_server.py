@@ -272,3 +272,62 @@ async def test_describe_tells_the_model_the_other_attributes(era5_like: Path) ->
         ]
         out = await c.call_tool("describe", {"file": h, "path": "/T"}, meta=_meta("s11"))
     assert "Other attributes: maximum_value=300.0" in out.content[0].text
+
+
+def _second_field(src: Path, dst: Path, name: str, latitudes: np.ndarray | None = None) -> Path:
+    """A file with another variable on ``src``'s grid (ERA5 keeps one variable per file)."""
+    with h5netcdf.File(src, "r") as a, h5netcdf.File(dst, "w") as b:
+        b.dimensions = {k: v.size for k, v in a.dimensions.items()}
+        for coord in ("time", "level", "latitude", "longitude"):
+            values = a.variables[coord][:]
+            if coord == "latitude" and latitudes is not None:
+                values = latitudes
+            var = b.create_variable(coord, (coord,), data=values)
+            for k, v in a.variables[coord].attrs.items():
+                var.attrs[k] = v
+        b.create_variable(
+            name, ("time", "level", "latitude", "longitude"), data=a.variables["T"][:] / 1000
+        )
+    return dst
+
+
+async def test_vtk_series_carries_fields_from_two_files_on_one_grid(era5_like, tmp_path) -> None:
+    other = _second_field(era5_like, tmp_path / "q.nc", "Q")
+    out = tmp_path / "both"
+    async with Client(mcp) as c:
+        t = _data(await c.call_tool("open_file", {"path": str(era5_like)}, meta=_meta("s12")))
+        q = _data(await c.call_tool("open_file", {"path": str(other)}, meta=_meta("s12")))
+        written = _data(
+            await c.call_tool(
+                "write_subset",
+                {
+                    "file": t["handle"],
+                    "items": [{"path": "/T"}, {"path": "/Q", "file": q["handle"]}],
+                    "out_path": str(out),
+                    "format": "vtk",
+                },
+                meta=_meta("s12"),
+            )
+        )
+    assert [f["name"] for f in written["fields"]] == ["T", "Q"]
+    assert written["steps"] == 4
+    names = [a.get("Name") for a in ET.parse(out / "both_0000.vtr").iter("DataArray")]
+    assert names[:2] == ["T", "Q"]
+
+
+async def test_vtk_series_refuses_fields_on_different_grids(era5_like, tmp_path) -> None:
+    other = _second_field(era5_like, tmp_path / "q2.nc", "Q", np.linspace(40, 20, 12))
+    async with Client(mcp) as c:
+        t = _data(await c.call_tool("open_file", {"path": str(era5_like)}, meta=_meta("s13")))
+        q = _data(await c.call_tool("open_file", {"path": str(other)}, meta=_meta("s13")))
+        with pytest.raises(ToolError, match="vtk_grids_differ"):
+            await c.call_tool(
+                "write_subset",
+                {
+                    "file": t["handle"],
+                    "items": [{"path": "/T"}, {"path": "/Q", "file": q["handle"]}],
+                    "out_path": str(tmp_path / "bad"),
+                    "format": "vtk",
+                },
+                meta=_meta("s13"),
+            )

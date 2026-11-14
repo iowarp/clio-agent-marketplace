@@ -484,8 +484,9 @@ def write_subset(
     items: Annotated[
         list[dict[str, Any]],
         Field(
-            description="Datasets to write: [{path, start?, count?, step?, name?}]. "
-            "For format vtk, exactly one 3D or (time, z, y, x) item."
+            description="Datasets to write: [{path, file?, start?, count?, step?, name?}]; "
+            "an item's file (another open handle) defaults to this call's file. For format "
+            "vtk, 3D or (time, z, y, x) items on one grid, each a field of the same series."
         ),
     ],
     out_path: Annotated[
@@ -513,20 +514,21 @@ def write_subset(
         refuse("out_path_invalid", f"{out.parent} cannot be created: {exc}")
     resolved = []
     for item in items:
-        ds = _dataset(f, str(item.get("path", "")))
+        owner = HANDLES.get(_owner(ctx), str(item["file"])) if item.get("file") else f
+        ds = _dataset(owner, str(item.get("path", "")))
         sel = selection.parse(ds, item.get("start"), item.get("count"), item.get("step"))
         resolved.append((ds, sel, str(item.get("name") or ds.name.rsplit("/", 1)[-1])))
     source = _label(f)
     if format == "vtk":
-        if len(resolved) != 1:
-            refuse("vtk_needs_one_item", "write one variable per VTK series")
-        ds, sel, name = resolved[0]
-        written = writers.write_vtk_series(ds, sel, out, name, vertical)
+        written = writers.write_vtk_series(resolved, out, vertical)
         b = written["bounds"]
         spans = [b[1] - b[0], b[3] - b[2], b[5] - b[4]]
+        ranges = ", ".join(
+            f"{x['name']} {x['range'][0]:.4g} to {x['range'][1]:.4g}" for x in written["fields"]
+        )
         text = (
-            f"Wrote {name} as {written['steps']} VTK step(s) on a {written['grid']} grid "
-            f"to {written['path']} (range {written['range'][0]:.4g} to {written['range'][1]:.4g}). "
+            f"Wrote {', '.join(x['name'] for x in written['fields'])} as {written['steps']} VTK "
+            f"step(s) on a {written['grid']} grid to {written['path']} ({ranges}). "
             f"The box spans {spans[0]:.3g} x {spans[1]:.3g} x {spans[2]:.3g} (x, y, z)"
             + (
                 "; it is much taller than it is wide, so in a 3D view the field is a thin "

@@ -90,7 +90,9 @@ def _b64(array: np.ndarray) -> str:
     return base64.b64encode(struct.pack("<Q", len(raw)) + raw).decode("ascii")
 
 
-def _vtr(path: Path, x: np.ndarray, y: np.ndarray, z: np.ndarray, name: str, v: np.ndarray) -> None:
+def _vtr(
+    path: Path, x: np.ndarray, y: np.ndarray, z: np.ndarray, fields: dict[str, np.ndarray]
+) -> None:
     nx, ny, nz = len(x), len(y), len(z)
     extent = f"0 {nx - 1} 0 {ny - 1} 0 {nz - 1}"
 
@@ -98,13 +100,14 @@ def _vtr(path: Path, x: np.ndarray, y: np.ndarray, z: np.ndarray, name: str, v: 
         return f'<DataArray type="{kind}" Name={quoteattr(n)} format="binary">{_b64(a)}</DataArray>'
 
     # VTK point order: x fastest, then y, then z -> a (z, y, x) array in C order.
+    first = next(iter(fields))
+    point_data = "".join(arr(n, v.astype("<f4"), "Float32") for n, v in fields.items())
     body = (
         '<?xml version="1.0"?>\n'
         '<VTKFile type="RectilinearGrid" version="1.0" byte_order="LittleEndian" '
         'header_type="UInt64">\n'
         f'<RectilinearGrid WholeExtent="{extent}"><Piece Extent="{extent}">\n'
-        f"<PointData Scalars={quoteattr(name)}>{arr(name, v.astype('<f4'), 'Float32')}"
-        "</PointData>\n"
+        f"<PointData Scalars={quoteattr(first)}>{point_data}</PointData>\n"
         f"<Coordinates>{arr('x', x.astype('<f8'), 'Float64')}"
         f"{arr('y', y.astype('<f8'), 'Float64')}{arr('z', z.astype('<f8'), 'Float64')}"
         "</Coordinates>\n</Piece></RectilinearGrid></VTKFile>\n"
@@ -112,25 +115,46 @@ def _vtr(path: Path, x: np.ndarray, y: np.ndarray, z: np.ndarray, name: str, v: 
     path.write_text(body, encoding="ascii")
 
 
+def _same_grid(coords: list, other: list, name: str, first: str) -> None:
+    for (axis, a, _), (_, b, _) in zip(coords, other, strict=True):
+        if a.shape != b.shape or not np.allclose(np.asarray(a, "f8"), np.asarray(b, "f8")):
+            refuse(
+                "vtk_grids_differ",
+                f"{name} and {first} differ along {axis}; one VTK series needs one grid "
+                "(the same box and times in every variable)",
+            )
+
+
 def write_vtk_series(
-    dataset: h5py.Dataset,
-    sel: Selection,
+    items: list[tuple[h5py.Dataset, Selection, str]],
     out: Path,
-    name: str,
     vertical: dict[str, float] | None,
 ) -> dict[str, Any]:
-    """Write a (time,) z, y, x selection as ``.vtr`` files and a ``.pvd`` time index."""
-    data = read(dataset, sel, decode=True)
-    if data.ndim not in (3, 4):
-        refuse("vtk_needs_3d", f"a 3D view needs 3 or 4 dims (time, z, y, x); this has {data.ndim}")
+    """Write ``(dataset, selection, name)`` items on one grid as ``.vtr`` files and a ``.pvd``.
+
+    Every item is one point array in each step, so variables kept in separate files (ERA5
+    stores one per file) are seen together: one isosurface of cloud liquid, one of ice.
+    """
+    dataset, sel, _ = items[0]
     coords = _coord_subset(dataset, sel)
-    if data.ndim == 3:
-        data = data[None]
-        times: list[float] = [0.0]
+    datas = {}
+    for ds, s_, name in items:
+        data = read(ds, s_, decode=True)
+        if data.ndim not in (3, 4):
+            refuse(
+                "vtk_needs_3d",
+                f"a 3D view needs 3 or 4 dims (time, z, y, x); {name} has {data.ndim}",
+            )
+        if datas:
+            _same_grid(coords, _coord_subset(ds, s_), name, next(iter(datas)))
+        datas[name] = data if data.ndim == 4 else data[None]
+    if len(coords) == 3:
         coords = [("time", np.array([0.0]), {}), *coords]
+        times: list[float] = [0.0]
+        time_units = None
     else:
         times = [float(t) for t in coords[0][1]]
-    time_units = coords[0][2].get("units") if data.ndim == 4 else None
+        time_units = coords[0][2].get("units")
     (_, zc, zattrs), (_, yc, _), (_, xc, _) = coords[1:]
     zc = zc.astype(np.float64)
     if vertical:
@@ -140,14 +164,15 @@ def write_vtk_series(
         zc = scale * np.log(ref / zc)
     order = [np.argsort(zc), np.argsort(yc), np.argsort(xc)]
     zc, yc, xc = zc[order[0]], yc[order[1]].astype(np.float64), xc[order[2]].astype(np.float64)
-    data = data[:, order[0]][:, :, order[1]][:, :, :, order[2]]
-    data = np.where(np.isfinite(data), data, 0.0)
+    for name, data in datas.items():
+        data = data[:, order[0]][:, :, order[1]][:, :, :, order[2]]
+        datas[name] = np.where(np.isfinite(data), data, 0.0)
     out.mkdir(parents=True, exist_ok=True)
     stem = out.name
     entries = []
     for i, t in enumerate(times):
         piece = out / f"{stem}_{i:04d}.vtr"
-        _vtr(piece, xc, yc, zc, name, data[i])
+        _vtr(piece, xc, yc, zc, {name: data[i] for name, data in datas.items()})
         entries.append(f'<DataSet timestep="{t:.6g}" part="0" file="{piece.name}"/>')
     index = out / f"{stem}.pvd"
     index.write_text(
@@ -157,14 +182,19 @@ def write_vtk_series(
         encoding="ascii",
     )
     meta = {
-        "source": dataset.file.filename,
-        "variable": dataset.name,
-        "selection": sel.as_dict(),
+        "sources": [
+            {"file": ds.file.filename, "variable": ds.name, "selection": s_.as_dict(), "name": n}
+            for ds, s_, n in items
+        ],
         "vertical": vertical or {},
         "vertical_units": zattrs.get("units"),
         "written": _now(),
     }
     (out / f"{stem}.provenance.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    fields = [
+        {"name": name, "range": [float(np.nanmin(data)), float(np.nanmax(data))]}
+        for name, data in datas.items()
+    ]
     return {
         "path": str(index),
         "format": "vtk",
@@ -178,8 +208,9 @@ def write_vtk_series(
             float(zc[0]),
             float(zc[-1]),
         ],
-        "field": name,
-        "range": [float(np.nanmin(data)), float(np.nanmax(data))],
+        "fields": fields,
+        "field": fields[0]["name"],
+        "range": fields[0]["range"],
         "times": times,
         "time_units": time_units,
         "times_iso": [cf.time_text(t, time_units) for t in times] if time_units else None,
