@@ -507,9 +507,18 @@ def write_subset(
             refuse("vtk_needs_one_item", "write one variable per VTK series")
         ds, sel, name = resolved[0]
         written = writers.write_vtk_series(ds, sel, out, name, vertical)
+        b = written["bounds"]
+        spans = [b[1] - b[0], b[3] - b[2], b[5] - b[4]]
         text = (
             f"Wrote {name} as {written['steps']} VTK step(s) on a {written['grid']} grid "
-            f"to {written['path']} (range {written['range'][0]:.4g} to {written['range'][1]:.4g})."
+            f"to {written['path']} (range {written['range'][0]:.4g} to {written['range'][1]:.4g}). "
+            f"The box spans {spans[0]:.3g} x {spans[1]:.3g} x {spans[2]:.3g} (x, y, z)"
+            + (
+                "; it is much taller than it is wide, so in a 3D view the field is a thin "
+                "column: fewer levels or a smaller vertical scale flattens it."
+                if spans[2] > 1.5 * max(spans[0], spans[1])
+                else "."
+            )
         )
     else:
         written = writers.write_netcdf(resolved, out, source)
