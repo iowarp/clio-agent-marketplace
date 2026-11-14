@@ -20,6 +20,9 @@ class SourceEvidence(BaseModel):
     quote: str = Field(min_length=1, description="Exact supporting passage from that fetch")
     supports: str = Field(min_length=1, description="Precisely what this passage establishes")
     source_id: str = Field(default="", description="Runtime binding; leave empty for a new fetch")
+    offset: int | None = Field(
+        default=None, description="Runtime binding: where the passage starts; leave empty"
+    )
 
     @field_validator("task_handle", "source_url", "quote", "supports")
     @classmethod
@@ -139,6 +142,10 @@ class ReviewReport(dspy.Signature):
     rejected_claims: list[dict[str, Any]] = dspy.InputField()
     blocks: list[ReportBlock] = dspy.InputField()
     report: str = dspy.InputField()
+    format_problem: str = dspy.InputField(
+        desc="Empty, or why your previous reply could not be read: return every issue "
+        "with owner, excerpt, reason and claim_ids"
+    )
     issues: list[ReviewIssue] = dspy.OutputField()
 
 
@@ -273,10 +280,29 @@ def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]])
                 problems.append(f"{prefix}: quotation is absent from the actual fetched content")
                 continue
             if pattern.search(source["content"], match.start() + 1) is not None:
-                problems.append(
-                    f"{prefix}: quotation repeats; include enough exact surrounding text to identify its intended occurrence"
-                )
-                continue
+                # The page repeats this passage. The critic was shown windows of this
+                # page around the researcher's quotes; one occurrence inside them is
+                # the passage it read.
+                windows = source.get("anchors") or []
+                seen = [
+                    found
+                    for found in pattern.finditer(source["content"])
+                    if any(start <= found.start() and found.end() <= end for start, end in windows)
+                ]
+                if len(seen) != 1:
+                    times = sum(1 for _ in pattern.finditer(source["content"]))
+                    shown = (
+                        f"{len(seen)} of them in the page text you were shown"
+                        if windows
+                        else "this is not a page whose text you were shown around a quote"
+                    )
+                    problems.append(
+                        f"{prefix}: quotation repeats ({times} times on the page; {shown}); "
+                        "include enough exact surrounding text to identify its intended occurrence"
+                    )
+                    continue
+                match = seen[0]
+            evidence.offset = match.start()
             evidence.source_id = source["source_id"]
             evidence.source_title = (
                 " ".join(source["source_title"].split()) or evidence.source_title
@@ -287,7 +313,7 @@ def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]])
 def public_sources(records: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     """Expose inspectable source identities without duplicating full page bodies."""
     return [
-        {key: value for key, value in record.items() if key != "content"}
+        {key: value for key, value in record.items() if key not in {"content", "anchors"}}
         for record in records.values()
     ]
 
@@ -325,7 +351,10 @@ def review_sources(
             source = records[edge.task_handle]
             content = source["content"]
             pattern = _quote_pattern(edge.quote)
-            match = pattern.search(content) if pattern is not None else None
+            # The bound occurrence, when binding chose one of several on the page.
+            at = edge.offset if edge.offset is not None else 0
+            match = pattern.match(content, at) if pattern is not None and at else None
+            match = match or (pattern.search(content) if pattern is not None else None)
             if match is None:
                 raise ValueError("A reviewed passage lost its actual source binding")
             start, end = max(0, match.start() - 800), min(len(content), match.end() + 800)
@@ -409,7 +438,7 @@ def _reference(url: str, title: str, papers: Mapping[str, dict[str, Any]]) -> st
     paper = paper_for(url, papers)
     link = lambda label: f"[{_markdown_label(label)}](<{url.replace('>', '%3E')}>)"  # noqa: E731
     if paper is None:
-        return f"- {link(title)}"
+        return f"- {link(_short_title(title))}"
     authors = [str(a) for a in paper.get("authors") or [] if str(a) != "et al."]
     names = ", ".join(authors[:3])
     if names and (len(authors) > 3 or "et al." in (paper.get("authors") or [])):
@@ -429,6 +458,7 @@ def render_report(
     blocks: list[ReportBlock],
     claims: list[VerifiedClaim],
     papers: Mapping[str, dict[str, Any]] | None = None,
+    unknown: list[str] | None = None,
 ) -> str:
     """Render the writer's map with canonical source citations and references.
 
@@ -442,16 +472,22 @@ def render_report(
         if block.kind == "source_fact" and not block.claim_ids:
             raise ValueError("A source_fact block must map to its verified claims")
         citations: dict[str, str] = {}
+        missing = [claim_id for claim_id in block.claim_ids if claim_id not in known]
+        if missing and unknown is None:
+            raise ValueError(f"Unknown report claim ID: {missing[0]}")
         for claim_id in block.claim_ids:
-            if claim_id not in known:
-                raise ValueError(f"Unknown report claim ID: {claim_id}")
-            for evidence in known[claim_id].evidence:
+            for evidence in known[claim_id].evidence if claim_id in known else []:
                 citations.setdefault(evidence.source_url, evidence.source_title or "Source")
         text = block.text.replace("\r\n", "\n").strip("\n")
+        if missing:
+            # Rendered on request only (``unknown`` collects them): the text stays,
+            # and says it rests on a claim that is not verified.
+            unknown += [claim_id for claim_id in missing if claim_id not in unknown]
+            text += " *(This rests on a claim that is not verified.)*"
         if citations:
             links = []
             for url, title in citations.items():
-                safe_title = _markdown_label(title)
+                safe_title = _markdown_label(_short_title(title))
                 links.append(f"[{safe_title}](<{url.replace('>', '%3E')}>)")
             text += ("\n\n" if "\n" in text else " ") + " ".join(links)
             used.update(citations)
@@ -462,6 +498,19 @@ def render_report(
             + "\n".join(_reference(url, title, papers or {}) for url, title in used.items())
         )
     return "\n\n".join(parts)
+
+
+#: Characters of a fetched page's title shown in a citation; the full title stays in
+#: the source record. Some pages put a whole funding or citation note in their title.
+TITLE_CHARS = 120
+
+
+def _short_title(title: str) -> str:
+    """A page title for display: whitespace collapsed, cut at a word past ``TITLE_CHARS``."""
+    text = " ".join(title.split())
+    if len(text) <= TITLE_CHARS:
+        return text
+    return text[:TITLE_CHARS].rsplit(" ", 1)[0].rstrip(",;:.") + "…"
 
 
 def _markdown_label(title: str) -> str:

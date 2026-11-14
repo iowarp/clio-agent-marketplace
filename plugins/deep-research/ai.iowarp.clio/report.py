@@ -9,6 +9,8 @@ from pydantic import ValidationError
 
 from clio_agent.flows.outcomes import FlowStall
 
+from .audit import ledger_scope, with_scope
+from .coordinate import checked_across
 from .evidence import ReportBlock, ReviewIssue, render_report, review_sources
 
 _CITED_URL = re.compile(r"https?://[^\s)\]>\"'`]+")
@@ -96,6 +98,17 @@ def with_open_issues(document: str, issues: list[dict[str, Any]]) -> str:
     return document.rstrip() + "\n\n" + "\n".join(lines) + "\n"
 
 
+def with_review_unavailable(document: str) -> str:
+    """Say plainly that the final review could not be completed for this report."""
+    return (
+        document.rstrip()
+        + "\n\n## Review not available\n\nThe independent final review of this report could "
+        "not be completed (its reply was unreadable or the model call failed, twice), so "
+        "this report was not reviewed. Its claims were still verified against their "
+        "sources; check the sources for anything you rely on.\n"
+    )
+
+
 def delivery_record(
     audit: Any,
     blocks: list[dict[str, Any]],
@@ -141,7 +154,7 @@ class ReportSynthesis:
         self,
         question: str,
         audit: Any,
-        packets: list[dict[str, Any]],
+        across: list[dict[str, Any]],
         critics: list[dict[str, Any]],
         resolutions: list[dict[str, Any]],
         rounds: int,
@@ -154,8 +167,15 @@ class ReportSynthesis:
         reviews = []
         draft_citations = []
         outside: list[str] = []
+        rendered = ""  # the last draft that rendered, kept so a report is never body-less
         for attempt in range(2):
             verified = [claim.model_dump() for claim in audit.verified]
+            # Cross-evidence findings stand only on claims the ledger still verifies.
+            across, cut = checked_across(across, {claim.claim_id for claim in audit.verified})
+            if cut:
+                await self.ctx.record_event(
+                    {"event": "across_unverified_claims", "attempt": attempt + 1, "cut": cut}
+                )
             gaps = [gap.model_dump() for gap in audit.gaps if not is_delivery(gap)]
             rejected = [claim.model_dump() for claim in audit.rejected]
             written = await self.ctx.step(
@@ -168,7 +188,34 @@ class ReportSynthesis:
                 outside,
                 feedback,
                 blocks,
+                across,
             )
+            if written.get("failed"):
+                # The writer's reply could not be read: one correction, then a typed stop.
+                await self.ctx.record_event(
+                    {
+                        "event": "report_draft_unreadable",
+                        "attempt": attempt + 1,
+                        "reason": written["failed"],
+                    }
+                )
+                if attempt:
+                    raise FlowStall(
+                        "report_unreadable",
+                        "the writer's draft could not be read, twice",
+                        step="report",
+                        observed={"reason": written["failed"]},
+                    )
+                feedback = [
+                    ReviewIssue(
+                        owner="report",
+                        excerpt="(the whole draft)",
+                        reason=f"Your draft could not be read: {written['failed']} Return "
+                        "every block with text, kind and claim_ids.",
+                    ).model_dump()
+                ]
+                blocks = []
+                continue
             blocks = written.get("blocks") or []
             if not blocks or not any(
                 isinstance(row, Mapping) and str(row.get("text") or "").strip() for row in blocks
@@ -178,6 +225,7 @@ class ReportSynthesis:
                 )
             report = ""
             issues: list[dict[str, Any]] = []
+            typed: list[ReportBlock] = []
             try:
                 typed = [ReportBlock.model_validate(row) for row in blocks]
                 report = render_report(typed, audit.verified, audit._papers)
@@ -185,7 +233,42 @@ class ReportSynthesis:
                 issues.append(
                     ReviewIssue(owner="report", excerpt=str(blocks), reason=str(exc)).model_dump()
                 )
-            outside = cited_outside(report, verified) if report else []
+                if typed:
+                    # Cited claims the ledger does not verify: render the report with
+                    # those passages marked, so it is never lost for one bad citation.
+                    unknown: list[str] = []
+                    report = render_report(typed, audit.verified, audit._papers, unknown)
+                    await self.ctx.record_event(
+                        {
+                            "event": "report_cites_unverified_claims",
+                            "attempt": attempt + 1,
+                            "claim_ids": unknown,
+                        }
+                    )
+            if not report and rendered:
+                # This draft could not be rendered at all: the last one that could is
+                # what the reader gets, with the reason among its open notes.
+                await self.ctx.record_event(
+                    {"event": "report_kept_previous_draft", "attempt": attempt + 1}
+                )
+                report = rendered
+            rendered = report or rendered
+            cited_ids = {cid for row in blocks for cid in row.get("claim_ids") or []}
+            await self.ctx.record_event(
+                {
+                    "event": "report_draft",
+                    "attempt": attempt + 1,
+                    "blocks": len(blocks),
+                    "words": len(" ".join(str(row.get("text") or "") for row in blocks).split()),
+                    "claims_cited": len(cited_ids & {c.claim_id for c in audit.verified}),
+                    "claims_verified": len(audit.verified),
+                }
+            )
+            # Only the writer's own prose can cite outside the evidence: the citations
+            # and References the flow renders come from verified claims, and a fetched
+            # page's title can itself contain a URL (a funding note, 2026-11-14).
+            prose = "\n\n".join(str(row.get("text") or "") for row in blocks)
+            outside = cited_outside(prose, verified) if report else []
             document = (report + self.record(gaps, rejected)).replace("\r\n", "\n")
             if outside:
                 draft_citations += [url for url in outside if url not in draft_citations]
@@ -212,6 +295,51 @@ class ReportSynthesis:
                     blocks,
                     document,
                 )
+                if review.get("failed"):
+                    # Format-only correction: the reviewer is told what was unreadable.
+                    await self.ctx.record_event(
+                        {
+                            "event": "report_review_unreadable",
+                            "attempt": attempt + 1,
+                            "reason": review["failed"],
+                        }
+                    )
+                    review = await self.ctx.step(
+                        self.flow._review,
+                        question,
+                        verified,
+                        review_sources(audit.verified, audit._sources),
+                        operational_evidence,
+                        gaps,
+                        rejected,
+                        blocks,
+                        document,
+                        review["failed"],
+                    )
+                if review.get("failed"):
+                    # No verdict (an unreadable reply, or a failed model call such as a
+                    # usage limit): deliver the report, marked unreviewed, rather than
+                    # lose the research. Never counted as acceptance.
+                    document = with_review_unavailable(document)
+                    verdict = {
+                        "attempt": attempt + 1,
+                        "report_sha256": hashlib.sha256(document.encode()).hexdigest(),
+                        "status": "review_unreadable",
+                        "issues": [],
+                        "reason": review["failed"],
+                    }
+                    reviews.append(verdict)
+                    await self.ctx.record_event({"event": "report_review", **verdict})
+                    return {
+                        "audit": audit,
+                        "report": report,
+                        "document": document,
+                        "blocks": blocks,
+                        "reviews": reviews,
+                        "draft_citations": draft_citations,
+                        "outside": outside,
+                        "operational_evidence": operational_evidence,
+                    }
                 issues = [ReviewIssue.model_validate(row).model_dump() for row in review["issues"]]
             verdict = {
                 "attempt": attempt + 1,
@@ -266,16 +394,38 @@ class ReportSynthesis:
                         step="report",
                         observed={"draft": report, "reviews": reviews},
                     )
-                audit, critic = await self.flow._verify(
+                # Only the disputed claims and their pinned sources go to the critic;
+                # its audit of them replaces them in the ledger.
+                disputed = [issue for issue in issues if issue["owner"] == "audit"]
+                named = {cid for issue in disputed for cid in issue.get("claim_ids") or []}
+                named &= {claim.claim_id for claim in audit.verified}
+                scope = ledger_scope(audit, named) if named else audit
+                before = {claim.claim_id for claim in audit.verified}
+                reviewed, critic = await self.flow._verify(
                     self.ctx,
                     question,
                     [],
-                    packets,
-                    (audit, critics[-1]),
+                    [],
+                    (scope, critics[-1]),
                     rounds,
-                    evidence_review=[issue for issue in issues if issue["owner"] == "audit"],
+                    evidence_review=disputed,
                 )
+                audit = with_scope(audit, named, reviewed) if named else reviewed
                 critics.append(critic)
+                cited = {cid for row in blocks for cid in row.get("claim_ids") or []}
+                withdrawn = sorted((before - {c.claim_id for c in audit.verified}) & cited)
+                # The writer's next draft starts from this one: name what it may no
+                # longer cite, so it does not keep a withdrawn claim's ID.
+                issues += [
+                    ReviewIssue(
+                        owner="report",
+                        excerpt=claim_id,
+                        reason="The evidence review withdrew this claim; do not cite it. "
+                        "Use the current verified claims (it may have a narrower replacement).",
+                        claim_ids=[claim_id],
+                    ).model_dump()
+                    for claim_id in withdrawn
+                ]
                 resolutions += [
                     {"round": rounds, **row.model_dump()} for row in audit.resolved_gaps
                 ]
