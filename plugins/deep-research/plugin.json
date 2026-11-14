@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "deep-research",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "description": "Deep web research as a flow: a planner chooses research directions, repeatable web researcher subagents investigate them in parallel, an independent web-enabled critic returns a typed audit (verified claims with fetched source and quote, rejected claims, gaps), gaps are researched within bounded rounds, and a Markdown report is written only from verified claims.",
   "author": {
     "name": "IoWarp Team"

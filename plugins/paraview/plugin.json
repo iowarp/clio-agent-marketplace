@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "paraview",
   "version": "1.0.0",
-  "description": "Work with scenes in the ParaView connector: open data in a live view, look and measure before making a claim, and point the connector at another machine when the person names one. It follows the ParaView connector and joins agents when that connector is enabled.",
+  "description": "Work with scenes in the ParaView connector: open data in a live view, look and measure before making a claim, and point the connector at another machine when the person names one. It belongs to the ParaView connector: add it to a conversation while that connector is enabled.",
   "author": {
     "name": "IoWarp Team"
   },

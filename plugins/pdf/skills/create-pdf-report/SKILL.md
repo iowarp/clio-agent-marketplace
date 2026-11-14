@@ -43,9 +43,14 @@ After each meaningful layout change:
 4. Correct defects and repeat the checks. Content extraction alone is not
    evidence of visual correctness.
 
+If `view_image` did not show you a page, because it failed or reported that
+the image was not shown to the model, name the pages that were not visually
+checked. Never claim that visual verification passed for them.
+
 Use `uv` for Python execution and dependency management. Typical dependencies
 are `reportlab`, `pypdf`, and Pillow; use only the packages the report needs.
-Place final deliverables under `output/pdf/` when the workspace has no more
-specific output convention, and keep intermediate renders under `tmp/pdfs/`.
+Write the PDF where the person asked for it, under the name they gave. When they
+named no place, use the workspace's own output convention, or else `output/pdf/`.
+Keep intermediate renders in the session's scratch folder, not the workspace.
 
 Deliver the final PDF only after both logical and visual verification pass.
