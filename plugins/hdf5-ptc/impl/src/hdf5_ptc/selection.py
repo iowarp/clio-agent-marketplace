@@ -63,7 +63,15 @@ def _ints(value: Any, name: str, rank: int) -> list[int] | None:
     except (TypeError, ValueError):
         refuse("selection_invalid", f"{name} must be a list of {rank} integers")
     if len(out) != rank:
-        refuse("selection_invalid", f"{name} has {len(out)} values; the dataset has {rank} dims")
+        meaning = {
+            "start": "the first index along each axis",
+            "count": "how many values along each axis",
+            "step": "the stride along each axis (1 takes every value)",
+        }.get(name, "one value per axis")
+        refuse(
+            "selection_invalid",
+            f"{name} has {len(out)} values; the dataset has {rank} dims. {name} is {meaning}",
+        )
     return out
 
 
