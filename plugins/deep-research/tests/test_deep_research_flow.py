@@ -549,7 +549,9 @@ def test_plan_research_verify_report() -> None:
             # What the critic's model read: its whole request, inline.
             "input_characters": len(render_input(call["input"])),
         }
-        for (direction, handle), call in zip((("d1", "task_3"), ("d2", "task_4")), critics)
+        for (direction, handle), call in zip(
+            (("d1", "task_3"), ("d2", "task_4")), critics, strict=True
+        )
     ]
     # Researchers' and critics' sections are read per call, never merged.
     assert ctx.merged_gathers == 0
