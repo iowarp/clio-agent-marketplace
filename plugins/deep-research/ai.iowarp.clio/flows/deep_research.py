@@ -129,6 +129,9 @@ class PlanResearch(dspy.Signature):
     operational_evidence: dict[str, Any] = dspy.InputField(
         desc="Own scope IDs and attributable permission history"
     )
+    format_problem: str = dspy.InputField(
+        desc="Empty, or why your previous reply could not be read; return every field in its declared shape"
+    )
     directions: list[Direction] = dspy.OutputField()
 
 
@@ -291,14 +294,21 @@ deep_research = sequence(terminal("plan"),
         max_directions: int,
         capabilities: dict[str, Any],
         operational_evidence: dict[str, Any],
+        format_problem: str = "",
     ) -> dict[str, Any]:
-        prediction = self.planner(
-            question=question,
-            max_directions=max_directions or None,
-            capabilities=capabilities,
-            operational_evidence=operational_evidence,
-        )
-        return {"directions": [_as_model(Direction, d).model_dump() for d in prediction.directions]}
+        try:
+            prediction = self.planner(
+                question=question,
+                max_directions=max_directions or None,
+                capabilities=capabilities,
+                operational_evidence=operational_evidence,
+                format_problem=format_problem,
+            )
+            return {
+                "directions": [_as_model(Direction, d).model_dump() for d in prediction.directions]
+            }
+        except Exception as exc:  # noqa: BLE001 - recorded; one format correction, then typed
+            return {"failed": _failure(exc)}
 
     def _write(
         self,
@@ -315,15 +325,13 @@ deep_research = sequence(terminal("plan"),
         try:
             prediction = self.writer(
                 question=question,
-            verified=[VerifiedClaim.model_validate(row) for row in verified],
+                verified=[VerifiedClaim.model_validate(row) for row in verified],
                 across=across or [],
                 unresolved_gaps=[Gap.model_validate(row) for row in gaps],
                 delivery=delivery,
                 operational_evidence=operational_evidence,
                 citation_problems=citation_problems or [],
-                review_feedback=[
-                    ReviewIssue.model_validate(row) for row in review_feedback or []
-                ],
+                review_feedback=[ReviewIssue.model_validate(row) for row in review_feedback or []],
                 previous_blocks=previous_blocks or [],
             )
         except Exception as exc:  # noqa: BLE001 - recorded by the synthesis; research kept
@@ -374,6 +382,7 @@ deep_research = sequence(terminal("plan"),
         researcher_tools: list[str],
         rounds_left: int,
         max_follow_ups: int,
+        format_problem: str = "",
     ) -> dict[str, Any]:
         try:
             prediction = self.coordinator(
@@ -385,6 +394,7 @@ deep_research = sequence(terminal("plan"),
                 researcher_tools=researcher_tools,
                 rounds_left=rounds_left,
                 max_follow_ups=max_follow_ups or None,
+                format_problem=format_problem,
             )
         except Exception as exc:  # noqa: BLE001 - recorded: the run keeps its evidence
             # No decision was made, so none is invented: nothing more is researched and
@@ -406,6 +416,24 @@ deep_research = sequence(terminal("plan"),
         plan = await ctx.step(
             self._plan, question, self.max_directions, capabilities, planning_evidence
         )
+        if plan.get("failed"):
+            # One format correction, told what could not be read; then a typed stop.
+            await ctx.record_event({"event": "planner_reply_unreadable", "reason": plan["failed"]})
+            plan = await ctx.step(
+                self._plan,
+                question,
+                self.max_directions,
+                capabilities,
+                planning_evidence,
+                plan["failed"],
+            )
+            if plan.get("failed"):
+                raise FlowStall(
+                    "planner_unreadable",
+                    "the planner's reply could not be read, twice",
+                    step="plan",
+                    observed=plan,
+                )
         planned = list(plan.get("directions") or [])
         if not planned:
             raise FlowStall(
@@ -674,6 +702,16 @@ deep_research = sequence(terminal("plan"),
         )
         decision = await ctx.step(self._coordinate, *inputs)
         if decision.get("failed"):
+            # One format correction, told what could not be read.
+            await ctx.record_event(
+                {
+                    "event": "coordinator_reply_unreadable",
+                    "round": round_no,
+                    "reason": decision["failed"],
+                }
+            )
+            decision = await ctx.step(self._coordinate, *inputs, decision["failed"])
+        if decision.get("failed"):
             await ctx.record_event(
                 {"event": "coordinator_failed", "round": round_no, "reason": decision["failed"]}
             )
@@ -740,7 +778,13 @@ def _failure(exc: Exception) -> str:
     A parse failure's own message starts with the whole reply; the validation
     problems that say what was wrong come last, so the end is what is kept.
     """
-    text = f"{type(exc).__name__}: {exc}"
+    text = str(exc)
+    if hasattr(exc, "lm_response"):
+        # A parse failure: keep the field and its validation errors, not the whole
+        # value and model reply that the message repeats around them.
+        text = text.split("\n\nAdapter ", 1)[0]
+        text = re.sub(r" with value .* from the LM response\.", ".", text, flags=re.S)
+    text = f"{type(exc).__name__}: {text}"
     return text if len(text) <= 1600 else text[:400] + " … " + text[-1200:]
 
 

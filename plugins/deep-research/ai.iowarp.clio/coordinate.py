@@ -89,6 +89,9 @@ class Coordinate(dspy.Signature):
     max_follow_ups: int | None = dspy.InputField(
         desc="A limit the person set on directions per round; none means no limit"
     )
+    format_problem: str = dspy.InputField(
+        desc="Empty, or why your previous reply could not be read; return every field in its declared shape"
+    )
     across: list[CrossFinding] = dspy.OutputField()
     follow_ups: list[FollowUp] = dspy.OutputField()
     open_questions: list[Direction] = dspy.OutputField()

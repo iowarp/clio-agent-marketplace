@@ -186,6 +186,7 @@ class Planner:
         max_directions: int,
         capabilities: dict[str, Any],
         operational_evidence: dict[str, Any],
+        format_problem: str = "",
     ) -> Any:
         self.asked.append(
             {
@@ -226,6 +227,7 @@ class Coordinator:
         researcher_tools: list[str],
         rounds_left: int,
         max_follow_ups: int | None,
+        format_problem: str = "",
     ) -> Any:
         self.given.append(
             {
@@ -1822,3 +1824,36 @@ def test_an_evidence_review_rechecks_only_the_disputed_claim_and_the_report_keep
     assert "*(This rests on a claim that is not verified.)*" in result["answer"]
     (marked,) = [e for e in ctx.events if e["event"] == "report_cites_unverified_claims"]
     assert marked["claim_ids"] == [claim(1)["claim_id"]]
+
+
+def test_unreadable_planner_and_coordinator_replies_get_one_format_correction() -> None:
+    class Shaky(Coordinator):
+        def __call__(self, **kwargs: Any) -> Any:
+            if not kwargs["format_problem"] and not self.given:
+                self.given.append(kwargs)
+                raise ValueError("open_questions.0 web_research requires the tools needed")
+            return super().__call__(**kwargs)
+
+    class ShakyPlanner(Planner):
+        def __call__(self, **kwargs: Any) -> Any:
+            if not kwargs["format_problem"] and not self.asked:
+                self.asked.append({"failed": True})
+                raise ValueError("directions.0.closure_kind Field required")
+            return super().__call__(**{k: v for k, v in kwargs.items() if k != "format_problem"})
+
+    coordinator = Shaky([{"follow_ups": [gap("next")]}, {}])
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    result = run(make_flow(ShakyPlanner(["a"]), coordinator=coordinator), ctx)
+    events = [e["event"] for e in ctx.events if e["event"].endswith("_unreadable")]
+    assert events == ["planner_reply_unreadable", "coordinator_reply_unreadable"]
+    # The corrected decision ran: its follow-up was researched.
+    assert [r["input"]["direction"]["question"] for r in of(ctx, "researcher")] == ["a", "next"]
+    assert result["verified"] == [claim(1)]
+
+    class Broken(Planner):
+        def __call__(self, **kwargs: Any) -> Any:
+            raise ValueError("directions.0.closure_kind Field required")
+
+    with pytest.raises(FlowStall) as stalled:
+        run(make_flow(Broken(["a"])), ScriptedCtx(Children([])))
+    assert stalled.value.stall == "planner_unreadable"
