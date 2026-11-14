@@ -1,0 +1,4 @@
+# Instance literals that must never ship in this pack: the fixtures and runs it
+# was checked on. Data, hosts and accounts come from the person at runtime.
+ha-mcp-demo-server
+qc-h.net

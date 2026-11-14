@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/homeassistant-ai/skills",
+  "revision": "166defa51c606b3c77d45a9b29a459d1f993f357",
+  "path": "skills/home-assistant-best-practices",
+  "license": "MIT",
+  "license_file": "LICENSE.txt",
+  "adaptations": [
+    "Added the upstream LICENSE as LICENSE.txt; no file changed"
+  ],
+  "files": {
+    "LICENSE.txt": "68eaf9eb28babab65015e2194e32f43ad96ca1a9539c8b6613e9822cfbd61205",
+    "SKILL.md": "6bd2d18d5edf237f5ff0d19ec28decc92af1fdabdc416919a9b547f29b39b186",
+    "references/appdaemon.md": "cafd134ff6c90f7aa9bc2f56e7f02836466d33405091ac33b02ebd80c42b1eb4",
+    "references/automation-actions.md": "82cfb07622e28f46ba1df361c6283e393c21f27be6ef51a32e6abf257065e1fd",
+    "references/backups.md": "fd130e2e239e20578596ebfbf12f85a487e8466432920a4a70e05de3d82a6afe",
+    "references/blueprint-guide.md": "72904598254cc2ae776ea5c48dbd74124e3180175403bdab855da69416990411",
+    "references/dashboard-cards.md": "ac5e0f8d009f378dc514502e7bcacb478084f3e47ebf0e9828a50eef52ac34d2",
+    "references/dashboard-guide.md": "b4d42e9383fe929ecc87fb52150ceb3222173b528b1cf9f8663218c65544d293",
+    "references/device-control.md": "bb3f5e0f86448789e95d71f09fb1efc635c4f40112ef7812d238829097e58ae3",
+    "references/domain-docs.md": "8207a5b50aaeae4d510614e9cbdad6c10ef7b0028a4dc50c716a096c2c5f5d31",
+    "references/examples.yaml": "06dff5e876681f0ef3214cf0f8d26e9253f4eac4fbb02852b8a8aa4207481da2",
+    "references/helper-selection.md": "ed3e9a21b3bb6558d897575da80124cadf004b022aeb75fa0584930196d1a45e",
+    "references/safe-refactoring.md": "fcb1f1e1eb0ba626f225bcd9cbd60263115099e929e1b1b2520abf2615bf6a07",
+    "references/scenes.md": "829d7e02f69ac7cbba8d05df19d4ae2de9dfe5c1ce085cc130d72ba0a074ab70",
+    "references/template-guidelines.md": "9336c7ac247a1ecd23a3575b005f01b793e613b00de3d1c446f6744a15ec1f5a",
+    "references/triggers-and-conditions.md": "c9375a88e9367aca87626dd4f473b471d92db487417069640cc455153f9991f3",
+    "references/yaml-only-integrations.md": "3b740e27c0810c0ad5a5546ed3abe2e3d60103cfed441aeb1a0d739f0e3dfcca"
+  }
+}
