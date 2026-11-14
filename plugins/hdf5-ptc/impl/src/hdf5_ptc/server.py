@@ -310,8 +310,20 @@ def describe(
         + "Coordinates: "
         + ", ".join(f"{d.get('name') or d['axis']}={d.get('coordinate') or 'index'}" for d in dims)
         + "."
+        + _other_attributes_text(attrs, meaning)
     )
     return _result(text, payload)
+
+
+def _other_attributes_text(attrs: dict, meaning: dict, limit: int = 600) -> str:
+    """The rest of the object's attributes for the model, bounded; the payload has them all."""
+    parts = [f"{k}={v}" for k, v in attrs.items() if k not in meaning]
+    if not parts:
+        return ""
+    text = "; ".join(parts)
+    if len(text) > limit:
+        text = text[:limit].rsplit(";", 1)[0] + "; ... (more in the result)"
+    return f" Other attributes: {text}."
 
 
 @mcp.tool(

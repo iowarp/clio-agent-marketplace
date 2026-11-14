@@ -49,6 +49,7 @@ def era5_like(tmp_path: Path) -> Path:
         )
         var.attrs["units"] = "K"
         var.attrs["long_name"] = "Temperature"
+        var.attrs["maximum_value"] = np.float32(300.0)
     return path
 
 
@@ -262,3 +263,12 @@ async def test_a_bare_number_selects_on_a_one_axis_dataset_only(era5_like: Path)
         assert "850" in level.content[0].text and "500" in level.content[0].text
         with pytest.raises(ToolError, match="selection_invalid"):
             await c.call_tool("read", {"file": h, "path": "/T", "count": 2}, meta=_meta("s10"))
+
+
+async def test_describe_tells_the_model_the_other_attributes(era5_like: Path) -> None:
+    async with Client(mcp) as c:
+        h = _data(await c.call_tool("open_file", {"path": str(era5_like)}, meta=_meta("s11")))[
+            "handle"
+        ]
+        out = await c.call_tool("describe", {"file": h, "path": "/T"}, meta=_meta("s11"))
+    assert "Other attributes: maximum_value=300.0" in out.content[0].text
