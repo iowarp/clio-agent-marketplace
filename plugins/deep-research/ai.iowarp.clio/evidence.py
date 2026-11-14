@@ -451,6 +451,7 @@ def render_report(
     blocks: list[ReportBlock],
     claims: list[VerifiedClaim],
     papers: Mapping[str, dict[str, Any]] | None = None,
+    unknown: list[str] | None = None,
 ) -> str:
     """Render the writer's map with canonical source citations and references.
 
@@ -464,12 +465,18 @@ def render_report(
         if block.kind == "source_fact" and not block.claim_ids:
             raise ValueError("A source_fact block must map to its verified claims")
         citations: dict[str, str] = {}
+        missing = [claim_id for claim_id in block.claim_ids if claim_id not in known]
+        if missing and unknown is None:
+            raise ValueError(f"Unknown report claim ID: {missing[0]}")
         for claim_id in block.claim_ids:
-            if claim_id not in known:
-                raise ValueError(f"Unknown report claim ID: {claim_id}")
-            for evidence in known[claim_id].evidence:
+            for evidence in known[claim_id].evidence if claim_id in known else []:
                 citations.setdefault(evidence.source_url, evidence.source_title or "Source")
         text = block.text.replace("\r\n", "\n").strip("\n")
+        if missing:
+            # Rendered on request only (``unknown`` collects them): the text stays,
+            # and says it rests on a claim that is not verified.
+            unknown += [claim_id for claim_id in missing if claim_id not in unknown]
+            text += " *(This rests on a claim that is not verified.)*"
         if citations:
             links = []
             for url, title in citations.items():

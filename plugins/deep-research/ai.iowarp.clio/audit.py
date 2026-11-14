@@ -330,6 +330,43 @@ def merge_shards(shards: list[Audit], prior: Audit | None) -> Audit:
     return merged
 
 
+def ledger_scope(audit: Audit, claim_ids: set[str]) -> Audit:
+    """The part of the ledger a review disputes: those verified claims and their sources.
+
+    The final evidence review re-checks named claims; sending the critic the whole
+    ledger (2026-11-14: 245K characters for one disputed claim) is what made a
+    single critic slow. Gaps and rejections stay with the full ledger.
+    """
+    scope = Audit(verified=[claim for claim in audit.verified if claim.claim_id in claim_ids])
+    handles = {edge.task_handle for claim in scope.verified for edge in claim.evidence}
+    scope._sources = {handle: audit._sources[handle] for handle in handles if handle in audit._sources}
+    scope._papers = dict(audit._papers)
+    return scope
+
+
+def with_scope(full: Audit, claim_ids: set[str], reviewed: Audit) -> Audit:
+    """The full ledger with its disputed claims replaced by the review's audit of them.
+
+    The review's verified claims replace the disputed ones (a claim it narrowed is
+    a new proposition; one it carried stays); its rejections join the ledger's.
+    Everything the review was not asked about is unchanged.
+    """
+    merged = Audit(
+        verified=merge_claims(
+            [claim for claim in full.verified if claim.claim_id not in claim_ids]
+            + list(reviewed.verified)
+        ),
+        rejected=list(
+            {(row.claim, row.source_url): row for row in [*full.rejected, *reviewed.rejected]}.values()
+        ),
+        gaps=list(full.gaps),
+        resolved_gaps=list(reviewed.resolved_gaps),
+    )
+    merged._sources = {**full._sources, **reviewed._sources}
+    merged._papers = {**full._papers, **reviewed._papers}
+    return merged
+
+
 def _merge_ledger(audit: Audit, earlier: Audit | None) -> None:
     """Carry earlier assertions unless the auditor explicitly reconsiders them."""
     if earlier is not None:

@@ -9,6 +9,8 @@ from pydantic import ValidationError
 
 from clio_agent.flows.outcomes import FlowStall
 
+from .audit import ledger_scope, with_scope
+from .coordinate import checked_across
 from .evidence import ReportBlock, ReviewIssue, render_report, review_sources
 
 _CITED_URL = re.compile(r"https?://[^\s)\]>\"'`]+")
@@ -164,8 +166,15 @@ class ReportSynthesis:
         reviews = []
         draft_citations = []
         outside: list[str] = []
+        rendered = ""  # the last draft that rendered, kept so a report is never body-less
         for attempt in range(2):
             verified = [claim.model_dump() for claim in audit.verified]
+            # Cross-evidence findings stand only on claims the ledger still verifies.
+            across, cut = checked_across(across, {claim.claim_id for claim in audit.verified})
+            if cut:
+                await self.ctx.record_event(
+                    {"event": "across_unverified_claims", "attempt": attempt + 1, "cut": cut}
+                )
             gaps = [gap.model_dump() for gap in audit.gaps if not is_delivery(gap)]
             rejected = [claim.model_dump() for claim in audit.rejected]
             written = await self.ctx.step(
@@ -215,6 +224,7 @@ class ReportSynthesis:
                 )
             report = ""
             issues: list[dict[str, Any]] = []
+            typed: list[ReportBlock] = []
             try:
                 typed = [ReportBlock.model_validate(row) for row in blocks]
                 report = render_report(typed, audit.verified, audit._papers)
@@ -222,6 +232,26 @@ class ReportSynthesis:
                 issues.append(
                     ReviewIssue(owner="report", excerpt=str(blocks), reason=str(exc)).model_dump()
                 )
+                if typed:
+                    # Cited claims the ledger does not verify: render the report with
+                    # those passages marked, so it is never lost for one bad citation.
+                    unknown: list[str] = []
+                    report = render_report(typed, audit.verified, audit._papers, unknown)
+                    await self.ctx.record_event(
+                        {
+                            "event": "report_cites_unverified_claims",
+                            "attempt": attempt + 1,
+                            "claim_ids": unknown,
+                        }
+                    )
+            if not report and rendered:
+                # This draft could not be rendered at all: the last one that could is
+                # what the reader gets, with the reason among its open notes.
+                await self.ctx.record_event(
+                    {"event": "report_kept_previous_draft", "attempt": attempt + 1}
+                )
+                report = rendered
+            rendered = report or rendered
             # Only the writer's own prose can cite outside the evidence: the citations
             # and References the flow renders come from verified claims, and a fetched
             # page's title can itself contain a URL (a funding note, 2026-11-14).
@@ -351,17 +381,38 @@ class ReportSynthesis:
                         step="report",
                         observed={"draft": report, "reviews": reviews},
                     )
-                # The disputed claims, against the pinned sources: not the whole round again.
-                audit, critic = await self.flow._verify(
+                # Only the disputed claims and their pinned sources go to the critic;
+                # its audit of them replaces them in the ledger.
+                disputed = [issue for issue in issues if issue["owner"] == "audit"]
+                named = {cid for issue in disputed for cid in issue.get("claim_ids") or []}
+                named &= {claim.claim_id for claim in audit.verified}
+                scope = ledger_scope(audit, named) if named else audit
+                before = {claim.claim_id for claim in audit.verified}
+                reviewed, critic = await self.flow._verify(
                     self.ctx,
                     question,
                     [],
                     [],
-                    (audit, critics[-1]),
+                    (scope, critics[-1]),
                     rounds,
-                    evidence_review=[issue for issue in issues if issue["owner"] == "audit"],
+                    evidence_review=disputed,
                 )
+                audit = with_scope(audit, named, reviewed) if named else reviewed
                 critics.append(critic)
+                cited = {cid for row in blocks for cid in row.get("claim_ids") or []}
+                withdrawn = sorted((before - {c.claim_id for c in audit.verified}) & cited)
+                # The writer's next draft starts from this one: name what it may no
+                # longer cite, so it does not keep a withdrawn claim's ID.
+                issues += [
+                    ReviewIssue(
+                        owner="report",
+                        excerpt=claim_id,
+                        reason="The evidence review withdrew this claim; do not cite it. "
+                        "Use the current verified claims (it may have a narrower replacement).",
+                        claim_ids=[claim_id],
+                    ).model_dump()
+                    for claim_id in withdrawn
+                ]
                 resolutions += [
                     {"round": rounds, **row.model_dump()} for row in audit.resolved_gaps
                 ]

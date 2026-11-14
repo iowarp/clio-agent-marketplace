@@ -479,7 +479,11 @@ def test_plan_research_verify_report() -> None:
     planner, writer, coordinator = Planner(["a", "b"]), Writer(), Coordinator()
     ctx = ScriptedCtx(Children([audit([claim(1)]), audit([claim(2)])]))
     flow = make_flow(
-        planner, writer, coordinator=coordinator, researcher_model="acct/small", critic_model="acct/large"
+        planner,
+        writer,
+        coordinator=coordinator,
+        researcher_model="acct/small",
+        critic_model="acct/large",
     )
 
     result = run(flow, ctx)
@@ -1654,8 +1658,6 @@ def test_critics_run_together_and_a_failed_critic_leaves_the_rest() -> None:
     assert failed["direction"] == "d2"
 
 
-
-
 def test_a_failed_coordinator_keeps_the_evidence_and_leaves_proposals_open() -> None:
     class Broken(Coordinator):
         def __call__(self, **kwargs: Any) -> Any:
@@ -1760,3 +1762,63 @@ def test_an_unreadable_draft_is_corrected_once_then_stops_typed() -> None:
     with pytest.raises(FlowStall) as stalled:
         run(make_flow(Planner(["a"]), Garbled(2), max_rounds=0), ctx)
     assert stalled.value.stall == "report_unreadable"
+
+
+def test_an_evidence_review_rechecks_only_the_disputed_claim_and_the_report_keeps_its_body() -> (
+    None
+):
+    # 2026-11-14 probe: the review critic got the whole 77-claim ledger (245K
+    # characters) for one disputed claim; it withdrew the claim, the writer's
+    # correction still cited its ID, and the delivered report had no body.
+    issue = {
+        "owner": "audit",
+        "excerpt": "claim 1",
+        "reason": "The passage does not say this",
+        "claim_ids": [claim(1)["claim_id"]],
+    }
+    withdrawal = audit(
+        [claim(3)],
+        rejected=[
+            {
+                "claim": "claim 1",
+                "reason": "Overstated; narrowed to claim 3",
+                "source_url": claim(1)["evidence"][0]["source_url"],
+            }
+        ],
+    )
+
+    class Stubborn(Writer):
+        """Rewrites from its previous draft and keeps that draft's claim IDs."""
+
+        def __call__(self, **kwargs: Any) -> Any:
+            previous = kwargs["previous_blocks"]
+            if previous:
+                self.given.append(
+                    {"review_feedback": [r.model_dump() for r in kwargs["review_feedback"]]}
+                )
+                return dspy.Prediction(blocks=previous)
+            return super().__call__(**kwargs)
+
+    writer = Stubborn()
+    ctx = ScriptedCtx(Children([audit([claim(1), claim(2)]), withdrawal]))
+    result = run(
+        make_flow(Planner(["a"]), writer, reviewer=Reviewer([[issue], []]), max_rounds=0), ctx
+    )
+    review = of(ctx, "critic")[1]["input"]
+    # Only the disputed claim and its source travel to the critic.
+    assert review["earlier_audit"]["verified"] == [claim(1)]
+    assert [row["task_handle"] for row in review["source_inventory"]] == ["fetch_1"]
+    # Its audit replaces that claim; the rest of the ledger is unchanged.
+    assert {c["claim_id"] for c in result["verified"]} == {
+        claim(2)["claim_id"],
+        claim(3)["claim_id"],
+    }
+    assert any(row["claim"] == "claim 1" for row in result["rejected"])
+    # The writer is told which claim it may no longer cite.
+    feedback = writer.given[-1]["review_feedback"]
+    assert any(row["claim_ids"] == [claim(1)["claim_id"]] for row in feedback)
+    # It cited it anyway: the passage is kept and marked, never a body-less report.
+    assert "claim 2" in result["answer"]
+    assert "*(This rests on a claim that is not verified.)*" in result["answer"]
+    (marked,) = [e for e in ctx.events if e["event"] == "report_cites_unverified_claims"]
+    assert marked["claim_ids"] == [claim(1)["claim_id"]]
