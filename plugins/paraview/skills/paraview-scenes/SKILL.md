@@ -53,23 +53,32 @@ Read field names from it; never guess one. Keep the scene id it returns: passing
   with the tools.
 - Never read a value off a colour bar or an image.
 
-## Change the scene
+## Build the scene with a script
 
-- `create_filter` takes ParaView's filter names and property names, for example
-  `Contour` with `ContourBy` and `Isosurfaces`, `Slice`, `Clip`, `Threshold`.
-  A wrong property name is refused with the names that exist, and nothing
-  changes.
-- `set_filter_property` changes a filter already in the scene (a contour value,
-  a slice origin) instead of adding another. The person can change one too, in
-  the view's panel; their change reaches you in the view's change log.
-- `set_representation` sets Surface, Wireframe, Points, Outline or Volume, the
-  field to colour by, and a colour preset; prefer a perceptually uniform preset
-  such as Viridis for continuous data.
+`run_scene_script` runs `paraview.simple` code inside the scene the person sees, so
+anything ParaView can do becomes part of it: a second dataset (`OpenDataFile`),
+filters, colouring, solid colours, colour ranges, text. The script sees `view` (the
+scene's view: `Show` things in it, never create another), `objects` (the scene's
+objects by id or label, e.g. `objects["o1"]` for the dataset) and `folder`.
+
+- One step builds one idea (the cloud shells; the isobars) and gets a `label`.
+- Read field names and ranges from the scene first, and choose values from
+  `measure_field`, not guesses.
+- The result lists what the script made, with the ids to use later. A script that
+  fails leaves nothing behind and says why; fix it and run it again.
+- The step is saved with the scene and replayed when the scene is restored, so the
+  script must read its data from files that stay where they are.
+- The person can change what a script made in the view's panel; their edits are
+  kept on top of the script.
+
+## Manage the view
+
 - `set_timestep` moves in time or follows the latest step. The person may park
   the view on an earlier step; say when newer steps exist rather than moving
   them.
-- `set_camera`, `fit_camera`, `remove_scene_object` do what they say.
-- Large geometry is drawn by ParaView and sent as images; the view says so.
+- `set_camera` and `fit_camera` place the camera.
+- Large geometry, volumes and image slices are drawn by ParaView and sent as
+  images; the view says so.
 
 ## In a dashboard
 
@@ -82,7 +91,12 @@ it to a chart that selects on the same path, both ways.
 
 ## Keep the result
 
-`export_artifact` writes a figure; `export_scene` writes the scene manifest and
-a ParaView state file. `scene_state` says where ParaView is attached and what
+`export_artifact` writes a figure. `export_animation` writes a video of the time
+steps as the view shows them (an MP4, or an OGG where the ParaView machine has no
+ffmpeg), with an optional label per step such as its date; write it into the
+person's workspace to share it. A live view only works while ParaView runs, so a
+dashboard that shows one should also carry its exported animation, so the
+dashboard still shows the motion later. `export_scene` writes the scene manifest
+and a ParaView state file. `scene_state` says where ParaView is attached and what
 the scene holds. Report the machine, the source, the time step, the filters, the
 field and its association, and the image you captured.
