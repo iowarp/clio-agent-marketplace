@@ -17,6 +17,7 @@ from typing import Annotated, Any, Literal
 import h5py
 import numpy as np
 from fastmcp import Context, FastMCP
+from fastmcp.exceptions import ToolError
 from fastmcp.tools import ToolResult
 from mcp.types import TextContent
 from pydantic import Field
@@ -30,6 +31,32 @@ PATHS_META_KEY = "ai.iowarp.clio/paths"
 MAX_LIST = 500
 
 mcp = FastMCP("h5", version="0.1.0")
+
+
+def _typed(func):
+    """Turn an unexpected failure into a typed refusal that says what failed and what to do."""
+    import functools  # noqa: PLC0415
+
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return func(*args, **kwargs)
+        except ToolError:
+            raise
+        except TimeoutError as exc:
+            refuse(
+                "read_timed_out",
+                f"a read did not finish ({type(exc).__name__}); retry, or read fewer steps "
+                "per call",
+            )
+        except OSError as exc:
+            refuse("read_failed", f"{type(exc).__name__}: {exc or 'no detail'}")
+        except Exception as exc:  # noqa: BLE001 - every failure is reported with its type
+            refuse("tool_failed", f"{type(exc).__name__}: {exc or 'no detail'}")
+
+    return wrapper
+
+
 HANDLES = Handles()
 
 Ints = Annotated[
@@ -102,6 +129,7 @@ def _dims_text(ds: h5py.Dataset) -> str:
     annotations={"title": "Open an HDF5 file", "readOnlyHint": True},
     meta=_paths(path=("local", "read")),
 )
+@_typed
 def open_file(
     path: Annotated[
         str,
@@ -147,6 +175,7 @@ def open_file(
 
 
 @mcp.tool(annotations={"title": "Close an HDF5 file", "readOnlyHint": True})
+@_typed
 def close_file(
     file: Annotated[str, Field(description="The handle open_file returned.")], ctx: Context
 ) -> ToolResult:
@@ -163,6 +192,7 @@ def close_file(
     annotations={"title": "List objects in an HDF5 file", "readOnlyHint": True},
     meta=_paths(path=("none", "read")),
 )
+@_typed
 def list_objects(
     file: Annotated[str, Field(description="The handle open_file returned.")],
     ctx: Context,
@@ -221,6 +251,7 @@ def list_objects(
     annotations={"title": "Describe an HDF5 object", "readOnlyHint": True},
     meta=_paths(path=("none", "read")),
 )
+@_typed
 def describe(
     file: Annotated[str, Field(description="The handle open_file returned.")],
     path: Annotated[str, Field(description="A dataset or group inside the file.")],
@@ -284,6 +315,7 @@ def describe(
     annotations={"title": "Price a read", "readOnlyHint": True},
     meta=_paths(path=("none", "read")),
 )
+@_typed
 def selection_cost(
     file: Annotated[str, Field(description="The handle open_file returned.")],
     path: Annotated[str, Field(description="A dataset inside the file.")],
@@ -320,6 +352,7 @@ def selection_cost(
     annotations={"title": "Read part of a dataset", "readOnlyHint": True},
     meta=_paths(path=("none", "read")),
 )
+@_typed
 def read(
     file: Annotated[str, Field(description="The handle open_file returned.")],
     path: Annotated[str, Field(description="A dataset inside the file.")],
@@ -379,6 +412,7 @@ def read(
     annotations={"title": "Reduce a dataset", "readOnlyHint": True},
     meta=_paths(path=("none", "read")),
 )
+@_typed
 def reduce(
     file: Annotated[str, Field(description="The handle open_file returned.")],
     path: Annotated[str, Field(description="A dataset inside the file.")],
@@ -429,6 +463,7 @@ def reduce(
     annotations={"title": "Write a subset file", "readOnlyHint": False},
     meta=_paths(out_path=("local", "write")),
 )
+@_typed
 def write_subset(
     file: Annotated[str, Field(description="The handle open_file returned.")],
     items: Annotated[
@@ -457,8 +492,10 @@ def write_subset(
     if not items:
         refuse("subset_empty", "name at least one dataset")
     out = Path(out_path).expanduser()
-    if not out.parent.exists():
-        refuse("out_path_invalid", f"{out.parent} does not exist")
+    try:
+        out.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        refuse("out_path_invalid", f"{out.parent} cannot be created: {exc}")
     resolved = []
     for item in items:
         ds = _dataset(f, str(item.get("path", "")))

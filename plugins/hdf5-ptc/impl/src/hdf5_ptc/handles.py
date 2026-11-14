@@ -68,9 +68,17 @@ def _open_remote(url: str) -> tuple[h5py.File, Any, int | None]:
         )
     if not (url == origin or url.startswith(origin + "/")):
         refuse("url_not_allowed", f"only byte-range URLs under {origin} can be opened")
+    import aiohttp  # noqa: PLC0415 - remote files only
     import fsspec  # noqa: PLC0415 - remote files only
 
-    fs = fsspec.filesystem("http", client_kwargs={"trust_env": True})
+    fs = fsspec.filesystem(
+        "http",
+        client_kwargs={
+            "trust_env": True,
+            "timeout": aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=120),
+        },
+        skip_instance_cache=True,
+    )
     try:
         size = fs.size(url)
         raw = fs.open(url, "rb", block_size=REMOTE_BLOCK_BYTES, cache_type="blockcache")

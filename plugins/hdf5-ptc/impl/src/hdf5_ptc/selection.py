@@ -88,7 +88,9 @@ def parse(
         if b < 1 or a + (b - 1) * m >= n:
             refuse(
                 "selection_out_of_bounds",
-                f"dim {dim}: start {a}, count {b}, step {m} runs past its length {n}",
+                f"dim {dim}: start {a}, count {b}, step {m} reaches index {a + (b - 1) * m}, past "
+                f"its length {n}. count is the number of values taken, so at most "
+                f"{(n - 1 - a) // m + 1} here",
             )
     return Selection(tuple(s), tuple(c), tuple(k))
 

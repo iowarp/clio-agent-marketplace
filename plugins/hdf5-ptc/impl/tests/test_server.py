@@ -221,3 +221,31 @@ async def test_urls_open_only_under_the_configured_range_origin(monkeypatch) -> 
         )
         with pytest.raises(ToolError, match="url_not_allowed"):
             await c.call_tool("open_file", {"path": "https://example.org/x.h5"}, meta=_meta("s8"))
+
+
+async def test_write_subset_makes_its_folder_and_count_errors_say_the_limit(
+    era5_like, tmp_path
+) -> None:
+    out = tmp_path / "new" / "deeper" / "box.nc"
+    async with Client(mcp) as c:
+        h = _data(await c.call_tool("open_file", {"path": str(era5_like)}, meta=_meta("s9")))[
+            "handle"
+        ]
+        await c.call_tool(
+            "write_subset",
+            {"file": h, "items": [{"path": "/T"}], "out_path": str(out)},
+            meta=_meta("s9"),
+        )
+        assert out.is_file()
+        with pytest.raises(ToolError, match="at most 2 here"):
+            await c.call_tool(
+                "read",
+                {
+                    "file": h,
+                    "path": "/T",
+                    "start": [0, 0, 0, 0],
+                    "count": [4, 5, 12, 16],
+                    "step": [3, 1, 1, 1],
+                },
+                meta=_meta("s9"),
+            )
