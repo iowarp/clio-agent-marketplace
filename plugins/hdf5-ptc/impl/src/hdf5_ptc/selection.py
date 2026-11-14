@@ -58,6 +58,8 @@ def _ints(value: Any, name: str, rank: int) -> list[int] | None:
         return None
     if isinstance(value, str):
         value = [v for v in value.replace(" ", "").split(",") if v]
+    elif isinstance(value, int) and rank == 1:
+        value = [value]  # one axis: a bare number is that axis's value
     try:
         out = [int(v) for v in value]
     except (TypeError, ValueError):

@@ -249,3 +249,16 @@ async def test_write_subset_makes_its_folder_and_count_errors_say_the_limit(
                 },
                 meta=_meta("s9"),
             )
+
+
+async def test_a_bare_number_selects_on_a_one_axis_dataset_only(era5_like: Path) -> None:
+    async with Client(mcp) as c:
+        h = _data(await c.call_tool("open_file", {"path": str(era5_like)}, meta=_meta("s10")))[
+            "handle"
+        ]
+        level = await c.call_tool(
+            "read", {"file": h, "path": "/level", "start": 1, "count": 2}, meta=_meta("s10")
+        )
+        assert "850" in level.content[0].text and "500" in level.content[0].text
+        with pytest.raises(ToolError, match="selection_invalid"):
+            await c.call_tool("read", {"file": h, "path": "/T", "count": 2}, meta=_meta("s10"))

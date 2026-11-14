@@ -31,6 +31,10 @@ takes it as `file`, and several files can be open at once. Close what you open.
 4. **Locate in coordinates.** Report positions as coordinate values (latitude,
    longitude, level, time), which `reduce` and `describe` give, not array indexes.
 
+When you name a dataset the reader may want to see, link it: a `workspace-file:` link
+with `?locator=/path/in/file` opens the file's viewer on that dataset, so a table of
+variables can be a list of fields the reader opens with one click.
+
 ## Files in a linked source
 
 A file in a linked source is not on disk. Ask `connected_data_open` for it with
