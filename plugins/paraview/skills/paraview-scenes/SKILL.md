@@ -95,8 +95,8 @@ it to a chart that selects on the same path, both ways.
 steps as the view shows them (an MP4, or an OGG where the ParaView machine has no
 ffmpeg), with an optional label per step such as its date; write it into the
 person's workspace to share it. A live view only works while ParaView runs, so a
-dashboard that shows one should also carry its exported animation, so the
-dashboard still shows the motion later. `export_scene` writes the scene manifest
+dashboard that shows one should name its exported animation as the view's
+`recordingUri`; the dashboard plays it when the live view cannot run. `export_scene` writes the scene manifest
 and a ParaView state file. `scene_state` says where ParaView is attached and what
 the scene holds. Report the machine, the source, the time step, the filters, the
 field and its association, and the image you captured.
