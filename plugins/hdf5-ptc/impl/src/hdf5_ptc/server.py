@@ -62,7 +62,8 @@ HANDLES = Handles()
 Ints = Annotated[
     list[int] | int | None,
     Field(
-        description="One integer per dimension (a bare number for a one-dimension dataset); omit for the default."
+        description="One integer per dimension (a bare number for a one-dimension dataset); "
+        "omit for the default."
     ),
 ]
 
