@@ -58,6 +58,7 @@ from ..evidence import (
     merge_claims as merge_claims,
 )
 from ..blocked import blocked_message, round_block
+from ..packet import typed_claims
 from ..report import ReportSynthesis, action_completed, action_receipts, delivery_record
 from ..report import is_delivery as _is_delivery
 
@@ -363,6 +364,9 @@ deep_research = sequence(terminal("plan"),
                 await ctx.record_event({"event": "gap_rounds_stopped", "reason": "permission"})
                 break
             gaps = _researchable([gap.model_dump() for gap in audit.gaps], capabilities)
+            gaps, merged = _distinct_questions(gaps)
+            if merged:
+                await ctx.record_event({"event": "gaps_merged", "round": rounds + 1, "merged": merged})
             if not gaps:
                 break
             rounds += 1
@@ -502,6 +506,17 @@ deep_research = sequence(terminal("plan"),
                 row["failed"] = {"reason": result.reason, "message": str(result)}
             else:
                 row.update(handle=result.handle, model=result.model, evidence=result.response_text)
+                claims, invalid = typed_claims(result)
+                if claims:
+                    row["claims"] = claims
+                if invalid:
+                    await ctx.record_event(
+                        {
+                            "event": "packet_claims_invalid",
+                            "direction": target["id"],
+                            "dropped": invalid,
+                        }
+                    )
             packets.append(row)
         return packets
 
@@ -691,6 +706,26 @@ _BOUNDS = {
     "max_rounds": (0, MAX_ROUNDS_CEILING),
     "concurrency": (0, DIRECTIONS_BACKSTOP),
 }
+
+
+def _distinct_questions(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
+    """One row per question (same words, ignoring case and spacing), and the dropped copies.
+
+    The critic can restate an open gap with other tools, which gives it a new
+    identity; researching the same question twice in one round adds nothing.
+    """
+
+    kept: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    merged: list[str] = []
+    for row in rows:
+        key = " ".join(str(row.get("question") or "").lower().split())
+        if key in seen:
+            merged.append(str(row.get("gap_id") or row.get("question")))
+            continue
+        seen.add(key)
+        kept.append(row)
+    return kept, merged
 
 
 def _child_label(target: dict[str, Any]) -> str:

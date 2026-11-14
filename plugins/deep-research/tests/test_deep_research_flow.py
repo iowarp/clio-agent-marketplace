@@ -1479,3 +1479,13 @@ def test_a_long_unnamed_question_is_shortened_at_a_word() -> None:
         {"id": "g2.1", "question": "What do the OpenTelemetry GenAI semantic conventions specify?"}
     )
     assert label == "What do the OpenTelemetry GenAI semantic…"
+
+
+def test_a_restated_gap_is_researched_once_per_round() -> None:
+    same = "What do the release notes say?"
+    first = audit(gaps=[gap(same), gap(same, required_tools=["web_search", "web_fetch"])])
+    ctx = ScriptedCtx(Children([first, audit()]))
+    run(make_flow(Planner(["a"]), max_rounds=1), ctx)
+    assert [r["key"] for r in of(ctx, "researcher")] == ["research:d1", "research:g2.1"]
+    (merged,) = [e for e in ctx.events if e.get("event") == "gaps_merged"]
+    assert merged["round"] == 2 and len(merged["merged"]) == 1

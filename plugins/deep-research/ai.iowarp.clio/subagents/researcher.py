@@ -9,4 +9,6 @@ researcher = Subagent(
     plugins=["web", "literature"],
     tools=["web_search", "web_fetch", "literature_search", "literature_lookup"],
     max_iters=32,
+    # Its findings travel to the critic typed (workflow_state.packet.claims).
+    structured_outputs={"workflow_state": True},
 )
