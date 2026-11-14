@@ -176,7 +176,8 @@ def test_a_critic_passage_that_repeats_binds_to_the_window_it_read() -> None:
     )
     # Without the window the repeated passage cannot be placed; with it, it binds
     # to the occurrence the critic read, and the reviewer's context starts there.
-    assert evidence.bind_claims([verified.model_copy(deep=True)], sources)
+    (problem,) = evidence.bind_claims([verified.model_copy(deep=True)], sources)
+    assert "repeats (2 times on the page; this is not a page whose text you were shown" in problem
     assert evidence.bind_claims([verified], anchored) == []
     offset = verified.evidence[0].offset
     assert page[offset:].startswith("The default is 64-bit. More.")

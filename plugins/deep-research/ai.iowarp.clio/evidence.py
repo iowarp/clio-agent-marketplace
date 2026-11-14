@@ -290,8 +290,15 @@ def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]])
                     if any(start <= found.start() and found.end() <= end for start, end in windows)
                 ]
                 if len(seen) != 1:
+                    times = sum(1 for _ in pattern.finditer(source["content"]))
+                    shown = (
+                        f"{len(seen)} of them in the page text you were shown"
+                        if windows
+                        else "this is not a page whose text you were shown around a quote"
+                    )
                     problems.append(
-                        f"{prefix}: quotation repeats; include enough exact surrounding text to identify its intended occurrence"
+                        f"{prefix}: quotation repeats ({times} times on the page; {shown}); "
+                        "include enough exact surrounding text to identify its intended occurrence"
                     )
                     continue
                 match = seen[0]
