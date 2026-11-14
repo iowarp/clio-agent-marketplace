@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "literature",
+  "version": "1.0.0",
+  "description": "Find papers, preprints, reports and datasets across scholarly sources, and follow a work's references, citations and versions, with CLIO's built-in literature tools.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "literature",
+    "papers",
+    "citations",
+    "research"
+  ]
+}

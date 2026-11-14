@@ -30,6 +30,11 @@ class SourceEvidence(BaseModel):
         return value
 
 
+def claim_identity(claim: str) -> str:
+    """The ID of a proposition: derived from its exact text, for continuity only."""
+    return "claim_" + hashlib.sha256(claim.strip().encode()).hexdigest()[:16]
+
+
 class VerifiedClaim(BaseModel):
     """An atomic proposition with every necessary supporting passage retained."""
 
@@ -47,7 +52,7 @@ class VerifiedClaim(BaseModel):
 
     @model_validator(mode="after")
     def identify(self) -> "VerifiedClaim":
-        expected = "claim_" + hashlib.sha256(self.claim.encode()).hexdigest()[:16]
+        expected = claim_identity(self.claim)
         if self.claim_id and self.claim_id != expected:
             raise ValueError("claim_id must identify the exact proposition")
         self.claim_id = expected
@@ -177,7 +182,8 @@ def source_records(
     for row in rows:
         task = row["task"]
         owner = task.get("owner") or {}
-        backend = task.get("backend") or {}
+        # An inline answer has no adopted backend; CLIO's submission names the server.
+        backend = task.get("backend") or task.get("submitted_backend") or {}
         if (
             task.get("kind") != "MCP"
             or task.get("status") != "completed"
@@ -212,6 +218,7 @@ def source_records(
         records[task["handle"]] = {
             "source_id": source_id,
             "task_handle": task["handle"],
+            "call_id": str(task.get("invocation_id") or ""),
             "auditor_handle": owner["assignment_id"],
             "result_reference": reference,
             "source_url": url,
@@ -225,11 +232,29 @@ def source_records(
     return records
 
 
+def resolve_handle(cited: str, records: dict[str, dict[str, Any]]) -> str:
+    """The fetch task a cited CLIO reference names.
+
+    A critic cites its fetch by task handle, or by the ``call:<session>/<call_id>``
+    reference CLIO prints after every tool result (an inline answer has no other
+    handle). Anything else is returned as cited and fails binding with its reason.
+    """
+    text = cited.strip().strip("[]").strip()
+    if text in records:
+        return text
+    call_id = text.removeprefix("call:").rpartition("/")[2]
+    for handle, record in records.items():
+        if call_id and record.get("call_id") == call_id:
+            return handle
+    return cited
+
+
 def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]]) -> list[str]:
     """Check source identity and passage integrity, without pretending to prove entailment."""
     problems = []
     for claim in claims:
         for evidence in claim.evidence:
+            evidence.task_handle = resolve_handle(evidence.task_handle, records)
             source = records.get(evidence.task_handle)
             prefix = f"{claim.claim_id} evidence {evidence.task_handle}"
             if source is None:
@@ -327,8 +352,89 @@ def _quote_pattern(quote: str) -> re.Pattern[str] | None:
     return re.compile(r"\s+".join(re.escape(word) for word in words)) if words else None
 
 
-def render_report(blocks: list[ReportBlock], claims: list[VerifiedClaim]) -> str:
-    """Render the writer's map with canonical source citations and references."""
+_DOI = re.compile(r"10\.\d{4,9}/[^\s?#<>]+", re.IGNORECASE)
+_ARXIV = re.compile(r"arxiv\.org/(?:abs|html|pdf)/(\d{4}\.\d{4,5})", re.IGNORECASE)
+
+
+def _paper_keys(work: Mapping[str, Any]) -> list[str]:
+    ids = work.get("ids") if isinstance(work.get("ids"), Mapping) else {}
+    keys = []
+    if ids.get("doi"):
+        keys.append("doi:" + str(ids["doi"]).lower())
+    if ids.get("arxiv"):
+        keys.append("arxiv:" + re.sub(r"v\d+$", "", str(ids["arxiv"]).lower()))
+    if work.get("readable_url"):
+        keys.append("url:" + url_key(str(work["readable_url"])))
+    return keys
+
+
+def paper_records(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Bibliographic records CLIO's literature tools returned in these tool results.
+
+    Keyed by DOI, arXiv id and readable URL, so a cited page can be matched to the
+    work it belongs to. Only completed, successful ``literature`` results count.
+    """
+    papers: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        task = row["task"]
+        backend = task.get("backend") or task.get("submitted_backend") or {}
+        if backend.get("server") != "literature" or task.get("status") != "completed":
+            continue
+        body = _web_payload(row.get("value"))
+        if body is None or body.get("ok") is not True:
+            continue
+        works = [body["work"]] if isinstance(body.get("work"), Mapping) else body.get("works")
+        for work in works if isinstance(works, list) else []:
+            if isinstance(work, Mapping) and work.get("title"):
+                for key in _paper_keys(work):
+                    papers.setdefault(key, dict(work))
+    return papers
+
+
+def paper_for(url: str, papers: Mapping[str, dict[str, Any]]) -> dict[str, Any] | None:
+    """The scholarly work a cited URL belongs to, by DOI, arXiv id or readable URL."""
+    if not papers:
+        return None
+    found = _DOI.search(url)
+    if found and (paper := papers.get("doi:" + found.group(0).lower().rstrip(".)"))):
+        return paper
+    found = _ARXIV.search(url)
+    if found and (paper := papers.get("arxiv:" + found.group(1).lower())):
+        return paper
+    return papers.get("url:" + url_key(url))
+
+
+def _reference(url: str, title: str, papers: Mapping[str, dict[str, Any]]) -> str:
+    """One References entry: the cited link, with the work's bibliography when known."""
+    paper = paper_for(url, papers)
+    link = lambda label: f"[{_markdown_label(label)}](<{url.replace('>', '%3E')}>)"  # noqa: E731
+    if paper is None:
+        return f"- {link(title)}"
+    authors = [str(a) for a in paper.get("authors") or [] if str(a) != "et al."]
+    names = ", ".join(authors[:3])
+    if names and (len(authors) > 3 or "et al." in (paper.get("authors") or [])):
+        names += " et al."
+    year = f" ({paper['year']})" if paper.get("year") else ""
+    entry = f"- {names}{year}. " if names or year else "- "
+    entry += link(str(paper.get("title") or title)) + "."
+    if paper.get("venue"):
+        entry += f" *{_markdown_label(str(paper['venue']))}*."
+    doi = (paper.get("ids") or {}).get("doi") if isinstance(paper.get("ids"), Mapping) else None
+    if doi:
+        entry += f" doi:{doi}"
+    return entry
+
+
+def render_report(
+    blocks: list[ReportBlock],
+    claims: list[VerifiedClaim],
+    papers: Mapping[str, dict[str, Any]] | None = None,
+) -> str:
+    """Render the writer's map with canonical source citations and references.
+
+    A reference whose URL belongs to a work CLIO's literature tools returned (by DOI,
+    arXiv id or readable URL) is written with its authors, year, venue and DOI.
+    """
     known = {claim.claim_id: claim for claim in claims}
     parts = []
     used: dict[str, str] = {}
@@ -353,10 +459,7 @@ def render_report(blocks: list[ReportBlock], claims: list[VerifiedClaim]) -> str
     if used:
         parts.append(
             "## References\n\n"
-            + "\n".join(
-                f"- [{_markdown_label(title)}](<{url.replace('>', '%3E')}>)"
-                for url, title in used.items()
-            )
+            + "\n".join(_reference(url, title, papers or {}) for url, title in used.items())
         )
     return "\n\n".join(parts)
 

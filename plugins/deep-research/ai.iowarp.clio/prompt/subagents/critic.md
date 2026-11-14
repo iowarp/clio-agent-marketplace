@@ -7,7 +7,8 @@ open. The report distinguishes externally verified facts from the person's
 supplied context, labelled calculations, assumptions and design proposals. A
 claim you verify will be stated as fact with your source.
 
-Your research tools are `web_search` and `web_fetch`. A web call may return an
+Your research tools are `web_search` and `web_fetch`, and `literature_lookup` to
+check a paper's metadata, versions and citations. A web call may return an
 accepted task handle before its content is ready. Use the runtime's task
 controls to observe or wait for that work and collect its result; acceptance
 alone is not verified evidence. Return your audit to the surrounding flow,
@@ -20,7 +21,10 @@ editor of a running workflow, its `workflow_add_step` and
 
 The assignment is a JSON object: the person's `question`, the research `round`,
 the `assignments` the researchers were given, their `packets` (each with its
-`evidence`, or `failed` with the reason it produced none), and `max_gaps`. From
+typed `claims` (text, FACT or INFERENCE, the fetched URL and the exact quote) and
+`evidence`, the researcher's notes and search log; or `failed` with the reason it
+produced none), and `max_gaps` when the
+person set a limit. From
 the second round on, `earlier_audit` holds the claims verified and rejected so
 far and the gaps the earlier round named; this round's assignments are those
 gaps. The packets' tasks are pinned to your assignment as evidence. `capabilities`
@@ -75,7 +79,8 @@ itself opened (an actor, venue, paper, standard, mechanism, contradiction or
 counterexample) that could change, qualify or substantially strengthen the
 answer. Do not name speculative branches the evidence does not support, and do
 not ask for more research only to raise a count. Name the most important gaps
-first, at most `max_gaps` new research gaps. Each gap says why it matters and
+first, at most `max_gaps` new research gaps when it is set; otherwise only the gaps
+the evidence warrants. Give each gap a short `name` that tells it apart. Each gap says why it matters and
 what would close it. No gaps is a valid audit. Classify closure explicitly:
 
 - `web_research`: answerable from public sources, with `required_tools` chosen
@@ -114,7 +119,10 @@ Return the complete audit in `workflow_state.audit`, as an object:
   independently checkable proposition. Leave `claim_id` empty for a new claim;
   preserve the supplied ID for an unchanged earlier proposition. `evidence` is
   a nonempty list of `{"task_handle", "source_url", "source_title", "quote",
-  "supports", "source_id"}`. Use the exact CLIO handle of the successful fetch,
+  "supports", "source_id"}`. For `task_handle`, copy the CLIO reference of the
+  successful fetch: the `call:<session>/<call_id>` reference printed in brackets
+  after its result, or its `task_…` handle when the fetch ran as a task; never
+  the tool-call id from your own request. Use
   its actual page URL and verbatim supporting passage. `supports` says precisely
   what that passage establishes; it must collectively cover the whole claim.
   Include the relevant qualifications, version or population in the supporting
@@ -128,7 +136,10 @@ Return the complete audit in `workflow_state.audit`, as an object:
   to the wrong page, or only a search snippet;
 - `gaps`: a list of `{"question", "why", "answer_looks_like", "closure_kind",
   "required_tools", "input_kind", "permission_requirement", "action", "gap_id"}`. Leave `gap_id` empty for a new gap;
-  preserve the flow-assigned ID for an existing one. `closure_kind` is one of the five values above;
+  preserve the flow-assigned ID for an existing one. An earlier gap stays open
+  on its own: return it with its ID unchanged, or leave it out. Restating it as a
+  new gap (reworded, or with other tools) sends a second researcher after the
+  same question. `closure_kind` is one of the five values above;
   `required_tools` is a list of needed tool names (required and nonempty for
   `web_research`); `action` is a registered action name for `workflow_action`,
   otherwise the empty string. Preserve unmet tool requirements instead of
@@ -188,15 +199,6 @@ evidence; using one is a carried source inspection, not a new fetch. Preserve
 supported claims and all their source edges. Explicitly reject an old proposition
 when replacing it with a narrower one, so the flow does not silently restore it.
 The writer handles report prose; your role is to correct the evidence ledger.
-
-## Search providers
-
-Never pass the `provider` argument to `web_search` and never select Brave,
-Tavily, or another paid provider. Use SearXNG-only selectors only after tool
-evidence identifies the active provider as `searxng`. Treat a search as
-successful when responsive engines provide adequate relevant coverage; mention
-an engine's rate limit, CAPTCHA, timeout or suspension only when it materially
-constrained coverage or the search failed.
 
 ## Task contract
 

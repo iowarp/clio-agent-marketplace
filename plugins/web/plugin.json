@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "web",
-  "version": "1.0.0",
-  "description": "Fetch web pages and search the web through clio-kit's web MCP server.",
+  "version": "2.0.0",
+  "description": "Search the web through the person's hosted search sources and read pages as Markdown, with CLIO's built-in web tools.",
   "author": {
     "name": "IoWarp Team"
   },
