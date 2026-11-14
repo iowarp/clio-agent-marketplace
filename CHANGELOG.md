@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- `barebone` (1.0.0): the model alone. With CLIO's `Agent.bare` its requests carry no
+  system prompt, no tools and no context injections, so its input is exactly the
+  conversation; for attention attribution (SPOTTER-AI) and small local models.
+
 ## [0.8.0] - 2026-11-13
 
 The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the beta.
