@@ -65,6 +65,37 @@ def cited_outside(report: str, verified: list[dict[str, Any]]) -> list[str]:
     )
 
 
+def without_unverified_links(text: str, urls: list[str]) -> str:
+    """Turn links to sources outside the verified evidence into marked plain text.
+
+    The report may cite only verified sources. A link the writer added anyway keeps
+    its words, loses its target, and says so; nothing unchecked reads as a citation.
+    """
+    for url in urls:
+        target = re.escape(url) + r"[/.,;:]*"
+        text = re.sub(r"\[([^\]]*)\]\(<?" + target + r">?\)", r"\1 (unverified source)", text)
+        text = re.sub(target, "(unverified source)", text)
+    return text
+
+
+def with_open_issues(document: str, issues: list[dict[str, Any]]) -> str:
+    """Append the reviewer's remaining objections, so the reader sees them."""
+    if not issues:
+        return document
+    lines = [
+        "## Open review notes",
+        "",
+        "An independent reviewer still raised these points on the final draft. Read the "
+        "passages they name with care.",
+        "",
+    ]
+    for issue in issues:
+        excerpt = " ".join(str(issue.get("excerpt") or "").split())
+        excerpt = excerpt if len(excerpt) <= 200 else excerpt[:199] + "…"
+        lines.append(f"- “{excerpt}”: {' '.join(str(issue.get('reason') or '').split())}")
+    return document.rstrip() + "\n\n" + "\n".join(lines) + "\n"
+
+
 def delivery_record(
     audit: Any,
     blocks: list[dict[str, Any]],
@@ -149,7 +180,7 @@ class ReportSynthesis:
             issues: list[dict[str, Any]] = []
             try:
                 typed = [ReportBlock.model_validate(row) for row in blocks]
-                report = render_report(typed, audit.verified)
+                report = render_report(typed, audit.verified, audit._papers)
             except (ValidationError, ValueError) as exc:
                 issues.append(
                     ReviewIssue(owner="report", excerpt=str(blocks), reason=str(exc)).model_dump()
@@ -202,17 +233,31 @@ class ReportSynthesis:
                     "operational_evidence": operational_evidence,
                 }
             if attempt:
-                raise FlowStall(
-                    "report_citations_invalid" if outside else "report_review_unresolved",
-                    "the corrected report still has unresolved evidence or synthesis problems",
-                    step="report",
-                    observed={
-                        "urls": outside,
-                        "draft": document,
-                        "blocks": blocks,
-                        "reviews": reviews,
-                    },
+                # The writer had its correction. Deliver the report rather than lose
+                # the research: links outside the verified evidence lose their target,
+                # and the reviewer's remaining objections are printed with the report.
+                report = without_unverified_links(report, outside)
+                document = without_unverified_links(with_open_issues(document, issues), outside)
+                verdict["status"] = "delivered_with_open_issues"
+                verdict["report_sha256"] = hashlib.sha256(document.encode()).hexdigest()
+                await self.ctx.record_event(
+                    {
+                        "event": "report_delivered_with_open_issues",
+                        "attempt": attempt + 1,
+                        "issues": issues,
+                        "unverified_urls": outside,
+                    }
                 )
+                return {
+                    "audit": audit,
+                    "report": report,
+                    "document": document,
+                    "blocks": blocks,
+                    "reviews": reviews,
+                    "draft_citations": draft_citations,
+                    "outside": outside,
+                    "operational_evidence": operational_evidence,
+                }
             if any(issue["owner"] == "audit" for issue in issues):
                 if not critics:
                     raise FlowStall(

@@ -80,6 +80,7 @@ class ScriptedCtx:
         evidence: Any = None,
         key: str = "",
         model: str = "",
+        label: str = "",
     ) -> _Call:  # noqa: A002 - ctx.call's public parameter name
         row = {
             "target": target,
@@ -87,6 +88,7 @@ class ScriptedCtx:
             "evidence": list(evidence or []),
             "key": key,
             "model": model,
+            "label": label,
         }
         self.calls.append(row)
         return _Call(self, row)
@@ -415,7 +417,7 @@ def test_plan_research_verify_report() -> None:
     assert planner.asked == [
         {
             "question": "What changed?",
-            "max_directions": 6,
+            "max_directions": None,
             "capabilities": flow_module._capabilities(ctx),
             "operational_evidence": {"status": "available", "receipts": []},
         }
@@ -696,17 +698,20 @@ def test_gap_closure_requires_prior_identity_and_verified_evidence_or_scope_reas
     assert flow_module._audit_of(result, [])[0] is None
 
 
-def test_unrepaired_outside_citations_stall_before_persistence(tmp_path: Path) -> None:
+def test_unrepaired_outside_citations_are_unlinked_and_the_report_delivered(
+    tmp_path: Path,
+) -> None:
     writer = Writer(extra="\n[a blog](https://unsupported.example/claim)")
     ctx = ScriptedCtx(Children([audit([claim(1)])]), workspace=tmp_path)
-    with pytest.raises(FlowStall) as stalled:
-        run(make_flow(Planner(["a"]), writer), ctx)
-    assert stalled.value.stall == "report_citations_invalid"
-    assert stalled.value.details["observed"]["urls"] == ["https://unsupported.example/claim"]
-    assert "https://unsupported.example/claim" in stalled.value.details["observed"]["draft"]
-    assert len(writer.given) == 2
-    assert not any(s.endswith("persist_report") for s in ctx.steps)
-    assert not list(tmp_path.rglob("*.md"))
+    run(make_flow(Planner(["a"]), writer), ctx)
+    assert len(writer.given) == 2  # the writer had its correction
+    [persisted] = list(tmp_path.rglob("*.md"))
+    text = persisted.read_text()
+    assert "https://unsupported.example/claim" not in text
+    assert "a blog (unverified source)" in text
+    assert "## Open review notes" in text and "outside the verified evidence graph" in text
+    event = next(r for r in ctx.events if r["event"] == "report_delivered_with_open_issues")
+    assert event["unverified_urls"] == ["https://unsupported.example/claim"]
 
 
 @pytest.mark.parametrize(
@@ -1159,6 +1164,32 @@ def test_source_binding_checks_actual_url_quote_and_unique_occurrence() -> None:
     assert flow_module.bind_claims([ambiguous], records) == []
 
 
+def test_an_inline_builtin_fetch_binds_by_its_call_reference() -> None:
+    """In-process web fetches answer inline: no adopted backend, cited by call reference."""
+    row = source_fixture(1, "critic")
+    row["task"]["backend"] = None
+    row["task"]["submitted_backend"] = {"owner": "external_mcp", "server": "web"}
+    row["task"]["invocation_id"] = "call_8f73cc6042d7"
+    records = flow_module.source_records([row], {"critic"})
+    assert list(records) == ["fetch_1"]
+    for cited in (
+        "call:sess_abc/call_8f73cc6042d7",
+        "[call:sess_abc/call_8f73cc6042d7]",
+        "call_8f73cc6042d7",
+    ):
+        bound = flow_module.VerifiedClaim.model_validate(claim(1))
+        bound.evidence[0].task_handle = cited
+        assert flow_module.bind_claims([bound], records) == []
+        assert bound.evidence[0].task_handle == "fetch_1"
+    unknown = flow_module.VerifiedClaim.model_validate(claim(1))
+    unknown.evidence[0].task_handle = "call_68b7df5f_5"  # the model's own tool-call id
+    assert "no successful critic-owned fetch" in flow_module.bind_claims([unknown], records)[0]
+    other = source_fixture(2, "critic")
+    other["task"]["backend"] = None
+    other["task"]["submitted_backend"] = {"owner": "external_mcp", "server": "files"}
+    assert flow_module.source_records([other], {"critic"}) == {}
+
+
 def test_merging_a_proposition_keeps_every_supporting_document() -> None:
     first = claim(1)
     second = claim(2)
@@ -1260,7 +1291,7 @@ def test_semantic_audit_fault_returns_to_critic_without_losing_source_edges() ->
     assert len(result["sources"]) == 2
 
 
-def test_unresolved_semantic_fault_stops_before_persistence(tmp_path: Path) -> None:
+def test_unresolved_semantic_fault_is_delivered_with_its_open_notes(tmp_path: Path) -> None:
     issue = {
         "owner": "report",
         "excerpt": "unsupported connective",
@@ -1268,11 +1299,13 @@ def test_unresolved_semantic_fault_stops_before_persistence(tmp_path: Path) -> N
         "claim_ids": [],
     }
     ctx = ScriptedCtx(Children([audit([claim(1)])]), workspace=tmp_path)
-    with pytest.raises(FlowStall) as stalled:
-        run(make_flow(Planner(["a"]), reviewer=Reviewer([[issue], [issue]])), ctx)
-    assert stalled.value.stall == "report_review_unresolved"
-    assert len(stalled.value.details["observed"]["reviews"]) == 2
-    assert not list(tmp_path.rglob("*.md"))
+    result = run(make_flow(Planner(["a"]), reviewer=Reviewer([[issue], [issue]])), ctx)
+    [persisted] = list(tmp_path.rglob("*.md"))
+    text = persisted.read_text()
+    assert "## Open review notes" in text
+    assert "The report is still stronger than its mapped claims" in text
+    assert result["report_reviews"][-1]["status"] == "delivered_with_open_issues"
+    assert result["report_reviews"][-1]["report_sha256"] == result["persistence"]["text_sha256"]
 
 
 def test_source_repair_reobserves_the_original_auditor_without_inventing_fetch_success() -> None:
@@ -1342,8 +1375,8 @@ def test_options_are_checked_before_a_run_starts() -> None:
         ({"max_rounds": True}, "max_rounds must be int"),
         ({"researcher_model": 3}, "researcher_model must be str"),
         ({"max_rounds": 9}, "max_rounds must be between 0 and 5"),
-        ({"max_directions": 0}, "max_directions must be between 1 and 12"),
-        ({"concurrency": -1}, "concurrency must be between 0 and 12"),
+        ({"max_directions": 40}, "max_directions must be between 0 and 32"),
+        ({"concurrency": -1}, "concurrency must be between 0 and 32"),
         ({"max_direction": 2}, "max_direction is not an option"),
     ]:
         with pytest.raises(FlowOptionsInvalid) as refused:
@@ -1373,3 +1406,86 @@ def test_the_critic_declares_the_typed_audit_channel() -> None:
     prompt = (PROMPT / "subagents" / "critic.md").read_text(encoding="utf-8")
     for field in ("workflow_state.audit", '"source_url"', '"quote"', '"reason"', '"question"'):
         assert field in prompt
+
+
+def test_references_carry_the_bibliography_of_works_the_literature_tools_returned() -> None:
+    """A cited arXiv or DOI page is written with its authors, year, venue and DOI."""
+    evidence_module = import_plugin_module(PLUGIN, "evidence.py")
+    work = {
+        "title": "Lossy Compression for Scientific Data",
+        "ids": {"doi": "10.1109/ipdps.2023.104", "arxiv": "2410.23497v2"},
+        "authors": ["A. Liang", "B. Di", "C. Tao", "et al."],
+        "year": 2023,
+        "venue": "IPDPS",
+        "readable_url": "https://arxiv.org/html/2410.23497v2",
+    }
+    lookup = {
+        "task": {
+            "status": "completed",
+            "backend": None,
+            "submitted_backend": {"server": "literature"},
+        },
+        "value": {"structuredContent": {"ok": True, "work": work}},
+    }
+    elsewhere = {**lookup, "task": {**lookup["task"], "submitted_backend": {"server": "web"}}}
+    papers = evidence_module.paper_records([lookup, elsewhere])
+    assert evidence_module.paper_for("https://arxiv.org/abs/2410.23497", papers) is not None
+    assert evidence_module.paper_for("https://doi.org/10.1109/ipdps.2023.104", papers)
+    assert evidence_module.paper_for("https://example.org/other", papers) is None
+    cited = flow_module.VerifiedClaim.model_validate(claim(1))
+    cited.evidence[0].source_url = "https://arxiv.org/pdf/2410.23497"
+    block = flow_module.ReportBlock(text="A fact.", kind="source_fact", claim_ids=[cited.claim_id])
+    rendered = evidence_module.render_report([block], [cited], papers)
+    reference = rendered.split("## References\n\n", 1)[1]
+    assert reference.startswith("- A. Liang, B. Di, C. Tao et al. (2023). [Lossy Compression")
+    assert "*IPDPS*." in reference and reference.endswith("doi:10.1109/ipdps.2023.104")
+    plain = evidence_module.render_report([block], [cited])
+    assert plain.split("## References\n\n", 1)[1].startswith("- [Source 1]")
+
+
+def test_unset_limit_lets_the_planner_size_the_run_and_names_each_child() -> None:
+    named = [
+        {**gap("What is PTC?"), "name": "Anthropic PTC docs"},
+        {**gap("How is script provenance traced?"), "name": ""},
+    ]
+    planner = Planner(named)
+    ctx = ScriptedCtx(Children([audit()]))
+
+    run(make_flow(planner), ctx)
+
+    assert planner.asked[0]["max_directions"] is None
+    researchers = of(ctx, "researcher")
+    assert [r["label"] for r in researchers] == [
+        "Anthropic PTC docs",
+        "How is script provenance traced?",
+    ]
+    assert "max_gaps" not in of(ctx, "critic")[0]["input"]
+    assert not [e for e in ctx.events if e.get("event") == "directions_capped"]
+
+
+def test_the_backstop_cuts_only_a_runaway_plan() -> None:
+    planner = Planner([f"q{n}" for n in range(1, 41)])
+    ctx = ScriptedCtx(Children([audit()]))
+
+    run(make_flow(planner), ctx)
+
+    assert len(of(ctx, "researcher")) == flow_module.DIRECTIONS_BACKSTOP
+    (capped,) = [e for e in ctx.events if e.get("event") == "directions_capped"]
+    assert capped["asked"] == 40 and capped["kept"] == flow_module.DIRECTIONS_BACKSTOP
+
+
+def test_a_long_unnamed_question_is_shortened_at_a_word() -> None:
+    label = flow_module._child_label(
+        {"id": "g2.1", "question": "What do the OpenTelemetry GenAI semantic conventions specify?"}
+    )
+    assert label == "What do the OpenTelemetry GenAI semantic…"
+
+
+def test_a_restated_gap_is_researched_once_per_round() -> None:
+    same = "What do the release notes say?"
+    first = audit(gaps=[gap(same), gap(same, required_tools=["web_search", "web_fetch"])])
+    ctx = ScriptedCtx(Children([first, audit()]))
+    run(make_flow(Planner(["a"]), max_rounds=1), ctx)
+    assert [r["key"] for r in of(ctx, "researcher")] == ["research:d1", "research:g2.1"]
+    (merged,) = [e for e in ctx.events if e.get("event") == "gaps_merged"]
+    assert merged["round"] == 2 and len(merged["merged"]) == 1

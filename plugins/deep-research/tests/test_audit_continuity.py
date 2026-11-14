@@ -34,6 +34,14 @@ def invalid_id(question: str) -> dict[str, Any]:
     return {**limit(question), "gap_id": "gap_invalid_model_id"}
 
 
+def misquoted() -> dict[str, Any]:
+    """A claim citing a real fetch with a passage that is not in it: forces a repair."""
+    row = deepcopy(claim(1))
+    row["claim"], row["claim_id"] = "misquoted claim", ""
+    row["evidence"][0]["quote"] = "a passage that was never fetched"
+    return row
+
+
 def records() -> dict[str, Any]:
     """Use successful immutable source fixtures through the real binding parser."""
     return flow_module.source_records([source_fixture(1, "critic")], {"critic"})
@@ -41,7 +49,11 @@ def records() -> dict[str, Any]:
 
 def test_same_round_empty_repair_retains_bound_claims_rejections_and_all_requirements() -> None:
     rejected = {"claim": "unsupported assertion", "reason": "not documented", "source_url": ""}
-    first = audit([claim(1), claim(2)], [rejected], [invalid_id("stack"), invalid_id("quota")])
+    first = audit(
+        [claim(1), claim(2), misquoted()],
+        [rejected],
+        [invalid_id("stack"), invalid_id("quota")],
+    )
     ctx = ScriptedCtx(Children([first, audit()]))
     result = run(make_flow(Planner(["sources"])), ctx)
     assert result["verified"] == [claim(1), claim(2)]
@@ -58,9 +70,21 @@ def test_same_round_empty_repair_retains_bound_claims_rejections_and_all_require
     ]
 
 
-def test_repaired_audit_that_repeats_invalid_id_is_still_rejected() -> None:
-    bad = audit([claim(1)], gaps=[invalid_id("stack")])
+def test_a_claim_still_unbound_after_the_repair_is_rejected_not_a_stall() -> None:
+    bad = audit([claim(1), misquoted()], gaps=[limit("stack")])
     ctx = ScriptedCtx(Children([bad, bad]))
+    result = run(make_flow(Planner(["sources"])), ctx)
+    assert len(of(ctx, "critic")) == 2  # the critic had its one repair
+    assert result["verified"] == [claim(1)]
+    rejected = next(row for row in result["rejected"] if row["claim"] == "misquoted claim")
+    assert "quotation is absent" in rejected["reason"]
+    event = next(row for row in ctx.events if row["event"] == "critic_unbound_claims_rejected")
+    assert event["excluded"][0]["claim"] == "misquoted claim"
+
+
+def test_a_repaired_audit_that_is_still_malformed_stalls() -> None:
+    malformed = audit([{"claim": "no evidence at all", "evidence": []}])
+    ctx = ScriptedCtx(Children([malformed, malformed]))
     with pytest.raises(FlowStall) as failure:
         run(make_flow(Planner(["sources"])), ctx)
     assert failure.value.stall == "critic_audit_invalid"
@@ -76,7 +100,7 @@ def test_repair_can_explicitly_withdraw_a_carried_proposition() -> None:
     ctx = ScriptedCtx(
         Children(
             [
-                audit([claim(1), claim(2)], gaps=[invalid_id("stack")]),
+                audit([claim(1), claim(2), misquoted()], gaps=[limit("stack")]),
                 audit(rejected=[rejection], gaps=[limit("stack")]),
             ]
         )
@@ -193,3 +217,43 @@ def test_resolution_without_bound_support_is_not_preserved() -> None:
     )
     assert ledger.resolved_gaps == [] and ledger.gaps == pending
     assert diagnostic["excluded_rows"][0]["field"] == "resolved_gaps"
+
+
+def test_a_claim_id_that_does_not_name_its_text_is_derived_and_recorded() -> None:
+    """A reworded earlier claim that kept its old ID is a new proposition, not a stall."""
+    from clio_agent.flows.values import CallResult
+
+    reworded = {**claim(1), "claim": claim(1)["claim"] + " (as of version 2)"}
+    reworded["claim_id"] = claim(1)["claim_id"]  # the critic kept the earlier ID
+    final, errors = owner._audit_of(
+        CallResult(audit([reworded]), handle="critic", target="critic", kind="subagent"), []
+    )
+    assert final is not None and not errors
+    canonical = flow_module.VerifiedClaim.model_validate({**reworded, "claim_id": ""}).claim_id
+    assert final.verified[0].claim_id == canonical != claim(1)["claim_id"]
+    assert final._claim_id_repairs == [
+        {"row": 0, "submitted": claim(1)["claim_id"], "canonical": canonical}
+    ]
+    _, diagnostics = owner.repair_context({"verified": [reworded]}, [], None, records())
+    assert diagnostics["claim_id_repairs"][0]["canonical"] == canonical
+
+
+def test_a_first_audit_with_invalid_gap_ids_is_accepted_with_derived_ids() -> None:
+    ctx = ScriptedCtx(Children([audit([claim(1)], gaps=[invalid_id("stack")])]))
+    result = run(make_flow(Planner(["sources"])), ctx)
+    assert len(of(ctx, "critic")) == 1  # no repair round for an ID CLIO can derive
+    assert result["gaps_unresolved"] == [limit("stack")]
+    event = next(row for row in ctx.events if row["event"] == "critic_id_repaired")
+    assert event["gap_id_repairs"][0]["submitted"] == "gap_invalid_model_id"
+
+
+def test_the_strict_check_derives_gap_ids_like_the_repair_path() -> None:
+    from clio_agent.flows.values import CallResult
+
+    final, errors = owner._audit_of(
+        CallResult(audit(gaps=[invalid_id("stack")]), handle="c", target="critic", kind="subagent"),
+        [],
+    )
+    assert final is not None and not errors
+    assert [row.model_dump() for row in final.gaps] == [limit("stack")]
+    assert final._gap_id_repairs[0]["submitted"] == "gap_invalid_model_id"

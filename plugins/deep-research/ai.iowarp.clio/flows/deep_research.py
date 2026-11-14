@@ -35,6 +35,7 @@ from ..audit import (
     Direction,
     Gap,
     _audit_of,
+    exclude_unbound,
     repair_context,
 )
 from ..audit import (
@@ -49,17 +50,22 @@ from ..evidence import (
     ReviewReport,
     VerifiedClaim,
     bind_claims,
+    paper_records,
     public_sources,
     source_records,
 )
 from ..evidence import (
     merge_claims as merge_claims,
 )
+from ..blocked import blocked_message, round_block
+from ..packet import typed_claims
 from ..report import ReportSynthesis, action_completed, action_receipts, delivery_record
 from ..report import is_delivery as _is_delivery
 
-#: Ceilings on what a caller may ask for in one run (``checked_options`` refuses more).
-MAX_DIRECTIONS_CEILING = 12
+#: A runaway backstop on directions (and gaps per round), not a target: the planner
+#: sizes the run to the question; a cut above it is recorded (``directions_capped``).
+DIRECTIONS_BACKSTOP = 32
+#: Ceiling on gap-closing rounds a caller may ask for (``checked_options`` refuses more).
 MAX_ROUNDS_CEILING = 5
 #: Researchers running at once when the caller sets no ``concurrency``.
 DEFAULT_CONCURRENCY_CAP = 8
@@ -79,15 +85,19 @@ class PlanResearch(dspy.Signature):
     These parent stages are never web research questions. Distinguish
     a requested design or proposed benchmark from an instruction to execute it:
     unprovided measurements and approvals may be conditional design inputs, not
-    new requirements. Directions must not overlap. Plan as many as the question needs, never
-    more than max_directions, most important first; a narrow question may need one.
+    new requirements. Directions must not overlap. Size the plan to the question, not to a
+    number: one direction when one question covers it, more only for genuinely independent
+    subquestions, most important first. When max_directions is set, stay within it. Give
+    each direction a short name that tells it apart from the others.
     Operational evidence supplies this assignment's exact scope IDs. Never invent
     an authorization blocker merely because a tool might later ask permission.
     A concrete permission input must use a supplied scope/permission ID.
     """
 
     question: str = dspy.InputField()
-    max_directions: int = dspy.InputField(desc="The most directions you may plan")
+    max_directions: int | None = dspy.InputField(
+        desc="A limit the person set; none means size the plan to the question"
+    )
     capabilities: dict[str, Any] = dspy.InputField(
         desc="Declared researcher tools and flow actions"
     )
@@ -167,8 +177,8 @@ class WriteReport(dspy.Signature):
 class DeepResearch(Flow):
     """Plan directions, research them in parallel, verify independently, close gaps, report.
 
-    Options: ``max_directions`` (the most directions the planner may plan, and the
-    most gaps one round researches; default 6), ``max_rounds`` (gap-closing rounds
+    Options: ``max_directions`` (a limit on the directions the planner may plan and
+    the gaps one round researches; unset, the planner sizes the run), ``max_rounds`` (gap-closing rounds
     after the first research round; default 2, 0 verifies once), ``concurrency``
     (researchers at once; 0 runs all of a round together, up to 8),
     ``researcher_model`` and ``critic_model`` (the model each subagent runs on;
@@ -183,7 +193,8 @@ class DeepResearch(Flow):
         "against fetched sources and name the gaps, researches those gaps, then writes "
         "a Markdown report separating verified facts, supplied context and proposals, with open questions "
         "and rejected claims listed. A separate semantic review checks the evidence map and full report "
-        "before delivery, with one correction allowed. Options: max_directions (default 6, at most 12), "
+        "before delivery, with one correction allowed. The planner sizes the run to the question. "
+        "Options: max_directions (only to limit it), "
         "max_rounds (gap-closing rounds, default 2, at most 5), concurrency (researchers "
         "at once; 0 runs a round together), researcher_model and critic_model. The "
         "planner, writer and final reviewer run on the run's model."
@@ -198,7 +209,7 @@ deep_research = sequence(terminal("plan"),
                          terminal("draft"), terminal("review"),
                          optional(sequence(choice(terminal("audit correction"), terminal("draft correction")), terminal("review"))),
                          terminal("deliver"));"""
-    max_directions: int = 6
+    max_directions: int = 0  # 0: no limit set; the planner sizes the run
     max_rounds: int = 2
     concurrency: int = 0
     researcher_model: str = ""
@@ -209,6 +220,11 @@ deep_research = sequence(terminal("plan"),
         self.planner = dspy.ChainOfThought(PlanResearch)
         self.writer = dspy.Predict(WriteReport)
         self.reviewer = dspy.Predict(ReviewReport)
+
+    @property
+    def _limit(self) -> int:
+        """The person's limit on directions and gaps per round, else the backstop."""
+        return self.max_directions or DIRECTIONS_BACKSTOP
 
     @classmethod
     def checked_options(cls, options: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -244,7 +260,7 @@ deep_research = sequence(terminal("plan"),
     ) -> dict[str, Any]:
         prediction = self.planner(
             question=question,
-            max_directions=max_directions,
+            max_directions=max_directions or None,
             capabilities=capabilities,
             operational_evidence=operational_evidence,
         )
@@ -318,12 +334,21 @@ deep_research = sequence(terminal("plan"),
                 step="plan",
                 observed=plan,
             )
-        kept = await _bounded(ctx, planned, self.max_directions, "directions_capped", 0)
+        kept = await _bounded(ctx, planned, self._limit, "directions_capped", 0)
         directions = [{"id": f"d{n}", **row} for n, row in enumerate(kept, 1)]
 
         targets = _researchable(directions, capabilities)
         deferred = [row for row in directions if row not in targets]
-        packets = await self._research(ctx, question, targets, 1) if targets else []
+        packets = []
+        if targets:
+            before = await ctx.permission_receipts(refresh=True)
+            packets = await self._research(ctx, question, targets, 1)
+            if block := await self._block(ctx, packets, before):
+                # Nothing could be searched: stop with the reason, never re-research.
+                await ctx.record_event({"event": "research_blocked", "round": 1, **block})
+                raise FlowStall(
+                    "research_blocked", blocked_message(block), step="research", observed=block
+                )
         researched = list(packets)
         if targets:
             audit, critic = await self._verify(ctx, question, directions, packets, None, 1)
@@ -334,14 +359,25 @@ deep_research = sequence(terminal("plan"),
         rounds = 1 if targets else 0
         resolutions = [{"round": rounds, **row.model_dump()} for row in audit.resolved_gaps]
         while rounds and rounds - 1 < self.max_rounds:
+            if any(gap.input_kind == "permission" for gap in audit.gaps):
+                # Research waits on the person's permission: more rounds can't close it.
+                await ctx.record_event({"event": "gap_rounds_stopped", "reason": "permission"})
+                break
             gaps = _researchable([gap.model_dump() for gap in audit.gaps], capabilities)
+            gaps, merged = _distinct_questions(gaps)
+            if merged:
+                await ctx.record_event({"event": "gaps_merged", "round": rounds + 1, "merged": merged})
             if not gaps:
                 break
             rounds += 1
-            chosen = await _bounded(ctx, gaps, self.max_directions, "gaps_capped", rounds)
+            chosen = await _bounded(ctx, gaps, self._limit, "gaps_capped", rounds)
             targets = [{"id": f"g{rounds}.{n}", **row} for n, row in enumerate(chosen, 1)]
+            before = await ctx.permission_receipts(refresh=True)
             packets = await self._research(ctx, question, targets, rounds)
             researched += packets
+            if block := await self._block(ctx, packets, before):
+                await ctx.record_event({"event": "research_blocked", "round": rounds, **block})
+                break  # deliver what was verified; the open gaps stay open
             earlier = (audit, critic)
             audit, critic = await self._verify(ctx, question, targets, packets, earlier, rounds)
             critics.append(critic)
@@ -451,6 +487,7 @@ deep_research = sequence(terminal("plan"),
                 {"question": question, "direction": target, "round": round_no},
                 key=f"research:{target['id']}",
                 model=self.researcher_model,
+                label=_child_label(target),
             )
             for target in targets
         ]
@@ -469,8 +506,30 @@ deep_research = sequence(terminal("plan"),
                 row["failed"] = {"reason": result.reason, "message": str(result)}
             else:
                 row.update(handle=result.handle, model=result.model, evidence=result.response_text)
+                claims, invalid = typed_claims(result)
+                if claims:
+                    row["claims"] = claims
+                if invalid:
+                    await ctx.record_event(
+                        {
+                            "event": "packet_claims_invalid",
+                            "direction": target["id"],
+                            "dropped": invalid,
+                        }
+                    )
             packets.append(row)
         return packets
+
+    async def _block(
+        self, ctx: Any, packets: list[dict[str, Any]], before: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Why this round's research could not run, from typed records, or ``None``."""
+
+        rows: list[dict[str, Any]] = []
+        for packet in packets:
+            if packet.get("handle"):
+                rows += await ctx.tool_results(packet["handle"])
+        return round_block(rows, before, await ctx.permission_receipts(refresh=True))
 
     async def _verify(
         self,
@@ -490,7 +549,7 @@ deep_research = sequence(terminal("plan"),
             "round": round_no,
             "assignments": targets,
             "packets": [_packet(p) for p in packets],
-            "max_gaps": self.max_directions,
+            **({"max_gaps": self.max_directions} if self.max_directions else {}),
             "capabilities": _capabilities(ctx),
             "operational_evidence": operational_update
             if operational_update is not None
@@ -533,7 +592,10 @@ deep_research = sequence(terminal("plan"),
         rows = await ctx.tool_results(result.handle)
         records = dict(prior_audit._sources) if prior_audit is not None else {}
         records.update(source_records(rows, auditors))
+        papers = dict(prior_audit._papers) if prior_audit is not None else {}
+        papers.update(paper_records(rows))
         audit, problems = _audit_of(result, pending, prior_audit, request["operational_evidence"])
+        await _record_claim_repairs(ctx, audit, round_no, result.handle)
         if audit is not None:
             problems += bind_claims(audit.verified, records)
         if audit is None or problems:
@@ -583,12 +645,25 @@ deep_research = sequence(terminal("plan"),
                 request["operational_evidence"],
                 carry_resolutions=True,
             )
+            await _record_claim_repairs(ctx, audit, round_no, result.handle)
             auditors.add(result.handle)
             for auditor in sorted(auditors):
                 rows = await ctx.tool_results(auditor)
                 records.update(source_records(rows, auditors))
-            if audit is not None:
-                problems += bind_claims(audit.verified, records)
+                papers.update(paper_records(rows))
+            if audit is not None and not problems:
+                # The critic had its repair; claims whose evidence still does not
+                # bind are rejected with their reason rather than stalling the run.
+                excluded = exclude_unbound(audit, records, pending, request["operational_evidence"])
+                if excluded:
+                    await ctx.record_event(
+                        {
+                            "event": "critic_unbound_claims_rejected",
+                            "round": round_no,
+                            "critic": result.handle,
+                            "excluded": excluded,
+                        }
+                    )
         if audit is None or problems:
             raise FlowStall(
                 "critic_audit_invalid",
@@ -598,6 +673,7 @@ deep_research = sequence(terminal("plan"),
                 handle=result.handle,
             )
         audit._sources = records
+        audit._papers = papers
         return audit, {
             "round": round_no,
             "handle": result.handle,
@@ -609,13 +685,59 @@ deep_research = sequence(terminal("plan"),
         }
 
 
+async def _record_claim_repairs(ctx: Any, audit: Any, round_no: int, critic: str) -> None:
+    """Record IDs derived from claims' text and gaps' fields in place of the critic's."""
+    if audit is not None and (audit._claim_id_repairs or audit._gap_id_repairs):
+        await ctx.record_event(
+            {
+                "event": "critic_id_repaired",
+                "round": round_no,
+                "critic": critic,
+                "claim_id_repairs": audit._claim_id_repairs,
+                "gap_id_repairs": audit._gap_id_repairs,
+            }
+        )
+
+
 _OPTIONS = ("max_directions", "max_rounds", "concurrency", "researcher_model", "critic_model")
 #: The integer options and the range each may take.
 _BOUNDS = {
-    "max_directions": (1, MAX_DIRECTIONS_CEILING),
+    "max_directions": (0, DIRECTIONS_BACKSTOP),
     "max_rounds": (0, MAX_ROUNDS_CEILING),
-    "concurrency": (0, MAX_DIRECTIONS_CEILING),
+    "concurrency": (0, DIRECTIONS_BACKSTOP),
 }
+
+
+def _distinct_questions(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
+    """One row per question (same words, ignoring case and spacing), and the dropped copies.
+
+    The critic can restate an open gap with other tools, which gives it a new
+    identity; researching the same question twice in one round adds nothing.
+    """
+
+    kept: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    merged: list[str] = []
+    for row in rows:
+        key = " ".join(str(row.get("question") or "").lower().split())
+        if key in seen:
+            merged.append(str(row.get("gap_id") or row.get("question")))
+            continue
+        seen.add(key)
+        kept.append(row)
+    return kept, merged
+
+
+def _child_label(target: dict[str, Any]) -> str:
+    """The name a researcher is shown under: its direction's name, else its question, short."""
+
+    name = " ".join(str(target.get("name") or "").split())
+    if name:
+        return name
+    question = " ".join(str(target.get("question") or "").split())
+    if len(question) <= 48:
+        return question or target["id"]
+    return question[:48].rsplit(" ", 1)[0].rstrip(",;:") + "…"
 
 
 def _capabilities(ctx: Any) -> dict[str, Any]:

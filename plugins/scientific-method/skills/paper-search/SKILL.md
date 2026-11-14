@@ -13,6 +13,10 @@ that use different vocabulary for the same concept. Split a broad question
 into independent lanes (mechanism, measurement method, competing approach,
 material system) that can be searched without duplicating each other.
 
+With the `literature` tools, search scholarly sources with `literature_search`
+and follow a work with `literature_lookup`; the `literature-search` skill covers
+their use. Use web search for grey literature, documentation and data portals.
+
 Fetch and read the actual source before citing it; a search-result snippet or
 title is not evidence of what a paper found. Record, per source: what was
 read (full text vs. abstract only), publication venue and date, and the
