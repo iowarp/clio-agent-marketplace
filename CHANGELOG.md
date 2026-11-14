@@ -4,6 +4,12 @@
 
 ### Added
 
+- `home-assistant` (1.0.0): Home Assistant as one plugin. It follows CLIO's
+  `home-assistant` connector (ha-mcp) and brings `home-assistant-sensors` (reading
+  sensors and their history, acting on devices, changing configuration deliberately)
+  and `home-assistant-best-practices`, vendored unchanged from homeassistant-ai/skills
+  at `166defa5` (MIT) with `import-lock.json` and
+  `scripts/import_home_assistant_skills.py`.
 - `barebone` (1.0.0): the model alone. With CLIO's `Agent.bare` its requests carry no
   system prompt, no tools and no context injections, so its input is exactly the
   conversation; for attention attribution (SPOTTER-AI) and small local models.
