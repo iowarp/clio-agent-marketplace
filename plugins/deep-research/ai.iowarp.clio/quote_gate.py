@@ -20,6 +20,8 @@ from .evidence import _quote_pattern, url_key
 
 #: Characters of page text kept on each side of a quote for its verifier.
 WINDOW = 600
+#: Longest passage the gate builds when it extends a repeated quote to one occurrence.
+UNIQUE_CHARS = 400
 
 #: Why a claim could not be checked against its page, keyed by typed reason.
 GATE_REASONS = {
@@ -72,6 +74,8 @@ def gate_claims(
             if match is None:
                 continue
             start, end = max(0, match.start() - WINDOW), min(len(content), match.end() + WINDOW)
+            repeats = pattern.search(content, match.start() + 1) is not None
+            unique = _unique_passage(content, match.start(), match.end()) if repeats else ""
             sorted_claims["bound"].append(
                 {
                     **claim,
@@ -79,13 +83,50 @@ def gate_claims(
                     "source_url": record["source_url"],
                     "source_title": " ".join(record["source_title"].split()),
                     "page_text": content[start:end],
-                    "quote_repeats": pattern.search(content, match.start() + 1) is not None,
+                    "quote_repeats": repeats,
+                    **({"unique_quote": unique} if unique else {}),
                 }
             )
             break
         else:
             sorted_claims["unchecked"].append(_unchecked(claim, "quote_not_on_page"))
     return sorted_claims
+
+
+def _unique(content: str, passage: str) -> bool:
+    pattern = _quote_pattern(passage)
+    first = pattern.search(content) if pattern is not None else None
+    return first is not None and pattern.search(content, first.start() + 1) is None
+
+
+def _unique_passage(content: str, start: int, end: int) -> str:
+    """The page text around a repeated quote, grown a word at a time until it occurs once.
+
+    A critic must cite a passage that occurs once on its page. When the researcher's
+    quote repeats, the first occurrence is extended with the page's own words (one
+    after, then one before) until it is unique; empty when no passage of at most
+    ``UNIQUE_CHARS`` characters is.
+    """
+    after = True
+    while end - start <= UNIQUE_CHARS:
+        if _unique(content, content[start:end]):
+            return content[start:end].strip()
+        grown = False
+        for _ in range(2):  # try this side, then the other
+            if after and end < len(content):
+                nxt = content.find(" ", end + 1)
+                end = len(content) if nxt == -1 else nxt
+                grown = True
+            elif not after and start > 0:
+                prev = content.rfind(" ", 0, max(0, start - 1))
+                start = 0 if prev == -1 else prev + 1
+                grown = True
+            after = not after
+            if grown:
+                break
+        if not grown:
+            return ""
+    return ""
 
 
 def _unchecked(claim: dict[str, Any], code: str) -> dict[str, Any]:

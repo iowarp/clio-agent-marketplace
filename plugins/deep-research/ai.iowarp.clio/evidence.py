@@ -139,6 +139,10 @@ class ReviewReport(dspy.Signature):
     rejected_claims: list[dict[str, Any]] = dspy.InputField()
     blocks: list[ReportBlock] = dspy.InputField()
     report: str = dspy.InputField()
+    format_problem: str = dspy.InputField(
+        desc="Empty, or why your previous reply could not be read: return every issue "
+        "with owner, excerpt, reason and claim_ids"
+    )
     issues: list[ReviewIssue] = dspy.OutputField()
 
 

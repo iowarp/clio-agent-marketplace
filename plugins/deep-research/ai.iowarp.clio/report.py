@@ -96,6 +96,16 @@ def with_open_issues(document: str, issues: list[dict[str, Any]]) -> str:
     return document.rstrip() + "\n\n" + "\n".join(lines) + "\n"
 
 
+def with_review_unavailable(document: str) -> str:
+    """Say plainly that the final review could not be completed for this report."""
+    return (
+        document.rstrip()
+        + "\n\n## Review not available\n\nThe independent final review of this report could "
+        "not be read, twice, so this report was not reviewed. Its claims were still "
+        "verified against their sources; check the sources for anything you rely on.\n"
+    )
+
+
 def delivery_record(
     audit: Any,
     blocks: list[dict[str, Any]],
@@ -170,6 +180,32 @@ class ReportSynthesis:
                 blocks,
                 across,
             )
+            if written.get("failed"):
+                # The writer's reply could not be read: one correction, then a typed stop.
+                await self.ctx.record_event(
+                    {
+                        "event": "report_draft_unreadable",
+                        "attempt": attempt + 1,
+                        "reason": written["failed"],
+                    }
+                )
+                if attempt:
+                    raise FlowStall(
+                        "report_unreadable",
+                        "the writer's draft could not be read, twice",
+                        step="report",
+                        observed={"reason": written["failed"]},
+                    )
+                feedback = [
+                    ReviewIssue(
+                        owner="report",
+                        excerpt="(the whole draft)",
+                        reason=f"Your draft could not be read: {written['failed']} Return "
+                        "every block with text, kind and claim_ids.",
+                    ).model_dump()
+                ]
+                blocks = []
+                continue
             blocks = written.get("blocks") or []
             if not blocks or not any(
                 isinstance(row, Mapping) and str(row.get("text") or "").strip() for row in blocks
@@ -217,6 +253,50 @@ class ReportSynthesis:
                     blocks,
                     document,
                 )
+                if review.get("failed"):
+                    # Format-only correction: the reviewer is told what was unreadable.
+                    await self.ctx.record_event(
+                        {
+                            "event": "report_review_unreadable",
+                            "attempt": attempt + 1,
+                            "reason": review["failed"],
+                        }
+                    )
+                    review = await self.ctx.step(
+                        self.flow._review,
+                        question,
+                        verified,
+                        review_sources(audit.verified, audit._sources),
+                        operational_evidence,
+                        gaps,
+                        rejected,
+                        blocks,
+                        document,
+                        review["failed"],
+                    )
+                if review.get("failed"):
+                    # No verdict could be read: deliver the report, marked unreviewed,
+                    # rather than lose the research. Never counted as acceptance.
+                    document = with_review_unavailable(document)
+                    verdict = {
+                        "attempt": attempt + 1,
+                        "report_sha256": hashlib.sha256(document.encode()).hexdigest(),
+                        "status": "review_unreadable",
+                        "issues": [],
+                        "reason": review["failed"],
+                    }
+                    reviews.append(verdict)
+                    await self.ctx.record_event({"event": "report_review", **verdict})
+                    return {
+                        "audit": audit,
+                        "report": report,
+                        "document": document,
+                        "blocks": blocks,
+                        "reviews": reviews,
+                        "draft_citations": draft_citations,
+                        "outside": outside,
+                        "operational_evidence": operational_evidence,
+                    }
                 issues = [ReviewIssue.model_validate(row).model_dump() for row in review["issues"]]
             verdict = {
                 "attempt": attempt + 1,

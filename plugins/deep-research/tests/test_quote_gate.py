@@ -128,3 +128,19 @@ def test_an_unchecked_claim_stays_rejected_unless_its_critic_verifies_it() -> No
     ctx = ResearcherFetched(TypedResearcher([audit([claim(1)])], [finding(quote="absent")]))
     result = run(make_flow(Planner(["a"]), max_rounds=0), ctx)
     assert result["verified"] == [claim(1)] and result["rejected"] == []
+
+
+def test_a_repeated_quote_gets_a_unique_passage_from_the_page() -> None:
+    page = "Ratio 10x at error 1e-3. Intro. Ratio 10x at error 1e-4 for SZ3."
+    (bound,) = gate.gate_claims([finding(quote="Ratio 10x at error")], records(page))["bound"]
+    assert bound["quote_repeats"] is True
+    unique = bound["unique_quote"]
+    assert unique.startswith("Ratio 10x at error") and page.count(unique) == 1
+    assert evidence._quote_pattern(unique).search(page).start() == 0
+    # A quote that occurs once needs nothing more.
+    (single,) = gate.gate_claims([finding(quote="for SZ3")], records(page))["bound"]
+    assert "unique_quote" not in single
+    # Text that repeats for longer than the bound cannot be told apart: none is invented.
+    periodic = "passage 1 again. " * 60
+    (same,) = gate.gate_claims([finding(quote="passage 1")], records(periodic))["bound"]
+    assert same["quote_repeats"] is True and "unique_quote" not in same

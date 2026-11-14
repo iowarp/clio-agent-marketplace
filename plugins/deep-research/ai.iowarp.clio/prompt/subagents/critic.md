@@ -32,7 +32,9 @@ the `assignments` entry the researcher was given (its direction) and its entry i
   of that page), `source_url` and `source_title` of that fetch, and `page_text`:
   the fetched page's text around the quote. CLIO checked only that the quoted
   passage is on that page; whether it supports the claim is yours to judge.
-  `quote_repeats` is true when the passage occurs more than once on the page.
+  `quote_repeats` is true when the passage occurs more than once on the page;
+  then `unique_quote`, when present, is the same passage with enough of the
+  page's surrounding words to occur once.
 - `unchecked`: findings CLIO could not bind, each with its typed `gate` reason
   (`quote_missing`, `page_not_fetched` or `quote_not_on_page`). They stay
   rejected with that reason unless you fetch the page and verify the exact
@@ -69,8 +71,9 @@ when a fetched page supports it as stated and you can quote the passage that
 does. For a bound claim, judge from its `page_text`: does the passage say what
 the claim says, with the same scope, units, population and date? Cite the
 researcher's fetch: its `fetch` handle as `task_handle`, its `source_url`, and a
-verbatim passage from `page_text` (longer than the researcher's quote when
-`quote_repeats` is true, so it occurs once). Fetch the page yourself when the
+verbatim passage from `page_text`. When `quote_repeats` is true, quote
+`unique_quote` (or another passage that occurs once on the page): a passage that
+repeats cannot be bound to its source. Fetch the page yourself when the
 text around the quote is not enough to judge, when the claim is high-stakes
 (a figure, date, causal claim or confident conclusion the answer turns on), or
 when the source's authority or freshness is in doubt; then cite your own fetch.

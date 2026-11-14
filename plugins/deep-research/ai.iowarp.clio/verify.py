@@ -14,6 +14,7 @@ import json
 from typing import Any
 
 from clio_agent.flows.outcomes import CallCancelled, FlowOutcome, FlowStall
+from clio_agent.flows.values import render_input
 
 from .audit import Audit, Gap, _audit_of, exclude_unbound, merge_shards, repair_context
 from .evidence import bind_claims, paper_records, public_sources, source_records
@@ -104,7 +105,12 @@ class Verification:
             )
         limit = self.flow.concurrency or min(len(calls), DEFAULT_CONCURRENCY_CAP)
         results = (
-            await ctx.gather([call for call, _ in calls], limit=limit, return_exceptions=True)
+            await ctx.gather(
+                [call for call, _ in calls],
+                limit=limit,
+                return_exceptions=True,
+                merge_state=False,  # each critic's audit is read from its own result
+            )
             if calls
             else []
         )
@@ -254,6 +260,9 @@ class Verification:
             "round": round_no,
             "operational_update": operational_update,
             "evidence_review": evidence_review,
+            # The request reaches the critic inline as its assignment text: this is
+            # what its model reads first.
+            "input_characters": len(render_input(request)),
         }
         return call, asked
 
@@ -268,6 +277,7 @@ class Verification:
         earlier, shard, round_no = asked["earlier"], asked["shard"], asked["round"]
         operational_update, evidence_review = asked["operational_update"], asked["evidence_review"]
         prior_audit = earlier[0] if earlier is not None else None
+        repair_characters = 0
         auditors = {result.handle}
         rows = await ctx.tool_results(result.handle)
         records = dict(prior_audit._sources) if prior_audit is not None else {}
@@ -304,21 +314,23 @@ class Verification:
             await ctx.record_event(
                 {"event": "critic_audit_continuity", "round": round_no, **where, **continuity}
             )
+            repair_request = {
+                "question": question,
+                "round": round_no,
+                "repair": problems,
+                "audit_as_returned": result.workflow_state.get("audit"),
+                "validated_prior_ledger": prior_audit.model_dump(),
+                "capabilities": _capabilities(ctx),
+                "open_requirements": [gap.model_dump() for gap in prior_audit.gaps],
+                "operational_evidence": request["operational_evidence"],
+                "operational_update": operational_update is not None,
+                "source_inventory": public_sources(records),
+                "evidence_review": evidence_review or [],
+            }
+            repair_characters = len(render_input(repair_request))
             result = await ctx.call(
                 "critic",
-                {
-                    "question": question,
-                    "round": round_no,
-                    "repair": problems,
-                    "audit_as_returned": result.workflow_state.get("audit"),
-                    "validated_prior_ledger": prior_audit.model_dump(),
-                    "capabilities": _capabilities(ctx),
-                    "open_requirements": [gap.model_dump() for gap in prior_audit.gaps],
-                    "operational_evidence": request["operational_evidence"],
-                    "operational_update": operational_update is not None,
-                    "source_inventory": public_sources(records),
-                    "evidence_review": evidence_review or [],
-                },
+                repair_request,
                 evidence=[result.handle, *records],
                 key=f"{stage}:repair",
                 model=self.flow.critic_model,
@@ -370,6 +382,8 @@ class Verification:
             "operational_update": operational_update is not None,
             "evidence_review": bool(evidence_review),
             "source_auditors": sorted(auditors),
+            "input_characters": asked["input_characters"],
+            **({"repair_input_characters": repair_characters} if repair_characters else {}),
         }
 
 

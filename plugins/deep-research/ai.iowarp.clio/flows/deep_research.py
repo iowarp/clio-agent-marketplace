@@ -312,17 +312,22 @@ deep_research = sequence(terminal("plan"),
         previous_blocks: list[dict[str, Any]] | None = None,
         across: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        prediction = self.writer(
-            question=question,
+        try:
+            prediction = self.writer(
+                question=question,
             verified=[VerifiedClaim.model_validate(row) for row in verified],
-            across=across or [],
-            unresolved_gaps=[Gap.model_validate(row) for row in gaps],
-            delivery=delivery,
-            operational_evidence=operational_evidence,
-            citation_problems=citation_problems or [],
-            review_feedback=[ReviewIssue.model_validate(row) for row in review_feedback or []],
-            previous_blocks=previous_blocks or [],
-        )
+                across=across or [],
+                unresolved_gaps=[Gap.model_validate(row) for row in gaps],
+                delivery=delivery,
+                operational_evidence=operational_evidence,
+                citation_problems=citation_problems or [],
+                review_feedback=[
+                    ReviewIssue.model_validate(row) for row in review_feedback or []
+                ],
+                previous_blocks=previous_blocks or [],
+            )
+        except Exception as exc:  # noqa: BLE001 - recorded by the synthesis; research kept
+            return {"failed": _failure(exc)}
         return {
             "blocks": [
                 row.model_dump() if isinstance(row, BaseModel) else row for row in prediction.blocks
@@ -339,17 +344,22 @@ deep_research = sequence(terminal("plan"),
         rejected: list[dict[str, Any]],
         blocks: list[dict[str, Any]],
         report: str,
+        format_problem: str = "",
     ) -> dict[str, Any]:
-        prediction = self.reviewer(
-            question=question,
-            verified=[VerifiedClaim.model_validate(row) for row in verified],
-            source_records=sources,
-            operational_evidence=operational_evidence,
-            unresolved_gaps=gaps,
-            rejected_claims=rejected,
-            blocks=[ReportBlock.model_validate(row) for row in blocks],
-            report=report,
-        )
+        try:
+            prediction = self.reviewer(
+                question=question,
+                verified=[VerifiedClaim.model_validate(row) for row in verified],
+                source_records=sources,
+                operational_evidence=operational_evidence,
+                unresolved_gaps=gaps,
+                rejected_claims=rejected,
+                blocks=[ReportBlock.model_validate(row) for row in blocks],
+                report=report,
+                format_problem=format_problem,
+            )
+        except Exception as exc:  # noqa: BLE001 - recorded by the synthesis; research kept
+            return {"failed": _failure(exc)}
         return {
             "issues": [ReviewIssue.model_validate(row).model_dump() for row in prediction.issues]
         }
@@ -379,7 +389,7 @@ deep_research = sequence(terminal("plan"),
         except Exception as exc:  # noqa: BLE001 - recorded: the run keeps its evidence
             # No decision was made, so none is invented: nothing more is researched and
             # the verifiers' proposals stay open. The flow records why.
-            return {"failed": f"{type(exc).__name__}: {exc}"[:800]}
+            return {"failed": _failure(exc)}
         return {
             field: [
                 row.model_dump() if isinstance(row, BaseModel) else row
@@ -585,7 +595,8 @@ deep_research = sequence(terminal("plan"),
             )
             for target in targets
         ]
-        results = await ctx.gather(calls, limit=limit, return_exceptions=True)
+        # Each packet is read from its own result: researchers' sections are not merged.
+        results = await ctx.gather(calls, limit=limit, return_exceptions=True, merge_state=False)
         cancelled = next((r for r in results if isinstance(r, CallCancelled)), None)
         if cancelled is not None:
             raise cancelled
@@ -651,8 +662,7 @@ deep_research = sequence(terminal("plan"),
             {key: row[key] for key in ("id", "name", "question") if row.get(key)}
             for row in directions
         ]
-        decision = await ctx.step(
-            self._coordinate,
+        inputs = (
             question,
             plan,
             assignments,
@@ -662,6 +672,7 @@ deep_research = sequence(terminal("plan"),
             rounds_left,
             self.max_directions,
         )
+        decision = await ctx.step(self._coordinate, *inputs)
         if decision.get("failed"):
             await ctx.record_event(
                 {"event": "coordinator_failed", "round": round_no, "reason": decision["failed"]}
@@ -708,6 +719,7 @@ deep_research = sequence(terminal("plan"),
                 "across": len(across),
                 "follow_ups": [row["question"] for row in chosen],
                 "open_questions": len(opened),
+                "input_characters": len(json.dumps(inputs, default=str)),
             }
         )
         return {"across": across, "open_questions": opened}, chosen
@@ -720,6 +732,16 @@ _BOUNDS = {
     "max_rounds": (0, MAX_ROUNDS_CEILING),
     "concurrency": (0, DIRECTIONS_BACKSTOP),
 }
+
+
+def _failure(exc: Exception) -> str:
+    """Why a model step's reply could not be used, kept short for the run record.
+
+    A parse failure's own message starts with the whole reply; the validation
+    problems that say what was wrong come last, so the end is what is kept.
+    """
+    text = f"{type(exc).__name__}: {exc}"
+    return text if len(text) <= 1600 else text[:400] + " … " + text[-1200:]
 
 
 def _persist_report(workspace: Any, name: str, text: str) -> dict[str, Any]:

@@ -22,7 +22,7 @@ import dspy
 import pytest
 
 from clio_agent.flows.outcomes import CallFailed, FlowOutcome, FlowStall, GatherFailed
-from clio_agent.flows.values import CallResult, FlowWorkspace
+from clio_agent.flows.values import CallResult, FlowWorkspace, render_input
 from clio_agent.plugins.loader import import_plugin_module
 from clio_agent.sdk.flow import FlowOptionsInvalid
 
@@ -121,8 +121,14 @@ class ScriptedCtx:
             self.in_flight -= 1
 
     async def gather(
-        self, calls: list[_Call], *, limit: int | None = None, return_exceptions: bool = False
+        self,
+        calls: list[_Call],
+        *,
+        limit: int | None = None,
+        return_exceptions: bool = False,
+        merge_state: bool = True,
     ) -> list[Any]:
+        self.merged_gathers = getattr(self, "merged_gathers", 0) + int(merge_state)
         gate = asyncio.Semaphore(limit if limit and limit > 0 else max(1, len(calls)))
 
         async def bounded(call: _Call) -> Any:
@@ -533,9 +539,15 @@ def test_plan_research_verify_report() -> None:
             "evidence_review": False,
             "source_auditors": [handle],
             "permission_revision": revision,
+            # What the critic's model read: its whole request, inline.
+            "input_characters": len(render_input(call["input"])),
         }
-        for direction, handle in (("d1", "task_3"), ("d2", "task_4"))
+        for (direction, handle), call in zip((("d1", "task_3"), ("d2", "task_4")), critics)
     ]
+    # Researchers' and critics' sections are read per call, never merged.
+    assert ctx.merged_gathers == 0
+    (coordinated,) = [e for e in ctx.events if e["event"] == "coordinated"]
+    assert coordinated["input_characters"] > 0
     assert "## Unresolved questions" not in result["answer"]
     assert result["answer"].startswith("# Report")
 
@@ -1686,3 +1698,64 @@ def test_a_url_inside_a_fetched_title_is_neither_flagged_nor_printed_whole() -> 
     assert [r["status"] for r in result["report_reviews"]] == ["accepted_by_reviewer"]
     assert "energy.gov" not in result["answer"]
     assert "[PROV-AGENT: Unified Provenance Thanks: Cite this paper as" in result["answer"]
+
+
+def test_an_unreadable_review_is_retried_then_the_report_delivered_unreviewed() -> None:
+    # 2026-11-14: one review issue without excerpt or reason failed the whole run
+    # after its research; the agent then started over.
+    class Garbled(Reviewer):
+        def __call__(self, **kwargs: Any) -> Any:
+            self.given.append(kwargs)
+            raise ValueError("issues.6.excerpt Field required")
+
+    reviewer = Garbled()
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    result = run(make_flow(Planner(["a"]), reviewer=reviewer, max_rounds=0), ctx)
+    assert [kwargs["format_problem"] for kwargs in reviewer.given] == [
+        "",
+        "ValueError: issues.6.excerpt Field required",
+    ]
+    assert result["verified"] == [claim(1)]
+    assert [r["status"] for r in result["report_reviews"]] == ["review_unreadable"]
+    assert result["action_receipts"]["review_report"]["status"] == "unverified"
+    assert "## Review not available" in result["answer"]
+    assert [e["event"] for e in ctx.events if "unreadable" in e["event"]] == [
+        "report_review_unreadable"
+    ]
+
+    # A reviewer that reads correctly the second time settles the report as usual.
+    class Once(Reviewer):
+        def __call__(self, **kwargs: Any) -> Any:
+            self.given.append(kwargs)
+            if len(self.given) == 1:
+                raise ValueError("issues.0.reason Field required")
+            return dspy.Prediction(issues=[])
+
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    result = run(make_flow(Planner(["a"]), reviewer=Once(), max_rounds=0), ctx)
+    assert [r["status"] for r in result["report_reviews"]] == ["accepted_by_reviewer"]
+    assert "## Review not available" not in result["answer"]
+
+
+def test_an_unreadable_draft_is_corrected_once_then_stops_typed() -> None:
+    class Garbled(Writer):
+        def __init__(self, fail: int) -> None:
+            super().__init__()
+            self.fail = fail
+
+        def __call__(self, **kwargs: Any) -> Any:
+            if self.fail:
+                self.fail -= 1
+                raise ValueError("blocks.2.kind Input should be 'structure'")
+            return super().__call__(**kwargs)
+
+    writer = Garbled(1)
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    result = run(make_flow(Planner(["a"]), writer, max_rounds=0), ctx)
+    assert result["verified"] == [claim(1)] and result["answer"].startswith("# Report")
+    assert "could not be read" in writer.given[0]["review_feedback"][0]["reason"]
+
+    ctx = ScriptedCtx(Children([audit([claim(1)])]))
+    with pytest.raises(FlowStall) as stalled:
+        run(make_flow(Planner(["a"]), Garbled(2), max_rounds=0), ctx)
+    assert stalled.value.stall == "report_unreadable"
