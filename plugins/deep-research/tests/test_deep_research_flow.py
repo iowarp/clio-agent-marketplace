@@ -349,6 +349,7 @@ def claim(n: int) -> dict[str, Any]:
                     "source_title": f"Source {n}",
                     "supports": f"claim {n}",
                     "source_id": source_id,
+                    "offset": 0,  # runtime binding: the passage starts the page
                 }
             ],
         }

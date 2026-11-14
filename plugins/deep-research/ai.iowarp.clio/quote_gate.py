@@ -85,6 +85,8 @@ def gate_claims(
                     "page_text": content[start:end],
                     "quote_repeats": repeats,
                     **({"unique_quote": unique} if unique else {}),
+                    # Where page_text sits on the page (kept by the flow, not sent).
+                    "_window": [start, end],
                 }
             )
             break

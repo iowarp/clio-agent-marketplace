@@ -64,6 +64,15 @@ class Verification:
                 sent["name"] = target["name"]
             if "claims" in packet:
                 gated = gate_claims(packet["claims"], records)
+                # The page windows this critic will read, so a passage it quotes from
+                # one of them binds to that occurrence even where the page repeats it.
+                anchors: dict[str, list[list[int]]] = {}
+                for row in gated["bound"]:
+                    anchors.setdefault(row["fetch"], []).append(row.pop("_window"))
+                records = {
+                    handle: {**record, "anchors": anchors[handle]} if handle in anchors else record
+                    for handle, record in records.items()
+                }
                 # The critic reads the bound claims as the packet's claims.
                 sent.update(
                     {

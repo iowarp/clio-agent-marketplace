@@ -144,3 +144,42 @@ def test_a_repeated_quote_gets_a_unique_passage_from_the_page() -> None:
     periodic = "passage 1 again. " * 60
     (same,) = gate.gate_claims([finding(quote="passage 1")], records(periodic))["bound"]
     assert same["quote_repeats"] is True and "unique_quote" not in same
+
+
+def test_a_critic_passage_that_repeats_binds_to_the_window_it_read() -> None:
+    # 2026-11-14 probe: critics quoted short passages from page_text that recur
+    # elsewhere on the page, so every check needed a repair call.
+    page = (
+        "Release notes. The default is 64-bit. "
+        + "Filler text. " * 200
+        + "HDF5 2.0 changed file offsets: The default is 64-bit. More."
+        + " Tail." * 200
+    )
+    finding_row = finding(quote="HDF5 2.0 changed file offsets")
+    sources = records(page)
+    gated = gate.gate_claims([finding_row], sources)
+    (bound,) = gated["bound"]
+    window = bound.pop("_window")
+    anchored = {h: {**r, "anchors": [window]} for h, r in sources.items()}
+    verified = flow_module.VerifiedClaim.model_validate(
+        {
+            "claim": "In HDF5 2.0 the default is 64-bit offsets.",
+            "evidence": [
+                {
+                    "task_handle": bound["fetch"],
+                    "source_url": bound["source_url"],
+                    "quote": "The default is 64-bit.",
+                    "supports": "the default",
+                }
+            ],
+        }
+    )
+    # Without the window the repeated passage cannot be placed; with it, it binds
+    # to the occurrence the critic read, and the reviewer's context starts there.
+    assert evidence.bind_claims([verified.model_copy(deep=True)], sources)
+    assert evidence.bind_claims([verified], anchored) == []
+    offset = verified.evidence[0].offset
+    assert page[offset:].startswith("The default is 64-bit. More.")
+    (context,) = evidence.review_sources([verified], anchored)[0]["passage_context"]
+    assert "HDF5 2.0 changed file offsets" in context["text"]
+    assert "anchors" not in evidence.public_sources(anchored)[0]

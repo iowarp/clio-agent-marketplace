@@ -20,6 +20,9 @@ class SourceEvidence(BaseModel):
     quote: str = Field(min_length=1, description="Exact supporting passage from that fetch")
     supports: str = Field(min_length=1, description="Precisely what this passage establishes")
     source_id: str = Field(default="", description="Runtime binding; leave empty for a new fetch")
+    offset: int | None = Field(
+        default=None, description="Runtime binding: where the passage starts; leave empty"
+    )
 
     @field_validator("task_handle", "source_url", "quote", "supports")
     @classmethod
@@ -277,10 +280,22 @@ def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]])
                 problems.append(f"{prefix}: quotation is absent from the actual fetched content")
                 continue
             if pattern.search(source["content"], match.start() + 1) is not None:
-                problems.append(
-                    f"{prefix}: quotation repeats; include enough exact surrounding text to identify its intended occurrence"
-                )
-                continue
+                # The page repeats this passage. The critic was shown windows of this
+                # page around the researcher's quotes; one occurrence inside them is
+                # the passage it read.
+                windows = source.get("anchors") or []
+                seen = [
+                    found
+                    for found in pattern.finditer(source["content"])
+                    if any(start <= found.start() and found.end() <= end for start, end in windows)
+                ]
+                if len(seen) != 1:
+                    problems.append(
+                        f"{prefix}: quotation repeats; include enough exact surrounding text to identify its intended occurrence"
+                    )
+                    continue
+                match = seen[0]
+            evidence.offset = match.start()
             evidence.source_id = source["source_id"]
             evidence.source_title = (
                 " ".join(source["source_title"].split()) or evidence.source_title
@@ -291,7 +306,7 @@ def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]])
 def public_sources(records: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     """Expose inspectable source identities without duplicating full page bodies."""
     return [
-        {key: value for key, value in record.items() if key != "content"}
+        {key: value for key, value in record.items() if key not in {"content", "anchors"}}
         for record in records.values()
     ]
 
@@ -329,7 +344,10 @@ def review_sources(
             source = records[edge.task_handle]
             content = source["content"]
             pattern = _quote_pattern(edge.quote)
-            match = pattern.search(content) if pattern is not None else None
+            # The bound occurrence, when binding chose one of several on the page.
+            at = edge.offset if edge.offset is not None else 0
+            match = pattern.match(content, at) if pattern is not None and at else None
+            match = match or (pattern.search(content) if pattern is not None else None)
             if match is None:
                 raise ValueError("A reviewed passage lost its actual source binding")
             start, end = max(0, match.start() - 800), min(len(content), match.end() + 800)
