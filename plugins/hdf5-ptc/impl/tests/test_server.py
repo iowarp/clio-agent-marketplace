@@ -331,3 +331,24 @@ async def test_vtk_series_refuses_fields_on_different_grids(era5_like, tmp_path)
                 },
                 meta=_meta("s13"),
             )
+
+
+async def test_vtk_time_steps_keep_full_precision(era5_like, tmp_path) -> None:
+    big = tmp_path / "hours.nc"
+    with h5netcdf.File(era5_like, "r") as a, h5netcdf.File(big, "w") as b:
+        b.dimensions = {k: v.size for k, v in a.dimensions.items()}
+        for coord in ("level", "latitude", "longitude"):
+            b.create_variable(coord, (coord,), data=a.variables[coord][:])
+        hours = b.create_variable("time", ("time",), data=np.arange(4, dtype=np.int64) + 1093416)
+        hours.attrs["units"] = "hours since 1900-01-01 00:00:00"
+        b.create_variable("T", ("time", "level", "latitude", "longitude"), data=a.variables["T"][:])
+    out = tmp_path / "steps"
+    async with Client(mcp) as c:
+        h = _data(await c.call_tool("open_file", {"path": str(big)}, meta=_meta("s14")))["handle"]
+        await c.call_tool(
+            "write_subset",
+            {"file": h, "items": [{"path": "/T"}], "out_path": str(out), "format": "vtk"},
+            meta=_meta("s14"),
+        )
+    steps = [float(d.get("timestep")) for d in ET.parse(out / "steps.pvd").iter("DataSet")]
+    assert steps == [1093416.0, 1093417.0, 1093418.0, 1093419.0]  # four distinct hours

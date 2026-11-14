@@ -173,7 +173,8 @@ def write_vtk_series(
     for i, t in enumerate(times):
         piece = out / f"{stem}_{i:04d}.vtr"
         _vtr(piece, xc, yc, zc, {name: data[i] for name, data in datas.items()})
-        entries.append(f'<DataSet timestep="{t:.6g}" part="0" file="{piece.name}"/>')
+        # Full precision: ERA5 hours since 1900 (~1.09e6) need seven digits to stay distinct.
+        entries.append(f'<DataSet timestep="{t!r}" part="0" file="{piece.name}"/>')
     index = out / f"{stem}.pvd"
     index.write_text(
         '<?xml version="1.0"?>\n<VTKFile type="Collection" version="1.0">\n<Collection>\n'
