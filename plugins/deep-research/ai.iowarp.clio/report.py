@@ -103,8 +103,9 @@ def with_review_unavailable(document: str) -> str:
     return (
         document.rstrip()
         + "\n\n## Review not available\n\nThe independent final review of this report could "
-        "not be read, twice, so this report was not reviewed. Its claims were still "
-        "verified against their sources; check the sources for anything you rely on.\n"
+        "not be completed (its reply was unreadable or the model call failed, twice), so "
+        "this report was not reviewed. Its claims were still verified against their "
+        "sources; check the sources for anything you rely on.\n"
     )
 
 
@@ -316,8 +317,9 @@ class ReportSynthesis:
                         review["failed"],
                     )
                 if review.get("failed"):
-                    # No verdict could be read: deliver the report, marked unreviewed,
-                    # rather than lose the research. Never counted as acceptance.
+                    # No verdict (an unreadable reply, or a failed model call such as a
+                    # usage limit): deliver the report, marked unreviewed, rather than
+                    # lose the research. Never counted as acceptance.
                     document = with_review_unavailable(document)
                     verdict = {
                         "attempt": attempt + 1,
