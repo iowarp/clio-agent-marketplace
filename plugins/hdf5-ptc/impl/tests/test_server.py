@@ -212,6 +212,36 @@ async def test_write_subset_vtk_writes_a_time_series_with_real_axes(era5_like, t
     ET.parse(out / "t_box_0000.vtr")
 
 
+async def test_a_tall_vtk_box_says_which_scale_flattens_it(era5_like, tmp_path) -> None:
+    async with Client(mcp) as c:
+        h = _data(await c.call_tool("open_file", {"path": str(era5_like)}, meta=_meta("s7b")))[
+            "handle"
+        ]
+        args = {"file": h, "items": [{"path": "/T"}], "format": "vtk"}
+        tall = await c.call_tool(
+            "write_subset",
+            {
+                **args,
+                "out_path": str(tmp_path / "tall"),
+                "vertical": {"reference": 1000, "scale": 30},
+            },
+            meta=_meta("s7b"),
+        )
+        flat = await c.call_tool(
+            "write_subset",
+            {
+                **args,
+                "out_path": str(tmp_path / "flat"),
+                "vertical": {"reference": 1000, "scale": 3.26},
+            },
+            meta=_meta("s7b"),
+        )
+    text = tall.content[0].text
+    # 30 lon x 20 lat degrees; z = 30 ln(10) = 69: a quarter of 30 needs scale 30 * 7.5 / 69.
+    assert "much taller than it is wide" in text and "vertical scale 3.3 makes it" in text
+    assert "taller" not in flat.content[0].text
+
+
 async def test_urls_open_only_under_the_configured_range_origin(monkeypatch) -> None:
     async with Client(mcp) as c:
         monkeypatch.delenv("CLIO_SOURCE_RANGE_ORIGIN", raising=False)
