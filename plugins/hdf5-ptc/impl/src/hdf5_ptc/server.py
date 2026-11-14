@@ -520,6 +520,18 @@ def write_subset(
                 else "."
             )
         )
+        if written["steps"] > 1:
+            first, last = written["times"][0], written["times"][-1]
+            when = (
+                f" ({written['times_iso'][0]} to {written['times_iso'][-1]})"
+                if written.get("times_iso")
+                else ""
+            )
+            text += (
+                f" Its time steps are the file's own time values, {first:.10g} to {last:.10g}"
+                + (f" {written['time_units']}" if written.get("time_units") else "")
+                + f"{when}: a table or chart column holding the same values links to it by time."
+            )
     else:
         written = writers.write_netcdf(resolved, out, source)
         text = (

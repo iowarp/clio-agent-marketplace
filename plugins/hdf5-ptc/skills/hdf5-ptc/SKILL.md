@@ -45,7 +45,9 @@ coordinates, attributes and the source selection as provenance; register it so a
 chart, map or table can read it. For a 3D view of a (time, level, y, x) field, write
 `format="vtk"`: a rectilinear grid per step with a time index, which ParaView opens
 with real axes. Uneven vertical levels can be mapped with `vertical` (for pressure,
-`{reference, scale}` gives log-pressure height).
+`{reference, scale}` gives log-pressure height). Its time steps are the file's own time
+values, so a table or chart column holding the same values links it to the other
+views by time; keep the source's time values in the tables you write.
 
 ## Errors
 

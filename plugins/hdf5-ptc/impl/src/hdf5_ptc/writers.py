@@ -130,6 +130,7 @@ def write_vtk_series(
         coords = [("time", np.array([0.0]), {}), *coords]
     else:
         times = [float(t) for t in coords[0][1]]
+    time_units = coords[0][2].get("units") if data.ndim == 4 else None
     (_, zc, zattrs), (_, yc, _), (_, xc, _) = coords[1:]
     zc = zc.astype(np.float64)
     if vertical:
@@ -179,4 +180,7 @@ def write_vtk_series(
         ],
         "field": name,
         "range": [float(np.nanmin(data)), float(np.nanmax(data))],
+        "times": times,
+        "time_units": time_units,
+        "times_iso": [cf.time_text(t, time_units) for t in times] if time_units else None,
     }
