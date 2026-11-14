@@ -59,6 +59,9 @@ Read field names from it; never guess one. Keep the scene id it returns: passing
   `Contour` with `ContourBy` and `Isosurfaces`, `Slice`, `Clip`, `Threshold`.
   A wrong property name is refused with the names that exist, and nothing
   changes.
+- `set_filter_property` changes a filter already in the scene (a contour value,
+  a slice origin) instead of adding another. The person can change one too, in
+  the view's panel; their change reaches you in the view's change log.
 - `set_representation` sets Surface, Wireframe, Points, Outline or Volume, the
   field to colour by, and a colour preset; prefer a perceptually uniform preset
   such as Viridis for continuous data.
