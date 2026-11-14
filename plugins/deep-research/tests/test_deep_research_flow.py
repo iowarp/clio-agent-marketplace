@@ -1859,3 +1859,24 @@ def test_unreadable_planner_and_coordinator_replies_get_one_format_correction() 
     with pytest.raises(FlowStall) as stalled:
         run(make_flow(Broken(["a"])), ScriptedCtx(Children([])))
     assert stalled.value.stall == "planner_unreadable"
+
+
+def test_a_parse_failure_reason_names_the_problem_not_the_reply() -> None:
+    from dspy.utils.exceptions import AdapterParseError
+
+    reply = "[[ ## reasoning ## ]]\n" + "long model reply " * 400
+    missing = AdapterParseError(
+        "ChatAdapter", flow_module.PlanResearch, reply, parsed_result={"reasoning": "x"}
+    )
+    invalid = AdapterParseError(
+        "ChatAdapter",
+        flow_module.PlanResearch,
+        reply,
+        message="Failed to parse field directions with value [" + "x" * 3000 + "] from the LM "
+        "response. Error message: Value error, web_research requires the tools",
+    )
+    reason = flow_module._failure(missing)
+    assert "long model reply" not in reason
+    assert reason.endswith("Actual output fields parsed from the LM response: [reasoning]")
+    reason = flow_module._failure(invalid)
+    assert "web_research requires the tools" in reason and "xxxx" not in reason

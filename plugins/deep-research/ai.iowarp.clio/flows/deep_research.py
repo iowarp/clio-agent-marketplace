@@ -786,10 +786,13 @@ def _failure(exc: Exception) -> str:
     """
     text = str(exc)
     if hasattr(exc, "lm_response"):
-        # A parse failure: keep the field and its validation errors, not the whole
-        # value and model reply that the message repeats around them.
-        text = text.split("\n\nAdapter ", 1)[0]
+        # A parse failure: keep what was wrong (the field and its validation errors,
+        # or which output fields were expected and found), not the value and the
+        # model reply that the message repeats around them.
         text = re.sub(r" with value .* from the LM response\.", ".", text, flags=re.S)
+        text = re.sub(r"Adapter \w+ failed to parse the LM response\. *", "", text)
+        text = re.sub(r"LM Response: .*? \n\nExpected", "Expected", text, flags=re.S)
+        text = " ".join(text.split())
     text = f"{type(exc).__name__}: {text}"
     return text if len(text) <= 1600 else text[:400] + " … " + text[-1200:]
 
