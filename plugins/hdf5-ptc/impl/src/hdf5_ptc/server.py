@@ -128,6 +128,24 @@ def _dims_text(ds: h5py.Dataset) -> str:
     return "(" + ", ".join(f"{n}={s}" for n, s in zip(names, ds.shape, strict=True)) + ")"
 
 
+def _shape_note(spans: list[float], vertical: dict[str, float] | None) -> str:
+    """How a written box will look in a 3D view, when its height dwarfs its width."""
+    wide = max(spans[0], spans[1])
+    if not wide or spans[2] <= 1.5 * wide:
+        return "."
+    note = (
+        "; it is much taller than it is wide, because z is in other units than x and y, so "
+        "in a 3D view the field is a thin column"
+    )
+    if vertical and spans[2]:
+        quarter = float(vertical.get("scale", 1.0)) * 0.25 * wide / spans[2]
+        return (
+            f"{note}: vertical scale {quarter:.2g} makes it a quarter as tall as it is wide, "
+            "and fewer levels leave out an empty top."
+        )
+    return f"{note}: a vertical mapping (vertical) or fewer levels flattens it."
+
+
 @mcp.tool(
     annotations={"title": "Open an HDF5 file", "readOnlyHint": True},
     meta=_paths(path=("local", "read")),
@@ -499,7 +517,9 @@ def write_subset(
         dict[str, float] | None,
         Field(
             description="vtk only: map the vertical coordinate to z = scale * ln(reference / "
-            "value), e.g. {reference: 1000, scale: 7} for log-pressure height in km."
+            "value) (for pressure, a log-pressure height). x and y keep the horizontal "
+            "coordinates' own units (degrees on a latitude/longitude grid) and a 3D view draws "
+            "z on the same scale, so scale sets how tall the box is next to its width."
         ),
     ] = None,
 ) -> ToolResult:
@@ -530,12 +550,7 @@ def write_subset(
             f"Wrote {', '.join(x['name'] for x in written['fields'])} as {written['steps']} VTK "
             f"step(s) on a {written['grid']} grid to {written['path']} ({ranges}). "
             f"The box spans {spans[0]:.3g} x {spans[1]:.3g} x {spans[2]:.3g} (x, y, z)"
-            + (
-                "; it is much taller than it is wide, so in a 3D view the field is a thin "
-                "column: fewer levels or a smaller vertical scale flattens it."
-                if spans[2] > 1.5 * max(spans[0], spans[1])
-                else "."
-            )
+            + _shape_note(spans, vertical)
         )
         if written["steps"] > 1:
             first, last = written["times"][0], written["times"][-1]
