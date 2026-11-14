@@ -555,6 +555,8 @@ def test_plan_research_verify_report() -> None:
     assert ctx.merged_gathers == 0
     (coordinated,) = [e for e in ctx.events if e["event"] == "coordinated"]
     assert coordinated["input_characters"] > 0
+    (draft,) = [e for e in ctx.events if e["event"] == "report_draft"]
+    assert (draft["attempt"], draft["claims_cited"], draft["claims_verified"]) == (1, 2, 2)
     assert "## Unresolved questions" not in result["answer"]
     assert result["answer"].startswith("# Report")
 

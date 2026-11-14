@@ -252,6 +252,17 @@ class ReportSynthesis:
                 )
                 report = rendered
             rendered = report or rendered
+            cited_ids = {cid for row in blocks for cid in row.get("claim_ids") or []}
+            await self.ctx.record_event(
+                {
+                    "event": "report_draft",
+                    "attempt": attempt + 1,
+                    "blocks": len(blocks),
+                    "words": len(" ".join(str(row.get("text") or "") for row in blocks).split()),
+                    "claims_cited": len(cited_ids & {c.claim_id for c in audit.verified}),
+                    "claims_verified": len(audit.verified),
+                }
+            )
             # Only the writer's own prose can cite outside the evidence: the citations
             # and References the flow renders come from verified claims, and a fetched
             # page's title can itself contain a URL (a funding note, 2026-11-14).

@@ -178,6 +178,12 @@ class WriteReport(dspy.Signature):
     appends the unresolved questions and the rejected claims after your report, so
     do not list them again. Do not cite a search page or an unverified source.
 
+    The report is where the verified evidence reaches the person: each part of the
+    question that verified claims answer gets its findings, with those claims. When
+    previous_blocks holds an earlier draft, the reply is still the complete report:
+    keep each block no issue concerns, and correct, add or remove only what the
+    issues and citation problems require.
+
     Delivery is handled by the flow after synthesis using the supplied delivery
     contract. Do not claim this document has or has not been saved, inspected or
     read back: those actions have not happened yet. Their actual outcome is
@@ -198,10 +204,10 @@ class WriteReport(dspy.Signature):
         desc="An earlier draft cited these unverified URLs; write a corrected report using verified sources"
     )
     review_feedback: list[ReviewIssue] = dspy.InputField(
-        desc="Concrete issues in a previous draft to correct"
+        desc="Concrete issues in the earlier draft to correct"
     )
     previous_blocks: list[dict[str, Any]] = dspy.InputField(
-        desc="Earlier draft, empty for the first attempt"
+        desc="The complete earlier draft, empty for the first attempt; the reply replaces it whole"
     )
     blocks: list[ReportBlock] = dspy.OutputField(
         desc="Complete report in readable Markdown units with an evidence map"
