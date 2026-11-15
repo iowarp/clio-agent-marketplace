@@ -14,6 +14,7 @@ SKILLS = PLUGIN / "skills"
 
 #: Server tools of the KiCad connector (kicad-mcp-pro at the pinned commit) the
 #: plugin's own skills name.
+CLIO_TOOLS = {"view_pdf"}
 TOOLS = {
     "export_spice_netlist",
     "export_step",
@@ -123,7 +124,8 @@ class KicadPluginTests(unittest.TestCase):
         for skill in sorted(OWN):
             with self.subTest(skill=skill):
                 text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
-                named = set(pattern.findall(text))
+                # CLIO's own tools that share a prefix with the connector's (view_pdf).
+                named = set(pattern.findall(text)) - CLIO_TOOLS
                 self.assertLessEqual(named, TOOLS)
                 self.assertNotIn(HIDDEN_PREFIX, " ".join(named))
 
