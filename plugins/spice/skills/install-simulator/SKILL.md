@@ -37,7 +37,7 @@ result's `boundary` says `elevation_required` or `privilege_denied`): call `shel
 with `outside_sandbox: true` and an `access_reason`. CLIO shows the person the exact command and
 runs it outside the sandbox only if they allow; the system then asks them itself (UAC on
 Windows, `pkexec`'s dialog on a Linux desktop, `osascript ... with administrator privileges` on
-macOS). Never ask for a password in the conversation. If they decline, give them the command to
+macOS). CLIO never takes a password: never ask for one in the conversation. If they decline, give them the command to
 run in their own terminal, or skip simulation as above.
 
 ## Point the connector at it
