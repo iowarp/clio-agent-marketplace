@@ -16,6 +16,14 @@ SKILLS = PLUGIN / "skills"
 #: plugin's own skills name.
 CLIO_TOOLS = {"export_3d_render", "view_pdf"}
 TOOLS = {
+    "lib_search_footprints",
+    "lib_generate_footprint_custom",
+    "lib_get_footprint_3d_model",
+    "lib_assign_footprint",
+    "lib_set_3d_model_path",
+    "lib_list_footprint_families",
+    "lib_check_footprint",
+    "lib_generate_footprint",
     "export_spice_netlist",
     "export_step",
     "kicad_get_project_info",
@@ -104,6 +112,8 @@ OWN = {
     "datasheet-pin-check",
     "pcb-pipeline",
     "part-sourcing",
+    "pcb-enclosure",
+    "pcb-footprints",
 }
 
 #: Simulation is the spice connector's; the connector hides these tools.
