@@ -14,7 +14,7 @@ SKILLS = PLUGIN / "skills"
 
 #: Server tools of the KiCad connector (kicad-mcp-pro at the pinned commit) the
 #: plugin's own skills name.
-CLIO_TOOLS = {"view_pdf"}
+CLIO_TOOLS = {"export_3d_render", "view_pdf"}
 TOOLS = {
     "export_spice_netlist",
     "export_step",
@@ -87,10 +87,23 @@ TOOLS = {
 }
 
 #: The views' own tools (MCP Apps app tools), which a skill may name too.
-APP_TOOLS = {"focus", "set_layers", "select_row", "select", "capture", "describe_region"}
+APP_TOOLS = {
+    "focus",
+    "set_layers",
+    "select_row",
+    "select",
+    "capture",
+    "describe_region",
+}
 
 #: Skills this plugin adds; the others are copies of the fork's skills.
-OWN = {"install-kicad", "pcb-placement", "pcb-routing", "datasheet-pin-check", "pcb-pipeline"}
+OWN = {
+    "install-kicad",
+    "pcb-placement",
+    "pcb-routing",
+    "datasheet-pin-check",
+    "pcb-pipeline",
+}
 
 #: Simulation is the spice connector's; the connector hides these tools.
 HIDDEN_PREFIX = "sim_"
@@ -117,10 +130,14 @@ class KicadPluginTests(unittest.TestCase):
         self.assertEqual(copied, set(pin["files"]))
         for name, digest in pin["files"].items():
             with self.subTest(file=name):
-                self.assertEqual(hashlib.sha256((PLUGIN / name).read_bytes()).hexdigest(), digest)
+                self.assertEqual(
+                    hashlib.sha256((PLUGIN / name).read_bytes()).hexdigest(), digest
+                )
 
     def test_its_own_skills_name_only_live_tools(self) -> None:
-        pattern = re.compile(r"`((?:pcb|lib|route|sch|run|view|export|kicad)_[a-z0-9_]+)`")
+        pattern = re.compile(
+            r"`((?:pcb|lib|route|sch|run|view|export|kicad)_[a-z0-9_]+)`"
+        )
         for skill in sorted(OWN):
             with self.subTest(skill=skill):
                 text = (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
@@ -137,12 +154,21 @@ class KicadPluginTests(unittest.TestCase):
 
     def test_the_workbench_links_board_bom_and_checks_by_selection(self) -> None:
         doc = json.loads(
-            (SKILLS / "pcb-pipeline" / "references" / "pcb-workbench.json").read_text("utf-8")
+            (SKILLS / "pcb-pipeline" / "references" / "pcb-workbench.json").read_text(
+                "utf-8"
+            )
         )
         components = {row["id"]: row for row in doc["components"]}
         self.assertEqual(len(components), len(doc["components"]))
-        views = {cid: row for cid, row in components.items() if row["component"] == "clio.mcp-app.v1"}
-        self.assertEqual({row["tool"] for row in views.values()}, {"view_board", "view_bom", "view_checks"})
+        views = {
+            cid: row
+            for cid, row in components.items()
+            if row["component"] == "clio.mcp-app.v1"
+        }
+        self.assertEqual(
+            {row["tool"] for row in views.values()},
+            {"view_board", "view_bom", "view_checks"},
+        )
         for row in views.values():
             self.assertEqual(row["server"], "kicad")
             paths = {channel["path"] for channel in row["state"]}
