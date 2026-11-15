@@ -28,7 +28,15 @@ def test_typed_claims_reach_the_critic_and_invalid_entries_are_counted() -> None
     ctx = ScriptedCtx(TypedChildren([audit()]))
     run(make_flow(Planner(["a"])), ctx)
     (packet,) = of(ctx, "critic")[0]["input"]["packets"]
-    assert packet["claims"] == [CLAIM]
+    # The researcher never fetched the page, so the claim reaches the critic unchecked.
+    assert "claims" not in packet
+    assert packet["unchecked"] == [
+        {
+            **CLAIM,
+            "gate": "page_not_fetched",
+            "reason": "the researcher did not successfully read the cited page",
+        }
+    ]
     assert packet["evidence"].startswith("## Assignment")
     assert {"event": "packet_claims_invalid", "direction": "d1", "dropped": 1} in ctx.events
 

@@ -5,8 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-
-from clio_agent.flows.outcomes import FlowStall
 from test_deep_research_flow import (
     Children,
     Planner,
@@ -18,6 +16,8 @@ from test_deep_research_flow import (
     of,
     run,
 )
+
+from clio_agent.flows.outcomes import FlowStall
 
 REFUSED = {
     "receipt_id": "refused-1",
