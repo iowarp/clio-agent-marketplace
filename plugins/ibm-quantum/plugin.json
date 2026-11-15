@@ -1,0 +1,28 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ibm-quantum",
+  "version": "1.0.0",
+  "description": "Quantum programs with Qiskit through the IBM Quantum connector, which already runs Qiskit, its exact and Aer simulators and IBM's fake devices on this machine, with nothing to install: build and simulate circuits (exactly, with ideal shots, or with a real device's noise), keep every run as a job, compare backends, see circuits, layouts, results and devices in views the person can work in, train hybrid quantum-classical models, and use real hardware only on purpose and within the time left. It belongs to the IBM Quantum connector: add it to a conversation while that connector is enabled.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "quantum",
+    "qiskit",
+    "ibm-quantum",
+    "quantum-machine-learning"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "follows": "ibm-quantum",
+      "connections": {
+        "ibm-quantum": "ibm-quantum"
+      },
+      "requires": [
+        "visuals",
+        "science-log"
+      ]
+    }
+  }
+}

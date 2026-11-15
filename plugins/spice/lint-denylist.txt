@@ -1,0 +1,3 @@
+# Instance literals that must never ship in this pack: machines and runs it was checked on.
+clean-led-kicad10
+sensor-node

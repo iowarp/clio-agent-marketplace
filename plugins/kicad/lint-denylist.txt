@@ -1,0 +1,6 @@
+# Instance literals that must never ship in this pack: qualification boards and parts.
+clean-led-kicad10
+drc-courtyard-error
+large-board
+GRM21BZ71E106KE15L
+enclosure_outline.dxf

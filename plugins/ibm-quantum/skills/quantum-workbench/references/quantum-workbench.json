@@ -1,0 +1,40 @@
+{
+  "format": "clio.dashboard.document.v1",
+  "title": "Quantum workbench",
+  "notes": "Fill every <…> before publishing: the circuit (OpenQASM 3), the device, the job ids. Keep the state channels as they are: they link the circuit and layout views by the selected gate.",
+  "components": [
+    {"id": "root", "component": "Column", "children": ["scope", "top", "resultsFrame"]},
+    {"id": "scope", "component": "Text", "text": "<what this circuit is, on which device, and which jobs are compared>"},
+    {"id": "top", "component": "Row", "align": "stretch", "children": ["circuitFrame", "layoutFrame"]},
+    {"id": "circuitFrame", "component": "Frame", "title": "Circuit", "child": "circuit"},
+    {
+      "id": "circuit",
+      "component": "clio.mcp-app.v1",
+      "server": "ibm-quantum",
+      "tool": "view_circuit",
+      "arguments": {"circuit": "<OpenQASM 3>", "blocks": [{"name": "<block>", "start": 0, "end": 1}]},
+      "state": [{"key": "selected_gate", "path": "/quantum/selected_gate", "tool": "focus"}],
+      "height": 420
+    },
+    {"id": "layoutFrame", "component": "Frame", "title": "On the device", "child": "layout"},
+    {
+      "id": "layout",
+      "component": "clio.mcp-app.v1",
+      "server": "ibm-quantum",
+      "tool": "view_layout",
+      "arguments": {"circuit": "<OpenQASM 3>", "backend_name": "<fake_<device> or a device>", "optimization_level": 1},
+      "state": [{"key": "selected_gate", "path": "/quantum/selected_gate", "tool": "focus"}],
+      "height": 420
+    },
+    {"id": "resultsFrame", "component": "Frame", "title": "Results", "child": "results"},
+    {
+      "id": "results",
+      "component": "clio.mcp-app.v1",
+      "server": "ibm-quantum",
+      "tool": "view_results",
+      "arguments": {"job_ids": ["<reference job>", "<compared job>"], "labels": ["<label>", "<label>"]},
+      "state": [{"key": "job_ids", "path": "/quantum/job_ids", "tool": "show_jobs"}],
+      "height": 380
+    }
+  ]
+}
