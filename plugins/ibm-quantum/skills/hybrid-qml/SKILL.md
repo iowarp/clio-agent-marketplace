@@ -24,9 +24,11 @@ device, and on the device.
   trained model.
 - Always train a classical baseline on the same features beside it (a linear layer
   where the quantum layer is), with the same data, epochs and optimizer. Report both.
-- Install what the script needs into the environment `run_code` uses (CPU builds of
-  `torch` and `torchvision`, `qiskit-machine-learning`), and keep datasets in the
-  workspace's cache folder so a rerun does not download them again.
+- Make the model's environment with CLIO's own uv, in the workspace:
+  `"$CLIO_UV" venv .venv --python 3.12`, then `"$CLIO_UV" pip install --python .venv
+  torch torchvision --index-url https://download.pytorch.org/whl/cpu` and
+  `"$CLIO_UV" pip install --python .venv qiskit qiskit-machine-learning`. Keep datasets
+  in the workspace's cache folder so a rerun does not download them again.
 
 ## 2. Train in the background and show it live
 
@@ -42,7 +44,7 @@ before the first epoch ends:
 
 `run_code`'s kernel is CLIO's own Python: it has the stream and task bindings, but not
 the packages you installed for the model. So the training script runs in the
-environment that has them, prints one JSON line per model per epoch, and a background
+`.venv` that has them, prints one JSON line per model per epoch, and a background
 `run_code(background=True, label=...)` starts it, writes each line to the stream and
 wakes the conversation at the end:
 
