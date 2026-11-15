@@ -303,6 +303,29 @@ def _outer_face(case: Case, edge: str, across: float, z: float) -> float | None:
     return {"-x": bb.xmin, "+x": bb.xmax, "-y": bb.ymin, "+y": bb.ymax}.get(edge)
 
 
+def _box_gap(a: cq.Shape, b: cq.Shape) -> float:
+    """The gap between the two shapes' bounding boxes: the shapes are never closer."""
+    p, q = a.BoundingBox(), b.BoundingBox()
+    dx = max(0.0, q.xmin - p.xmax, p.xmin - q.xmax)
+    dy = max(0.0, q.ymin - p.ymax, p.ymin - q.ymax)
+    dz = max(0.0, q.zmin - p.zmax, p.zmin - q.zmax)
+    return math.sqrt(dx * dx + dy * dy + dz * dz)
+
+
+def _gap(a: cq.Shape, b: cq.Shape) -> tuple[float, str]:
+    """The distance between two shapes, and how it was found.
+
+    OCC's ``Shape.distance`` has returned 0.0 for a pair 25 mm apart (ledger FN-7). The
+    bounding boxes' gap is a lower bound on the true distance, so a smaller distance is
+    wrong; the bound is used instead, which can only under-report the clearance.
+    """
+    measured = a.distance(b)
+    bound = _box_gap(a, b)
+    if measured < bound - 1e-6:
+        return bound, "bounding boxes (Shape.distance gave less)"
+    return measured, "Shape.distance"
+
+
 def fit_checks(case: Case, made: dict[str, Any], bodies: dict[str, cq.Shape]) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
 
@@ -319,10 +342,10 @@ def fit_checks(case: Case, made: dict[str, Any], bodies: dict[str, cq.Shape]) ->
         if ref == "pcb" or ref in connectors:
             continue  # a connector reaches into its opening; checked below
         for element, shape in elements.items():
-            gap = body.distance(shape)
+            gap, method = _gap(body, shape)
             if gap < CLEARANCE - 0.05:
                 check("clearance", False, part=ref, element=element, gap=round(gap, 2),
-                      required=CLEARANCE)
+                      required=CLEARANCE, measured_by=method)
     if not any(c["check"] == "clearance" for c in checks):
         check("clearance", True, required=CLEARANCE)
 
@@ -353,7 +376,7 @@ def fit_checks(case: Case, made: dict[str, Any], bodies: dict[str, cq.Shape]) ->
             y0, y1 = (at - travel, at) if edge == "-y" else (at, at + travel)
             plug = _box(mid - w / 2, y0, zmid - h / 2, mid + w / 2, y1, zmid + h / 2)
         touching = {name: shell.intersect(plug).Volume() for name, shell in shells.items()}
-        gap = min(plug.distance(shell) for shell in shells.values())
+        gap = min(_gap(plug, shell)[0] for shell in shells.values())
         outer_face = _outer_face(case, edge, mid, zmid)
         recess = abs(outer_face - at) if outer_face is not None else None
         check("cutout", all(v < 1e-6 for v in touching.values()), connector=f"cutout_{ref}",

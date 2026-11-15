@@ -50,6 +50,16 @@ the operating system each ask the person before anything changes:
 | Windows | `winget install --id KiCad.KiCad -e --accept-source-agreements --accept-package-agreements` | Machine-wide, so Windows asks for approval (UAC). `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
 | Conda (no admin rights) | `conda install -c conda-forge kicad` | A user-space install; useful where installing system packages is not allowed |
 
+**Disk space for the 3D models.** The 3D model package is several gigabytes once unpacked,
+more than the rest of KiCad together. Before installing it, read its size
+(`apt-cache show kicad-packages3d`, field `Installed-Size`, in kB; on macOS and Windows the
+models come with the installer) and the free space where it goes (`df -h /usr` on Linux and
+macOS, `Get-PSDrive C` on Windows), and tell the person both. When the space is short, offer
+the choice: skip the models (the 3D view and STEP export then show the board, tracks and
+pads without component bodies), or let the person free space. Never free space yourself by
+deleting folders you did not create, and never CLIO's own folders: a running connector's
+environment lives there.
+
 If `add-apt-repository` fails (for example `No module named 'apt_pkg'` when the system Python
 was replaced), add the PPA by hand: put
 `deb [signed-by=/etc/apt/keyrings/kicad.gpg] https://ppa.launchpadcontent.net/kicad/kicad-10.0-releases/ubuntu <codename> main`
