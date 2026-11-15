@@ -1,6 +1,6 @@
 ---
 name: pcb-routing
-description: Route a KiCad board with KiCad MCP Pro: power and critical nets by hand with the routing tools, FreeRouting for the rest, then zones and DRC until clean.
+description: "Route a KiCad board with KiCad MCP Pro: power and critical nets by hand with the routing tools, FreeRouting for the rest, then zones and DRC until clean."
 ---
 
 # PCB routing
