@@ -51,8 +51,10 @@ person's decision, so say what you will run first.
    pattern.
 7. **Placement**, as a study (below), with the `pcb-placement` skill.
 8. **Routing**, with the `pcb-routing` skill; DRC until clean.
-9. **Release.** DFM checks and the manufacturing package. Exporting the release package is the
-   person's step: say it is ready and what it holds. Send the STEP (`export_step`) back to the
+9. **Release.** DFM checks and the manufacturing package. Look at the board first
+   (`export_3d_render` top and bottom, or the board view's `capture`): checks pass on boards
+   with a keepout in the wrong place or a connector set back from the edge. Exporting the
+   release package is the person's step: say it is ready and what it holds. Send the STEP (`export_step`) back to the
    enclosure for a fit check.
 
 ## The views

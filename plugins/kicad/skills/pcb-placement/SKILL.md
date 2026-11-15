@@ -15,7 +15,10 @@ call committed by the live KiCad (`pcb_move_footprint`, `pcb_set_footprint_layer
    the enclosure's DXF, or `pcb_set_board_outline_shape`), then the mounting holes, then the
    connectors, switches, LEDs and anything that must line up with an opening. Lock each
    (`pcb_set_footprint_locked`) so later passes cannot move it. Add keepouts
-   (`pcb_set_keepout_zone`) under antennas and around holes.
+   (`pcb_set_keepout_zone`) under antennas and around holes. An antenna keepout covers the
+   antenna area the module's footprint marks (the part of its courtyard beyond the body), on
+   every copper layer, at the module's position as placed: take its corners from the
+   footprint, not from the body outline.
 2. **Group by function from the schematic.** Read the hierarchy and the nets
    (`sch_get_*`, `pcb_get_ratsnest`): the power stage, the MCU and its crystal, each
    interface. Keep each group together and near the connector it serves.
