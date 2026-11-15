@@ -103,6 +103,7 @@ OWN = {
     "pcb-routing",
     "datasheet-pin-check",
     "pcb-pipeline",
+    "part-sourcing",
 }
 
 #: Simulation is the spice connector's; the connector hides these tools.
@@ -146,8 +147,8 @@ class KicadPluginTests(unittest.TestCase):
                 self.assertLessEqual(named, TOOLS)
                 self.assertNotIn(HIDDEN_PREFIX, " ".join(named))
 
-    def test_the_pipeline_asks_for_keys_through_the_card_not_the_chat(self) -> None:
-        text = (SKILLS / "pcb-pipeline" / "SKILL.md").read_text(encoding="utf-8")
+    def test_sourcing_asks_for_keys_through_the_card_not_the_chat(self) -> None:
+        text = (SKILLS / "part-sourcing" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("offer_plugin", text)
         self.assertIn("needs", text)
         self.assertIn("never ask for a key in a message", text)
