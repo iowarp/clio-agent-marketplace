@@ -11,13 +11,17 @@ and polarized part.
 
 ## For each part
 
-1. **Get the datasheet.** `lib_get_datasheet_url` (or the BOM's datasheet link); ingest the
-   PDF where the session keeps documents, so you can cite pages.
+1. **Get the datasheet.** `lib_get_datasheet_url` (or the BOM's datasheet link). Save the PDF
+   in the project folder and read it with `view_pdf`, so every value you take from it comes
+   with the page you read it on.
 2. **Read the pin table** for the exact package (the same part in another package has
    another pin map).
 3. **Compare** with the symbol's pins (`sch_get_pin_positions` or the library symbol) and the
    footprint's pads (`lib_get_footprint_info`): every number, name and electrical type.
-   Exposed pads and mounting tabs count.
+   Exposed pads and mounting tabs count. An exposed pad the symbol does not list is a
+   mismatch even when ERC passes: it is usually both the part's heat path and an electrical
+   connection, and the datasheet's pin table or notes say what it joins (ground, a supply, or
+   "may be left floating"). Connect it as the datasheet says, with the page.
 4. **Stop on a mismatch.** Report the part, the pin, what the symbol says and what the
    datasheet says, with the page. Do not lay out a part whose pins disagree.
 
