@@ -18,9 +18,12 @@ Use this skill once placement is settled. Route in this order; check after each 
      unbroken reference plane.
    - Crystals and sensitive analog: short, away from switching nodes.
    Use `route_single_track`, `route_from_pad_to_pad` and `pcb_add_via`.
-3. **FreeRouting for the rest.** `route_autoroute_freerouting` routes what is left. It needs
-   Java with the FreeRouting JAR, or Docker with its image; when neither is present, say so
-   and route by hand.
+3. **FreeRouting for the rest.** `route_autoroute_freerouting` routes what is left. The
+   server installs FreeRouting and the Java runtime it needs by itself the first time (or
+   uses Docker), and the result says what it installed. When it cannot, the result says why
+   and how the person installs it: routing a whole board by hand is slow and error-prone, so
+   do not start it on your own. Ask once with `ask_user`, giving the reason and the steps
+   from the result: install it and route again, or route by hand.
 4. **Zones.** Add ground (and power) pours (`pcb_add_zone`), then `pcb_refill_zones`.
 5. **DRC until clean.** `run_drc`; fix each violation at its cause, never by loosening a rule
    without saying why; run again until there are none or every remaining one is explained.
