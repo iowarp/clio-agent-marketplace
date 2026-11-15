@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import unicodedata
 from collections.abc import Mapping
 from typing import Any, Literal
 from urllib.parse import urlsplit, urlunsplit
@@ -392,16 +393,34 @@ def _paper_keys(work: Mapping[str, Any]) -> list[str]:
         keys.append("doi:" + str(ids["doi"]).lower())
     if ids.get("arxiv"):
         keys.append("arxiv:" + re.sub(r"v\d+$", "", str(ids["arxiv"]).lower()))
-    if work.get("readable_url"):
-        keys.append("url:" + url_key(str(work["readable_url"])))
+    for field in ("readable_url", "pdf_url"):
+        if work.get(field):
+            keys.append("url:" + url_key(str(work[field])))
+    if title := _title_key(str(work.get("title") or "")):
+        keys.append(title)
     return keys
+
+
+#: Fewer words than this do not name one work (``Interfaces``, ``Source``).
+_TITLE_WORDS = 3
+
+
+def _title_key(title: str) -> str:
+    """A work's full title, case and punctuation folded; ``""`` when too short to name one.
+
+    A researcher often reads a paper's text on another host than the record's (a
+    publisher PDF, a repository copy): the page's own title still names the work.
+    """
+    words = re.sub(r"[^\w]+", " ", unicodedata.normalize("NFKC", title).casefold()).split()
+    return "title:" + " ".join(words) if len(words) >= _TITLE_WORDS else ""
 
 
 def paper_records(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Bibliographic records CLIO's literature tools returned in these tool results.
 
-    Keyed by DOI, arXiv id and readable URL, so a cited page can be matched to the
-    work it belongs to. Only completed, successful ``literature`` results count.
+    Keyed by DOI, arXiv id, readable and PDF URL and full title, so a cited page can
+    be matched to the work it belongs to. Only completed, successful ``literature``
+    results count.
     """
     papers: dict[str, dict[str, Any]] = {}
     for row in rows:
@@ -420,8 +439,14 @@ def paper_records(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return papers
 
 
-def paper_for(url: str, papers: Mapping[str, dict[str, Any]]) -> dict[str, Any] | None:
-    """The scholarly work a cited URL belongs to, by DOI, arXiv id or readable URL."""
+def paper_for(
+    url: str, papers: Mapping[str, dict[str, Any]], title: str = ""
+) -> dict[str, Any] | None:
+    """The scholarly work a cited page belongs to.
+
+    By the DOI or arXiv id in its URL, the record's readable or PDF URL, and last by
+    the page's full title equal to the work's.
+    """
     if not papers:
         return None
     found = _DOI.search(url)
@@ -430,12 +455,15 @@ def paper_for(url: str, papers: Mapping[str, dict[str, Any]]) -> dict[str, Any] 
     found = _ARXIV.search(url)
     if found and (paper := papers.get("arxiv:" + found.group(1).lower())):
         return paper
-    return papers.get("url:" + url_key(url))
+    if paper := papers.get("url:" + url_key(url)):
+        return paper
+    key = _title_key(title)
+    return papers.get(key) if key else None
 
 
 def _reference(url: str, title: str, papers: Mapping[str, dict[str, Any]]) -> str:
     """One References entry: the cited link, with the work's bibliography when known."""
-    paper = paper_for(url, papers)
+    paper = paper_for(url, papers, title)
     link = lambda label: f"[{_markdown_label(label)}](<{url.replace('>', '%3E')}>)"  # noqa: E731
     if paper is None:
         return f"- {link(_short_title(title))}"
@@ -462,8 +490,9 @@ def render_report(
 ) -> str:
     """Render the writer's map with canonical source citations and references.
 
-    A reference whose URL belongs to a work CLIO's literature tools returned (by DOI,
-    arXiv id or readable URL) is written with its authors, year, venue and DOI.
+    A reference that belongs to a work CLIO's literature tools returned (by DOI, arXiv
+    id, the record's URLs or its full title) is written with its authors, year, venue
+    and DOI.
     """
     known = {claim.claim_id: claim for claim in claims}
     parts = []

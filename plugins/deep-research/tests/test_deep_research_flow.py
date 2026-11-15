@@ -1519,6 +1519,39 @@ def test_the_critic_declares_the_typed_audit_channel() -> None:
         assert field in prompt
 
 
+def test_a_paper_read_on_another_host_keeps_its_bibliography() -> None:
+    """The full text fetched from a publisher PDF is still the work the search returned."""
+    evidence_module = import_plugin_module(PLUGIN, "evidence.py")
+    work = {
+        "title": "Elf: Erasing-based lossless floating-point compression",
+        "ids": {"doi": "10.14778/3587136.3587149"},
+        "authors": ["Ruiyuan Li"],
+        "year": 2023,
+        "readable_url": "https://doi.org/10.14778/3587136.3587149",
+        "pdf_url": "https://www.osti.gov/servlets/purl/1",
+    }
+    found = {
+        "task": {"status": "completed", "submitted_backend": {"server": "literature"}},
+        "value": {"structuredContent": {"ok": True, "works": [work]}},
+    }
+    papers = evidence_module.paper_records([found])
+    elf = "https://vldb.org/pvldb/vol16/p1763-li.pdf"
+    assert evidence_module.paper_for(elf, papers) is None
+    title = "Elf: Erasing-Based Lossless Floating-Point Compression"
+    assert evidence_module.paper_for(elf, papers, title)["ids"]["doi"] == work["ids"]["doi"]
+    assert evidence_module.paper_for("https://www.osti.gov/servlets/purl/1", papers)
+    # A short page title names no particular work.
+    assert evidence_module.paper_for(elf, {"title:elf": work}, "Elf") is None
+    cited = flow_module.VerifiedClaim.model_validate(claim(1))
+    cited.evidence[0].source_url, cited.evidence[0].source_title = elf, title
+    block = flow_module.ReportBlock(text="A fact.", kind="source_fact", claim_ids=[cited.claim_id])
+    reference = evidence_module.render_report([block], [cited], papers).split("## References\n\n")[
+        1
+    ]
+    assert reference.startswith("- Ruiyuan Li (2023). [Elf: Erasing-based")
+    assert reference.endswith("doi:10.14778/3587136.3587149")
+
+
 def test_references_carry_the_bibliography_of_works_the_literature_tools_returned() -> None:
     """A cited arXiv or DOI page is written with its authors, year, venue and DOI."""
     evidence_module = import_plugin_module(PLUGIN, "evidence.py")
