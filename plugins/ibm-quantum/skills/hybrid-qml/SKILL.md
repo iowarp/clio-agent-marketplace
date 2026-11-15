@@ -27,15 +27,25 @@ device, and on the device.
 
 ## 2. Train in the background and show it live
 
+The person watches both models learn while training runs, so the dashboard exists
+before the first epoch ends:
+
+1. `open_stream("qml-training")` and keep its `view_uri`.
+2. Load `references/training-dashboard.json`, put the `view_uri` in its two charts and
+   the task in its scope line, and publish it with `create_a2ui_surface`. Its two
+   `trajectories` charts follow the stream: loss and training accuracy over `epoch`, one
+   line per `model`.
+3. Start the training as below.
+
 `run_code`'s kernel is CLIO's own Python: it has the stream and task bindings, but not
 the packages you installed for the model. So the training script runs in the
 environment that has them, prints one JSON line per model per epoch, and a background
-`run_code(background=True, label=...)` starts it, writes each line to a stream and wakes
-the conversation at the end:
+`run_code(background=True, label=...)` starts it, writes each line to the stream and
+wakes the conversation at the end:
 
 ```python
 import asyncio, json
-s = await stream.open("qml-training", window=500)
+s = await stream.open("qml-training", window=500)     # the stream the dashboard follows
 proc = await asyncio.create_subprocess_exec(
     PYTHON, "train.py",                             # the environment with torch and qiskit
     stdout=asyncio.subprocess.PIPE, cwd=WORKSPACE)
@@ -52,10 +62,7 @@ await task.notify("Training finished" if code == 0 else f"Training failed ({code
 The training script saves the trained weights and the test features to the workspace,
 for the evaluation below.
 
-Build a dashboard (the create-dashboard skill) with two `trajectories` charts bound
-to the stream's `view_uri`: loss and training accuracy over `epoch`, one line per
-`model`. The person watches both curves while it trains. Do not poll the task; the
-notification wakes you.
+Do not poll the task; the notification wakes you.
 
 ## 3. Evaluate on three backends, one job each
 
@@ -83,9 +90,19 @@ notification wakes you.
   is easy for both models, so equal accuracy is expected and is not evidence of a
   quantum advantage. What the comparison shows is how much the device's noise moves
   the expectation values and which inputs sit near the decision boundary.
-- Record the comparison as a study with the science log: each job is an entry's
-  source, and the accuracies are measurements.
 - When asked why one input flipped, answer from the selected parameter set in the
   results view (its exact and noisy values and how close it is to the threshold) and
   from the layout (the two-qubit gates and swaps the device added), not from general
   text.
+
+## 5. Keep it as a study
+
+The comparison is a small study, recorded with the science log (`run-a-study`) so
+it can be read, compared and extended later:
+
+- A `question` entry: how the device's noise changes this classifier's predictions.
+- An `experiment` entry: the trained model, the test inputs and the backends.
+- One `observation` per evaluation job, citing its `run_estimator` call in
+  `from_calls`, with the job's accuracy, the mean shift from the exact values and the
+  number of flipped inputs as `measurements` (`conditions`: the backend).
+- An `evidence` entry for what the comparison supports, with its honest `strength`.
