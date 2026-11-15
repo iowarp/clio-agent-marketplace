@@ -27,18 +27,30 @@ device, and on the device.
 
 ## 2. Train in the background and show it live
 
-Run training as `run_code(background=True, label=...)`. Each epoch writes one record
-per model to a stream, and the end wakes the conversation:
+`run_code`'s kernel is CLIO's own Python: it has the stream and task bindings, but not
+the packages you installed for the model. So the training script runs in the
+environment that has them, prints one JSON line per model per epoch, and a background
+`run_code(background=True, label=...)` starts it, writes each line to a stream and wakes
+the conversation at the end:
 
 ```python
+import asyncio, json
 s = await stream.open("qml-training", window=500)
-for epoch in range(epochs):
-    for model_name, model in models.items():
-        loss, acc = train_one_epoch(model)          # however the loop is written
-        await s.write(epoch=epoch, model=model_name, loss=loss, train_acc=acc)
-save_weights(models)                                # to the workspace, for inference
-await task.notify("Training finished", data=final_metrics)
+proc = await asyncio.create_subprocess_exec(
+    PYTHON, "train.py",                             # the environment with torch and qiskit
+    stdout=asyncio.subprocess.PIPE, cwd=WORKSPACE)
+async for line in proc.stdout:
+    try:
+        row = json.loads(line)                      # {"epoch", "model", "loss", "train_acc"}
+    except ValueError:
+        continue
+    await s.write(**row)
+code = await proc.wait()
+await task.notify("Training finished" if code == 0 else f"Training failed ({code})")
 ```
+
+The training script saves the trained weights and the test features to the workspace,
+for the evaluation below.
 
 Build a dashboard (the create-dashboard skill) with two `trajectories` charts bound
 to the stream's `view_uri`: loss and training accuracy over `epoch`, one line per
