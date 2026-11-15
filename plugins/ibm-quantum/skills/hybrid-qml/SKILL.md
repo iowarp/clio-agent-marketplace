@@ -18,7 +18,10 @@ device, and on the device.
 - Write the model in PyTorch with Qiskit Machine Learning: a feature map
   (`zz_feature_map(n)`) then an ansatz (`real_amplitudes(n, reps=1)`), wrapped by
   `EstimatorQNN` with the input parameters and the weight parameters named, and
-  `TorchConnector` as the layer. Train on `StatevectorEstimator`.
+  `TorchConnector` as the layer. Train on `StatevectorEstimator(default_precision=0.0)`:
+  `EstimatorQNN`'s default estimator samples at a precision of 1/64, so training values
+  and gradients would carry shot noise and the exact evaluation would not match the
+  trained model.
 - Always train a classical baseline on the same features beside it (a linear layer
   where the quantum layer is), with the same data, epochs and optimizer. Report both.
 - Install what the script needs into the environment `run_code` uses (CPU builds of
