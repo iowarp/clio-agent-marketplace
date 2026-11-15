@@ -41,8 +41,8 @@ in `/etc/apt/sources.list.d/kicad.list` and the PPA's signing key (its fingerpri
 Launchpad API, `https://api.launchpad.net/1.0/~kicad/+archive/ubuntu/kicad-10.0-releases`,
 field `signing_key_fingerprint`) in `/etc/apt/keyrings/kicad.gpg`.
 
-On Ubuntu, the `ngspice` package conflicts with KiCad's own `libngspice-kicad`; do not install
-both.
+On Ubuntu, the `ngspice` package conflicts with KiCad's own `libngspice-kicad`. For circuit
+simulation, install ngspice through conda instead (the spice plugin's `install-simulator`).
 
 If the server did not find an install, point it at the CLI: `KICAD_CLI_PATH=/path/to/kicad-cli`.
 Setting it also makes the server use only that install when it starts KiCad.
@@ -65,8 +65,10 @@ KICAD_CONFIG_HOME=/path/to/private-settings kicad-cli api-server --socket /path/
 KICAD_CONFIG_HOME=/path/to/private-settings xvfb-run -a -s "-screen 0 1600x1000x24" pcbnew board.kicad_pcb
 ```
 
-The editor's API socket is always KiCad's default, `/tmp/kicad/api.sock` on Linux and macOS and
-`%TEMP%\kicad\api.sock` on Windows; `pcbnew` does not read `KICAD_API_SOCKET`.
+The editor serves its API socket under its temp folder: `$TMPDIR/kicad/api.sock` (usually
+`/tmp/kicad/api.sock`) on Linux and macOS, `%TEMP%\kicad\api.sock` on Windows. It does not read
+`KICAD_API_SOCKET`, so a KiCad started with another temp folder (a sandboxed client) listens
+there.
 
 ## 3. Skip the first-run wizard (headless)
 

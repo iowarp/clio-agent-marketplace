@@ -24,8 +24,15 @@ Use this skill once placement is settled. Route in this order; check after each 
    and how the person installs it: routing a whole board by hand is slow and error-prone, so
    do not start it on your own. Ask once with `ask_user`, giving the reason and the steps
    from the result: install it and route again, or route by hand.
-4. **Zones.** Add ground (and power) pours (`pcb_add_zone`), then `pcb_refill_zones`.
-5. **DRC until clean.** `run_drc`; fix each violation at its cause, never by loosening a rule
+4. **Review what the autorouter did, and correct it.** An autorouter connects every net but
+   does not judge: look at the board (`export_3d_render` top and bottom, the board view's
+   `capture` or `describe_region` on a dense area) and read the tracks (`pcb_get_tracks`,
+   `pcb_get_vias`). Look for power tracks narrower than their current needs, decoupling loops
+   that wander away from their pins, a differential pair split or routed apart, copper or vias
+   inside an antenna keepout, long detours and needless vias, acute angles and stubs. Delete
+   what is wrong (`pcb_delete_items`) and route it by hand, then look again.
+5. **Zones.** Add ground (and power) pours (`pcb_add_zone`), then `pcb_refill_zones`.
+6. **DRC until clean.** `run_drc`; fix each violation at its cause, never by loosening a rule
    without saying why; run again until there are none or every remaining one is explained.
 
 Record completion, vias and total track length after routing, as you did for placement.
