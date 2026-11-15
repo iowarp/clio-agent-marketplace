@@ -25,6 +25,20 @@ person's decision, so say what you will run first.
    with `lib_get_component_specs`; put candidates side by side with `lib_compare_parts`.
    Open `view_parts` with your shortlist in `candidates` when the person should choose; their
    pick binds the part (`lib_bind_part_to_symbol`) and arrives as context.
+
+   **When a part is scarce.** Stock is what the sources that answered report, not what exists:
+   "out of stock at jlcsearch" means only that. A passive or other part with many equivalents
+   is yours to swap for an in-stock one; say what you chose. A core part, one the design is
+   built around (the processor or module, a sensor the brief names, the regulator, the
+   connectors), that is out of stock, or stocked below what the build needs, is the person's
+   decision: they know whether they can wait, pay more or redesign. Ask once with `ask_user`
+   (a choice), saying which sources you asked and what each reported, and offer what is open:
+   - add a part catalog (Nexar, DigiKey, Mouser), which you then raise with `offer_plugin`;
+   - keep the part and order it when it is back, accepting the wait;
+   - search further: other packages, pin-compatible parts, other families, or a part with no
+     KiCad symbol (generate it from the datasheet, `datasheet-pin-check`);
+   - change the requirement (another kind of sensor, another module).
+   Carry on with work the answer does not change while you wait.
 3. **Datasheets.** For each IC, fetch the datasheet (`lib_get_datasheet_url`) and ingest it
    with the documents tools, so values come with a page. Run `datasheet-pin-check` before
    layout.
