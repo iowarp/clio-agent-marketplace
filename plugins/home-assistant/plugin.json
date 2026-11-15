@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "home-assistant",
+  "version": "1.0.0",
+  "description": "Work with your Home Assistant: read sensors and their history for analysis, control devices, and write automations, scripts, scenes, helpers and dashboards the native Home Assistant way, with the homeassistant-ai best-practices skill. It belongs to the Home Assistant connector: add it to a conversation while that connector is enabled.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause AND MIT",
+  "keywords": [
+    "home-assistant",
+    "smart-home",
+    "sensors",
+    "automation",
+    "iot"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "follows": "home-assistant",
+      "connections": {
+        "home-assistant": "home-assistant"
+      }
+    }
+  }
+}
