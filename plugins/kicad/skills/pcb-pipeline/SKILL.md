@@ -45,9 +45,12 @@ person's decision, so say what you will run first.
 4. **Schematic and ERC.** Build the schematic, `run_erc` until it is clean or every finding is
    explained.
 5. **Simulation.** Simulate power stages and filters on the spice connector, from
-   `export_spice_netlist`; this connector does not simulate. When the spice connector finds no
-   simulator, its plugin's `install-simulator` skill asks the person to install one or to skip
-   simulation; if they skip, say in your summary what stays unverified.
+   `export_spice_netlist`; this connector does not simulate. When the spice connector is not
+   on, offer it (`offer_plugin` with plugin `spice` and what you would simulate). When it finds
+   no simulator, its plugin's `install-simulator` skill asks the person to install one or to
+   skip simulation. A board with nothing to simulate (a regulator used exactly as its
+   datasheet's reference circuit, no filters) may skip it, and your summary says so. Whenever
+   simulation is skipped, the summary says what stays unverified.
 6. **Outline and holes.** `pcb_import_outline_dxf` draws the enclosure's outline and holes;
    `pcb_set_board_outline_shape` draws one from points; `pcb_add_mounting_holes` adds holes by
    pattern.
