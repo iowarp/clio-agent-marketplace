@@ -1,0 +1,60 @@
+{
+  "format": "clio.dashboard.document.v1",
+  "title": "PCB workbench",
+  "components": [
+    {"id": "root", "component": "Column", "children": ["views", "placement"]},
+    {"id": "views", "component": "Row", "children": ["board", "side"]},
+    {
+      "id": "board",
+      "component": "clio.mcp-app.v1",
+      "server": "kicad",
+      "tool": "view_board",
+      "arguments": {"project": "PROJECT_FOLDER"},
+      "height": 640,
+      "state": [
+        {"key": "selection", "path": "/pcb/selection", "tool": "select"},
+        {"key": "revision", "path": "/pcb/revision"}
+      ]
+    },
+    {"id": "side", "component": "Column", "children": ["bom", "checks"]},
+    {
+      "id": "bom",
+      "component": "clio.mcp-app.v1",
+      "server": "kicad",
+      "tool": "view_bom",
+      "arguments": {"project": "PROJECT_FOLDER"},
+      "height": 340,
+      "state": [{"key": "selection", "path": "/pcb/selection", "tool": "select"}]
+    },
+    {
+      "id": "checks",
+      "component": "clio.mcp-app.v1",
+      "server": "kicad",
+      "tool": "view_checks",
+      "arguments": {"project": "PROJECT_FOLDER", "kind": "both"},
+      "height": 300,
+      "state": [{"key": "selection", "path": "/pcb/selection"}]
+    },
+    {
+      "id": "placement",
+      "component": "clio.chart.v1",
+      "title": "Placement passes",
+      "dataUri": "PLACEMENT_METRICS",
+      "spec": {
+        "data": {"name": "source"},
+        "transform": [
+          {"fold": ["unrouted", "ratsnest_mm", "drc", "vias", "track_mm"], "as": ["metric", "value"]},
+          {"filter": "datum.value != null"}
+        ],
+        "mark": {"type": "line", "point": true},
+        "encoding": {
+          "x": {"field": "pass", "type": "ordinal", "title": "Pass"},
+          "y": {"field": "value", "type": "quantitative", "title": null},
+          "color": {"field": "metric", "type": "nominal", "title": "Metric"},
+          "row": {"field": "metric", "type": "nominal", "title": null}
+        },
+        "resolve": {"scale": {"y": "independent"}}
+      }
+    }
+  ]
+}

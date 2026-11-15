@@ -1,0 +1,28 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "kicad",
+  "version": "1.0.0",
+  "description": "Design circuit boards with the KiCad connector, from parts and datasheets to a board house package: the views (board, schematic, BOM, checks, stackup, parts) and their workbench, placement passes as a study, routing, checks and release. It belongs to the KiCad connector: add it to a conversation while that connector is enabled.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "MIT",
+  "keywords": [
+    "kicad",
+    "pcb",
+    "electronics",
+    "eda"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "follows": "kicad",
+      "connections": {
+        "kicad": "kicad"
+      },
+      "requires": [
+        "documents",
+        "science-log"
+      ]
+    }
+  }
+}
