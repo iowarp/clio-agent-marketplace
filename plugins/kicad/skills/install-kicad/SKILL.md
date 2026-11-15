@@ -22,7 +22,23 @@ server does, so you can do it by hand or tell the user what is missing.
 
 ## 1. Install
 
-Ask before installing system software, and say which command you will run.
+Installing system software is the person's decision: ask once (`ask_user`), naming the
+command, and offer a no-admin route where there is one. Then run it yourself; the sandbox and
+the operating system each ask the person before anything changes:
+
+- **A folder the sandbox blocks** (a user-space install, Homebrew's own folders): retry with
+  `access_paths`; CLIO raises the folder card.
+- **Administrator rights, or a block no folder lifts** (the result's `boundary` says
+  `elevation_required` or `privilege_denied`): call `shell_bash` again with
+  `outside_sandbox: true` and an `access_reason`. CLIO shows the person the exact command; if
+  they allow, it runs outside the sandbox, and the system asks them itself where it needs
+  administrator rights: on **Windows**, `winget` raises its UAC prompt; on **macOS**, wrap a
+  command that needs `sudo` as `osascript -e 'do shell script "<command>" with administrator
+  privileges'` (macOS shows its password dialog); on a **Linux desktop**, run it as
+  `pkexec <command>` (the system's authentication dialog). As root in a container no prompt
+  is needed. Never ask for a password in the conversation and never pipe one to `sudo`.
+- If the person declines, give them the exact command to run in their own terminal, or use
+  the no-admin route.
 
 | System | Command | Notes |
 | --- | --- | --- |
@@ -30,8 +46,8 @@ Ask before installing system software, and say which command you will run.
 | Ubuntu, nightly (KiCad 11 preview, for `api-server`) | `sudo add-apt-repository ppa:kicad/kicad-dev-nightly && sudo apt install kicad-nightly` | Installs beside KiCad 10 as `kicad-cli-nightly`, `pcbnew-nightly` |
 | Fedora | `sudo dnf install kicad` | |
 | Arch | `sudo pacman -S kicad kicad-library` | |
-| macOS | `brew install --cask kicad` | Or the disk image from kicad.org. `kicad-cli` is in `/Applications/KiCad/KiCad.app/Contents/MacOS/` |
-| Windows | `winget install KiCad.KiCad` | `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
+| macOS | `brew install --cask kicad` | `--appdir=~/Applications` installs without administrator rights. Or the disk image from kicad.org. `kicad-cli` is in `<Applications>/KiCad/KiCad.app/Contents/MacOS/` |
+| Windows | `winget install --id KiCad.KiCad -e --accept-source-agreements --accept-package-agreements` | Machine-wide, so Windows asks for approval (UAC). `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
 | Conda (no admin rights) | `conda install -c conda-forge kicad` | A user-space install; useful where installing system packages is not allowed |
 
 If `add-apt-repository` fails (for example `No module named 'apt_pkg'` when the system Python
@@ -108,10 +124,9 @@ in `<KICAD_CONFIG_HOME>/<major>.<minor>/` (for example `10.0/`):
   `~<board>.kicad_pcb.lck` and `~<board>.kicad_pro.lck` beside the board. A lock names a host and
   a user, not a process: when it names this host and no KiCad has the board open, delete it.
 - **No display and no Xvfb**: install Xvfb, or KiCad 11's `api-server`.
-- **Root in a sandbox**: installing with `apt` writes `/usr`, `/etc` and `/var/lib/dpkg`. In a
-  sandbox that confines writes, the install needs those folders granted. A desktop install that
-  needs `sudo` or administrator rights is the user's to run: give them the exact command; never
-  ask for their password.
+- **Root in a sandbox**: `apt` writes `/usr`, `/etc` and `/var/lib/dpkg` and replaces files its
+  own download account owns, which a sandboxed command cannot do even with the folders granted
+  (`privilege_denied`). Run the install outside the sandbox with the person's allow (step 1).
 
 ## 5. Check it
 
