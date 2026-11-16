@@ -13,7 +13,8 @@ keywords: [alembic, reaction, gibbs energy, energy diagram, method levels, dft]
    method, energy, H, S, G, multiplicity, checks.
 3. **Live energy diagram:** write the per-species results to a CSV as each finishes and
    show a reaction energy diagram from it (`chemistry-views`), one series per method,
-   updating as results arrive. A species picked in the diagram opens its structure.
+   updating as results arrive, in a dashboard with the Burette view linked by the species'
+   structure path (`burette-views`, "In a dashboard"), so picking a species opens it.
 4. **Reaction quantities in code** from the per-species table with stoichiometry. Never
    add numbers by hand.
 5. **Disagreement between methods:** show where the methods differ most and offer DFT

@@ -31,14 +31,27 @@ view's state (`get_view_state`; `describe_region` for a framed region) rather th
 guessing, and name the atoms by element and index. You can move the view yourself:
 `set_frame`, `play_mode`, `focus`.
 
-## Linking charts to the viewer
+## In a dashboard, linked to charts
 
-The viewer's `frame`, `mode` and `focus` are state channels an A2UI chart can drive: an
-optimization's energy-and-force chart linked by step moves the viewer to that frame; a
-frequency table or IR spectrum linked by mode plays that mode; a species in a reaction
-energy diagram or a row in a screening table can open its structure. Build such charts
-from the result CSVs (one row per step, mode or species, with the structure path or frame
-index as a column) so a selection carries enough to act on.
+The viewer can sit in a dashboard beside charts (the `create-dashboard` skill): a
+`clio.mcp-app.v1` component with server `burette`, tool `open_structure` (or `play_mode`)
+and the file the view already shows, so the dashboard shows the live view rather than a
+picture. The view reports `frame` (0-based) and takes it back through `set_frame`, so the
+state channel `{key: "frame", path: "/selection/frame", tool: "set_frame"}` links it to a
+chart that selects on the same path, both ways. Likewise `mode` with `play_mode` (a mode's
+animation path) and `focus`.
+
+- An optimization: the trajectory (`opt_trajectory.xyz`) in the view and a line chart of
+  `opt_steps.csv` (energy and largest force against step, one row per frame) selecting
+  `step` on `/selection/frame`: picking a step moves the viewer to that frame, and playing
+  the view moves the chart's marker.
+- Frequencies: a table or IR stick chart of `frequencies.csv` selecting the mode's
+  animation path on `/selection/mode`, so picking a mode plays it.
+- Species or materials (a reaction diagram, a screening table): a column with each
+  structure's path, selecting on `/selection/path`, opens that structure.
+
+What the person picks on the chart reaches you as the view's state and the chart's
+selection; answer from those rows and from the structure file, not from the picture.
 
 ## Edits make new files
 

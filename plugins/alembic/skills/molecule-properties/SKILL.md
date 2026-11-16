@@ -9,8 +9,9 @@ keywords: [alembic, optimization, frequencies, thermochemistry, imaginary mode]
 1. **Method:** pick with `method-ladder`; say which and why in a line. The person may
    name one.
 2. **Optimize** (`run_ase` driver `opt`, or `vib`, `thermo`, `ir`, which optimize first).
-   Show the convergence as an energy-and-force chart linked to the viewer by step
-   (`chemistry-views`), and the final structure. A question about a step is answered from
+   Show the convergence as a dashboard: the trajectory in the Burette view and the
+   energy-and-force chart from `opt_steps.csv`, linked by frame (`burette-views`, "In a
+   dashboard"), so the person can pick a step. A question about a step is answered from
    the trajectory (which atoms moved, by how much), computed in code.
 3. **Check** with `geometry-and-frequencies`. An imaginary mode: play it in Burette
    (`play_mode` with the mode's animation), let the person look, then displace along it
