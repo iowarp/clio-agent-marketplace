@@ -15,9 +15,11 @@ is how the connector does it.
 `fetch_materials_project` takes a formula or an `mp-` id and writes a CIF for each
 matching material, ordered by energy above the hull, with space group and magnetic
 ordering. When several match (polymorphs, magnetic orderings), say which one you use and
-why, or ask. It needs the connector's **Materials Project API key**; on `mp_key_missing`
-ask the person for it through the connector, do not look for another source. Show the
-structure with its unit cell in Burette before computing.
+why, or ask. It needs the connector's **Materials Project API key**. On `mp_key_missing`
+ask once with `offer_plugin` (plugin `fdmnes`, your reason, `needs` with the key's need
+from the listing's `optional_needs`): the person types it into the card, never into the
+chat. Do not look for another source unless they choose Not now. Show the structure with
+its unit cell in Burette before computing.
 
 ## run_xanes
 
