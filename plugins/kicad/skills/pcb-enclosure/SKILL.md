@@ -71,9 +71,12 @@ Checks pass on cases that look wrong. Register `enclosure.glb` as an artifact an
 `clio.mesh-viewport.v1` with `nodeOpacity` for `base` and `lid` at about 0.3, so the board shows
 through. Look at the view yourself (capture it): the board sits on the standoffs, each opening
 lines up with its connector, nothing pokes through a wall. Aim the view at what you check:
-`camera` takes `{"position": [x, y, z], "target": [x, y, z]}` in the scene's millimetres
-(the envelope gives each connector's opening and the standoffs' positions), so set it to look
-straight at an opening or down at a standoff (`update_a2ui_components`), then capture again. Also show the case exploded
+`camera` takes `{"position": [x, y, z], "target": [x, y, z]}` in the view's own frame, which
+is not the envelope's: the GLB is Y-up (the case's (x, y, z) in millimetres shows at
+(x, z, -y)). Each capture reports that frame's `bounds` and every named part's centre
+(`parts`, e.g. `cutout_J1 in enclosure`); set the target to the part's centre and the position
+a few tens of millimetres from it along the side you look from (`update_a2ui_components`),
+then capture again. Also show the case exploded
 (`python enclosure.py --explode 40` writes `enclosure-exploded.glb`) and, when a fit is tight, a
 section through it (`--section y=VALUE` keeps the side below the plane; pick the plane through
 the part in question). Say what you looked at and what you saw.
