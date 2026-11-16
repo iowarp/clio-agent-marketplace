@@ -20,7 +20,15 @@ and tables.
 | Screening many materials | a scatter of two properties plus a sortable table, shared selection | row → its structure |
 | A crystal | the structure with its unit cell (and a supercell when periodicity matters) | atom → its site |
 
+A view here is interactive: a chart or table in the conversation drawn from the active
+A2UI catalog (`present-interactive-analysis`), or a dashboard with the structure view
+beside its charts (`create-dashboard`, and `burette-views` "In a dashboard" for the
+link). Its "linked by" column only works in such a view: a rendered image (a matplotlib
+PNG) cannot carry the person's pick back or follow new results, so it is for when they
+ask for a figure file.
+
 Label axes with quantity and unit. Put the method in the legend. Build each chart from a
-file (CSV) the calculation wrote, so the chart and the numbers in the reply agree. When a
-view updates while calculations run (a diagram filling in per species), say so, and
-report the final numbers from the results, not from the picture.
+file (CSV) the calculation wrote, so the chart and the numbers in the reply agree. A view
+that fills in while calculations run (a diagram per species) binds that file at
+`@latest` (`create-dashboard`), and each finished result adds its row to the file; say
+that it updates, and report the final numbers from the results, not from the view.
