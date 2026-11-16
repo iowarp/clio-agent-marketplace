@@ -302,6 +302,16 @@ def _mating_face(box: cq.BoundBox, bounds: list[float]) -> dict[str, Any] | None
     }
 
 
+def missing_bodies(by_ref: dict[str, Footprint], named: dict[str, Any]) -> list[str]:
+    """Parts with no body in the STEP, or none in the board file (an older STEP may still
+    hold a body the board no longer has): the case cannot be sized around them."""
+    return sorted(
+        ref
+        for ref, footprint in by_ref.items()
+        if ref and not ref.startswith("#") and (ref not in named or not footprint.model)
+    )
+
+
 def measure(step: Path, pcb: Path | None, revision: str) -> dict[str, Any]:
     if pcb is not None and pcb.exists() and pcb.stat().st_mtime > step.stat().st_mtime + 1:
         # The STEP shows the board as it was when exported; a later edit (a part moved, a
@@ -356,7 +366,7 @@ def measure(step: Path, pcb: Path | None, revision: str) -> dict[str, Any]:
     for poly in board_keepouts:
         keepouts.append({"source": "board", "polygon": [to_step(x, y) for x, y in poly]})
 
-    missing = sorted(ref for ref in by_ref if ref and ref not in named and not ref.startswith("#"))
+    missing = missing_bodies(by_ref, named)
     return {
         "source": {
             "step": str(step),

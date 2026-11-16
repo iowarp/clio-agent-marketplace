@@ -103,5 +103,22 @@ class BoardChangedTest(unittest.TestCase):
         self.assertIn("measure again", str(stop.exception))
 
 
+    def test_a_body_the_board_file_no_longer_has_is_missing(self) -> None:
+        """Found live (FQ7): J1's model was removed in the board file, and the STEP exported
+        before still held its body, so the case was built around it."""
+        envelope = _load("board_envelope")
+        board = self.dir / "j1.kicad_pcb"
+        board.write_text(
+            '(kicad_pcb (footprint "USB_C" (layer "F.Cu") (at 4 22 -90)'
+            ' (property "Reference" "J1"))'
+            ' (footprint "R" (layer "F.Cu") (at 10 10) (property "Reference" "R1")'
+            ' (model "R_0603.step")))'
+        )
+        footprints, _ = envelope.read_pcb(board)
+        by_ref = {f.reference: f for f in footprints}
+        in_the_old_step = {"J1": object(), "R1": object()}
+        self.assertEqual(envelope.missing_bodies(by_ref, in_the_old_step), ["J1"])
+
+
 if __name__ == "__main__":
     unittest.main()

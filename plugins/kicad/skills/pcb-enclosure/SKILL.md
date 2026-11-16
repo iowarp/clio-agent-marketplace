@@ -22,11 +22,11 @@ you can do yourself. Export again until no part is missing.
 ## 2. Measure
 
 Copy `scripts/board_envelope.py` and `scripts/enclosure.py` from this skill into
-`<project>/enclosure/`. Run them with a Python that has CadQuery: Library Tools' Python
-when the KiCad connector installed it with CadQuery (`lib_list_footprint_families` names it on
-its first line), e.g. `<that python> board_envelope.py ../BOARD.step --pcb ../BOARD.kicad_pcb --out ../board-envelope.json`;
-otherwise `uv run --no-project --with cadquery python …`, which downloads CadQuery (about
-1.7 GB) into the conversation's own cache.
+`<project>/enclosure/`. They need CadQuery. Call `lib_list_footprint_families` first: its
+first line names Library Tools' Python and says whether it has CadQuery. Run the scripts with
+that Python, e.g. `<that python> board_envelope.py ../BOARD.step --pcb ../BOARD.kicad_pcb --out ../board-envelope.json`.
+Only when it has no CadQuery, `uv run --no-project --with cadquery python …` installs it, about
+1.7 GB downloaded into this conversation's own cache each time.
 It writes the outline (lines and arcs), the holes, each part's box and side, the connectors with
 the board edge their plug enters from, the keepouts, and `missing_bodies` (exit 3 while any).
 
