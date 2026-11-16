@@ -9,6 +9,15 @@ The case is a CadQuery program kept in the project, with its parameters at the t
 revision means running it again, not editing a mesh. Every number it uses comes from the
 board's STEP. Never type a component height or a hole position from memory or from a picture.
 
+A project that already has `board_envelope.py` and `enclosure.py` keeps its own copies, which do
+not get this skill's later checks. Before running them for any step, compare each copy's
+`SCRIPT_VERSION` with this skill's `scripts/`: replace a copy with an older or no
+`SCRIPT_VERSION` by this skill's, carrying the values of the project's parameter block (the top
+of `enclosure.py`) over, and say that you did. An older copy lacks checks that keep the case true
+to the board, so it is never a way round a refusal: when the current scripts refuse an envelope,
+the case they would build fits another board than the person's, and the answer is to measure
+again or to tell the person why it cannot be built yet.
+
 ## 1. Every part needs a body
 
 Export the board's STEP (`export_step`). KiCad names each footprint whose 3D model it could not
@@ -22,10 +31,7 @@ you can do yourself. Export again until no part is missing.
 ## 2. Measure
 
 Copy `scripts/board_envelope.py` and `scripts/enclosure.py` from this skill into
-`<project>/enclosure/`. A project that already has them keeps its own copies, which do not get
-this skill's later checks: compare each copy's `SCRIPT_VERSION` with this skill's, and replace a
-copy with an older or no `SCRIPT_VERSION` by this skill's, carrying the values of the project's
-parameter block (the top of `enclosure.py`) over. They need CadQuery. Call `lib_list_footprint_families` first: its
+`<project>/enclosure/`. They need CadQuery. Call `lib_list_footprint_families` first: its
 first line names Library Tools' Python and says whether it has CadQuery. Run the scripts with
 that Python, e.g. `<that python> board_envelope.py ../BOARD.step --pcb ../BOARD.kicad_pcb --out ../board-envelope.json`.
 Only when it has no CadQuery, `uv run --no-project --with cadquery python …` installs it, about
@@ -45,7 +51,8 @@ Run `python enclosure.py` in `enclosure/`. It refuses an envelope measured from 
 of the board (measure again) or with missing bodies. It writes `base.step`, `lid.step`, their
 STL, `enclosure.3mf`, `enclosure.glb` and `fit-report.json`, and exits 1 when a check fails:
 
-- **clearance**: every part at least `CLEARANCE` from every element of the case, named;
+- **clearance**: the board and every part at least `CLEARANCE` from every element of the case,
+  and never under `FIT_GAP` (the gap a print needs to go together), named;
 - **standoff_axis**: each standoff on its hole;
 - **cutout**: a plug of the connector's size passes through its opening; `recess` is how far the
   connector's face sits behind the case's outer surface. Compare it with the plug's datasheet
@@ -56,7 +63,7 @@ STL, `enclosure.3mf`, `enclosure.glb` and `fit-report.json`, and exits 1 when a 
 A failing check names the part, the element and the distance. Change a parameter at the top of
 `enclosure.py` and run again; the run you show passes every check, or you say which check you
 could not meet and why. Defaults suit an FDM print in PLA or PETG (2 mm walls, 1 mm clearance,
-0.5 mm around openings, M3 screws, 0.4 mm nozzle, 45° overhangs).
+0.5 mm around openings, M3 screws, 0.4 mm nozzle, 0.3 mm fit gap, 45° overhangs).
 
 ## 4. Look at it
 

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 #: This script's version. A project keeps its own copy, which does not get later fixes; when the
 #: skill's copy has a higher version, replace the project's copy (keep its parameter values).
-SCRIPT_VERSION = 2
+SCRIPT_VERSION = 3
 
 import argparse
 import hashlib
