@@ -1,6 +1,6 @@
 ---
 name: pcb-footprints
-description: "Give every part on a KiCad board a footprint and a 3D body that match its datasheet: find one in KiCad's libraries, or generate it with KiCad Library Tools, check it against the land pattern and the KiCad Library Conventions, and assign it. Also for checking a footprint already on the board against a datasheet's or supplier's land pattern."
+description: "Check a KiCad footprint against a datasheet's or supplier's land pattern (pad by pad, recorded), and give every part on a board a footprint and a 3D body that match its datasheet: find one in KiCad's libraries, or generate it with KiCad Library Tools, check it against the land pattern and the KiCad Library Conventions, and assign it."
 ---
 
 # Footprints and bodies from datasheets
