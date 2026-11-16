@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "nwchem",
+  "version": "1.0.0",
+  "description": "Get NWChem onto the machine for the ASE connector's NWChem calculator (a confined Spack build, with the person's consent) and point the connector at it.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "chemistry",
+    "nwchem",
+    "dft",
+    "spack"
+  ]
+}

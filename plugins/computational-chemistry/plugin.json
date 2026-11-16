@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "computational-chemistry",
+  "version": "1.0.0",
+  "description": "Computational chemistry method for any molecule or crystal, independent of program: choosing a level of theory, checking that a calculation means what it claims (convergence, minima and saddle points, charge and spin, units), reaction and conformational energies, X-ray absorption spectra, and gas adsorption in porous solids.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "chemistry",
+    "computational-chemistry",
+    "quantum-chemistry",
+    "spectroscopy",
+    "adsorption"
+  ]
+}

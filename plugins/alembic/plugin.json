@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "alembic",
+  "version": "0.1.0",
+  "description": "Alembic's identity and research process: its mission and practice, and the chemistry-study skill that takes a question from compound to checked result.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "alembic",
+    "chemistry",
+    "research"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "requires": [
+        "computational-chemistry",
+        "science-log"
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "orca",
+  "version": "1.0.0",
+  "description": "Set up ORCA for the ASE connector's ORCA calculator: what the person must do themselves (registration and licence), where to point the connector, and checking it works.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "chemistry",
+    "orca",
+    "dft"
+  ]
+}
