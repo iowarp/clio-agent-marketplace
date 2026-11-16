@@ -1,5 +1,5 @@
 ---
-name: adsorption-with-graspa
+name: graspa-adsorption
 title: Adsorption with gRASPA
 description: Use when gas uptake (CO2, H2O, N2) in a MOF or zeolite CIF is to be simulated with the gRASPA connector, an isotherm or working capacity computed, or frameworks ranked.
 keywords: [graspa, gcmc, adsorption, mof, zeolite, ranking, level:L2]
@@ -7,7 +7,7 @@ keywords: [graspa, gcmc, adsorption, mof, zeolite, ranking, level:L2]
 
 # Adsorption with the gRASPA connector
 
-Read `gas-adsorption` for the method and its caveats. This is how the connector does it.
+Read `adsorption` for the method and its caveats. This is how the connector does it.
 
 ## One condition, one folder
 

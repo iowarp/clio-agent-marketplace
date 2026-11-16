@@ -29,7 +29,7 @@ the next; do not retype coordinates.
 
 - `calculator`: `{type: 'xtb'}` (GFN2-xTB), `{type: 'mace'}` (MACE-OFF23 small),
   `{type: 'uma'}`, `{type: 'nwchem', method, basis}`, `{type: 'orca', method, basis}`;
-  `emt` only for tests. Choose with the `choose-a-method` skill.
+  `emt` only for tests. Choose with the `method-ladder` skill.
 - `charge` and `multiplicity` go to the calculator and the thermochemistry; the result
   notes when a calculator ignores them.
 - `constraints` hold atoms, bonds, angles or dihedrals during an optimization (a value
@@ -40,7 +40,7 @@ the next; do not retype coordinates.
   of energy and force per step, linked to the trajectory frames), `frequencies.csv`,
   `modes/mode_NNN.xyz` (one animation per mode), IR CSVs, `result.json`.
 
-Then check the result with `check-a-calculation`. Show structures, trajectories and
+Then check the result with `geometry-and-frequencies`. Show structures, trajectories and
 modes in the Burette viewer when it is enabled (`open_structure`, `play_mode`).
 
 ## First use and missing programs

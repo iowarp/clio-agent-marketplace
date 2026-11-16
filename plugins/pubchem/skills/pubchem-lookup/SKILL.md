@@ -1,5 +1,5 @@
 ---
-name: find-compounds
+name: pubchem-lookup
 title: Find compounds in PubChem
 description: Use when the person names a compound (a common, trade or IUPAC name) and the work needs its identity, formula, SMILES or a 3D structure, or when a name may mean several compounds (isomers, a racemate or one enantiomer, a salt or the free base).
 keywords: [pubchem, compound, name, smiles, cid, isomer, level:L2]

@@ -1,5 +1,5 @@
 ---
-name: check-a-calculation
+name: geometry-and-frequencies
 description: Use after any structure optimization, frequency, thermochemistry or energy calculation, before reporting it, to check that it means what it claims - converged, a minimum or a saddle point as intended, the right charge and spin, the units stated - and to say what was not checked.
 keywords: [chemistry, convergence, imaginary frequency, transition state, units, level:L1]
 ---

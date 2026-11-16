@@ -1,5 +1,5 @@
 ---
-name: x-ray-absorption
+name: xanes
 description: Use when a question involves an X-ray absorption spectrum (XANES, the near-edge region) - simulating one for a structure, comparing a calculation with a measurement, or reading oxidation state, coordination or site symmetry from edge and pre-edge features.
 keywords: [xanes, xas, spectroscopy, absorption edge, oxidation state, level:L1]
 ---

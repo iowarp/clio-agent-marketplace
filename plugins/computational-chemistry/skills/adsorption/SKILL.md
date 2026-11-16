@@ -1,5 +1,5 @@
 ---
-name: gas-adsorption
+name: adsorption
 description: Use when a question is about how much gas a porous solid (a MOF, zeolite, porous carbon) takes up, which framework is best for a separation or storage, or how uptake changes with pressure and temperature, before setting up grand-canonical Monte Carlo simulations.
 keywords: [adsorption, gcmc, mof, zeolite, working capacity, isotherm, level:L1]
 ---

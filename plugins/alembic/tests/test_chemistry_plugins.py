@@ -51,16 +51,16 @@ def test_skills_named_in_backticks_exist() -> None:
         m for text in skills.values() for m in re.findall(r"`([a-z]+(?:-[a-z]+)+)`", text)
     }
     referenced = {n for n in named if n.count("-") >= 1 and n in skills or n.startswith(
-        ("choose-", "check-", "find-", "read-", "install-", "set-up-", "x-ray", "gas-"))}
+        ("method-", "geometry-", "pubchem-", "structure-", "install-", "fdmnes-", "graspa-", "xanes", "adsorption"))}
     assert referenced <= set(skills), referenced - set(skills)
 
 
 def test_installs_ask_the_person_first_and_never_bypass() -> None:
     skills = _skills()
-    for name in ("install-fdmnes", "install-graspa", "install-nwchem", "set-up-orca"):
+    for name in ("install-fdmnes", "install-graspa", "install-nwchem", "install-orca"):
         assert "ask_user" in skills[name], name
     assert "do not bypass the checksum" in skills["install-fdmnes"]
-    assert "never download ORCA" in skills["set-up-orca"]
+    assert "never download ORCA" in skills["install-orca"]
 
 
 def test_mission_is_main_only_and_short() -> None:

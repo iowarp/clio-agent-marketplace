@@ -31,6 +31,15 @@ view's state (`get_view_state`; `describe_region` for a framed region) rather th
 guessing, and name the atoms by element and index. You can move the view yourself:
 `set_frame`, `play_mode`, `focus`.
 
+## Linking charts to the viewer
+
+The viewer's `frame`, `mode` and `focus` are state channels an A2UI chart can drive: an
+optimization's energy-and-force chart linked by step moves the viewer to that frame; a
+frequency table or IR spectrum linked by mode plays that mode; a species in a reaction
+energy diagram or a row in a screening table can open its structure. Build such charts
+from the result CSVs (one row per step, mode or species, with the structure path or frame
+index as a column) so a selection carries enough to act on.
+
 ## Edits make new files
 
 Every geometry edit writes a new file and leaves the source unchanged; the result names

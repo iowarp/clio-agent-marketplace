@@ -1,5 +1,5 @@
 ---
-name: read-structure-images
+name: structure-from-image
 title: Read structures from images
 description: Use when a chemical structure exists only as a picture - a figure in a paper, a screenshot, a photo of a whiteboard or notebook - and it is needed as SMILES or a structure file.
 keywords: [decimer, ocsr, image, smiles, structure recognition, level:L2]

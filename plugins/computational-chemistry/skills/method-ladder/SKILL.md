@@ -1,5 +1,5 @@
 ---
-name: choose-a-method
+name: method-ladder
 description: Use before any energy, geometry, frequency or spectrum calculation on a molecule or crystal, to choose the level of theory (force field, semi-empirical tight binding, machine-learned potential, DFT or wavefunction) for the question, the system and the time available, and to say what the choice can and cannot show.
 keywords: [chemistry, level of theory, dft, xtb, machine-learned potential, level:L1]
 ---
@@ -31,9 +31,9 @@ Rules of thumb:
 - **Metals and crystals:** periodic methods or potentials trained on crystals; EMT only
   for testing.
 - **Spectra:** IR needs a dipole (xTB or DFT). X-ray absorption needs its own program
-  (see `x-ray-absorption`).
+  (see `xanes`).
 - **Adsorption in porous solids:** classical Monte Carlo with a force field (see
-  `gas-adsorption`), not electronic structure.
+  `adsorption`), not electronic structure.
 
 ## When the person did not say
 

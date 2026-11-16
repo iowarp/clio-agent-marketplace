@@ -1,5 +1,5 @@
 ---
-name: xanes-with-fdmnes
+name: fdmnes-xanes
 title: XANES with FDMNES
 description: Use when an X-ray absorption near-edge spectrum is to be computed with the FDMNES connector for a crystal or molecule file, or a computed or measured spectrum is to be normalized or compared with others.
 keywords: [fdmnes, xanes, xas, spectrum, level:L2]
@@ -7,8 +7,17 @@ keywords: [fdmnes, xanes, xas, spectrum, level:L2]
 
 # XANES with the FDMNES connector
 
-Read `x-ray-absorption` for what the spectrum means and which settings matter. This skill
+Read `xanes` for what the spectrum means and which settings matter. This skill
 is how the connector does it.
+
+## Structures from the Materials Project
+
+`fetch_materials_project` takes a formula or an `mp-` id and writes a CIF for each
+matching material, ordered by energy above the hull, with space group and magnetic
+ordering. When several match (polymorphs, magnetic orderings), say which one you use and
+why, or ask. It needs the connector's **Materials Project API key**; on `mp_key_missing`
+ask the person for it through the connector, do not look for another source. Show the
+structure with its unit cell in Burette before computing.
 
 ## run_xanes
 

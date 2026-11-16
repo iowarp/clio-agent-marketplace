@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "alembic",
   "version": "0.1.0",
-  "description": "Alembic's identity and research process: its mission and practice, and the chemistry-study skill that takes a question from compound to checked result.",
+  "description": "Alembic's identity and research process: its mission and the study skills that take a request from compound to checked result (structure-from-name, molecule-properties, reaction-study, adsorption-screen, xanes-comparison).",
   "author": {
     "name": "IoWarp Team"
   },
