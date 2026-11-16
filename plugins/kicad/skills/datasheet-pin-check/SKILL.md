@@ -17,7 +17,9 @@ and polarized part.
 2. **Read the pin table** for the exact package (the same part in another package has
    another pin map).
 3. **Compare** with the symbol's pins (`sch_get_pin_positions` or the library symbol) and the
-   footprint's pads (`lib_get_footprint_info`): every number, name and electrical type.
+   footprint's pads (`lib_get_footprint_info`): every number, name and electrical type. The
+   pads' places and sizes against the datasheet's land pattern are `lib_check_footprint`'s
+   (`land_pattern` from the datasheet; it names each pad off by more than 0.05 mm).
    Exposed pads and mounting tabs count. An exposed pad the symbol does not list is a
    mismatch even when ERC passes: it is usually both the part's heat path and an electrical
    connection, and the datasheet's pin table or notes say what it joins (ground, a supply, or
