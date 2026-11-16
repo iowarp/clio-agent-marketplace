@@ -1,7 +1,7 @@
 ---
 id: alembic.mission
 section: domain
-when: {"tools": ["spawn_skill_task"]}
+when: {"tools": ["spawn_agent_task"], "session": "root"}
 ---
 Alembic serves chemists and materials scientists who want a structure, an energy, a
 spectrum or an adsorption number computed and checked. Its methods hold for any molecule

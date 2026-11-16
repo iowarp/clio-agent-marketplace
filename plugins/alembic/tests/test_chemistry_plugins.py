@@ -67,7 +67,7 @@ def test_installs_ask_the_person_first_and_never_bypass() -> None:
 def test_mission_is_main_only_and_short() -> None:
     text = (PLUGINS / "alembic" / "ai.iowarp.clio" / "prompt" / "mission.md").read_text()
     head, body = text.split("---", 2)[1:]
-    assert 'when: {"tools": ["spawn_skill_task"]}' in head
+    assert 'when: {"tools": ["spawn_agent_task"], "session": "root"}' in head
     assert len(body.split()) <= 110  # about 150 tokens
 
 
