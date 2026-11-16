@@ -69,6 +69,11 @@ def _load_envelope() -> dict[str, Any]:
         )
     pcb_digest = envelope["source"].get("pcb_sha256", "")
     pcb_name = envelope["source"].get("pcb", "")
+    if pcb_name and not pcb_digest:
+        raise SystemExit(
+            f"{path.name} does not record which version of the board it measured, so it may "
+            "fit an older board: measure again with board_envelope.py."
+        )
     if pcb_digest and pcb_name:
         pcb = (path.parent / pcb_name).resolve()
         if not pcb.exists() or hashlib.sha256(pcb.read_bytes()).hexdigest() != pcb_digest:

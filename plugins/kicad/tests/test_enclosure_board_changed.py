@@ -85,5 +85,23 @@ class BoardChangedTest(unittest.TestCase):
         self.assertIn("changed after board-envelope.json was measured", str(stop.exception))
 
 
+    def test_an_envelope_that_does_not_record_its_board_is_measured_again(self) -> None:
+        enclosure = _load("enclosure")
+        envelope = {
+            "source": {
+                "step": "board.step",
+                "sha256": hashlib.sha256(self.step.read_bytes()).hexdigest(),
+                "pcb": "board.kicad_pcb",
+            },
+            "missing_bodies": [],
+        }
+        (self.dir / "board-envelope.json").write_text(json.dumps(envelope))
+        enclosure.HERE = self.dir
+        enclosure.ENVELOPE = "board-envelope.json"
+        with self.assertRaises(SystemExit) as stop:
+            enclosure._load_envelope()
+        self.assertIn("measure again", str(stop.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
