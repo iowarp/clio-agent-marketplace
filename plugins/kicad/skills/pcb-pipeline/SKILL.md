@@ -40,15 +40,20 @@ person's decision, so say what you will run first.
    pattern.
 7. **Placement**, as a study (below), with the `pcb-placement` skill.
 8. **Routing**, with the `pcb-routing` skill; DRC until clean.
-9. **Release.** DFM checks and the manufacturing package. Look at the board first
-   (`export_3d_render` top and bottom, or the board view's `capture`): checks pass on boards
-   with a keepout in the wrong place or a connector set back from the edge. Exporting the
+9. **Release.** DFM checks and the manufacturing package. Look at the board first in the board
+   view (its `capture`, with `set_layers` and `focus` on the keepouts and edge connectors):
+   checks pass on boards with a keepout in the wrong place or a connector set back from the
+   edge. `export_3d_render` is a picture to show the person, not a review. Exporting the
    release package is the person's step: say it is ready and what it holds. Send the STEP (`export_step`) back to the
    enclosure for a fit check.
 
 ## The views
 
-Each opens in a tab and follows every edit, whoever made it:
+Each opens in a tab and follows every edit, whoever made it. They are also how you review your
+own work: each view has its own tools (`focus`, `select`, `capture`, `describe_region`; the
+board view also `set_layers` and `show`), and `look_at_view` shows you what one shows now. Judge
+placement, holes and routes in the board view and the wiring in the schematic view, not from a
+3D render:
 
 | Tool | Shows | The person can |
 | --- | --- | --- |
