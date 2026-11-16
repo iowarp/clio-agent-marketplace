@@ -67,6 +67,16 @@ def _load_envelope() -> dict[str, Any]:
             f"{path.name} was measured from another export of the board than {step.name}: "
             "measure again with board_envelope.py before building the case."
         )
+    pcb_digest = envelope["source"].get("pcb_sha256", "")
+    pcb_name = envelope["source"].get("pcb", "")
+    if pcb_digest and pcb_name:
+        pcb = (path.parent / pcb_name).resolve()
+        if not pcb.exists() or hashlib.sha256(pcb.read_bytes()).hexdigest() != pcb_digest:
+            raise SystemExit(
+                f"The board ({pcb.name}) changed after {path.name} was measured, so the case "
+                "would fit the old board: export the STEP again and measure again with "
+                "board_envelope.py."
+            )
     if envelope.get("missing_bodies"):
         raise SystemExit(
             "These parts have no 3D body, so the case cannot clear them: "

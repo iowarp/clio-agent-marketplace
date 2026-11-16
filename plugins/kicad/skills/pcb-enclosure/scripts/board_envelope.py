@@ -303,6 +303,13 @@ def _mating_face(box: cq.BoundBox, bounds: list[float]) -> dict[str, Any] | None
 
 
 def measure(step: Path, pcb: Path | None, revision: str) -> dict[str, Any]:
+    if pcb is not None and pcb.exists() and pcb.stat().st_mtime > step.stat().st_mtime + 1:
+        # The STEP shows the board as it was when exported; a later edit (a part moved, a
+        # body removed) is not in it, so measuring it would describe another board.
+        raise SystemExit(
+            f"{step.name} is older than {pcb.name}: the board changed after the STEP was "
+            "exported. Export the STEP again, then measure."
+        )
     bodies = read_step(step)
     board = _board_body(bodies)
     named = {b.name: b for b in bodies if b is not board and b.name and not b.name.startswith("=>")}
@@ -356,6 +363,7 @@ def measure(step: Path, pcb: Path | None, revision: str) -> dict[str, Any]:
             "sha256": hashlib.sha256(step.read_bytes()).hexdigest(),
             "revision": revision,
             "pcb": str(pcb) if pcb else "",
+            "pcb_sha256": hashlib.sha256(pcb.read_bytes()).hexdigest() if pcb else "",
         },
         "units": "mm",
         "frame": "STEP coordinates as exported by KiCad (y flipped from the board file)",
