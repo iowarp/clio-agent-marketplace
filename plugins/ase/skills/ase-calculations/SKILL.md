@@ -50,8 +50,10 @@ minutes; progress is reported). `calculators` says what is ready. A typed error 
 what is missing:
 
 - `binary_missing` for NWChem or ORCA: use the nwchem or orca plugin's skill, or pick a
-  calculator that is ready and say so.
+  calculator that is ready and say so. When the person has the program, ask for its path
+  and set the connector's program value yourself (`set_connector_value`).
 - `hf_token_missing`: UMA needs a Hugging Face token whose account accepted the UMA
-  licence, set in the connector's **Hugging Face token (UMA)** value. Ask the person; do
-  not look for another way.
+  licence. Ask once with `offer_plugin` (plugin `ase`, your reason, `needs` with the
+  token's need from the listing's `optional_needs`): the person types it into the card,
+  never into the chat or an environment variable. Do not look for another way.
 - `dipole_unavailable`: IR needs xtb, nwchem or orca.
