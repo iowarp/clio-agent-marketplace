@@ -17,6 +17,10 @@ CadQuery again (an install is about 1.7 GB in each conversation's own cache).
 
 from __future__ import annotations
 
+#: This script's version. A project keeps its own copy, which does not get later fixes; when the
+#: skill's copy has a higher version, replace the project's copy (keep its parameter values).
+SCRIPT_VERSION = 2
+
 import argparse
 import hashlib
 import json
@@ -385,6 +389,7 @@ def measure(step: Path, pcb: Path | None, revision: str) -> dict[str, Any]:
             "revision": revision,
             "pcb": str(pcb) if pcb else "",
             "pcb_sha256": hashlib.sha256(pcb.read_bytes()).hexdigest() if pcb else "",
+            "script_version": SCRIPT_VERSION,
         },
         "units": "mm",
         "frame": "STEP coordinates as exported by KiCad (y flipped from the board file)",

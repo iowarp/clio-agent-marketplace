@@ -120,6 +120,30 @@ class BoardChangedTest(unittest.TestCase):
         in_the_old_step = {"J1": object(), "R1": object()}
         self.assertEqual(envelope.missing_bodies(by_ref, in_the_old_step), ["J1"])
 
+    def test_both_scripts_are_the_same_version(self) -> None:
+        self.assertEqual(_load("board_envelope").SCRIPT_VERSION, _load("enclosure").SCRIPT_VERSION)
+
+    def test_an_envelope_measured_by_another_version_is_measured_again(self) -> None:
+        """Found live (FQ14): the project kept a copy of the scripts from before the board
+        check, and the case was built for the board before J1 moved."""
+        enclosure = _load("enclosure")
+        envelope = {
+            "source": {
+                "step": "board.step",
+                "sha256": hashlib.sha256(self.step.read_bytes()).hexdigest(),
+                "pcb": "board.kicad_pcb",
+                "pcb_sha256": hashlib.sha256(self.pcb.read_bytes()).hexdigest(),
+                "script_version": enclosure.SCRIPT_VERSION - 1,
+            },
+            "missing_bodies": [],
+        }
+        (self.dir / "board-envelope.json").write_text(json.dumps(envelope))
+        enclosure.HERE = self.dir
+        enclosure.ENVELOPE = "board-envelope.json"
+        with self.assertRaises(SystemExit) as stop:
+            enclosure._load_envelope()
+        self.assertIn("same version of the skill and measure again", str(stop.exception))
+
     @unittest.skipIf(importlib.util.find_spec("cadquery"), "this Python has CadQuery")
     def test_a_python_without_cadquery_is_pointed_at_library_tools(self) -> None:
         """Found live (FQ12): the agent ran the script under `uv --with cadquery`, a 1.7 GB

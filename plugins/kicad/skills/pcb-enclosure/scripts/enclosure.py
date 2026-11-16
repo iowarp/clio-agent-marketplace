@@ -17,6 +17,10 @@ CadQuery again (an install is about 1.7 GB in each conversation's own cache).
 
 from __future__ import annotations
 
+#: This script's version. A project keeps its own copy, which does not get later fixes; when the
+#: skill's copy has a higher version, replace the project's copy (keep its parameter values).
+SCRIPT_VERSION = 2
+
 # --- parameters (millimetres and degrees) -----------------------------------------------
 ENVELOPE = "../board-envelope.json"
 BOARD_STEP = ""  # the STEP the envelope was measured from; empty: the one it names
@@ -93,6 +97,13 @@ def _load_envelope() -> dict[str, Any]:
                 "would fit the old board: export the STEP again and measure again with "
                 "board_envelope.py."
             )
+    measured_by = envelope["source"].get("script_version", 1)
+    if measured_by != SCRIPT_VERSION:
+        raise SystemExit(
+            f"{path.name} was measured by board_envelope.py version {measured_by}, and this is "
+            f"enclosure.py version {SCRIPT_VERSION}: use both scripts from the same version of "
+            "the skill and measure again."
+        )
     if envelope.get("missing_bodies"):
         raise SystemExit(
             "These parts have no 3D body, so the case cannot clear them: "
@@ -425,6 +436,7 @@ def fit_checks(case: Case, made: dict[str, Any], bodies: dict[str, cq.Shape]) ->
 
     return {
         "passed": all(c["passed"] for c in checks),
+        "script_version": SCRIPT_VERSION,
         "parameters": {
             "wall": WALL, "clearance": CLEARANCE, "cutout_clearance": CUTOUT_CLEARANCE,
             "lid_style": LID_STYLE, "screw": SCREW_DIAMETER, "nozzle": NOZZLE,

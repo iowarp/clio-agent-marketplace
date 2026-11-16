@@ -22,7 +22,10 @@ you can do yourself. Export again until no part is missing.
 ## 2. Measure
 
 Copy `scripts/board_envelope.py` and `scripts/enclosure.py` from this skill into
-`<project>/enclosure/`. They need CadQuery. Call `lib_list_footprint_families` first: its
+`<project>/enclosure/`. A project that already has them keeps its own copies, which do not get
+this skill's later checks: compare each copy's `SCRIPT_VERSION` with this skill's, and replace a
+copy with an older or no `SCRIPT_VERSION` by this skill's, carrying the values of the project's
+parameter block (the top of `enclosure.py`) over. They need CadQuery. Call `lib_list_footprint_families` first: its
 first line names Library Tools' Python and says whether it has CadQuery. Run the scripts with
 that Python, e.g. `<that python> board_envelope.py ../BOARD.step --pcb ../BOARD.kicad_pcb --out ../board-envelope.json`.
 Only when it has no CadQuery, `uv run --no-project --with cadquery python …` installs it, about
