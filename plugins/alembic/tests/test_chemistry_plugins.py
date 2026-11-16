@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 PLUGINS = Path(__file__).resolve().parents[2]
-FOLLOWERS = ("ase", "fdmnes", "graspa", "burette")
+FOLLOWERS = ("ase", "fdmnes", "graspa", "burette", "avogadro")
 SERVERS = ("pubchem", "decimer")
 CHEMISTRY = (*FOLLOWERS, *SERVERS, "computational-chemistry", "nwchem", "orca", "alembic")
 
@@ -57,7 +57,8 @@ def test_skills_named_in_backticks_exist() -> None:
 
 def test_installs_ask_the_person_first_and_never_bypass() -> None:
     skills = _skills()
-    for name in ("install-fdmnes", "install-graspa", "install-nwchem", "install-orca"):
+    for name in ("install-fdmnes", "install-graspa", "install-nwchem", "install-orca",
+                 "install-avogadro"):
         assert "ask_user" in skills[name], name
     assert "do not bypass the checksum" in skills["install-fdmnes"]
     assert "never download ORCA" in skills["install-orca"]

@@ -48,5 +48,5 @@ would break): say so and suggest a constrained optimization instead. A hand-edit
 geometry is a starting point: optimize it before computing properties.
 
 Burette is for looking and quick internal-coordinate edits. Building a structure from
-fragments, changing elements or making surfaces and supercells needs a 3D builder; say so
-when that is what the person wants.
+fragments, changing elements or making surfaces and supercells is Avogadro's
+(`avogadro-building`, when the Avogadro connector is enabled).

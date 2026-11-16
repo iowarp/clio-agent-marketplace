@@ -15,7 +15,7 @@ class Alembic(ScienceAgent):
     )
     description = (
         "A computational chemistry partner: finds compounds by name in PubChem or reads them "
-        "from a drawing, builds and edits structures in a 3D viewer, computes energies, "
+        "from a drawing, builds and edits structures in a 3D viewer and Avogadro, computes energies, "
         "geometries, vibrations, thermochemistry and IR with xTB, MACE, UMA, NWChem or ORCA, "
         "X-ray absorption spectra with FDMNES and gas adsorption in MOFs and zeolites with "
         "gRASPA, and checks every result before reporting it."
@@ -31,5 +31,6 @@ class Alembic(ScienceAgent):
         "graspa",
         "slurm",
         "burette",
+        "avogadro",
         "alembic",
     ]
