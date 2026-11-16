@@ -10,6 +10,9 @@ It reads board-envelope.json (from board_envelope.py) and refuses one that was m
 another STEP than BOARD_STEP, or that lists parts with no body. It writes base/lid STEP and STL,
 enclosure.3mf, enclosure.glb (nodes: board, each reference, base, lid, standoff_N, pillar_N,
 cutout_<ref>) and fit-report.json, and exits 1 when a fit check fails. Needs CadQuery 2.6+.
+KiCad Library Tools' Python has it: the first line of the KiCad connector's
+lib_list_footprint_families names that Python, so run this script with it rather than installing
+CadQuery again (an install is about 1.7 GB in each conversation's own cache).
 """
 
 from __future__ import annotations
@@ -45,7 +48,15 @@ import sys  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
-import cadquery as cq  # noqa: E402
+_NO_CADQUERY = (
+    "CadQuery is not installed in this Python ({python}). KiCad Library Tools' Python has it: "
+    "the first line of the KiCad connector's lib_list_footprint_families names that Python. "
+    "Run this script with it."
+)
+try:
+    import cadquery as cq  # noqa: E402
+except ImportError as missing:  # the agent picked a Python without it
+    raise SystemExit(_NO_CADQUERY.format(python=sys.executable)) from missing
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))  # board_envelope.py sits beside this file

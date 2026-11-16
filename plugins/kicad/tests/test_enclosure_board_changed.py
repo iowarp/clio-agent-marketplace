@@ -10,6 +10,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import types
@@ -118,6 +119,20 @@ class BoardChangedTest(unittest.TestCase):
         by_ref = {f.reference: f for f in footprints}
         in_the_old_step = {"J1": object(), "R1": object()}
         self.assertEqual(envelope.missing_bodies(by_ref, in_the_old_step), ["J1"])
+
+    @unittest.skipIf(importlib.util.find_spec("cadquery"), "this Python has CadQuery")
+    def test_a_python_without_cadquery_is_pointed_at_library_tools(self) -> None:
+        """Found live (FQ12): the agent ran the script under `uv --with cadquery`, a 1.7 GB
+        download into the conversation's own cache, though Library Tools' Python has it."""
+        for script in ("board_envelope.py", "enclosure.py"):
+            run = subprocess.run(
+                [sys.executable, "-I", str(SCRIPTS / script), "--help"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(run.returncode, 0)
+            self.assertIn("lib_list_footprint_families names that Python", run.stderr)
 
 
 if __name__ == "__main__":

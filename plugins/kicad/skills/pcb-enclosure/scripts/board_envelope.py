@@ -10,7 +10,9 @@ any part has none).
 
 Coordinates are the STEP's, in millimetres: the board's bottom face at z = board bottom, its
 top at z = board top, x and y as KiCad exported them (KiCad's y axis is flipped). Needs
-CadQuery (2.6 or later).
+CadQuery (2.6 or later). KiCad Library Tools' Python has it: the first line of the KiCad connector's
+lib_list_footprint_families names that Python, so run this script with it rather than installing
+CadQuery again (an install is about 1.7 GB in each conversation's own cache).
 """
 
 from __future__ import annotations
@@ -27,13 +29,22 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import cadquery as cq
-from OCP.STEPCAFControl import STEPCAFControl_Reader
-from OCP.TCollection import TCollection_ExtendedString
-from OCP.TDataStd import TDataStd_Name
-from OCP.TDF import TDF_Label, TDF_LabelSequence
-from OCP.TDocStd import TDocStd_Document
-from OCP.XCAFDoc import XCAFDoc_DocumentTool
+_NO_CADQUERY = (
+    "CadQuery is not installed in this Python ({python}). KiCad Library Tools' Python has it: "
+    "the first line of the KiCad connector's lib_list_footprint_families names that Python. "
+    "Run this script with it."
+)
+
+try:
+    import cadquery as cq
+    from OCP.STEPCAFControl import STEPCAFControl_Reader
+    from OCP.TCollection import TCollection_ExtendedString
+    from OCP.TDataStd import TDataStd_Name
+    from OCP.TDF import TDF_Label, TDF_LabelSequence
+    from OCP.TDocStd import TDocStd_Document
+    from OCP.XCAFDoc import XCAFDoc_DocumentTool
+except ImportError as missing:  # the agent picked a Python without it
+    raise SystemExit(_NO_CADQUERY.format(python=sys.executable)) from missing
 
 CONNECTOR_PREFIXES = ("J", "P", "CN", "USB", "X")
 EDGE_REACH_MM = 1.5  # a connector body within this of the outline faces that edge
