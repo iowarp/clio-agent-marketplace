@@ -34,9 +34,12 @@ rules are notes in a project library. Fix the entry or script and generate again
 
 ## The person sees what you made
 
-Render a generated footprint (`kicad-cli fp export svg`) beside a crop of the datasheet's land
-pattern page and show both. A **custom** footprint is assigned only after the person accepts
-it; a generated one is assigned and shown, and the person can reject it. The record in
+Render a generated footprint (`kicad-cli fp export svg`, then to PNG) beside a crop of the
+datasheet's land pattern page and show both in the conversation, side by side (registered as
+artifacts, or on one surface), and look at them yourself first. A path in your text is not
+showing them: the person can only accept what they have seen. A **custom** footprint is
+assigned only after the person accepts it; a generated one is assigned and shown, and the
+person can reject it. The record in
 `libs/footprint-records.json` keeps where each footprint came from, its datasheet pages and its
 last check.
 
