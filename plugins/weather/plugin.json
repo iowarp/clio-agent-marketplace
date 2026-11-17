@@ -1,13 +1,18 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "weather",
-  "version": "1.0.0",
-  "description": "Weather forecasts for a place.",
+  "version": "2.0.0",
+  "description": "Weather and climate science: forecasts for a place, ensemble probabilities, reanalysis thresholds and extremes, atmospheric rivers and cyclone tracks, cross-sections and soundings with a skew-T chart, forecast scores, AI forecasts with their checkpoint licences, and climate-model evaluation, through clio-kit's weather server and ECMWF's own weather skills (Apache-2.0, vendored unchanged).",
   "author": {
     "name": "IoWarp Team"
   },
-  "license": "BSD-3-Clause",
+  "license": "BSD-3-Clause AND Apache-2.0",
   "keywords": [
-    "weather"
+    "weather",
+    "climate",
+    "forecast",
+    "ensemble",
+    "era5",
+    "ecmwf"
   ]
 }

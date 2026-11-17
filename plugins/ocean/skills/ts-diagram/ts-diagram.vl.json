@@ -1,0 +1,45 @@
+{
+  "title": "Conservative Temperature against Absolute Salinity",
+  "layer": [
+    {
+      "transform": [{"filter": "datum.kind === 'isopycnal'"}],
+      "mark": {"type": "line", "strokeWidth": 0.8, "opacity": 0.6},
+      "encoding": {
+        "x": {"field": "SA", "type": "quantitative", "title": "Absolute Salinity (g/kg)", "scale": {"zero": false}},
+        "y": {"field": "CT", "type": "quantitative", "title": "Conservative Temperature (°C)", "scale": {"zero": false}},
+        "detail": {"field": "sigma0", "type": "quantitative"},
+        "order": {"field": "SA", "type": "quantitative"},
+        "color": {"value": "gray"}
+      }
+    },
+    {
+      "transform": [{"filter": "datum.kind === 'isopycnal' && datum.label === true"}],
+      "mark": {"type": "text", "align": "left", "dx": 3, "fontSize": 10},
+      "encoding": {
+        "x": {"field": "SA", "type": "quantitative"},
+        "y": {"field": "CT", "type": "quantitative"},
+        "text": {"field": "sigma0", "type": "quantitative", "format": ".1f"},
+        "color": {"value": "gray"}
+      }
+    },
+    {
+      "transform": [{"filter": "datum.kind !== 'isopycnal'"}],
+      "mark": {"type": "point", "filled": true, "size": 14, "opacity": 0.8},
+      "encoding": {
+        "x": {"field": "SA", "type": "quantitative"},
+        "y": {"field": "CT", "type": "quantitative"},
+        "color": {"field": "water_mass", "type": "nominal", "title": "Water mass"},
+        "tooltip": [
+          {"field": "profile", "type": "nominal", "title": "Cast"},
+          {"field": "pressure", "type": "quantitative", "title": "Pressure (dbar)", "format": ".0f"},
+          {"field": "SA", "type": "quantitative", "format": ".3f"},
+          {"field": "CT", "type": "quantitative", "format": ".3f"},
+          {"field": "water_mass", "type": "nominal", "title": "Water mass"}
+        ]
+      }
+    }
+  ],
+  "width": "container",
+  "height": 420,
+  "data": {"name": "source"}
+}
