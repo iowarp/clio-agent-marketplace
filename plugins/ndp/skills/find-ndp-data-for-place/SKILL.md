@@ -47,16 +47,13 @@ organization, catalog id, what it measures, resources and their kinds.
 
 ## 3. Check each candidate's coverage
 
-Read location and time from whichever field the record uses. Records carry
-location as `spatial` (GeoJSON) or `dataBbox`, or not at all. They carry time
-as `temporal`, `start_time`/`end_time`, `startDateTime`/`endDateTime`, only
-`issueDate`, or only in the title or notes. Search results omit some of these.
-When you need them, read the dataset's full record, through the `ndp` MCP
-server in `run_code` (`tools.ndp.get_dataset_details`) when it is available, or
-after connecting the dataset.
+Each search result carries `coverage`: the record's own `location` (a `bbox`
+from whichever field it uses, with `span_degrees`) and `time` (start and end,
+or only an issue date), with the source field named. Records that state
+neither have `null`. Time can also appear only in the title or notes.
 
-- A **world-wide or nation-wide box** says nothing about the region. Treat it
-  like a missing extent.
+- A **world-wide or nation-wide box** (a large `span_degrees`) says nothing
+  about the region. Treat it like a missing extent.
 - **No usable extent:** ask the source. For a service resource (Esri REST,
   ArcGIS Feature Service, WFS, WCS, STAC), use the `get-geospatial-data` skill:
   `describe_geo_service` with the region's `bbox`, then a count query when it
