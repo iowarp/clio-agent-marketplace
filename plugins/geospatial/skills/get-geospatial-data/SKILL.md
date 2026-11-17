@@ -54,7 +54,10 @@ holds no data even though the bounds overlap. Report "does not cover" or
   It reports `decimation`. Use native resolution (a larger budget or a smaller
   region) when the science depends on fine detail, such as slopes or narrow
   channels. Several tiles, including tiles in different UTM zones, are
-  mosaicked in one call.
+  mosaicked in one call. `region_not_covered` names the part of the region no
+  source reaches (its fraction and box): that part is nodata in the output, so
+  add the tiles that cover it, or report the gap and leave it out of every
+  statistic.
 - **Point clouds:** `read_point_cloud` with the region, `max_points`, and
   `classifications=[2]` for ground. `complete: false` means a coarser level of
   detail was read. The `spacing` tells you whether it is fine enough.
