@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `visuals` (1.2.3): `create_a2ui_surface`, `update_a2ui_components` and
+  `update_a2ui_data_model` are listed (`defer=False`). Declaring nothing deferred them
+  with every other built-in tool, so no agent saw them, nor the figure and dashboard
+  guidance gated on them, and answers fell back to static images.
+
 ### Added
 
 - `home-assistant` (1.0.0): Home Assistant as one plugin. It follows CLIO's
