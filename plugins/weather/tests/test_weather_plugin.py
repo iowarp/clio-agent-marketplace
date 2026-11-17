@@ -47,8 +47,13 @@ class WeatherPluginTests(unittest.TestCase):
         self.assertNotIn('"url"', text)
         for column in SOUNDING_COLUMNS:
             self.assertIn(column, text)
-        self.assertEqual(spec["encoding"]["y"]["scale"]["type"], "log")
-        self.assertTrue(spec["encoding"]["y"]["scale"]["reverse"])
+        scale = spec["encoding"]["y"]["scale"]
+        self.assertEqual(scale["type"], "log")
+        # The first domain value sits at the bottom of a y axis: the surface pressure
+        # first puts high pressure at the bottom, as on a printed skew-T. A reverse
+        # flag on top of that turns the chart upside down.
+        self.assertGreater(scale["domain"][0], scale["domain"][1])
+        self.assertNotIn("reverse", scale)
 
     def test_the_skew_t_spec_passes_the_chart_guard(self) -> None:
         try:
