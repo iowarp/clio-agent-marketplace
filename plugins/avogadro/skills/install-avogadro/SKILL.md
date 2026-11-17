@@ -1,6 +1,6 @@
 ---
 name: install-avogadro
-description: Install Avogadro 2 and the programs its streamed view needs (Xvfb, x11vnc) for the Avogadro connector, with the person's consent, and point the connector at it; when avogadro_status or open_in_avogadro says something is missing (not_installed, display_missing).
+description: Find Avogadro 2 if it is already installed, otherwise install it and the programs its streamed view needs (Xvfb, x11vnc, OpenGL libraries) where every conversation finds it, with the person's consent; when avogadro_status or open_in_avogadro says something is missing (not_installed, display_missing).
 keywords: [avogadro, install, xvfb, x11vnc, appimage, level:L2]
 ---
 
@@ -16,6 +16,15 @@ missing. On Linux it needs three things:
 macOS and Windows: the streamed view is Linux only (it needs an X display). Avogadro can
 still be installed for the person to use on their desktop (`brew install --cask avogadro`,
 `winget install --id OpenChemistry.Avogadro2`), and structures move as files.
+
+## 0. Look before installing
+
+Avogadro may already be installed, in this conversation or another. `avogadro_status`
+finds it on PATH (`avogadro2`) and where this skill installs it
+(`~/.local/opt/avogadro-<version>/squashfs-root/AppRun`); also check
+`command -v avogadro2` and `ls -d ~/.local/opt/avogadro-*` yourself. If it is there, use
+it: do not ask to install it again, and install only what `avogadro_status` still reports
+missing (often only the display programs).
 
 ## 1. Ask first
 
@@ -49,18 +58,30 @@ rm Avogadro2-x86_64.AppImage
 ```
 
 If the checksum does not match, stop: delete the file, do not run it, and tell the person.
-The program is `$dest/squashfs-root/AppRun`.
+The program is `$dest/squashfs-root/AppRun`. Put a launcher on PATH so every conversation
+and the person's own terminal find it:
+
+```sh
+mkdir -p "$HOME/.local/bin" && ln -sf "$dest/squashfs-root/AppRun" "$HOME/.local/bin/avogadro2"
+```
 
 ## 3. Xvfb and x11vnc
 
 | System | Command |
 | --- | --- |
-| Ubuntu, Debian | `apt-get install -y xvfb x11vnc` (with `pkexec`, or as root in a container) |
-| Fedora | `dnf install -y xorg-x11-server-Xvfb x11vnc` |
-| Arch | `pacman -S xorg-server-xvfb x11vnc` |
+| Ubuntu, Debian | `apt-get install -y xvfb x11vnc libopengl0 libegl1` (with `pkexec`, or as root in a container) |
+| Fedora | `dnf install -y xorg-x11-server-Xvfb x11vnc libglvnd-opengl libglvnd-egl` |
+| Arch | `pacman -S xorg-server-xvfb x11vnc libglvnd` |
 
-## 4. Point the connector at it
+The official build loads the system's OpenGL libraries (`libOpenGL.so.0`, `libEGL.so.1`);
+on a minimal system they are missing and Avogadro exits at start. Check with
+`ldd "$dest/squashfs-root/usr/bin/avogadro2" | grep "not found"` and install what it lists.
 
-Set the connector's **Where Avogadro is** to the full path of `AppRun` (or of `avogadro2`
-when it came from the system's packages), then call `avogadro_status`: it should report
-Avogadro and both programs. Then `open_in_avogadro`.
+## 4. Check, then open
+
+Call `avogadro_status`: installed as above, it finds Avogadro and both programs with no
+setting, in this conversation and every later one. Then `open_in_avogadro`.
+
+Set the connector's **Where Avogadro is** only for an Avogadro somewhere else (a system
+package outside PATH, a shared install): that value belongs to this conversation, so tell
+the person they can save it as their default in the Avogadro connector's settings.

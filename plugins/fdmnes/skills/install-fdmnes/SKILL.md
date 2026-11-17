@@ -9,6 +9,12 @@ keywords: [fdmnes, spack, install, level:L2]
 The FDMNES connector runs an FDMNES program already on the machine and never downloads
 one. Reading, normalizing and comparing spectra work without it; only `run_xanes` needs it.
 
+## Look first
+
+FDMNES may already be installed, from this conversation or another: `fdmnes_status` finds
+`fdmnes` on PATH; also check `command -v fdmnes`. If it is there, use it and do not ask to
+build it again.
+
 ## Ask first
 
 Ask once with `ask_user` (a choice), naming what you would do: **build it now** (about a
@@ -19,13 +25,14 @@ conversation.
 
 ## Build it with Spack, in one folder
 
-Everything Spack writes goes under one folder, by default `.spack` in the workspace, so
-nothing lands in the home folder. clio-kit's Spack repository (`spack-repo/` in
+Everything Spack writes goes under one folder, `~/.local/opt/clio-spack`, shared by every
+conversation and workspace (a folder inside a workspace would build it again for each).
+clio-kit's Spack repository (`spack-repo/` in
 https://github.com/iowarp/clio-kit) has the `fdmnes` recipe and a config that keeps the
 install tree, build stages and caches in that folder.
 
 ```sh
-export CLIO_SPACK_ROOT="$PWD/.spack"
+export CLIO_SPACK_ROOT="$HOME/.local/opt/clio-spack"
 export SPACK_USER_CONFIG_PATH="$CLIO_SPACK_ROOT/user-config"
 export SPACK_USER_CACHE_PATH="$CLIO_SPACK_ROOT/user-cache"
 export SPACK_DISABLE_LOCAL_CONFIG=1
@@ -37,7 +44,8 @@ export CLIO_KIT_SPACK_REPO="$CLIO_SPACK_ROOT/clio-kit/spack-repo"
 SPACK="$CLIO_SPACK_ROOT/spack/bin/spack -C $CLIO_KIT_SPACK_REPO/config"
 $SPACK compiler find
 $SPACK install fdmnes
-$SPACK location -i fdmnes        # the program is <that folder>/bin/fdmnes
+# A launcher on CLIO's PATH, so every conversation finds it:
+mkdir -p "$HOME/.local/bin" && ln -sf "$($SPACK location -i fdmnes)/bin/fdmnes" "$HOME/.local/bin/fdmnes"
 ```
 
 It needs a C and Fortran compiler (gcc and gfortran). If `compiler find` finds no Fortran
@@ -50,7 +58,9 @@ stage folder: read it and report the error.
 FDMNES's source link always holds its newest revision, so the recipe's checksum fails
 after FDMNES releases a new one. Report that error as it is; do not bypass the checksum.
 
-## Point the connector at it
+## Check
 
-Set the connector's **FDMNES program** value to the full path of `bin/fdmnes`, then call
-`fdmnes_status` to confirm, and run the calculation again.
+Call `fdmnes_status`: it finds the program with no setting. Set the connector's **FDMNES
+program** only for an FDMNES somewhere else (a cluster module); that value belongs to this
+conversation, so tell the person they can save it as their default in the FDMNES
+connector's settings. Then run the calculation again.

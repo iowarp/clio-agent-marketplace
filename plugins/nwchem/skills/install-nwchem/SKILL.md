@@ -1,6 +1,6 @@
 ---
 name: install-nwchem
-description: When the ASE connector's NWChem calculator reports binary_missing, install NWChem with the person's consent (Spack in a folder of its own, or conda), point the ASE connector at it, or go on with a calculator that is ready.
+description: When the ASE connector's NWChem calculator reports binary_missing, find an NWChem already installed, or install it once with the person's consent (conda or Spack, in the home folder with a launcher on PATH) so every conversation finds it, or go on with a calculator that is ready.
 keywords: [nwchem, dft, spack, conda, install, level:L2]
 ---
 
@@ -9,6 +9,12 @@ keywords: [nwchem, dft, spack, conda, install, level:L2]
 NWChem is free (ECL-2.0). The ASE connector finds it through its **NWChem program** value
 or `nwchem` on PATH.
 
+## Look first
+
+NWChem may already be installed, from this conversation or another: `calculators` reports
+it when `nwchem` is on PATH; also check `command -v nwchem` and `ls ~/.local/opt/nwchem`.
+If it is there, use it and do not ask to install it again.
+
 ## Ask first
 
 Ask once with `ask_user`: **install it now** (Spack builds it from source in tens of
@@ -16,17 +22,40 @@ minutes with MPI and maths libraries; conda installs a prebuilt one in minutes),
 install it myself**, or **use a calculator that is ready** (`calculators` lists them; say
 what changes, for example xTB instead of DFT).
 
-## Install
+## Install once, for every conversation
 
-- **conda (fastest):** `conda create -y -p "$PWD/.conda/nwchem" -c conda-forge nwchem`;
-  the program is `.conda/nwchem/bin/nwchem`.
-- **Spack, in one folder:** with the environment from the fdmnes plugin's
-  `install-fdmnes` skill (everything under `$CLIO_SPACK_ROOT`), `$SPACK install nwchem`
-  (Spack's own recipe), then `$SPACK location -i nwchem`.
-- **A cluster module:** `module avail nwchem`; use its path.
+Install under `~/.local/opt` (never inside a workspace, which would install it again for
+each one) and put a launcher in `~/.local/bin`, which is on CLIO's PATH:
 
-## Point the connector at it
+- **conda (fastest):** with `conda`, or the standalone `micromamba` when conda is absent:
+  `conda create -y -p "$HOME/.local/opt/nwchem" -c conda-forge nwchem`.
+- **Spack:** with the environment from the fdmnes plugin's `install-fdmnes` skill,
+  `$SPACK install nwchem` (Spack's own recipe), then `$SPACK location -i nwchem`.
+- **A cluster module:** `module avail nwchem`; set the connector's **NWChem program** to
+  its path instead of a launcher.
 
-Set the ASE connector's **NWChem program** value to the full path of `nwchem` (for
-parallel runs the calculator setting `nprocs` adds `mpirun -np`). Call `calculators` to
-confirm, then run the calculation again.
+The conda build carries its build machine's basis-library path, so the launcher sets it:
+
+```sh
+nw="$HOME/.local/opt/nwchem"
+mkdir -p "$HOME/.local/bin"
+cat > "$HOME/.local/bin/nwchem" <<EOS
+#!/bin/sh
+export NWCHEM_BASIS_LIBRARY="$nw/share/nwchem/libraries/"
+export NWCHEMRC="$nw/etc/default.nwchemrc"
+exec "$nw/bin/nwchem" "\$@"
+EOS
+chmod +x "$HOME/.local/bin/nwchem"
+```
+
+Running as root in a container, Open MPI also needs `OMPI_ALLOW_RUN_AS_ROOT=1` and
+`OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1` exported in the launcher.
+
+## Check
+
+Call `calculators`: NWChem is ready with no setting. A run of H2 at a small basis checks
+the basis library before the real calculation (an `exit 255` with a basis error in its
+output means the library path is wrong). Set the connector's **NWChem program** only for
+an NWChem somewhere else; that value belongs to this conversation, so tell the person they
+can save it as their default in the ASE connector's settings. For parallel runs the
+calculator setting `nprocs` adds `mpirun -np`.
