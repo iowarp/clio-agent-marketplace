@@ -19,14 +19,15 @@ change is more than an internal coordinate, and say why.
 build from scratch). The first open starts Avogadro (seconds). If it says `not_installed` or
 `display_missing`, use `install-avogadro`.
 
-## The person works, then sends
+## The person works, then says so
 
-Tell the person how to hand the result back: select the atoms they mean (Select menu, or
-the selection tool), then **Extensions > CLIO > Send to CLIO**. The tab tells you when
-something was sent, with the formula and selected atoms. Then `read_avogadro`: it writes the
-structure as XYZ (and Avogadro's CJSON) in the workspace and gives the selected atoms as
-0-based indices in that file's order. Continue from that file (inspect it, optimize it); a
-hand-built structure is a starting point.
+The person edits in the tab and selects the atoms they mean (Select menu, or the selection
+tool); nothing needs to be sent. When they say they are done, or ask about what they built,
+call `read_avogadro`: it reads the molecule open in Avogadro now, writes it as XYZ (and
+Avogadro's CJSON) in the workspace, and gives the selected atoms as 0-based indices in that
+file's order. Continue from that file (inspect it, optimize it); a hand-built structure is
+a starting point. (An Avogadro older than 2.1 cannot report its molecule: there the person
+chooses **Extensions > CLIO > Send to CLIO** first, and `read_avogadro` reads that.)
 
 Files the person saves from Avogadro's own Save dialog land in the workspace's
 `chemistry/avogadro/` folder; they are ordinary files you can open.
