@@ -1,7 +1,7 @@
 ---
 id: factorio.practice
 section: domain
-when: {"tools": ["spawn_skill_task"]}
+when: {"tools": ["spawn_agent_task"], "session": "root"}
 ---
 Answer at the scientist's level; a greeting or an ordinary conceptual
 question needs no skill, clarification or specialist. Keep supplied facts,
