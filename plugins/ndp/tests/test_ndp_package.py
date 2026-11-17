@@ -15,7 +15,7 @@ def test_the_mcp_server_is_code_only_and_connected_data_is_required() -> None:
     clio = json.loads((PLUGIN / "plugin.json").read_text(encoding="utf-8"))["extensions"][
         "ai.iowarp.clio"
     ]
-    assert clio["requires"] == ["connected-data"]
+    assert clio["requires"] == ["connected-data", "geospatial"]
     assert clio["servers"]["ndp"]["callers"] == "code"
     assert "ndp" in json.loads((PLUGIN / "mcp.json").read_text(encoding="utf-8"))["mcpServers"]
 
@@ -30,6 +30,7 @@ def test_discovery_is_claimed_directly_and_endpoint_tools_are_deferred() -> None
     assert claims == {
         "connected_data_search_ndp": "",
         "connected_data_ndp_organizations": "",
+        "connected_data_ndp_tiles_covering": "",
         "connected_data_ndp_endpoint_connect": ", defer=True",
         "connected_data_ndp_endpoint_operations": ", defer=True",
         "connected_data_ndp_upload_artifact": ", defer=True",

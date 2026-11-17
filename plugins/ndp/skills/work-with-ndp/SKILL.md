@@ -27,6 +27,12 @@ Use short distinctive search terms: catalog words are combined with AND, so past
 whole research question or a list of synonyms can hide an available collection.
 Before concluding data is absent, retry a zero-match query with fewer terms or a
 publisher and inspect candidate coverage.
+For a question about a place and a topic, especially across organizations, load
+`find-ndp-data-for-place`. For a dataset of many raster tiles, select only the
+tiles covering the region with `connected_data_ndp_tiles_covering` before
+connecting. For a resource that is a service (Esri REST, WFS, WCS, STAC), a
+point-cloud viewer link or a tiled raster with a VRT, use `get-geospatial-data`
+to read only the region instead of downloading.
 
 Reuse the workspace's sources, saved NDP account and Endpoint connections with
 `connected_data_status`. Choose only the workflow needed for the request.

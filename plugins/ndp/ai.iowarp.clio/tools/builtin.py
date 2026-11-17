@@ -9,6 +9,7 @@ from clio_agent.sdk import native_tool
 
 connected_data_search_ndp = native_tool("connected_data_search_ndp")
 connected_data_ndp_organizations = native_tool("connected_data_ndp_organizations")
+connected_data_ndp_tiles_covering = native_tool("connected_data_ndp_tiles_covering")
 connected_data_ndp_endpoint_connect = native_tool("connected_data_ndp_endpoint_connect", defer=True)
 connected_data_ndp_endpoint_operations = native_tool(
     "connected_data_ndp_endpoint_operations", defer=True

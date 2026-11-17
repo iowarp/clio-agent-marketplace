@@ -16,7 +16,6 @@ PLUGIN = Path(__file__).resolve().parents[1]
 EXPECTED_LEVELS: dict[str, str] = {
     "gnss-time-series": "L1",
     "station-catalogs": "L1",
-    "resolve-region": "L1",
     "compare-station-coverage": "L1",
     "count-stations-in-region": "L1",
 }
