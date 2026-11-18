@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- `ndp` (2.1.0): `find-ndp-data-for-place` says a blank record `format` is missing
+  metadata, not an unusable file: identify the file from its `name_suffix` and one
+  `describe_geo_service` read, and set it aside only after a read fails. A
+  cross-organization run had skipped a basin's lidar tiles (`.img`, format blank).
 - `visuals` (1.2.3): `create_a2ui_surface`, `update_a2ui_components` and
   `update_a2ui_data_model` are listed (`defer=False`). Declaring nothing deferred them
   with every other built-in tool, so no agent saw them, nor the figure and dashboard

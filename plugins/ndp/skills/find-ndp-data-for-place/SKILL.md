@@ -59,6 +59,12 @@ neither have `null`. Time can also appear only in the title or notes.
   `describe_geo_service` with the region's `bbox`, then a count query when it
   stays undetermined. For a multi-tile raster dataset, use
   `connected_data_ndp_tiles_covering`.
+- **A blank `format` is missing metadata, not an unusable file.** Many records
+  leave it empty for tiled rasters and point clouds; the search result then gives
+  each resource's `name_suffix` (`.img`, `.tif`, `.laz`) and tallies the suffixes.
+  Identify the file from that, and confirm with `describe_geo_service` on one
+  resource, which reads raster and point-cloud headers. Set a candidate aside
+  for its format only after a read has failed, and say which read.
 - Classify each candidate as **overlaps**, **does not overlap** or **could not
   be determined (why)**, for both space and time. Keep all three groups in the
   answer.
