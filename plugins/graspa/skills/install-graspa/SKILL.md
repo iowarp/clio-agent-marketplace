@@ -20,7 +20,7 @@ Ask once with `ask_user`:
 
 ## Build with Spack, in one folder
 
-On the machine that has the GPU (through the ssh and slurm tools for a cluster), with
+On the machine that has the GPU (for a cluster, `ssh` from the shell and the slurm tools), with
 everything Spack writes under one folder (see the fdmnes plugin's `install-fdmnes` for
 the same environment variables, or clio-kit's `spack-repo/README.md`):
 

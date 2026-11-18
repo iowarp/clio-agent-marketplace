@@ -14,6 +14,12 @@
   system prompt, no tools and no context injections, so its input is exactly the
   conversation; for attention attribution (SPOTTER-AI) and small local models.
 
+### Removed
+
+- `ssh`: CLIO no longer ships the `ssh_execute` tool. Agents reach SSH hosts with
+  `ssh`, `scp`, `sftp` and Git over SSH from the shell, which runs them through the
+  sandbox's network policy.
+
 ## [0.8.0] - 2026-11-13
 
 The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the beta.
