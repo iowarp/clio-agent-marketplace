@@ -23,14 +23,15 @@ def test_the_mcp_server_is_code_only_and_connected_data_is_required() -> None:
 def test_discovery_is_claimed_directly_and_endpoint_tools_are_deferred() -> None:
     claims = dict(
         re.findall(
-            r'native_tool\(\s*"(\w+)"(, defer=True)?\s*\)',
+            r'native_tool\(\s*"(\w+)"(, defer=(?:True|False))?\s*\)',
             (PLUGIN / "ai.iowarp.clio" / "tools" / "builtin.py").read_text(encoding="utf-8"),
         )
     )
     assert claims == {
-        "connected_data_search_ndp": "",
-        "connected_data_ndp_organizations": "",
-        "connected_data_ndp_tiles_covering": "",
+        # Listed explicitly: declaring nothing defers a built-in.
+        "connected_data_search_ndp": ", defer=False",
+        "connected_data_ndp_organizations": ", defer=False",
+        "connected_data_ndp_tiles_covering": ", defer=False",
         "connected_data_ndp_endpoint_connect": ", defer=True",
         "connected_data_ndp_endpoint_operations": ", defer=True",
         "connected_data_ndp_upload_artifact": ", defer=True",
