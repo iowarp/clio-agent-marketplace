@@ -20,6 +20,7 @@ CLIO's fence lets a plugin server write only to its own data folder, so
 a terminal, point `CLIO_RELAY_CONFIG_DIR` and `CLIO_RELAY_STATE_DIR` at those
 folders.
 
-`mcp.json` runs relay with `uvx` from a pinned commit of this repository. The
-published copy lives in the CLIO agent marketplace as `plugins/clio-relay/`;
-when relay changes, move both pins to the new commit.
+`mcp.json` runs relay with `uvx` from a pinned commit of
+[clio-relay](https://github.com/iowarp/clio-relay). This folder is a copy of
+that repository's `plugin/` folder at the pinned commit; when relay changes,
+copy the folder again and move the pin.
