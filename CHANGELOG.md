@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Removed
+
+- `ndp` (3.0.0): the clio-kit `ndp` MCP server is no longer part of the plugin. NDP
+  is reached only through CLIO's own NDP source: search, filters, tile selection, and
+  attaching resources as workspace sources. Search now filters by `resource_format` and
+  returns each resource's own description, which the MCP server alone gave. Through
+  the server, an agent read the catalog anonymously into its context, attached
+  nothing, and left the person's NDP sign-in unused. `earthscope` (0.6.1) points its
+  record filtering at the same search.
+
 ### Fixed
 
 - `ndp` (2.1.0) and `connected-data` (2.0.1): NDP search, organizations and tile

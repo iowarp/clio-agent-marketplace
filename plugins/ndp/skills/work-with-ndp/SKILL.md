@@ -123,21 +123,15 @@ it also determines visibility, destination and whether a remote change is wanted
 - **Inspection:** use `workspace_resource_read` / `workspace_resource_inspect`
   for immutable resources. Register useful derived outputs with `create_artifact`.
 
-## Optional: the ndp MCP server through `run_code`
+## Narrowing a search and reading a record
 
-Everything above works without it. When the `ndp` MCP server is running, its
-tools are not in your tool list; they are callable inside `run_code` as
-`tools.ndp.search_datasets(...)`, `tools.ndp.list_organizations(...)`,
-`tools.ndp.get_dataset_details(...)` and `tools.ndp.stage_resource(...)`
-(`help(tools.ndp.search_datasets)` shows each signature). They add richer
-semantics: field-level search (`owner_org`, `resource_format`,
-`dataset_description`, ...), full dataset details including resource URLs, and
-bounded resource staging. Use them inside one script to filter or join many
-records instead of paging search results through the conversation. If the
-`run_code` index lists no `ndp` group, the server is not running: continue with
-the built-in tools and do not tell the user the server is required. If a
-`tools.ndp.*` call fails with a connection or request error, its backend is
-unreachable: do not retry variants of the call; finish with the built-in tools.
+`connected_data_search_ndp` takes `resource_format` to keep datasets with a
+resource of that format (as the record states it: GeoTIFF, CSV, LAZ, Esri
+REST). Records often leave `format` blank, so also read each resource's
+`name_suffix` and its own `description`, which the search returns. To list
+more of one dataset's resources, search again with its `dataset_id` and
+`resource_offset`. Data reaches the workspace by attaching the resources you
+chose with `connected_data_connect`, never by copying links out of the record.
 
 ## Access and execution
 
