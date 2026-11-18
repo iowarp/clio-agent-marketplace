@@ -1,0 +1,24 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "avogadro",
+  "version": "1.0.0",
+  "description": "Build and remodel structures in 3D with the Avogadro connector (Avogadro 2 streamed into a tab): what to build there rather than in Burette, how the person hands the result and their selection back, and installing Avogadro and its streaming programs with the person's consent. It belongs to the Avogadro connector: add it to a conversation while that connector is enabled.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "chemistry",
+    "avogadro",
+    "molecular-editor",
+    "structures"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "follows": "avogadro",
+      "connections": {
+        "avogadro": "avogadro"
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 ---
 id: factorio.specialists
 section: domain
-when: {"tools": ["spawn_skill_task"]}
+when: {"tools": ["spawn_agent_task"], "session": "root"}
 ---
 Consulting a specialist is an ordinary tool call; the scientist need not ask
 for it. Consult when a bounded question needs independent judgment or a

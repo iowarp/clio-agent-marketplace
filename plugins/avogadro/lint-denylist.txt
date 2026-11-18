@@ -1,0 +1,3 @@
+# Instance literals that must never ship: values and files from the runs this plugin was checked on.
+293i
+0.44065

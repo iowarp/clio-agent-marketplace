@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "ase",
+  "version": "1.0.0",
+  "description": "Molecular calculations with the ASE connector: structures from SMILES, geometry changes, energies, optimizations, vibrations, thermochemistry and IR with xTB, MACE, UMA, NWChem or ORCA, and restarts from modes and trajectory frames. It belongs to the ASE connector: add it to a conversation while that connector is enabled.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "chemistry",
+    "ase",
+    "xtb",
+    "mace",
+    "thermochemistry"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "follows": "ase",
+      "connections": {
+        "ase": "ase"
+      }
+    }
+  }
+}

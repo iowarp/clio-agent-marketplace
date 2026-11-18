@@ -1,0 +1,6 @@
+# Instance literals that must never ship: measured values from the runs this plugin was checked on.
+293i
+287i
+10.8 kJ
+10.4 kJ
+0.44065

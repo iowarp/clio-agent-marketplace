@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "graspa",
+  "version": "1.0.0",
+  "description": "Gas adsorption in MOFs and zeolites with the gRASPA connector: runs here when there is a GPU, run folders for a GPU node through Slurm otherwise, and framework rankings. It belongs to the gRASPA connector: add it to a conversation while that connector is enabled.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "chemistry",
+    "adsorption",
+    "gcmc",
+    "graspa",
+    "mof"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "follows": "graspa",
+      "connections": {
+        "graspa": "graspa"
+      }
+    }
+  }
+}

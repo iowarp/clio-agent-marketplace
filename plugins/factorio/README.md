@@ -27,9 +27,11 @@ jobs itself when the program is reachable.
 
 CLIO gives a subagent its owner plugin's fragments. `factorio.mission`,
 `factorio.practice` and `factorio.specialists` are written for the main
-agent, so each is gated on `spawn_skill_task`, a delegation tool the main
-agent has and no Factorio subagent is given (every subagent here has a tool
-allowlist that omits it). The fragments sort by file name, so `mission.md`
+agent, so each is gated on `spawn_agent_task` in the root session: the main
+agent has that delegation tool, and a subagent runs in a child session. (The
+earlier gate, `spawn_skill_task`, is given only to agents whose skills spawn
+subagents, which Factorio's do not, so these fragments never reached the
+prompt.) The fragments sort by file name, so `mission.md`
 comes first among Factorio's domain fragments.
 
 ## Specialists
