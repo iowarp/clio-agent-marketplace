@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- `connected-data` (2.1.0): `connected_data_release` is listed, and `connect-data`
+  says to compare a download with the free space `connected_data_status` reports and
+  to release older copies of a source when space is short. A person had freed the
+  disk by hand while runs waited.
+
 ### Changed
 
 - `ndp` (3.1.0): `work-with-ndp` reads part of a large file through a byte-range
