@@ -38,6 +38,15 @@ for one, keep both and compare.
    intensity per object.
 3. Show the objects on the layered map with the time axis, and the table
    of objects; landfalling or long-lived ones are usually what matters.
+   Landfall needs the coast on the same grid: ERA5 carries it as
+   the variable land_sea_mask (one hour through `era5_fetch` is enough).
+
+## Checking an event list
+
+An event list is a finding, and the detection choices shape it. Where an
+independent record of the same period exists (a published catalogue of the
+same kind of event, station totals, an agency's season summary), find it and
+say where your events agree with it and where they differ, and why.
 
 ## Cyclones
 
