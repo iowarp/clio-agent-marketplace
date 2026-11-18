@@ -56,8 +56,13 @@ selected resources with `connected_data_open` using its default `linked=true`.
 For shell/Python analysis, use the approved `connected_data_download` task, then
 use the materialized paths or open with `linked=false` and the returned revision.
 Downloads stream to disk with an 8 GiB ceiling per selected resource; linked-file
-reads have a separate 512 MiB limit. For large analysis, download first and process
-incrementally rather than loading the entire file into memory.
+reads have a separate 512 MiB limit. When you need part of a large file (a region
+of a raster, some variables or chunks of an array), do not download it: open it with
+`connected_data_open(..., range=true)` and read the part through the returned
+`handle_url` (GDAL `/vsicurl/` or rasterio for rasters, h5py or xarray through
+fsspec for arrays); only the bytes the read touches move. Download when you need the
+whole file, or when a server refuses ranges (`range_unsupported`), then process it
+incrementally rather than loading it into memory.
 Linked and downloaded manifests have different revisions; do not interchange them.
 Returned downloaded paths are approved read inputs even outside the workspace.
 Do not request shell `access_paths` for those reads: it requests broader folder
@@ -112,7 +117,8 @@ it also determines visibility, destination and whether a remote change is wanted
   than guessing a URL or catalog host.
 - **Access:** `connected_data_connect(provider="ndp", ...)` selects the actual
   dataset/resources. `connected_data_open` lists/opens approved relative paths;
-  `connected_data_download` starts a durable transfer task for shell analysis.
+  `connected_data_download` starts a durable transfer task for shell analysis;
+  `connected_data_open(..., range=true)` gives a byte-range URL for reading a window.
 - **Services and changes:** `connected_data_ndp_endpoint_operations` returns the
   selected Endpoint's operation IDs and input schemas.
   `connected_data_ndp_endpoint_request` executes an observed operation and retains

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `ndp` (3.1.0): `work-with-ndp` reads part of a large file through a byte-range
+  handle (`connected_data_open` with `range=true`, then GDAL `/vsicurl/`, rasterio,
+  h5py or xarray on its URL) and downloads only a whole file or one whose server
+  refuses ranges. CLIO now serves NDP resources by range; a run had downloaded a
+  570 MB tile to read one window of it.
+
 ### Removed
 
 - `ndp` (3.0.0): the clio-kit `ndp` MCP server is no longer part of the plugin. NDP
