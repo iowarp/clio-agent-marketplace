@@ -47,6 +47,8 @@ EXTENSION_FIELDS = {
     "tabs",
     "accounts",
     "elicitation",
+    "title",
+    "navigation",
 }
 SKILL_NAME = re.compile(r"^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")

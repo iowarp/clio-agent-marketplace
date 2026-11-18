@@ -5,12 +5,16 @@
 ### Added
 
 - `clio-relay` (1.6.8): relay's MCP server, run with `uvx` from a pinned commit of
-  iowarp/clio-relay, and its Compute tab, where a person adds, probes, edits and
-  removes compute sites. It declares a Globus account, whose grant file it hands relay
-  as `CLIO_RELAY_GRANT_FILE_GLOBUS`, and sign-in pages on the loopback address and
-  `https://tacc.tapis.io`. It ships the `clio-relay-compute` A2UI catalog (ten Basic
-  components, unchanged) and the `use-relay` skill. The layout check now accepts the
-  `tabs`, `accounts` and `elicitation` host fields.
+  iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
+  the protocol and security for new endpoints, then adds, probes, edits and removes
+  compute endpoints and changes each one's protocol and security in place. It
+  declares the page with `navigation`, its breadcrumb title "Relay" with `title`, a
+  Globus account, whose grant file it hands relay as `CLIO_RELAY_GRANT_FILE_GLOBUS`,
+  and sign-in pages on the loopback address and `https://tacc.tapis.io`. It ships
+  the `clio-relay-compute` A2UI catalog (the Basic components it uses plus
+  `clio.choice-table.v1` for the endpoint table) and the `use-relay` skill. The
+  layout check now accepts the `navigation`, `title`, `tabs`, `accounts` and
+  `elicitation` host fields.
 
 - `home-assistant` (1.0.0): Home Assistant as one plugin. It follows CLIO's
   `home-assistant` connector (ha-mcp) and brings `home-assistant-sensors` (reading
