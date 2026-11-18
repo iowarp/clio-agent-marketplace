@@ -103,6 +103,25 @@ class SkillLiteralPolicyTests(unittest.TestCase):
         )
         self.assertEqual(findings[-1].excerpt, "P475.CI.LY_.20.csv")
 
+    def test_vendored_files_are_exempt_until_edited(self) -> None:
+        """A file the import lock records unchanged is upstream's text, not ours."""
+        import hashlib
+        import json
+
+        plugin = self._plugin("vendor")
+        _write(plugin / ".lint-l3", "")
+        skill = plugin / "skills" / "upstream-skill" / "SKILL.md"
+        _write(skill, _STRICT_LINES)
+        digest = hashlib.sha256(skill.read_bytes()).hexdigest()
+        lock = {"skills": {"upstream-skill": {"path": "x/upstream-skill",
+                                               "files": {"SKILL.md": digest}}}}
+        _write(plugin / "import-lock.json", json.dumps(lock))
+
+        self.assertEqual(find_literals(self.root), [])
+
+        _write(skill, _STRICT_LINES + "\nedited here\n")
+        self.assertTrue(find_literals(self.root))
+
     def test_strict_pack_flag_enables_strict_rules(self) -> None:
         """``--strict-pack`` opts in one named plugin only."""
         for name in ("a", "b"):

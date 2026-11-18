@@ -31,6 +31,27 @@
 
 ### Added
 
+- `ocean` (1.0.0): oceanography on clio-kit's ocean server. It follows CLIO's `ocean`
+  connector (which holds the optional Earthdata Login for SWOT downloads), requires
+  `grids`, and brings `ocean-hydrography`, `ocean-circulation`, `ocean-events`,
+  `regional-ocean-model` and `ts-diagram` (a T-S diagram with labelled isopycnals: a
+  `clio.chart.v1` spec and a script that adds the density contours to the table).
+- `copernicus` (1.0.0): Copernicus Marine and the Climate Data Store through
+  copernicus-mcp 0.7.2 as published. It follows CLIO's `copernicus` connector, which
+  holds the accounts, and brings `copernicus-data`.
+- `grids` (1.0.0): clio-kit's grids server, an editor view for 2-D model grids whose
+  every edit is a tool call, with `edit-model-grid`.
+- `scripts/check_skill_literals.py` skips a file that a plugin's `import-lock.json`
+  records unchanged from upstream, and checks it again once it is edited.
+
+### Changed
+
+- `weather` (2.0.0): weather and climate science on clio-kit's weather server, with
+  `forecast-probabilities`, `weather-extremes`, `atmospheric-profiles`,
+  `climate-evaluation` and `skew-t-chart` (a skew-T log-p `clio.chart.v1` spec for the
+  soundings table), and ECMWF's `ecmwf-open-data`, `ecmwf-polytope` and `ecmwf-cds-ads`
+  vendored unchanged from ecmwf/ecmwf-weather-skills at `62e6334a` (Apache-2.0) with
+  `import-lock.json`. It keeps the built-in `get_weather_forecast` claim.
 - `home-assistant` (1.0.0): Home Assistant as one plugin. It follows CLIO's
   `home-assistant` connector (ha-mcp) and brings `home-assistant-sensors` (reading
   sensors and their history, acting on devices, changing configuration deliberately)
