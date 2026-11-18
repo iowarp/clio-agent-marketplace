@@ -14,7 +14,12 @@ This folder is relay's plugin for CLIO. Installing it gives CLIO:
 with. It is ten Basic components, unchanged, so CLIO renders everything the
 tab sends.
 
-`mcp.json` runs relay with `uvx` from a pinned commit of
-[clio-relay](https://github.com/iowarp/clio-relay). This folder is a copy of
-that repository's `plugin/` folder at the pinned commit; when relay changes,
-copy the folder again and move the pin.
+CLIO's fence lets a plugin server write only to its own data folder, so
+`mcp.json` puts relay's configuration (`sites.yaml`, skills) and state in
+`${PLUGIN_DATA}/config` and `${PLUGIN_DATA}/state`. To use the same sites from
+a terminal, point `CLIO_RELAY_CONFIG_DIR` and `CLIO_RELAY_STATE_DIR` at those
+folders.
+
+`mcp.json` runs relay with `uvx` from a pinned commit of this repository. The
+published copy lives in the CLIO agent marketplace as `plugins/clio-relay/`;
+when relay changes, move both pins to the new commit.
