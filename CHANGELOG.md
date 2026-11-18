@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- `ndp` (2.1.0) and `connected-data` (2.0.1): NDP search, organizations and tile
+  selection, and attaching, opening and downloading a source, are listed
+  (`defer=False`). They declared nothing, so CLIO deferred them, and an agent that
+  enabled the NDP connector used its MCP tools instead: anonymous catalog reads into
+  context, nothing attached to the workspace, the person's NDP sign-in unused. The
+  other connected-data tools are now deferred explicitly.
 - `ndp` (2.1.0): `find-ndp-data-for-place` says a blank record `format` is missing
   metadata, not an unusable file: identify the file from its `name_suffix` and one
   `describe_geo_service` read, and set it aside only after a read fails. A
