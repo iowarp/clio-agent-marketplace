@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-19
+
 ### Added
 
 - `connected-data` (2.1.0): `connected_data_release` is listed, and `connect-data`
