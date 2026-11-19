@@ -91,11 +91,10 @@ folder path or resubmit an accepted download. NDP originals stay intact; create
 separate derivatives in the workspace. A downloaded historical copy is not a
 current upstream read after disconnection.
 
-Downloads stream in bounded chunks with an 8 GiB ceiling per resource. Capacity,
+Downloads stream in bounded chunks; the free disk, not a fixed size, decides. Capacity,
 cancellation and complete-snapshot publication belong to the transfer task; its
-success does not mean the file was loaded into the model or into RAM. Linked-file
-reads retain their separate 512 MiB ceiling. Use a download for a larger approved
-resource, then inspect its format and process it incrementally. Preserve only the
+success does not mean the file was loaded into the model or into RAM. A linked open copies the file after checking the free disk; for a large file, read
+the part you need by range, or download it and then inspect its format and process it incrementally. Preserve only the
 needed columns, intervals and aggregates rather than constructing an unbounded
 dataframe. A transfer-limit error is a CLIO size limit, not an NDP access denial.
 

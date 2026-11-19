@@ -55,8 +55,11 @@ Connecting starts a metadata index. After its task completes, list and read the
 selected resources with `connected_data_open` using its default `linked=true`.
 For shell/Python analysis, use the approved `connected_data_download` task, then
 use the materialized paths or open with `linked=false` and the returned revision.
-Downloads stream to disk with an 8 GiB ceiling per selected resource; linked-file
-reads have a separate 512 MiB limit. When you need part of a large file (a region
+Downloads stream to disk; no size is refused, but a download or a linked open that
+would not fit in the free disk stops first and says how much it needs
+(`connected_data_status` reports the free space; `connected_data_release` frees older
+copies). Before a transfer of gigabytes in a conversation with a person, tell them
+the size and ask. When you need part of a large file (a region
 of a raster, some variables or chunks of an array), do not download it: open it with
 `connected_data_open(..., range=true)` and read the part through the returned
 `handle_url` (GDAL `/vsicurl/` or rasterio for rasters, h5py or xarray through
