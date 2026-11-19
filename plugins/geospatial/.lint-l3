@@ -1,0 +1,3 @@
+# Marker: this plugin carries geospatial methods, never facts about one place,
+# dataset, service or run: no layer ids, service URLs from a run, dates, counts,
+# measured values or concrete dataset file names. See lint-denylist.txt.

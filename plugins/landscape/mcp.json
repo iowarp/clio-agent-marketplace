@@ -1,12 +1,12 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
-    "ndp": {
+    "terrain": {
       "type": "stdio",
       "command": "clio-kit",
       "args": [
         "mcp-server",
-        "ndp"
+        "terrain"
       ]
     }
   }

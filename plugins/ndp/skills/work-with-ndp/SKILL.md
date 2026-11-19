@@ -27,6 +27,12 @@ Use short distinctive search terms: catalog words are combined with AND, so past
 whole research question or a list of synonyms can hide an available collection.
 Before concluding data is absent, retry a zero-match query with fewer terms or a
 publisher and inspect candidate coverage.
+For a question about a place and a topic, especially across organizations, load
+`find-ndp-data-for-place`. For a dataset of many raster tiles, select only the
+tiles covering the region with `connected_data_ndp_tiles_covering` before
+connecting. For a resource that is a service (Esri REST, WFS, WCS, STAC), a
+point-cloud viewer link or a tiled raster with a VRT, use `get-geospatial-data`
+to read only the region instead of downloading.
 
 Reuse the workspace's sources, saved NDP account and Endpoint connections with
 `connected_data_status`. Choose only the workflow needed for the request.
@@ -50,8 +56,13 @@ selected resources with `connected_data_open` using its default `linked=true`.
 For shell/Python analysis, use the approved `connected_data_download` task, then
 use the materialized paths or open with `linked=false` and the returned revision.
 Downloads stream to disk with an 8 GiB ceiling per selected resource; linked-file
-reads have a separate 512 MiB limit. For large analysis, download first and process
-incrementally rather than loading the entire file into memory.
+reads have a separate 512 MiB limit. When you need part of a large file (a region
+of a raster, some variables or chunks of an array), do not download it: open it with
+`connected_data_open(..., range=true)` and read the part through the returned
+`handle_url` (GDAL `/vsicurl/` or rasterio for rasters, h5py or xarray through
+fsspec for arrays); only the bytes the read touches move. Download when you need the
+whole file, or when a server refuses ranges (`range_unsupported`), then process it
+incrementally rather than loading it into memory.
 Linked and downloaded manifests have different revisions; do not interchange them.
 Returned downloaded paths are approved read inputs even outside the workspace.
 Do not request shell `access_paths` for those reads: it requests broader folder
@@ -106,7 +117,8 @@ it also determines visibility, destination and whether a remote change is wanted
   than guessing a URL or catalog host.
 - **Access:** `connected_data_connect(provider="ndp", ...)` selects the actual
   dataset/resources. `connected_data_open` lists/opens approved relative paths;
-  `connected_data_download` starts a durable transfer task for shell analysis.
+  `connected_data_download` starts a durable transfer task for shell analysis;
+  `connected_data_open(..., range=true)` gives a byte-range URL for reading a window.
 - **Services and changes:** `connected_data_ndp_endpoint_operations` returns the
   selected Endpoint's operation IDs and input schemas.
   `connected_data_ndp_endpoint_request` executes an observed operation and retains
@@ -117,21 +129,15 @@ it also determines visibility, destination and whether a remote change is wanted
 - **Inspection:** use `workspace_resource_read` / `workspace_resource_inspect`
   for immutable resources. Register useful derived outputs with `create_artifact`.
 
-## Optional: the ndp MCP server through `run_code`
+## Narrowing a search and reading a record
 
-Everything above works without it. When the `ndp` MCP server is running, its
-tools are not in your tool list; they are callable inside `run_code` as
-`tools.ndp.search_datasets(...)`, `tools.ndp.list_organizations(...)`,
-`tools.ndp.get_dataset_details(...)` and `tools.ndp.stage_resource(...)`
-(`help(tools.ndp.search_datasets)` shows each signature). They add richer
-semantics: field-level search (`owner_org`, `resource_format`,
-`dataset_description`, ...), full dataset details including resource URLs, and
-bounded resource staging. Use them inside one script to filter or join many
-records instead of paging search results through the conversation. If the
-`run_code` index lists no `ndp` group, the server is not running: continue with
-the built-in tools and do not tell the user the server is required. If a
-`tools.ndp.*` call fails with a connection or request error, its backend is
-unreachable: do not retry variants of the call; finish with the built-in tools.
+`connected_data_search_ndp` takes `resource_format` to keep datasets with a
+resource of that format (as the record states it: GeoTIFF, CSV, LAZ, Esri
+REST). Records often leave `format` blank, so also read each resource's
+`name_suffix` and its own `description`, which the search returns. To list
+more of one dataset's resources, search again with its `dataset_id` and
+`resource_offset`. Data reaches the workspace by attaching the resources you
+chose with `connected_data_connect`, never by copying links out of the record.
 
 ## Access and execution
 

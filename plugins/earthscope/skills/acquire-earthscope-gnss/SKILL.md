@@ -63,11 +63,9 @@ them every session and never carry them over from memory.
    units, cadence, time span and time representation, from the record or the
    file itself.
 
-When the `ndp` MCP server is running, `run_code` scripts can also call
-`tools.ndp.search_datasets` (field searches such as `owner_org` or
-`resource_format`) and `tools.ndp.get_dataset_details` (resource URLs) to
-filter many station records in one step. It is optional: everything here
-works with the built-in tools.
+To narrow many station records in one step, search with `organization` and
+`resource_format` (for example CSV), and read each resource's own
+`description`; both come with `connected_data_search_ndp`.
 
 ## Stage
 

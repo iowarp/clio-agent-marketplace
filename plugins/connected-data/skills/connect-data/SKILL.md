@@ -19,7 +19,11 @@ Explain what input is missing and ask where it is before requesting setup.
 Call `connected_data_status` for the inventory of approved workspace folders,
 attached sources, and signed-in provider accounts. This read returns status,
 not a setup control. If this tool is absent in a child session, return to the
-main session for setup.
+main session for setup. Its `storage` block gives the free bytes where downloads
+are kept and each source's bytes on disk. Before a large download, compare its size
+with the free space; when space is short, release older copies of a source you no
+longer need with `connected_data_release` (the current copy stays readable) or read
+the part you need by range instead.
 
 For National Data Platform requests, load `work-with-ndp` when this agent has
 it (the `ndp` plugin). An NDP dataset someone attached with **Attach > NDP**

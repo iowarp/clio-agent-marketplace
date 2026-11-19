@@ -7,7 +7,7 @@ class Ndp(StandardAgent):
     """The standard agent plus NDP catalog search, access and Endpoints (L2 source)."""
 
     id = "ndp"
-    version = "1.0.0"
+    version = "1.1.0"
     name = "NDP"
     role = (
         "an autonomous scientific coding and data assistant that finds, attaches and analyzes "
@@ -18,4 +18,6 @@ class Ndp(StandardAgent):
         "datasets and resources, attach and download them, analyze the data, and query or "
         "publish to NDP Endpoints. Works without any MCP server."
     )
-    plugins = StandardAgent.plugins + ["ndp"]
+    # geospatial arrives through ndp; wildfire and landscape give the national fire,
+    # fuels, lidar and planning layers their methods.
+    plugins = StandardAgent.plugins + ["ndp", "wildfire", "landscape"]
