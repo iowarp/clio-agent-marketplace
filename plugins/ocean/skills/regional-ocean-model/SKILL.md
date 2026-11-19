@@ -18,7 +18,10 @@ is usually got wrong by hand: open boundaries against the segment files,
 boundary and initial-condition dates against the run, isolated wet cells
 and one-cell channels in the mask, minimum depth in the bathymetry against
 the configuration, and the processor layout against the mask table. Report
-every finding with the file and parameter it comes from.
+every finding with the file and parameter it comes from. A preflight speaks
+for the set-up it read: after adding forcing or tides, extending the dates or
+changing boundary files, it is a different set-up, so check it again before
+running it.
 
 ## Grid edits
 
