@@ -31,6 +31,13 @@ for one, keep both and compare.
 
 ## Features as blobs (atmospheric rivers, blocks, heat domes)
 
+The domain is set by the feature, not by the region the person named. A
+feature that affects a region often sits upstream or poleward of it (a block
+that shapes a European winter can be centred over Greenland or the eastern
+Atlantic), and an index needs every latitude it references inside the data.
+Fetch a box that holds the whole feature and its index, then report what
+reaches the region asked about.
+
 1. Compute the field the feature is defined on (for rivers, integrated
    vapour transport) and state the definition and threshold.
 2. `detect_blobs` finds regions above the threshold per time,
@@ -45,8 +52,10 @@ for one, keep both and compare.
 
 An event list is a finding, and the detection choices shape it. Where an
 independent record of the same period exists (a published catalogue of the
-same kind of event, station totals, an agency's season summary), find it and
-say where your events agree with it and where they differ, and why.
+same kind of event, a paper on that season, station totals, an agency's
+season summary), find it before you answer and say where your events agree
+with it and where they differ, and why; a notable event of that record that
+your list misses usually points at the domain or the definition.
 
 ## Cyclones
 
