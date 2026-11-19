@@ -18,7 +18,13 @@ is usually got wrong by hand: open boundaries against the segment files,
 boundary and initial-condition dates against the run, isolated wet cells
 and one-cell channels in the mask, minimum depth in the bathymetry against
 the configuration, and the processor layout against the mask table. Report
-every finding with the file and parameter it comes from. A preflight speaks
+every finding with the file and parameter it comes from. A failed check
+says what the run will get wrong, and a run can finish cleanly and still be
+wrong in exactly that way: an earlier run that completed does not show a
+finding is harmless. Before a long run, settle each failed check with the
+person: propose the fix (an edit to a configuration or input is theirs to
+accept), or have them keep it on purpose and say what it will do to the
+result. A preflight speaks
 for the set-up it read: after adding forcing or tides, extending the dates or
 changing boundary files, it is a different set-up, so check it again before
 running it.
