@@ -38,7 +38,19 @@ period; give the period and the vertical land motion assumption.
 
 `eddy_track` identifies and tracks eddies in sea-level maps (a separate
 process; py-eddy-tracker, GPL-3.0). `track_crossings` finds where tracks
-cross a line or ship track. `swath_fetch` gets SWOT swaths for a box and
+cross a line or ship track. Its defaults are a starting point, not an answer:
+
+- The high-pass `wavelength_km` removes features larger than it. In a basin
+  not much wider than it, it also weakens the basin's own large rings; choose
+  it against the eddies you expect there and say why.
+- Read the track lengths against what is known of the region: rings that live
+  for months but come out as tracks of weeks are being broken (`virtual`,
+  `shape_error`), and a relaxed run tells you whether they join.
+- Where the region has a known eddy source (a boundary current that sheds
+  rings), say which tracks start there, or that none was shed in the window and
+  how you checked, before counting what they did.
+
+`swath_fetch` gets SWOT swaths for a box and
 period (searching is anonymous; downloading needs the Earthdata Login in the
 Ocean analysis connector), and `swath_compare` sets them against a gridded
 field at pass times.
