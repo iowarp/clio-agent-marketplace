@@ -71,9 +71,13 @@ neither have `null`. Time can also appear only in the title or notes.
 
 ## 4. One branch per organization
 
-When candidates come from several organizations, give each organization its
-own branch: a delegated task or workflow step when `delegation` is available,
-otherwise one section of your own work at a time. Each branch:
+When candidates come from several organizations, each organization is its own
+branch of independent work. When you can start agents (`spawn_agents_parallel`),
+the branches can run at the same time as children started in one call: an
+`explore` child for a branch that only searches and reads, a copy of yourself
+(leave out `agent`) for one that connects or fetches. Without children, run the
+branches' searches and reads together in the same step rather than finishing one
+organization before starting the next. Each branch:
 
 - acquires through the right path: `connected_data_connect` with only the
   covering resources (or tiles) for files; the `get-geospatial-data` tools for

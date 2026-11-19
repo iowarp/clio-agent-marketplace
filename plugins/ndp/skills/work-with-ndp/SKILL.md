@@ -63,6 +63,10 @@ of a raster, some variables or chunks of an array), do not download it: open it 
 fsspec for arrays); only the bytes the read touches move. Download when you need the
 whole file, or when a server refuses ranges (`range_unsupported`), then process it
 incrementally rather than loading it into memory.
+Each range read is a network round trip, so a script that reads many windows (tiles
+of a mosaic, one window per area) spends its time waiting: read the windows a step
+needs at the same time (a thread pool or asyncio over the handle URLs), and read each
+window once and reuse it rather than reading it again for every area it touches.
 Linked and downloaded manifests have different revisions; do not interchange them.
 Returned downloaded paths are approved read inputs even outside the workspace.
 Do not request shell `access_paths` for those reads: it requests broader folder
