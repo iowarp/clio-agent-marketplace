@@ -81,7 +81,10 @@ references, not shell mounts.
 
 ## Materialize and analyze
 
-For Python or shell analysis use
+To read part of a large file, open it with
+`connected_data_open(source_id=SOURCE_ID, path=RELATIVE_PATH, range=true)` and give
+its `handle_url` to the reader (for a raster, `/vsicurl/HANDLE_URL` in GDAL or
+rasterio with a window). For Python or shell analysis of a whole file use
 `connected_data_download(source_id=SOURCE_ID, selected_paths=[RELATIVE_PATH])`.
 Wait for completion and use the returned materialized path. Do not guess a source
 folder path or resubmit an accepted download. NDP originals stay intact; create
