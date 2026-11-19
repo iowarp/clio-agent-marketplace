@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/ecmwf/ecmwf-weather-skills",
+  "revision": "62e6334a13ac04e21694ae4369b30c5d87af02b9",
+  "license": "Apache-2.0",
+  "skills": {
+    "ecmwf-open-data": {
+      "path": "plugins/ecmwf-weather/skills/ecmwf-open-data",
+      "license_file": "LICENSE.txt",
+      "notice_file": "NOTICE.txt",
+      "adaptations": [
+        "Added the upstream LICENSE as LICENSE.txt and NOTICE as NOTICE.txt; no file changed"
+      ],
+      "files": {
+        "LICENSE.txt": "9db8b2c2bb95e3a7f9b54bfc0fafa348809530864094007f862acda034a81769",
+        "NOTICE.txt": "caff31a39553dee53f7dc0142979f843a40ef688c281efef704d052c175acdfa",
+        "SKILL.md": "9ab9b604bb71a74e9fc127c3fc825230e74a59518c907f4a318b2c27a90d04f0",
+        "references/attribution.md": "f87b88562fbee130c79cc41d982590c3e1ff2db3e1401de89c9d14488bda6ff0",
+        "references/catalog.md": "81a7f6be61f147ca6701dab8d0a18f7ea15b9d70d5c2ed4949e9f590737151d7",
+        "references/fields.md": "c99b9b8eafe33cec837f75166e0f4a31bcbe1f48c5da40642d3a1f97eb464a31",
+        "scripts/ecmwf_mcp.py": "73fd47075820e5888c8d35c9f40d2eec6abd59f0ad0e2e71579ccf8c775c0c24",
+        "scripts/ecmwf_status.py": "efcbd568d51c641682fa462cf7afba75df00b7f412eca52c436d2baa57a3d08b",
+        "scripts/odcatalog.py": "9d0aaf4751d52166817a6e92dc661902693d4ba55b90dd93acdfc6d7a6f1db19",
+        "scripts/odpoint.py": "fec93881ec6ff84583b354a95a20bc9c6438c074503f2a4882d0c94f6f685a4e"
+      }
+    },
+    "ecmwf-polytope": {
+      "path": "plugins/ecmwf-weather/skills/ecmwf-polytope",
+      "license_file": "LICENSE.txt",
+      "notice_file": "NOTICE.txt",
+      "adaptations": [
+        "Added the upstream LICENSE as LICENSE.txt and NOTICE as NOTICE.txt; no file changed"
+      ],
+      "files": {
+        "LICENSE.txt": "9db8b2c2bb95e3a7f9b54bfc0fafa348809530864094007f862acda034a81769",
+        "NOTICE.txt": "caff31a39553dee53f7dc0142979f843a40ef688c281efef704d052c175acdfa",
+        "SKILL.md": "9955db798f167fa7e6670dab902f90722c2f62155fb71d80ef8b43c8ca69db86",
+        "references/requests.md": "3e97ac461ff8fc11213891a6f24ffa4905e70e68410475d7051cfb5d38a7aad7",
+        "scripts/ecmwf_mcp.py": "73fd47075820e5888c8d35c9f40d2eec6abd59f0ad0e2e71579ccf8c775c0c24",
+        "scripts/ecmwf_status.py": "efcbd568d51c641682fa462cf7afba75df00b7f412eca52c436d2baa57a3d08b",
+        "scripts/ptpoint.py": "77c80b30a5d6901c14a3f862c49f69e146a332c5c880da58b0d8a38d238d760d"
+      }
+    },
+    "ecmwf-cds-ads": {
+      "path": "plugins/ecmwf-weather/skills/ecmwf-cds-ads",
+      "license_file": "LICENSE.txt",
+      "notice_file": "NOTICE.txt",
+      "adaptations": [
+        "Added the upstream LICENSE as LICENSE.txt and NOTICE as NOTICE.txt; no file changed"
+      ],
+      "files": {
+        "LICENSE.txt": "9db8b2c2bb95e3a7f9b54bfc0fafa348809530864094007f862acda034a81769",
+        "NOTICE.txt": "caff31a39553dee53f7dc0142979f843a40ef688c281efef704d052c175acdfa",
+        "SKILL.md": "530b905dcd4e377a9d2137ab5efc6bfb8d6a9b687a1d0e43ef58d2f0134cac51",
+        "references/datasets.md": "97af07635386aba76d0b692a11226583a5cf0680372e62c5fea0fb70ccb4cbe5",
+        "references/regional-reanalyses.md": "d3045bbaeb6e4aaab5af4b96c841646b0027b000210a97f0461d7989a211c000",
+        "scripts/cds.py": "829a4d1a1376b15bda4f2e1921ff9002a8e8b495505eab29c8c56552c89d6cae",
+        "scripts/ecmwf_mcp.py": "73fd47075820e5888c8d35c9f40d2eec6abd59f0ad0e2e71579ccf8c775c0c24",
+        "scripts/ecmwf_status.py": "efcbd568d51c641682fa462cf7afba75df00b7f412eca52c436d2baa57a3d08b"
+      }
+    }
+  }
+}

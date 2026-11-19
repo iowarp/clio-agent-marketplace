@@ -18,8 +18,9 @@ with `web_fetch` on its `readable_url`.
   synonyms. Run separate searches for distinct vocabularies rather than one
   long query.
 - `field="any"` (the default) asks every broad source: OpenAlex, Crossref,
-  arXiv, Europe PMC, OSTI.gov and DataCite. Set `field` only to narrow a search to
-  one area's sources.
+  arXiv, ChemRxiv, Europe PMC, OSTI.gov and DataCite. Set `field` only to narrow
+  a search to one area's sources; `field="chemistry"` adds ChemRxiv preprints.
+- bioRxiv and medRxiv preprints arrive through Europe PMC (`field="life"`).
 - A source missing from the results is named in `notes` with what happened and
   what to do; the other sources' works are complete.
 - Set `kind` to `preprint`, `review` or `dataset` when that is what you need;

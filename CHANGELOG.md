@@ -2,6 +2,83 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-19
+
+### Added
+
+- `connected-data` (2.1.0): `connected_data_release` is listed, and `connect-data`
+  says to compare a download with the free space `connected_data_status` reports and
+  to release older copies of a source when space is short. A person had freed the
+  disk by hand while runs waited.
+
+### Changed
+
+- `ndp` (3.1.0): `work-with-ndp` reads part of a large file through a byte-range
+  handle (`connected_data_open` with `range=true`, then GDAL `/vsicurl/`, rasterio,
+  h5py or xarray on its URL) and downloads only a whole file or one whose server
+  refuses ranges. CLIO now serves NDP resources by range; a run had downloaded a
+  570 MB tile to read one window of it.
+
+### Removed
+
+- `ndp` (3.0.0): the clio-kit `ndp` MCP server is no longer part of the plugin. NDP
+  is reached only through CLIO's own NDP source: search, filters, tile selection, and
+  attaching resources as workspace sources. Search now filters by `resource_format` and
+  returns each resource's own description, which the MCP server alone gave. Through
+  the server, an agent read the catalog anonymously into its context, attached
+  nothing, and left the person's NDP sign-in unused. `earthscope` (0.6.1) points its
+  record filtering at the same search.
+
+### Fixed
+
+- `ndp` (2.1.0) and `connected-data` (2.0.1): NDP search, organizations and tile
+  selection, and attaching, opening and downloading a source, are listed
+  (`defer=False`). They declared nothing, so CLIO deferred them, and an agent that
+  enabled the NDP connector used its MCP tools instead: anonymous catalog reads into
+  context, nothing attached to the workspace, the person's NDP sign-in unused. The
+  other connected-data tools are now deferred explicitly.
+- `ndp` (2.1.0): `find-ndp-data-for-place` says a blank record `format` is missing
+  metadata, not an unusable file: identify the file from its `name_suffix` and one
+  `describe_geo_service` read, and set it aside only after a read fails. A
+  cross-organization run had skipped a basin's lidar tiles (`.img`, format blank).
+- `visuals` (1.2.3): `create_a2ui_surface`, `update_a2ui_components` and
+  `update_a2ui_data_model` are listed (`defer=False`). Declaring nothing deferred them
+  with every other built-in tool, so no agent saw them, nor the figure and dashboard
+  guidance gated on them, and answers fell back to static images.
+
+### Added
+
+- `ocean` (1.0.0): oceanography on clio-kit's ocean server. It follows CLIO's `ocean`
+  connector (which holds the optional Earthdata Login for SWOT downloads), requires
+  `grids`, and brings `ocean-hydrography`, `ocean-circulation`, `ocean-events`,
+  `regional-ocean-model` and `ts-diagram` (a T-S diagram with labelled isopycnals: a
+  `clio.chart.v1` spec and a script that adds the density contours to the table).
+- `copernicus` (1.0.0): Copernicus Marine and the Climate Data Store through
+  copernicus-mcp 0.7.2 as published. It follows CLIO's `copernicus` connector, which
+  holds the accounts, and brings `copernicus-data`.
+- `grids` (1.0.0): clio-kit's grids server, an editor view for 2-D model grids whose
+  every edit is a tool call, with `edit-model-grid`.
+- `scripts/check_skill_literals.py` skips a file that a plugin's `import-lock.json`
+  records unchanged from upstream, and checks it again once it is edited.
+
+### Changed
+
+- `weather` (2.0.0): weather and climate science on clio-kit's weather server, with
+  `forecast-probabilities`, `weather-extremes`, `atmospheric-profiles`,
+  `climate-evaluation` and `skew-t-chart` (a skew-T log-p `clio.chart.v1` spec for the
+  soundings table), and ECMWF's `ecmwf-open-data`, `ecmwf-polytope` and `ecmwf-cds-ads`
+  vendored unchanged from ecmwf/ecmwf-weather-skills at `62e6334a` (Apache-2.0) with
+  `import-lock.json`. It keeps the built-in `get_weather_forecast` claim.
+- `home-assistant` (1.0.0): Home Assistant as one plugin. It follows CLIO's
+  `home-assistant` connector (ha-mcp) and brings `home-assistant-sensors` (reading
+  sensors and their history, acting on devices, changing configuration deliberately)
+  and `home-assistant-best-practices`, vendored unchanged from homeassistant-ai/skills
+  at `166defa5` (MIT) with `import-lock.json` and
+  `scripts/import_home_assistant_skills.py`.
+- `barebone` (1.0.0): the model alone. With CLIO's `Agent.bare` its requests carry no
+  system prompt, no tools and no context injections, so its input is exactly the
+  conversation; for attention attribution (SPOTTER-AI) and small local models.
+
 ## [0.8.0] - 2026-11-13
 
 The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the beta.

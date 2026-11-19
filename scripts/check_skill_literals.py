@@ -18,6 +18,8 @@ A line containing ``lint: allow-literal`` is never reported.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 import sys
 from collections.abc import Iterator, Sequence
@@ -97,6 +99,34 @@ def _is_skipped(path: Path, pack: Path) -> bool:
     return path.name.startswith(".")
 
 
+def vendored_files(pack: Path) -> set[Path]:
+    """Files a plugin ships unchanged from upstream, as its ``import-lock.json`` records.
+
+    These are the upstream authors' text, not facts this marketplace tuned on, so the
+    literal rules do not apply to them. A file is exempt only while its SHA-256 still
+    matches the lock: any local edit makes it ours again and it is checked.
+    The lock is one skill (``path`` and ``files``) or several (``skills``: name to
+    ``{path, files}``); each skill lives in ``skills/<last part of path>`` or its name.
+    """
+    lock_path = pack / "import-lock.json"
+    if not lock_path.is_file():
+        return set()
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    entries = (
+        list(lock["skills"].items())
+        if isinstance(lock.get("skills"), dict)
+        else [(Path(str(lock.get("path", ""))).name, lock)]
+    )
+    exempt: set[Path] = set()
+    for name, entry in entries:
+        folder = pack / "skills" / name
+        for rel, digest in (entry.get("files") or {}).items():
+            path = folder / rel
+            if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == digest:
+                exempt.add(path)
+    return exempt
+
+
 def iter_scanned_files(pack: Path) -> Iterator[Path]:
     """Yield the plugin files whose text is checked for leaked literals."""
     prompt = pack.joinpath(*PROMPT_DIR)
@@ -104,8 +134,14 @@ def iter_scanned_files(pack: Path) -> Iterator[Path]:
         yield from sorted(p for p in prompt.rglob("*.md") if p.is_file())
     skills = pack / "skills"
     if skills.is_dir():
+        vendored = vendored_files(pack)
         for path in sorted(skills.rglob("*")):
-            if path.is_file() and not _is_skipped(path, pack) and "__pycache__" not in path.parts:
+            if (
+                path.is_file()
+                and not _is_skipped(path, pack)
+                and "__pycache__" not in path.parts
+                and path not in vendored
+            ):
                 yield path
 
 

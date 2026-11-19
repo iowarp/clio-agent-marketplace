@@ -1,0 +1,7 @@
+# Literals from the NDP runs (L3).
+Tahoe
+Caldor
+WFIGS
+TAHOE_be
+rrk_sn__
+TRPA

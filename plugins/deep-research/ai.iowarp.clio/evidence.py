@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import unicodedata
 from collections.abc import Mapping
 from typing import Any, Literal
 from urllib.parse import urlsplit, urlunsplit
@@ -20,6 +21,9 @@ class SourceEvidence(BaseModel):
     quote: str = Field(min_length=1, description="Exact supporting passage from that fetch")
     supports: str = Field(min_length=1, description="Precisely what this passage establishes")
     source_id: str = Field(default="", description="Runtime binding; leave empty for a new fetch")
+    offset: int | None = Field(
+        default=None, description="Runtime binding: where the passage starts; leave empty"
+    )
 
     @field_validator("task_handle", "source_url", "quote", "supports")
     @classmethod
@@ -139,6 +143,10 @@ class ReviewReport(dspy.Signature):
     rejected_claims: list[dict[str, Any]] = dspy.InputField()
     blocks: list[ReportBlock] = dspy.InputField()
     report: str = dspy.InputField()
+    format_problem: str = dspy.InputField(
+        desc="Empty, or why your previous reply could not be read: return every issue "
+        "with owner, excerpt, reason and claim_ids"
+    )
     issues: list[ReviewIssue] = dspy.OutputField()
 
 
@@ -273,10 +281,29 @@ def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]])
                 problems.append(f"{prefix}: quotation is absent from the actual fetched content")
                 continue
             if pattern.search(source["content"], match.start() + 1) is not None:
-                problems.append(
-                    f"{prefix}: quotation repeats; include enough exact surrounding text to identify its intended occurrence"
-                )
-                continue
+                # The page repeats this passage. The critic was shown windows of this
+                # page around the researcher's quotes; one occurrence inside them is
+                # the passage it read.
+                windows = source.get("anchors") or []
+                seen = [
+                    found
+                    for found in pattern.finditer(source["content"])
+                    if any(start <= found.start() and found.end() <= end for start, end in windows)
+                ]
+                if len(seen) != 1:
+                    times = sum(1 for _ in pattern.finditer(source["content"]))
+                    shown = (
+                        f"{len(seen)} of them in the page text you were shown"
+                        if windows
+                        else "this is not a page whose text you were shown around a quote"
+                    )
+                    problems.append(
+                        f"{prefix}: quotation repeats ({times} times on the page; {shown}); "
+                        "include enough exact surrounding text to identify its intended occurrence"
+                    )
+                    continue
+                match = seen[0]
+            evidence.offset = match.start()
             evidence.source_id = source["source_id"]
             evidence.source_title = (
                 " ".join(source["source_title"].split()) or evidence.source_title
@@ -287,7 +314,7 @@ def bind_claims(claims: list[VerifiedClaim], records: dict[str, dict[str, Any]])
 def public_sources(records: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     """Expose inspectable source identities without duplicating full page bodies."""
     return [
-        {key: value for key, value in record.items() if key != "content"}
+        {key: value for key, value in record.items() if key not in {"content", "anchors"}}
         for record in records.values()
     ]
 
@@ -325,7 +352,10 @@ def review_sources(
             source = records[edge.task_handle]
             content = source["content"]
             pattern = _quote_pattern(edge.quote)
-            match = pattern.search(content) if pattern is not None else None
+            # The bound occurrence, when binding chose one of several on the page.
+            at = edge.offset if edge.offset is not None else 0
+            match = pattern.match(content, at) if pattern is not None and at else None
+            match = match or (pattern.search(content) if pattern is not None else None)
             if match is None:
                 raise ValueError("A reviewed passage lost its actual source binding")
             start, end = max(0, match.start() - 800), min(len(content), match.end() + 800)
@@ -363,16 +393,34 @@ def _paper_keys(work: Mapping[str, Any]) -> list[str]:
         keys.append("doi:" + str(ids["doi"]).lower())
     if ids.get("arxiv"):
         keys.append("arxiv:" + re.sub(r"v\d+$", "", str(ids["arxiv"]).lower()))
-    if work.get("readable_url"):
-        keys.append("url:" + url_key(str(work["readable_url"])))
+    for field in ("readable_url", "pdf_url"):
+        if work.get(field):
+            keys.append("url:" + url_key(str(work[field])))
+    if title := _title_key(str(work.get("title") or "")):
+        keys.append(title)
     return keys
+
+
+#: Fewer words than this do not name one work (``Interfaces``, ``Source``).
+_TITLE_WORDS = 3
+
+
+def _title_key(title: str) -> str:
+    """A work's full title, case and punctuation folded; ``""`` when too short to name one.
+
+    A researcher often reads a paper's text on another host than the record's (a
+    publisher PDF, a repository copy): the page's own title still names the work.
+    """
+    words = re.sub(r"[^\w]+", " ", unicodedata.normalize("NFKC", title).casefold()).split()
+    return "title:" + " ".join(words) if len(words) >= _TITLE_WORDS else ""
 
 
 def paper_records(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Bibliographic records CLIO's literature tools returned in these tool results.
 
-    Keyed by DOI, arXiv id and readable URL, so a cited page can be matched to the
-    work it belongs to. Only completed, successful ``literature`` results count.
+    Keyed by DOI, arXiv id, readable and PDF URL and full title, so a cited page can
+    be matched to the work it belongs to. Only completed, successful ``literature``
+    results count.
     """
     papers: dict[str, dict[str, Any]] = {}
     for row in rows:
@@ -391,8 +439,14 @@ def paper_records(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return papers
 
 
-def paper_for(url: str, papers: Mapping[str, dict[str, Any]]) -> dict[str, Any] | None:
-    """The scholarly work a cited URL belongs to, by DOI, arXiv id or readable URL."""
+def paper_for(
+    url: str, papers: Mapping[str, dict[str, Any]], title: str = ""
+) -> dict[str, Any] | None:
+    """The scholarly work a cited page belongs to.
+
+    By the DOI or arXiv id in its URL, the record's readable or PDF URL, and last by
+    the page's full title equal to the work's.
+    """
     if not papers:
         return None
     found = _DOI.search(url)
@@ -401,15 +455,18 @@ def paper_for(url: str, papers: Mapping[str, dict[str, Any]]) -> dict[str, Any] 
     found = _ARXIV.search(url)
     if found and (paper := papers.get("arxiv:" + found.group(1).lower())):
         return paper
-    return papers.get("url:" + url_key(url))
+    if paper := papers.get("url:" + url_key(url)):
+        return paper
+    key = _title_key(title)
+    return papers.get(key) if key else None
 
 
 def _reference(url: str, title: str, papers: Mapping[str, dict[str, Any]]) -> str:
     """One References entry: the cited link, with the work's bibliography when known."""
-    paper = paper_for(url, papers)
+    paper = paper_for(url, papers, title)
     link = lambda label: f"[{_markdown_label(label)}](<{url.replace('>', '%3E')}>)"  # noqa: E731
     if paper is None:
-        return f"- {link(title)}"
+        return f"- {link(_short_title(title))}"
     authors = [str(a) for a in paper.get("authors") or [] if str(a) != "et al."]
     names = ", ".join(authors[:3])
     if names and (len(authors) > 3 or "et al." in (paper.get("authors") or [])):
@@ -429,11 +486,13 @@ def render_report(
     blocks: list[ReportBlock],
     claims: list[VerifiedClaim],
     papers: Mapping[str, dict[str, Any]] | None = None,
+    unknown: list[str] | None = None,
 ) -> str:
     """Render the writer's map with canonical source citations and references.
 
-    A reference whose URL belongs to a work CLIO's literature tools returned (by DOI,
-    arXiv id or readable URL) is written with its authors, year, venue and DOI.
+    A reference that belongs to a work CLIO's literature tools returned (by DOI, arXiv
+    id, the record's URLs or its full title) is written with its authors, year, venue
+    and DOI.
     """
     known = {claim.claim_id: claim for claim in claims}
     parts = []
@@ -442,16 +501,22 @@ def render_report(
         if block.kind == "source_fact" and not block.claim_ids:
             raise ValueError("A source_fact block must map to its verified claims")
         citations: dict[str, str] = {}
+        missing = [claim_id for claim_id in block.claim_ids if claim_id not in known]
+        if missing and unknown is None:
+            raise ValueError(f"Unknown report claim ID: {missing[0]}")
         for claim_id in block.claim_ids:
-            if claim_id not in known:
-                raise ValueError(f"Unknown report claim ID: {claim_id}")
-            for evidence in known[claim_id].evidence:
+            for evidence in known[claim_id].evidence if claim_id in known else []:
                 citations.setdefault(evidence.source_url, evidence.source_title or "Source")
         text = block.text.replace("\r\n", "\n").strip("\n")
+        if missing:
+            # Rendered on request only (``unknown`` collects them): the text stays,
+            # and says it rests on a claim that is not verified.
+            unknown += [claim_id for claim_id in missing if claim_id not in unknown]
+            text += " *(This rests on a claim that is not verified.)*"
         if citations:
             links = []
             for url, title in citations.items():
-                safe_title = _markdown_label(title)
+                safe_title = _markdown_label(_short_title(title))
                 links.append(f"[{safe_title}](<{url.replace('>', '%3E')}>)")
             text += ("\n\n" if "\n" in text else " ") + " ".join(links)
             used.update(citations)
@@ -462,6 +527,19 @@ def render_report(
             + "\n".join(_reference(url, title, papers or {}) for url, title in used.items())
         )
     return "\n\n".join(parts)
+
+
+#: Characters of a fetched page's title shown in a citation; the full title stays in
+#: the source record. Some pages put a whole funding or citation note in their title.
+TITLE_CHARS = 120
+
+
+def _short_title(title: str) -> str:
+    """A page title for display: whitespace collapsed, cut at a word past ``TITLE_CHARS``."""
+    text = " ".join(title.split())
+    if len(text) <= TITLE_CHARS:
+        return text
+    return text[:TITLE_CHARS].rsplit(" ", 1)[0].rstrip(",;:.") + "…"
 
 
 def _markdown_label(title: str) -> str:

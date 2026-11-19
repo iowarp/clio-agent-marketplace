@@ -7,8 +7,12 @@ search_tools) so a session that never reaches an Endpoint does not carry them.
 
 from clio_agent.sdk import native_tool
 
-connected_data_search_ndp = native_tool("connected_data_search_ndp")
-connected_data_ndp_organizations = native_tool("connected_data_ndp_organizations")
+# Discovery is listed (defer=False). A tool that declares nothing is deferred with
+# every other built-in (tools.defer_builtins); these were, and an agent given the ndp
+# connector used its MCP tools instead, reading the catalog anonymously into context.
+connected_data_search_ndp = native_tool("connected_data_search_ndp", defer=False)
+connected_data_ndp_organizations = native_tool("connected_data_ndp_organizations", defer=False)
+connected_data_ndp_tiles_covering = native_tool("connected_data_ndp_tiles_covering", defer=False)
 connected_data_ndp_endpoint_connect = native_tool("connected_data_ndp_endpoint_connect", defer=True)
 connected_data_ndp_endpoint_operations = native_tool(
     "connected_data_ndp_endpoint_operations", defer=True

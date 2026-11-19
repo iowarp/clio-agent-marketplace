@@ -1,0 +1,129 @@
+{
+  "title": "Skew-T log-p",
+  "transform": [
+    {
+      "fold": [
+        "temperature_c",
+        "dewpoint_c",
+        "parcel_temperature_c"
+      ],
+      "as": [
+        "series",
+        "value"
+      ]
+    },
+    {
+      "filter": "isValid(datum.value) && isFinite(datum.value) && datum.pressure >= 100"
+    },
+    {
+      "calculate": "datum.value + 30 * log(1000 / datum.pressure)",
+      "as": "skewed"
+    },
+    {
+      "calculate": "datum.series === 'temperature_c' ? 'Temperature' : datum.series === 'dewpoint_c' ? 'Dewpoint' : 'Surface parcel'",
+      "as": "curve"
+    }
+  ],
+  "mark": {
+    "type": "line",
+    "interpolate": "linear"
+  },
+  "encoding": {
+    "y": {
+      "field": "pressure",
+      "type": "quantitative",
+      "title": "Pressure (hPa)",
+      "scale": {
+        "type": "log",
+        "domain": [
+          1050,
+          100
+        ]
+      },
+      "axis": {
+        "values": [
+          1000,
+          850,
+          700,
+          500,
+          400,
+          300,
+          250,
+          200,
+          150,
+          100
+        ]
+      }
+    },
+    "x": {
+      "field": "skewed",
+      "type": "quantitative",
+      "title": "Temperature (°C), skewed with height",
+      "scale": {
+        "domain": [
+          -40,
+          60
+        ],
+        "clamp": true
+      }
+    },
+    "color": {
+      "field": "curve",
+      "type": "nominal",
+      "title": null,
+      "sort": [
+        "Temperature",
+        "Dewpoint",
+        "Surface parcel"
+      ]
+    },
+    "strokeDash": {
+      "field": "curve",
+      "type": "nominal",
+      "title": null,
+      "sort": [
+        "Temperature",
+        "Dewpoint",
+        "Surface parcel"
+      ]
+    },
+    "detail": {
+      "field": "profile",
+      "type": "nominal"
+    },
+    "order": {
+      "field": "pressure",
+      "type": "quantitative",
+      "sort": "descending"
+    },
+    "tooltip": [
+      {
+        "field": "profile",
+        "type": "nominal",
+        "title": "Sounding"
+      },
+      {
+        "field": "pressure",
+        "type": "quantitative",
+        "title": "Pressure (hPa)",
+        "format": ".0f"
+      },
+      {
+        "field": "curve",
+        "type": "nominal",
+        "title": "Curve"
+      },
+      {
+        "field": "value",
+        "type": "quantitative",
+        "title": "Temperature (°C)",
+        "format": ".1f"
+      }
+    ]
+  },
+  "width": "container",
+  "height": 420,
+  "data": {
+    "name": "source"
+  }
+}

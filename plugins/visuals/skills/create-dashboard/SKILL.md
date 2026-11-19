@@ -33,6 +33,10 @@ nominal chart encodings so the shared automatic colours keep their meaning.
 Load the active catalog index and exact component schemas with `load_skill`.
 The catalog remains the authority for shapes and actions. Reuse its rows,
 columns, frames, grids, text, metrics, charts, tables, meshes, images and inputs.
+A connector's live view (an MCP App, such as a 3D scene) is a component too:
+`clio.mcp-app.v1` mounts the view itself, and its state channels link it to the
+other views on a shared path such as the selected time; an exported image of it
+is a still picture that links to nothing.
 Default to one composed report: keep related evidence visible together so a
 person can compare it without switching tabs, and a PNG tells the same story.
 Use tabs for genuinely separate workflows or optional depth, not to separate

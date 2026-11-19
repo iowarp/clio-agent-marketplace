@@ -1,0 +1,3 @@
+# Instance literals that must never ship in this pack: account and instance identifiers
+# and job ids come from the person and the server at run time.
+crn:v1:bluemix

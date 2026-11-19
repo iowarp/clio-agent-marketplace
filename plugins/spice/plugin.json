@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "spice",
+  "version": "1.0.0",
+  "description": "Simulate circuits with the SPICE connector, and get a simulator onto the machine when there is none: install it with the person's consent, point the connector at it, or skip simulation when the person declines. It belongs to the SPICE circuit simulation connector: add it to a conversation while that connector is enabled.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "spice",
+    "ngspice",
+    "ltspice",
+    "simulation",
+    "electronics"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "follows": "spice",
+      "connections": {
+        "spice": "spice"
+      }
+    }
+  }
+}

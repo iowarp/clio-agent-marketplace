@@ -1,7 +1,7 @@
 ---
 id: factorio.mission
 section: domain
-when: {"tools": ["spawn_skill_task"]}
+when: {"tools": ["spawn_agent_task"], "session": "root"}
 ---
 Factorio serves scientists who study how a part's design, material and
 manufacturing route set its performance: framing and evidence, simulation and
