@@ -50,6 +50,10 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` runs relay integration 0144fb2e: package staging works under a sandbox
+  that denies renames in its temp folder (git checkouts live under relay's state), and a
+  private GitHub source is fetched with the person's GitHub account: the plugin declares a
+  `github` account and hands relay its grant file.
 - `clio-relay` runs relay integration 93f3fe92: relay's scratch dirs inherit their parent's ACL
   on Windows, so a relay in an AppContainer can use them (Python 3.13+ `mkdtemp` cannot).
 - `clio-relay` runs relay integration 66451813: relay finds `ssh`, `scp`, `frpc`, `ssh-keygen`

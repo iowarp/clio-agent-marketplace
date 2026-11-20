@@ -6,14 +6,15 @@
       "command": "uvx",
       "args": [
         "--from",
-        "clio-relay[tapis] @ git+https://github.com/iowarp/clio-relay@93f3fe9208cef79e876c0cc08dd1ad349255532c",
+        "clio-relay[tapis] @ git+https://github.com/iowarp/clio-relay@0144fb2e353b168a5abf68bd1ccda92191d2cd37",
         "clio-relay",
         "serve"
       ],
       "env": {
         "CLIO_RELAY_CONFIG_DIR": "${PLUGIN_DATA}/config",
         "CLIO_RELAY_STATE_DIR": "${PLUGIN_DATA}/state",
-        "CLIO_RELAY_GRANT_FILE_GLOBUS": "${CLIO_ACCOUNT_GLOBUS_FILE}"
+        "CLIO_RELAY_GRANT_FILE_GLOBUS": "${CLIO_ACCOUNT_GLOBUS_FILE}",
+        "CLIO_RELAY_GRANT_FILE_GITHUB": "${CLIO_ACCOUNT_GITHUB_FILE}"
       }
     }
   }
