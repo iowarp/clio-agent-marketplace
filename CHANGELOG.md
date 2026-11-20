@@ -16,7 +16,8 @@
   layout check now accepts the `navigation`, `title`, `tabs`, `accounts` and
   `elicitation` host fields.
 - `spack` (1.0.0): HPC software on clio-relay sites through clio-kit's spack
-  server (contract `clio-kit-spack-user-v3`), with the `spack` skill. Research the
+  server (contract `clio-kit-spack-user-v3`), run with `uvx` from a pinned commit
+  of iowarp/clio-kit until clio-kit releases 3.0.0, with the `spack` skill. Research the
   site with `spack_site_query` (find, info, spec, modules), prepare a CLIO Spack
   that reuses the site's Spack as an upstream with `spack_prepare_site`, and
   install through `jarvis ppl install +submit` jobs on compute nodes, never on the

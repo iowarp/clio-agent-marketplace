@@ -3,11 +3,15 @@
   "mcpServers": {
     "spack": {
       "type": "stdio",
-      "command": "clio-kit",
+      "command": "uvx",
       "args": [
-        "mcp-server",
-        "spack"
-      ]
+        "--from",
+        "spack-mcp @ git+https://github.com/iowarp/clio-kit@d1eff1a194253b52181611c2acc42d6daa3fa37d#subdirectory=mcp-servers/spack",
+        "spack-mcp"
+      ],
+      "env": {
+        "SPACK_MCP_PROFILE": "user"
+      }
     }
   }
 }
