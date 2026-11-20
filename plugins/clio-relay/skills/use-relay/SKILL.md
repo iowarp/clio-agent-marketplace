@@ -121,6 +121,29 @@ An install, the queue and the run itself can take hours. When `run` or
 wakes you when the task ends, so do not poll `describe` in a loop. When you are
 woken, carry on with the next step of the plan the person approved.
 
+A job that waits in the queue says so: the operation's `result.queue` (and its
+message) names the partition, Slurm's `reason` and `estimated_start`, and
+`idle_partitions`, the partitions with free nodes now, each with `fits` when
+the job's nodes and time would fit there. When the estimate is far off and a
+partition fits, tell the person and offer to cancel and run again on it with
+the package's `queue` parameter. Never switch partitions without their yes.
+
+An install that asks to choose an MPI asks once per site. A later install's
+approval says it uses the MPI chosen for that site before; approve it to keep
+that choice, and decline only when the person wants to choose again.
+
+When a multi-node run fails and the operation's `result.mpi_network_hint` is
+set, the ranks could not reach each other over TCP, usually because Open MPI
+picked an interface every node shares (such as `docker0`) instead of the
+fabric between them. Do not stop at the diagnosis. Compare the network relay
+found, `describe(site=...)` under `info.mpi.network`, with the nodes'
+interfaces (`exec` with `ip -o -4 addr` shows the login side's). Then propose
+the fix to the person: write the nodes' fabric, a CIDR or interface names
+joined by commas, to `mpi_network_hint.site_record` as one line
+`<network> person` with `files(op="write", overwrite=true)`, which a guarded
+site asks the person for, and call the same `run` again. Every later job on
+the site uses it.
+
 When an install job fails, the run fails `submit_failed` with
 `refusal.data.needs: "jarvis ppl install"`. Its message ends with the last part
 of the install log, and `refusal.data.install_log` is the whole log on the site:

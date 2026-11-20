@@ -4,7 +4,7 @@
 
 ### Added
 
-- `clio-relay` (1.6.15): relay's MCP server, run with `uvx` from a pinned commit of
+- `clio-relay` (1.6.16): relay's MCP server, run with `uvx` from a pinned commit of
   iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
   the protocol and security for new endpoints, then adds, probes, edits and removes
   compute endpoints and changes each one's protocol and security in place. It
@@ -50,6 +50,15 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.16) runs relay integration b5c98e2c. A site's MPI choice
+  carries to the next install on that site until the person declines it. A serve
+  with `path: auto` takes ssh when frp has no client or token. A queued job shows
+  Slurm's start estimate and the partitions with free nodes. Multi-node runs name
+  the network Open MPI's TCP channels use, found from Slurm's node addresses and
+  kept per site, and a run that fails on the wrong interface carries
+  `mpi_network_hint` naming that record. The use-relay skill says how to act on
+  each: offer another partition, keep the carried MPI, and write the nodes'
+  fabric to the record before running again.
 - `clio-relay` (1.6.15) runs relay integration d87eeb55, and `spack` (1.0.1) runs
   clio-kit edf67da2. A package's install job takes one whole node and Spack builds
   with all its CPUs. `spack_prepare_site` prefers compilers with Fortran, the site
