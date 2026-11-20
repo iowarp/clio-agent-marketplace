@@ -50,6 +50,7 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` runs relay integration d3a1a360: catalog endpoints take the Security default (Secure), and the sign-in copy reads "Needs an ssh sign-in".
 - `clio-relay` runs relay integration d1f3f5c2: `site clean`, `shutdown` (it reports
   processes it can't confirm) with an authenticated HTTP stop, the worker's `link_mode` (`brokered_tcp` or
   `udp_rendezvous`), relay's pinned jarvis and the `ambiguous_provider` choice.
