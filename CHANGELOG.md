@@ -4,7 +4,7 @@
 
 ### Added
 
-- `clio-relay` (1.6.9): relay's MCP server, run with `uvx` from a pinned commit of
+- `clio-relay` (1.6.10): relay's MCP server, run with `uvx` from a pinned commit of
   iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
   the protocol and security for new endpoints, then adds, probes, edits and removes
   compute endpoints and changes each one's protocol and security in place. It
@@ -50,6 +50,15 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.10) runs relay integration 40f4f634: a clean site runs end to
+  end. Relay finds a Python 3.11 or newer for jarvis-cd itself (`python3`, then
+  `python3.N`, then the site's python modules), or uses the site's `jarvis_python`
+  setting, and package jobs use that same Python. The install job gets its own
+  walltime (`install_walltime_s`, 4 hours by default) instead of the run's. The
+  plugin's clio-jarvis copy adds `pyproject.toml` and `spack/` from aa8b3d56, so the
+  package archive carries its Python requirements and Spack repository; its SHA-256
+  changes, so the first stage asks for a new review. `site clean` really removes
+  relay's deployment, and a cancel withdraws the run's pending asks.
 - `clio-relay` (1.6.9) runs relay integration 84c2bb77: the plugin ships clio-jarvis at
   aa8b3d56 in `packages/` and hands it to relay as `CLIO_RELAY_PACKAGE_SOURCES`, so
   staging a clio-jarvis package runs no git and needs no account. A person's own packages

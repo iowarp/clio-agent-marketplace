@@ -29,5 +29,8 @@ folders.
 `mcp.json` runs relay with `uvx` from a pinned commit of this repository. The
 published copy lives in the CLIO agent marketplace as `plugins/clio-relay/`;
 when relay changes, move both pins to the new commit. To move clio-jarvis,
-copy its `clio_jarvis/` and `schemas/` from the new commit into
-`packages/clio-jarvis/` and update `commit` in its `.clio-relay-source.json`.
+copy its `clio_jarvis/`, `schemas/`, `spack/` and `pyproject.toml` from the new
+commit into `packages/clio-jarvis/` and update `commit` in its
+`.clio-relay-source.json`. Relay ships `spack/`, the Spack repository the
+contracts install from, with each package, reads the Python requirements from
+`pyproject.toml` and installs them on the site with its jarvis-cd.
