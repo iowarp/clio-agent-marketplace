@@ -4,7 +4,7 @@
 
 ### Added
 
-- `clio-relay` (1.6.11): relay's MCP server, run with `uvx` from a pinned commit of
+- `clio-relay` (1.6.12): relay's MCP server, run with `uvx` from a pinned commit of
   iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
   the protocol and security for new endpoints, then adds, probes, edits and removes
   compute endpoints and changes each one's protocol and security in place. It
@@ -50,6 +50,11 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.12) runs relay integration cb4c790b: after a plugin update, a
+  package name follows the bundled clio-jarvis. A run, stage, list or describe by
+  name stages the archive the current copy builds, marks the older one
+  `superseded_by`, and a guarded site asks the new archive's review. Pinning an
+  older `sha256` still runs it.
 - `clio-relay` (1.6.11) runs relay integration 3f25846a, which pins jarvis-cd
   c95fa922: cancelling a running job works on a Slurm without accounting. A site
   with relay's older jarvis-cd gets the reinstall ask on its next package run.

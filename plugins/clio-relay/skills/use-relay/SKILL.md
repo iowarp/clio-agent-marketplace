@@ -85,6 +85,11 @@ same files again gives the same SHA-256, so an earlier review still holds.
 When several archives of one name are staged, `run` refuses and lists them:
 ask the person which one and pin its `version` or `sha256`.
 
+After a plugin update the package sources may build a new archive of a name.
+A run, stage or list by name then stages it, and the older archive shows
+`superseded_by`. Run the name, not the old `sha256`, unless the person asks for
+that archive; a guarded site reviews the new one before it runs.
+
 ## Sites are the person's
 
 Do not add, edit or remove sites. The person manages them on the Compute page
