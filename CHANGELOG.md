@@ -4,7 +4,7 @@
 
 ### Added
 
-- `clio-relay` (1.6.10): relay's MCP server, run with `uvx` from a pinned commit of
+- `clio-relay` (1.6.11): relay's MCP server, run with `uvx` from a pinned commit of
   iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
   the protocol and security for new endpoints, then adds, probes, edits and removes
   compute endpoints and changes each one's protocol and security in place. It
@@ -50,6 +50,9 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.11) runs relay integration 3f25846a, which pins jarvis-cd
+  c95fa922: cancelling a running job works on a Slurm without accounting. A site
+  with relay's older jarvis-cd gets the reinstall ask on its next package run.
 - `clio-relay` (1.6.10) runs relay integration 40f4f634: a clean site runs end to
   end. Relay finds a Python 3.11 or newer for jarvis-cd itself (`python3`, then
   `python3.N`, then the site's python modules), or uses the site's `jarvis_python`
