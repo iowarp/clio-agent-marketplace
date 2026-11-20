@@ -90,6 +90,30 @@ A run, stage or list by name then stages it, and the older archive shows
 `superseded_by`. Run the name, not the old `sha256`, unless the person asks for
 that archive; a guarded site reviews the new one before it runs.
 
+## When a site has no Spack for JARVIS
+
+A run can refuse `adapter_unavailable` with `refusal.data.missing: "spack"`:
+JARVIS needs a Spack to install the package with, and relay found none at its
+CLIO Spack checkout. This is not something to tell the person and stop on.
+`refusal.data.remedy` (`action: "prepare_spack"`) says what to do:
+
+1. Use this plugin's `spack` skill and its `spack_prepare_site` tool, which come
+   with relay. If they are not in the conversation, offer the `spack` plugin.
+2. Call `spack_prepare_site` with `site` (the run's site), `site_home` (the
+   directory above `remedy.root`; relay's default is `~/.clio-relay`) and
+   `site_spack` set to `remedy.site_spacks[0].root`, the site's own Spack. The
+   new checkout reuses it as an upstream; relay never builds into it. When
+   `site_spacks` is empty, leave `site_spack` empty and give `spack_version`.
+3. Follow the skill's two-call flow: make the `exec` call it returns, with its
+   arguments unchanged. On a guarded site the person approves the plan. Then
+   call `spack_prepare_site` again with `relay_result`.
+4. When it returns `"done"`, call the same `run` again. Do not install anything
+   on the login node: JARVIS builds what is missing in its install job, after
+   relay's install ask.
+
+Do not inspect the site by hand (`ls`, `module`) to work out the Spack: the
+refusal already says what relay looked for and what the site has.
+
 ## Sites are the person's
 
 Do not add, edit or remove sites. The person manages them on the Compute page

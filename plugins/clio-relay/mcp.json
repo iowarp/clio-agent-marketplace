@@ -6,7 +6,7 @@
       "command": "uvx",
       "args": [
         "--from",
-        "clio-relay[tapis] @ git+https://github.com/iowarp/clio-relay@cb4c790b794cf00d01b1a5ce8179f8166ff51381",
+        "clio-relay[tapis] @ git+https://github.com/iowarp/clio-relay@43ff03eda4a061303765929e597edc1af690a6b2",
         "clio-relay",
         "serve"
       ],
