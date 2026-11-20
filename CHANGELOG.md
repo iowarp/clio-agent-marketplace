@@ -22,7 +22,8 @@
   that reuses the site's Spack as an upstream with `spack_prepare_site`, and
   install through `jarvis ppl install +submit` jobs on compute nodes, never on the
   login node. Choices the agent cannot resolve, such as several MPIs, go to the
-  person.
+  person. On a guarded site, queries use relay's read-only Spack argv and
+  preparing goes through relay's plan ask (`needs_approval`, `declined`).
 
 - `home-assistant` (1.0.0): Home Assistant as one plugin. It follows CLIO's
   `home-assistant` connector (ha-mcp) and brings `home-assistant-sensors` (reading

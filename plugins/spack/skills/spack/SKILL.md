@@ -40,14 +40,23 @@ on the cluster.
 1. Call the tool without `relay_result`. It returns
    `status: "relay_call_required"` and `relay_call`: the clio-relay `exec`
    call to make (`relay_call.arguments`: `site`, `command`, `timeout_s`,
-   `max_output_bytes`).
+   `max_output_bytes`, and for `spack_prepare_site` a `plan`).
 2. Make that `exec` call with the arguments unchanged.
 3. Call the tool again with the same arguments and `relay_result` set to the
-   `exec` structured result. It returns `status: "done"` with the answer,
-   `"failed"` with `error` and `stderr_tail`, or `"refused"` when relay refused
-   the command.
+   `exec` structured result. It returns one of:
+   - `"done"` with the answer;
+   - `"failed"` with `error` and `stderr_tail`;
+   - `"needs_approval"`: relay asked the person to approve the plan and could
+     not show the ask itself. The result carries `ask` (`ask_id`, `message`,
+     `page`) and the same `relay_call`. Once the person has answered, send that
+     `exec` call again unchanged, then call the tool again with the new
+     `relay_result`;
+   - `"declined"`: the person did not approve the ask. Stop; do not retry;
+   - `"refused"`: relay's guard or policy refused the command. Tell the person
+     and stop.
 
-Do not edit the argv. A `relay_result` for a different command is rejected.
+Do not edit the argv or the plan. A `relay_result` for a different command is
+rejected.
 
 ## 1. Research the site (read-only)
 
@@ -80,9 +89,13 @@ documentation). When the site has no Spack, leave `site_spack` empty and give
 site Spack), `module_paths` (default: `MODULEPATH`), `build_tools` (default: a
 fixed list; never an MPI) and `root`.
 
-The first call returns `relay_call` and `approval`. Show the person the
-`approval` text, then make the `exec` call after relay's normal approval, and
-call the tool again with `relay_result`.
+The first call returns `relay_call` and `approval`. Its `exec` arguments carry
+`plan: {kind: "spack", summary: "Prepare the CLIO Spack ..."}` and a 900 s
+timeout. On a guarded site, relay asks the person to approve that plan itself;
+on any other site, show the person the `approval` text first. Make the `exec`
+call with the arguments unchanged, and call the tool again with
+`relay_result`. If it returns `"needs_approval"`, resend the same `exec` once
+the person has answered the ask; if `"declined"`, stop.
 
 The tool:
 
@@ -116,10 +129,16 @@ Read `report`:
   directory exist.
 
 A `"failed"` status changed nothing that needs undoing: show the person the
-error, and rerun once the cause is fixed. A `"refused"` status on a guarded
-site means relay's read-only list has no `bash`, `git` or `spack`, so the CLIO
-Spack cannot be prepared or queried there. Stop and tell the person. Do not
-work around the guard.
+error, and rerun once the cause is fixed. On a guarded site, research queries
+run Spack directly as `env SPACK_DISABLE_LOCAL_CONFIG=1 <spack> find|info|spec`,
+which is on relay's read-only list, but only for the Spack its guard lists
+(default `.clio-relay/spack/bin/spack`, the default `root`). Preparing needs the
+approved plan. A `"refused"` status means the guard or policy refused the
+command anyway, for example a `root` the guard does not list. Stop and tell the
+person. Do not work around the guard.
+
+A `spack_site_query` that returns `"failed"` with `no CLIO Spack at ...` means
+the site has no CLIO Spack yet: run `spack_prepare_site` first.
 
 ## 3. Install through jarvis
 
@@ -204,8 +223,10 @@ Ask, with the options laid out, when:
 - `spack_site_query` `spec` shows a `to_build` list the person may not expect,
   for example a GUI stack pulled in with a visualization package.
 - a version or variant must change for the spec to concretize.
-- the site is guarded, has no Spack and no release to pick, or relay refuses a
-  step.
+- the site has no Spack and no release to pick, or relay refuses a step.
+
+A `"needs_approval"` ask is relay's, not yours: point the person to it (its
+`message` and `page`) instead of asking again in your own words.
 
 Do not ask about what the tools already decided: the Spack release to clone,
 the build-tool externals, or reuse of the site upstream.
