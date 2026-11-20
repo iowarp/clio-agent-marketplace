@@ -50,6 +50,9 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` runs relay integration 93a11e4f: a `packages` tool stages JARVIS packages
+  (git at a commit, by default relay's pinned clio-jarvis, or a directory on the relay host),
+  lists and removes them; the use-relay skill says when to stage.
 - `clio-relay` runs relay integration d3a1a360: catalog endpoints take the Security default (Secure), and the sign-in copy reads "Needs an ssh sign-in".
 - `clio-relay` runs relay integration d1f3f5c2: `site clean`, `shutdown` (it reports
   processes it can't confirm) with an authenticated HTTP stop, the worker's `link_mode` (`brokered_tcp` or
