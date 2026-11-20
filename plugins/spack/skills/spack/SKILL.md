@@ -123,34 +123,75 @@ work around the guard.
 
 ## 3. Install through jarvis
 
-Install packages only with a jarvis install job submitted to the scheduler:
-`jarvis ppl install +submit`. jarvis concretizes against the CLIO Spack named by
-`JARVIS_SPACK_ROOT` and `JARVIS_SPACK_CONFIG`, so it reuses the upstream and the
-externals and builds only the rest, on a compute node.
+Install packages only with a jarvis install job, a one-node scheduler job that
+builds on a compute node:
 
-When the job finishes, read its result:
+    jarvis ppl install +submit +json                          # build what is missing
+    jarvis ppl install +check +submit +json                   # report only
+    jarvis ppl install +submit --answers answers.json +json   # re-run with answers
 
-- Exit code 0: confirm with `spack_site_query` `find`. Hand each package to the
-  pipeline as `/<dag_hash>` in `jarvis_run`'s `spack_specs`, the same exact form
-  `spack_locate`'s `load_spec` gives locally. Never pass an executable path
-  derived from a prefix.
-- Exit code 3: jarvis needs a decision. Read `issues.jsonl` in the job output;
-  each line has a `kind`:
-  - `ambiguous_provider`: several providers fit, for example several MPIs.
-    Ask the person.
-  - `variant_conflict`: the requested variants cannot all hold. Explain the
-    conflict and ask which to keep.
-  - `concretize_failed`: Spack could not solve the spec. Use `spack_site_query`
-    `spec` and `info` to find the cause, propose a fix (another version,
-    variant or compiler), and ask before changing the request.
-  - `no_recipe`: no registered repo has the package. Say so. Do not hand-build
-    it.
-  - `not_installed`: a dependency is missing where it was expected. Rerun the
-    install job, or report it.
+jarvis resolves find-first against the CLIO Spack named by `JARVIS_SPACK_ROOT`
+and `JARVIS_SPACK_CONFIG`, so it reuses the upstream, the externals and anything
+installed, and builds only what is missing. Both variables reach the job through
+the scheduler's environment export; if the site exports nothing, set them in the
+pipeline's scheduler `pre_cmds`. On the login node, `+submit` only writes the
+snapshot and calls the scheduler. `jarvis ppl install +check` without `+submit`
+is also allowed there: it only runs `spack spec -I` and `spack find`.
 
-  Write the person's answer into jarvis's answers (decisions) input and
-  resubmit the same install job. Do not guess an answer.
-- Any other non-zero exit is a build failure. Read the log tail jarvis reports,
+Submit run jobs with `JARVIS_INSTALL_ON_LOAD=check` set on the submitting
+process (or in the scheduler's `pre_cmds`). A run job then verifies its packages
+instead of building them, and `ppl submit` exits 3 without submitting when
+something is missing. Install first, then run.
+
+Follow the job with `jarvis execution get +json`. `metadata.install` reports
+its `phase` (`queued`, `resolving`, `waiting_env_lock`, `building`,
+`needs_decision`, `refused`, `failed`, `done`) and the paths of `install.log`,
+`issues.jsonl` and `install-record.json` under `<execution>/install/`. With
+`+json`, the last stdout line is a `jarvis.install-report.v1` document with
+`exit_code`, `issues` and `issues_path`. Read the exit code:
+
+- **0**: everything is installed. Confirm with `spack_site_query` `find` if you
+  need to. A run job of the same pipeline loads what the install built (the
+  lock hash) and exports the chosen MPI (`JARVIS_MPI_NAME`, `JARVIS_MPI_SPEC`,
+  `JARVIS_MPI_TYPE`, `JARVIS_MPI_PREFIX`), so there is nothing to copy. When a
+  run also needs other Spack software through `jarvis_run`'s `spack_specs`,
+  pass `/<dag_hash>` from the site `find`, the exact form `spack_locate`'s
+  `load_spec` gives locally. Never pass an executable path derived from a prefix.
+- **3**: a decision is needed (`phase: needs_decision`), or `+check` found
+  packages that still need building. Each question is a
+  `jarvis.install-issue.v1` line in `issues.jsonl`, with a stable `issue_id`
+  and a `kind`:
+  - `ambiguous_provider`: several MPI candidates (installed, upstream or
+    `packages.yaml` externals, module MPIs included), and nothing pins one.
+    `candidates[]` gives each one's `id`, `constraint`, `source`, `prefix` and,
+    for module externals, `modules`. Ask the person which to use.
+  - `variant_conflict`: the concretizer reports a conflict. Explain it and ask
+    which spec constraint to apply (such as `~cuda`).
+  - `concretize_failed`: any other concretizer error; `detail` holds the
+    excerpt. Use `spack_site_query` `spec` and `info` to find the cause, propose
+    a constraint (another version, variant or compiler), and ask before
+    applying it.
+  - `no_recipe`: Spack has no recipe for the package. Not answerable: say so,
+    and do not hand-build it. A package can add a recipe repo with
+    `install_repos`, or change its `install_query`.
+  - `not_installed`: `+check` found nodes still to build. Not a question: run
+    the install job without `+check`.
+
+  Write the person's answers into `answers.json`, keyed by `issue_id`, then
+  resubmit the same install job with `--answers answers.json`:
+
+      {"<issue_id>": {"constraint": "<one candidate's constraint>", "answered_by": "<person>"}}
+
+  A plain string value (`{"<issue_id>": "<constraint>"}`) also works. When the
+  issue lists candidates, the answer must be one of their constraints. jarvis
+  records applied answers in the pipeline's `install/decisions.yaml`, so later
+  run jobs reuse them. Never guess an answer.
+- **4**: `refused: build_outside_allocation`. Something tried to build outside
+  a scheduler allocation, for example `ppl install` without `+submit`, or a run
+  submitted with the default `JARVIS_INSTALL_ON_LOAD=install`. Nothing was
+  built. Resubmit as `jarvis ppl install +submit`. Do not opt out with
+  `+allow_local` or `JARVIS_ALLOW_LOCAL_BUILD=1` on a site.
+- **1**: an error, such as a failed build. Read the tail of `install.log`,
   summarize it, and ask before trying anything different.
 
 ## 4. When to ask the person
