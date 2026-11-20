@@ -50,6 +50,8 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` runs relay integration bbda1d29: each serve endpoint port has an `address`,
+  `host:port`, so a host that rewrites addresses can publish tcp ports too.
 - `clio-relay` runs relay integration 93a11e4f: a `packages` tool stages JARVIS packages
   (git at a commit, by default relay's pinned clio-jarvis, or a directory on the relay host),
   lists and removes them; the use-relay skill says when to stage.
