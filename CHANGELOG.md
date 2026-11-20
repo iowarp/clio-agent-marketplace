@@ -4,7 +4,7 @@
 
 ### Added
 
-- `clio-relay` (1.6.13): relay's MCP server, run with `uvx` from a pinned commit of
+- `clio-relay` (1.6.14): relay's MCP server, run with `uvx` from a pinned commit of
   iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
   the protocol and security for new endpoints, then adds, probes, edits and removes
   compute endpoints and changes each one's protocol and security in place. It
@@ -50,6 +50,11 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.14) runs relay integration bdd1541b: a package archive's
+  SHA-256 no longer depends on the Python relay runs under. CPython 3.14 on Windows
+  links zlib-ng, so the same files had given xcompact3d 9763fc95 there and
+  0089efeb elsewhere. Archives are now stored-block gzip: xcompact3d 6f30a7a0 and
+  pvserver 6736500f everywhere, and a guarded site asks the new review once.
 - `clio-relay` (1.6.13) runs relay integration 43ff03ed and requires the `spack`
   plugin. When a site has no Spack for JARVIS, relay's `missing: spack` refusal
   carries a `remedy` (`prepare_spack`: the CLIO Spack root and config, and the
