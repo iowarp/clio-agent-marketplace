@@ -15,6 +15,13 @@
   `clio.choice-table.v1` for the endpoint table) and the `use-relay` skill. The
   layout check now accepts the `navigation`, `title`, `tabs`, `accounts` and
   `elicitation` host fields.
+- `spack` (1.0.0): HPC software on clio-relay sites through clio-kit's spack
+  server (contract `clio-kit-spack-user-v3`), with the `spack` skill. Research the
+  site with `spack_site_query` (find, info, spec, modules), prepare a CLIO Spack
+  that reuses the site's Spack as an upstream with `spack_prepare_site`, and
+  install through `jarvis ppl install +submit` jobs on compute nodes, never on the
+  login node. Choices the agent cannot resolve, such as several MPIs, go to the
+  person.
 
 - `home-assistant` (1.0.0): Home Assistant as one plugin. It follows CLIO's
   `home-assistant` connector (ha-mcp) and brings `home-assistant-sensors` (reading
