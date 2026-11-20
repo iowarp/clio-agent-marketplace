@@ -114,6 +114,24 @@ CLIO Spack checkout. This is not something to tell the person and stop on.
 Do not inspect the site by hand (`ls`, `module`) to work out the Spack: the
 refusal already says what relay looked for and what the site has.
 
+## Long runs and failed installs
+
+An install, the queue and the run itself can take hours. When `run` or
+`serve` returns a task, say what you are waiting for and end your turn: CLIO
+wakes you when the task ends, so do not poll `describe` in a loop. When you are
+woken, carry on with the next step of the plan the person approved.
+
+When an install job fails, the run fails `submit_failed` with
+`refusal.data.needs: "jarvis ppl install"`. Its message ends with the last part
+of the install log, and `refusal.data.install_log` is the whole log on the site:
+read it with `files(op="read")`. Find the cause, fix it with the tool that owns
+it, and call the same `run` again. The site's Spack configuration belongs to
+the `spack` skill: when the log shows the wrong compiler, for example one with no
+Fortran for a package that needs it, call `spack_prepare_site` again with
+`compiler=` naming one the report lists in `compiler.toolchains`. Ask the
+person only for a real decision, such as a choice between two compilers or a
+larger allocation.
+
 ## Sites are the person's
 
 Do not add, edit or remove sites. The person manages them on the Compute page

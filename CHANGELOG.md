@@ -4,7 +4,7 @@
 
 ### Added
 
-- `clio-relay` (1.6.14): relay's MCP server, run with `uvx` from a pinned commit of
+- `clio-relay` (1.6.15): relay's MCP server, run with `uvx` from a pinned commit of
   iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
   the protocol and security for new endpoints, then adds, probes, edits and removes
   compute endpoints and changes each one's protocol and security in place. It
@@ -15,7 +15,7 @@
   `clio.choice-table.v1` for the endpoint table) and the `use-relay` skill. The
   layout check now accepts the `navigation`, `title`, `tabs`, `accounts` and
   `elicitation` host fields.
-- `spack` (1.0.0): HPC software on clio-relay sites through clio-kit's spack
+- `spack` (1.0.1): HPC software on clio-relay sites through clio-kit's spack
   server (contract `clio-kit-spack-user-v3`), run with `uvx` from a pinned commit
   of iowarp/clio-kit until clio-kit releases 3.0.0, with the `spack` skill. Research the
   site with `spack_site_query` (find, info, spec, modules), prepare a CLIO Spack
@@ -50,6 +50,16 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.15) runs relay integration d87eeb55, and `spack` (1.0.1) runs
+  clio-kit edf67da2. A package's install job takes one whole node and Spack builds
+  with all its CPUs. `spack_prepare_site` prefers compilers with Fortran, the site
+  MPI's first, so Spack 0.23 concretizes the stack to the compiler the site's
+  upstream was built with and reuses it. jarvis-cd af290aef offers the site MPI's
+  real install, not its external alias. Relay's tools declare a closed world, so a
+  plan approved for auto-execute runs them without a permission prompt while
+  relay's own asks still reach the person. A failed install carries its log and
+  job, and the use-relay skill says to yield on a long task, read that log, and
+  prepare Spack again with `compiler=` when a compiler check fails.
 - `clio-relay` (1.6.14) runs relay integration bdd1541b: a package archive's
   SHA-256 no longer depends on the Python relay runs under. CPython 3.14 on Windows
   links zlib-ng, so the same files had given xcompact3d 9763fc95 there and
