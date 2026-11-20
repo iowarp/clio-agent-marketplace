@@ -50,6 +50,9 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` runs relay integration d1f3f5c2: `site clean`, `shutdown` (it reports
+  processes it can't confirm) with an authenticated HTTP stop, the worker's `link_mode` (`brokered_tcp` or
+  `udp_rendezvous`), relay's pinned jarvis and the `ambiguous_provider` choice.
 - `web` (2.0.0) uses CLIO's built-in `web_search` and `web_fetch` instead of clio-kit's
   Web Search MCP server (its `mcp.json` is removed), with a new `web-research` skill
   (#133).
