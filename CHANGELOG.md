@@ -4,6 +4,13 @@
 
 ### Added
 
+- `spack` (1.0.0): HPC software on clio-relay sites through clio-kit's spack
+  server (contract `clio-kit-spack-user-v3`), with the `spack` skill. Research the
+  site with `spack_site_query` (find, info, spec, modules), prepare a CLIO Spack
+  that reuses the site's Spack as an upstream with `spack_prepare_site`, and
+  install through `jarvis ppl install +submit` jobs on compute nodes, never on the
+  login node. Choices the agent cannot resolve, such as several MPIs, go to the
+  person.
 - `connected-data` (2.1.0): `connected_data_release` is listed, and `connect-data`
   says to compare a download with the free space `connected_data_status` reports and
   to release older copies of a source when space is short. A person had freed the
