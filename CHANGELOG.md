@@ -50,6 +50,8 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` runs relay integration 93f3fe92: relay's scratch dirs inherit their parent's ACL
+  on Windows, so a relay in an AppContainer can use them (Python 3.13+ `mkdtemp` cannot).
 - `clio-relay` runs relay integration 66451813: relay finds `ssh`, `scp`, `frpc`, `ssh-keygen`
   and `git` on the PATH with PATHEXT, so a host's `ssh.cmd` shim wins on Windows.
 - `clio-relay` runs relay integration bbda1d29: each serve endpoint port has an `address`,
