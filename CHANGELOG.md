@@ -4,7 +4,7 @@
 
 ### Added
 
-- `clio-relay` (1.6.8): relay's MCP server, run with `uvx` from a pinned commit of
+- `clio-relay` (1.6.9): relay's MCP server, run with `uvx` from a pinned commit of
   iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
   the protocol and security for new endpoints, then adds, probes, edits and removes
   compute endpoints and changes each one's protocol and security in place. It
@@ -50,6 +50,13 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.9) runs relay integration 84c2bb77: the plugin ships clio-jarvis at
+  aa8b3d56 in `packages/` and hands it to relay as `CLIO_RELAY_PACKAGE_SOURCES`, so
+  staging a clio-jarvis package runs no git and needs no account. A person's own packages
+  reach a site through relay's file transfer. The `github` account and its grant file
+  are gone. Relay on Windows also loads psij without `SIGCHLD`, takes a job duration in
+  seconds, holds an ssh forward to a compute node through the login node under CLIO's
+  fence, and names an antivirus block of `frpc`.
 - `clio-relay` runs relay integration 0144fb2e: package staging works under a sandbox
   that denies renames in its temp folder (git checkouts live under relay's state), and a
   private GitHub source is fetched with the person's GitHub account: the plugin declares a

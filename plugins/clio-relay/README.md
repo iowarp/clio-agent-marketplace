@@ -9,6 +9,10 @@ This folder is relay's plugin for CLIO. Installing it gives CLIO:
   security;
 - a Globus account, whose grant file CLIO hands relay as
   `CLIO_RELAY_GRANT_FILE_GLOBUS`;
+- the JARVIS packages in `packages/`: clio-jarvis at the commit its
+  `.clio-relay-source.json` names. `mcp.json` hands that folder to relay as
+  `CLIO_RELAY_PACKAGE_SOURCES`, so staging one needs no download and no
+  account;
 - sign-in pages on the loopback address and on `https://tacc.tapis.io`;
 - the `use-relay` skill, which sends the agent to relay's skill resources.
 
@@ -24,4 +28,6 @@ folders.
 
 `mcp.json` runs relay with `uvx` from a pinned commit of this repository. The
 published copy lives in the CLIO agent marketplace as `plugins/clio-relay/`;
-when relay changes, move both pins to the new commit.
+when relay changes, move both pins to the new commit. To move clio-jarvis,
+copy its `clio_jarvis/` and `schemas/` from the new commit into
+`packages/clio-jarvis/` and update `commit` in its `.clio-relay-source.json`.

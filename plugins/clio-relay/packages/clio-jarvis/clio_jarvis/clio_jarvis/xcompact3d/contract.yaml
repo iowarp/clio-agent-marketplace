@@ -1,0 +1,206 @@
+schema: clio.package-contract.v1
+package: xcompact3d
+version: 0.3.1
+kind: application
+summary: >-
+  Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
+  file in geometry and it simulates uniform flow along +x past that body (a
+  wing section, a car body, a cylinder, any closed solid) with the immersed
+  boundary method; leave geometry empty for the Taylor-Green vortex at Re 1600.
+  Setting up a body case, in order.
+  Units: everything is in body lengths. The body is scaled to L = 1 (its x
+  extent, or reference_length in STL units), so the viscosity is nu = inflow /
+  re and a time unit is the time the flow takes to cross L at inflow 1. angle
+  turns the body nose up about z; if the CAD part is already pitched, set angle
+  0 and reference_length to its chord in STL units, since the x extent of a
+  pitched body is longer than its chord.
+  Grid: the body sits upstream body lengths from the inlet, with downstream
+  body lengths of wake behind it and lateral body lengths each side. The
+  spacing is h = 1 / resolution in x and y, so the grid is about (upstream +
+  body length + downstream) x resolution by (body height + 2 x lateral) x
+  resolution points, rounded up to FFT-friendly counts. span periodic runs a
+  section extruded along z as a thin periodic slab with nz = max(8, span length
+  x resolution / 2) points rounded up, so dz is about 2h, except that a span shorter than 16 /
+  resolution gets dz = span length / 8, which is finer and tightens the time
+  step; span free runs a whole 3D body with dz = h and costs far more. Aim for
+  6 or more points across the body's thickness (thickness x resolution): a 12
+  percent section at resolution 24 has about 3, enough for the wake but not
+  for forces worth quoting. The boundary layer is about L / sqrt(re) thick, so
+  a coarse grid shows the wake qualitatively, not the layer.
+  Reynolds number: re = U L / nu. Bluff bodies start to shed near re 50; 100 to
+  3000 gives laminar to unsteady wakes at these resolutions, and higher re
+  needs a finer grid than these cases afford.
+  Time step: work dt out before submitting, because configure checks it only
+  when the job starts, after any approval, and refuses an unstable one. Two
+  limits hold together. Convection: CFL = inflow x dt / h at most 0.2, aim for
+  0.1, which is dt about 0.1 / (resolution x inflow). Viscous: dt x nu x (2 /
+  h^2 + 1 / dz^2) at most 0.0075 for this scheme, which with dz = 2h is dt at
+  most 0.0033 x re / (resolution^2 x inflow), and with dz = h (span free) is dt
+  at most 0.0025 x re / (resolution^2 x inflow). Take the smaller and round it
+  down. At resolution 24, re 1000 and inflow 1 with dz = 2h that is the smaller
+  of 0.0042 and 0.0058, so dt 0.004; a 0.25 chord span at the same settings has
+  dz = 0.031 and needs dt 0.003. Low re is limited by viscosity, high re by
+  convection. clio-case.json records the cfl, diffusion_number and
+  suggested_dt of the run, and a refusal names the largest safe dt.
+  Run length and snapshots: the simulated time is ilast x dt. The wake needs
+  ilast x dt x inflow to cover two to three domain lengths before shedding
+  shows, and a bluff body sheds about every 5 / inflow time units (Strouhal
+  number near 0.2), so a few shedding cycles take 30 to 50 time units. There
+  are ilast / ioutput snapshots; 50 to 200 make a smooth live view, and each
+  holds 7 fields of nx x ny x nz doubles.
+  Cost: a run is about nx x ny x nz x ilast point-steps, so walltime in seconds
+  is about nx x ny x nz x ilast / (throughput x nprocs), with the site's
+  point-steps per second per MPI rank measured from a short run of the same
+  build (see sizing); set walltime with a margin. nprocs must split the grid
+  into a 2D pencil grid; configure refuses one that cannot.
+  Outputs: snapshots of ux, uy, uz, pp, vort, critq and (body case) ep, the
+  body indicator, go to a growing BP5 output that ParaView's ADIOS2VTXReader
+  follows while the run goes; a slice at mid-span coloured by vort shows the
+  wake, and a contour of ep at 0.5 shows the body. clio-case.json in the run
+  directory gives the grid, the body placement and the stability numbers,
+  body.stl is the body in solver coordinates, and forces.dat holds drag and
+  lift by time. With icheckpoint set, the run also writes restart files
+  (checkpoint.bp5 and restart.info) and, with initstat set too, averaged
+  statistics (statistics.bp5) every icheckpoint steps; both are off by
+  default. All of these go to run_dir; set run_dir to a folder you can
+  read (beside the geometry, say) and open <run_dir>/data.bp5 in ParaView as
+  soon as the job runs to watch it grow. While the run goes, the package syncs
+  data.bp5 to the file server every second, so a viewer on another machine
+  sees each snapshot as it lands rather than in 30 s bursts.
+install:
+  method: spack
+  # MPI stays the mpi virtual, so the site's MPI (Ares: its openmpi) is reused.
+  query: xcompact3d@5.0 +clio ^decomp2d-fft io=adios2 ^adios2+mpi+fortran
+  repos: [spack]
+parameters:
+  required: [nprocs, n, ilast, ioutput, dt]
+  properties:
+    nprocs: {minimum: 1, maximum: 65536}
+    ppn: {minimum: 1, maximum: 256}
+    cores_per_node: {minimum: 1, maximum: 1024}
+    icheckpoint: {minimum: 0}
+    initstat: {minimum: 0}
+    inflow: {exclusiveMinimum: 0}
+    angle: {minimum: -90, maximum: 90}
+    resolution: {minimum: 4, maximum: 512}
+    reference_length: {minimum: 0}
+    upstream: {minimum: 0.5}
+    downstream: {minimum: 1}
+    lateral: {minimum: 0.5}
+    ilast: {minimum: 1}
+    ioutput: {minimum: 1}
+    dt: {exclusiveMinimum: 0}
+    re: {exclusiveMinimum: 0}
+    walltime: {minimum: 1}
+  review: [geometry, run_dir, nprocs, ppn, resolution, span, angle, inflow, re, ilast, ioutput, dt, n, icheckpoint, initstat, walltime, queue]
+  fill:
+    input_template: "{pkg_dir}/config/input_DNS_Re1600.i3d"
+    run_dir: "{shared_dir}/run"
+
+resources:
+  process_count: {param: nprocs}
+  processes_per_node: {param: ppn}
+  duration: {param: walltime}
+  queue_name: {param: queue}
+
+sizing:
+  mesh: >-
+    nx x ny x nz grid points. Body case: about (upstream + body length +
+    downstream) x resolution by (body height + 2 x lateral) x resolution, by
+    max(8, span x resolution / 2) for a periodic span or (body depth + 2 x
+    lateral) x resolution for span free, each rounded up to an FFT-friendly
+    count; clio-case.json records the grid chosen. Taylor-Green case: n x n x n.
+  decomposition: pencil2d
+  ranks: >-
+    nprocs = p_row x p_col, a 2D pencil grid that 2DECOMP&FFT needs with p_row
+    at most min(nx, ny) and p_col at most min(ny, nz); configure picks the
+    split closest to square and refuses an nprocs that has none. A periodic
+    span has nz = 8 or a little more, so it allows at most min(nx, ny) x nz
+    ranks. Choose nprocs from the mesh: more ranks shorten the run until each
+    pencil is so small that the transposes dominate, so keep each rank's
+    share, nx x ny x nz / nprocs, in the tens of thousands of points or more,
+    and prefer an nprocs with a near-square split (a power of two, or a
+    multiple of ppn).
+  processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}
+  nodes: {ceil_div: [nprocs, ppn]}
+  cost: >-
+    walltime seconds = nx x ny x nz x ilast / (throughput x nprocs), with the
+    throughput in point-steps per second per rank measured on the site with a
+    short run of the same build and rank count range; add a margin for
+    snapshot writes, which grow with nx x ny x nz x 7 doubles per snapshot.
+
+outputs:
+  - name: snapshots
+    path: "{run_dir}/data.bp5"
+    path_kind: directory
+    format: adios2-bp5
+    reader: ADIOS2VTXReader
+    expected_steps: {div: [ilast, ioutput]}
+    follow: {signal: reader-time-steps, poll_seconds: 2}
+    time: {unit: simulation time, step_interval: {mul: [dt, ioutput]}}
+    display:
+      array: vort
+      association: POINTS
+      representation: Slice
+      slice_normal: [0, 0, 1]
+      color_map: Viridis (matplotlib)
+    # Both cases; the body case adds ep.
+    arrays: [ux, uy, uz, pp, vort, critq]
+  - name: statistics
+    role: statistics
+    description: >-
+      Time-averaged statistics (means and second moments of the velocity and
+      pressure) from step initstat, written every icheckpoint steps; only when
+      both icheckpoint and initstat are set.
+    path: "{run_dir}/statistics.bp5"
+    path_kind: directory
+    format: adios2-bp5
+  - name: restart
+    role: restart
+    description: >-
+      Restart file with the whole flow state, written every icheckpoint steps
+      with restart.info beside it (the step and time it holds); only when
+      icheckpoint is set.
+    path: "{run_dir}/checkpoint.bp5"
+    path_kind: directory
+    format: adios2-bp5
+
+progress:
+  unit: step
+  # "Writing snapshots =>           2" is printed before snapshot 2 is written.
+  step_pattern: '^Writing snapshots =>\s*(?P<step>\d+)\s*$'
+  announces: before-write
+  output: snapshots
+  total: {div: [ilast, ioutput]}
+
+provenance:
+  inputs:
+    - "{run_dir}/input.i3d"
+    - "{run_dir}/adios2_config.xml"
+    - "{run_dir}/clio-vtk.xml"
+    - "{run_dir}/clio-case.json"
+  upstream:
+    - name: >-
+        Incompact3d v5.0 with 2DECOMP&FFT 2.0.4, built by the Spack recipes
+        clio.xcompact3d +clio and clio.decomp2d-fft io=adios2 in spack/, whose
+        patch() methods add the clio VTX output, the body mask and BP5 naming
+      version: "5.0"
+      url: https://github.com/xcompact3d/Incompact3d/tree/v5.0
+    - name: Incompact3d examples/TGV-Taylor-Green-vortex/input_DNS_Re1600.i3d (BSD-3-Clause, see NOTICE)
+      version: "5.0"
+      url: https://github.com/xcompact3d/Incompact3d/tree/v5.0/examples/TGV-Taylor-Green-vortex
+
+selftest:
+  # A cylinder of diameter 1 in a periodic span at Re 300: 181 x 90 x 8 points.
+  params:
+    nprocs: 4
+    ppn: 4
+    geometry: "{pkg_dir}/config/cylinder.stl"
+    resolution: 12
+    re: 300
+    dt: 0.005
+    ilast: 200
+    ioutput: 20
+    walltime: 900
+  max_seconds: 900
+  script: selftest.py

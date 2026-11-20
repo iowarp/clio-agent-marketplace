@@ -1,0 +1,107 @@
+schema: clio.package-contract.v1
+package: pvserver
+version: 0.3.1
+kind: service
+summary: >-
+  ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
+  built by Spack with MPI and ADIOS2. A ParaView client reaches it through an
+  SSH tunnel to the reported port and opens clio outputs with the reader their
+  view descriptor names.
+
+install:
+  method: spack
+  # Spack's builtin paraview recipe; MPI stays the mpi virtual, so the site's
+  # MPI and Mesa are reused. 5.13.1 matches the CLIO ParaView MCP client.
+  query: paraview@5.13.1 +mpi +adios2 +python ~qt ^[virtuals=gl] osmesa
+  repos: []
+
+parameters:
+  required: [nprocs, port]
+  properties:
+    nprocs: {minimum: 1, maximum: 1024}
+    ppn: {minimum: 1, maximum: 256}
+    cores_per_node: {minimum: 1, maximum: 1024}
+    port: {minimum: 0, maximum: 65535}
+    connect_id: {minimum: 0, maximum: 2147483647}
+    # No default and no cap: absent means the server runs until it is stopped.
+    max_lifetime: {minimum: 1}
+    start_timeout: {minimum: 5, maximum: 3600}
+    walltime: {minimum: 1}
+  review: [nprocs, port, connect_id, max_lifetime, walltime, queue]
+  fill:
+    state_dir: "{shared_dir}/pvserver"
+
+resources:
+  process_count: {param: nprocs}
+  processes_per_node: {param: ppn}
+  duration: {param: walltime}
+  queue_name: {param: queue}
+
+sizing:
+  mesh: The datasets clients open; pvserver holds no mesh of its own.
+  decomposition: data-parallel
+  ranks: >-
+    nprocs pvserver ranks; readers split a dataset across them. One rank renders
+    a small case; add ranks when a dataset no longer fits one node's memory or
+    renders too slowly. The ranks run on the package's hosts (its hostfile,
+    narrowed by host_slice) with rank 0, the one clients reach, on the node
+    that runs JARVIS; without a hostfile they share that node.
+  processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}
+  nodes: {ceil_div: [nprocs, ppn]}
+
+outputs: []
+
+progress:
+  unit: service
+  ready_pattern: '^clio-pvserver ready port=(?P<port>\d+)\b'
+
+service:
+  ports:
+    - name: paraview
+      protocol: tcp
+      port: {param: port}
+      bind: 127.0.0.1
+      health:
+        kind: tcp-listen
+        note: >-
+          Checked in /proc/net/tcp, never by connecting: pvserver serves the
+          first client that connects. Port 0 means the ready event carries the
+          chosen port.
+      protection:
+        bind: loopback
+        connect_id: {param: connect_id}
+        note: Reached only through an SSH tunnel; a nonzero connect_id must also match.
+  stop:
+    signal: SIGTERM
+    writes: "{state_dir}/pvserver-stop.json"
+    record: clio.service-stop.v1
+    # Within jarvis-cd's 20 s stop grace, after which the job's tree gets KILL.
+    grace_seconds: 15
+  runtime:
+    record: jarvis.service-runtime.v2
+    lifecycle: [starting, ready, degraded, stopping, stopped, failed]
+    endpoint:
+      host: rank0-node
+      port: {param: port}
+      note: >-
+        host is the node running rank 0 (the one running JARVIS) and port the
+        port pvserver listens on. pvserver binds 127.0.0.1 there, so a client
+        reaches cs://host:port through an SSH tunnel to host. The runtime's
+        protocol is tcp (base_url tcp://host:port), which needs jarvis-cd
+        4007fd14 or newer; the ready message names cs://.
+  max_lifetime: {param: max_lifetime}
+
+provenance:
+  inputs: []
+  upstream:
+    - name: ParaView pvserver (Spack builtin paraview, offscreen OSMesa)
+      version: "5.13.1"
+      url: https://www.paraview.org/download/
+
+selftest:
+  # The generic runner's 'jarvis ppl run' starts and then stops the server.
+  # selftest.py also serves it as relay does, with no lifetime: through
+  # 'ppl start', a held wait and 'ppl stop', and through 'ppl run' with hold.
+  params: {nprocs: 1, ppn: 1, port: 0, start_timeout: 120}
+  max_seconds: 600
+  script: selftest.py

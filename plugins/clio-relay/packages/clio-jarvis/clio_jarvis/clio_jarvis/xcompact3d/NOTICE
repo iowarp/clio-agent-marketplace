@@ -1,0 +1,13 @@
+clio-jarvis xcompact3d package
+
+config/input_DNS_Re1600.i3d and the IO layout in config/adios2_config.xml come
+from the Incompact3d v5.0 example examples/TGV-Taylor-Green-vortex. The input
+file is unchanged; the ADIOS2 configuration uses the BP5 engine instead of BP4.
+They are distributed under the BSD 3-Clause License in config/LICENSE.incompact3d:
+
+  Copyright (c) 2012-2022, Xcompact3d
+  All rights reserved.
+
+The clio patches to Incompact3d v5.0 and 2DECOMP&FFT 2.0.4 are the patch()
+methods of the Spack recipes spack/packages/xcompact3d (variant +clio) and
+spack/packages/decomp2d-fft in the clio-jarvis repository. They are not upstream.

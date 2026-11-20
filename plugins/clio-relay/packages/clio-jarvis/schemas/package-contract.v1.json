@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/iowarp/clio-jarvis/schemas/package-contract.v1.json",
+  "title": "clio-jarvis package contract, version 1",
+  "description": "The contract.yaml beside each clio-jarvis package's pkg.py (RL40). A package that misses a part does not ship.",
+  "type": "object",
+  "required": ["schema", "package", "version", "kind", "summary", "install", "parameters", "resources", "sizing", "outputs", "progress", "provenance", "selftest"],
+  "additionalProperties": false,
+  "$defs": {
+    "param_name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$" },
+    "value": {
+      "description": "A literal, a parameter reference {param: name}, or integer arithmetic over them.",
+      "oneOf": [
+        { "type": ["integer", "number", "string", "boolean"] },
+        {
+          "type": "object", "additionalProperties": false, "required": ["param"],
+          "properties": { "param": { "$ref": "#/$defs/param_name" } }
+        },
+        {
+          "type": "object", "additionalProperties": false, "minProperties": 1, "maxProperties": 1,
+          "properties": {
+            "div": { "$ref": "#/$defs/operands" },
+            "mul": { "$ref": "#/$defs/operands" },
+            "add": { "$ref": "#/$defs/operands" },
+            "ceil_div": { "$ref": "#/$defs/operands" }
+          }
+        }
+      ]
+    },
+    "operands": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": { "anyOf": [ { "type": "number" }, { "$ref": "#/$defs/param_name" } ] }
+    },
+    "output": {
+      "type": "object",
+      "required": ["name", "path", "path_kind", "format"],
+      "additionalProperties": false,
+      "if": { "required": ["role"], "properties": { "role": { "not": { "const": "snapshots" } } } },
+      "else": { "required": ["reader"] },
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$" },
+        "role": {
+          "enum": ["snapshots", "statistics", "restart"],
+          "default": "snapshots",
+          "description": "snapshots: the growing series a viewer follows (needs reader). statistics and restart: files reported as artifacts when the run ends, if the run wrote them."
+        },
+        "description": { "type": "string", "description": "What the output holds and when the run writes it." },
+        "path": { "type": "string", "minLength": 1, "description": "Template over the configured parameters and {shared_dir}, for example '{outdir}/gs.bp'." },
+        "path_kind": { "enum": ["file", "directory", "glob"] },
+        "format": { "type": "string" },
+        "reader": { "type": "string" },
+        "reader_properties": { "type": "object" },
+        "expected_steps": { "$ref": "#/$defs/value" },
+        "follow": { "type": "object" },
+        "time": { "type": "object" },
+        "display": { "type": "object" },
+        "arrays": { "type": "array", "items": { "type": "string" }, "description": "Arrays the self-test expects the reader to expose." }
+      }
+    }
+  },
+  "properties": {
+    "schema": { "const": "clio.package-contract.v1" },
+    "package": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([.+-][0-9A-Za-z.-]+)?$" },
+    "kind": { "enum": ["application", "service"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "install": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "query", "repos"],
+      "description": "The package's Spack linkage. It becomes the install_method, install_query and install_repos menu defaults, which jarvis-cd's Spack installer plans: it finds what the site has and builds the rest.",
+      "properties": {
+        "method": { "const": "spack" },
+        "query": {
+          "type": "string", "minLength": 1,
+          "description": "Spack spec of the software. MPI stays the mpi virtual: the spec never names an MPI, so the site's MPI is reused."
+        },
+        "repos": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Spack repositories holding recipes the query needs beyond Spack's builtin, relative to the clio-jarvis repository root."
+        }
+      }
+    },
+    "sizing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mesh", "decomposition", "ranks", "processes_per_node", "nodes"],
+      "description": "How a run is sized: mesh, then MPI ranks, then nodes.",
+      "properties": {
+        "mesh": { "type": "string", "description": "How the mesh (the work in one step) follows from the parameters." },
+        "decomposition": { "enum": ["pencil2d", "block3d", "data-parallel", "none"] },
+        "ranks": { "type": "string", "description": "How to choose the process count from the mesh, and the limits the decomposition puts on it." },
+        "processes_per_node": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["param", "default", "cores"],
+          "properties": {
+            "param": { "$ref": "#/$defs/param_name" },
+            "default": { "const": "physical_cores", "description": "An empty parameter takes the target partition's physical cores per node: the cores parameter (relay's describe reports it per partition), else, inside the job, the physical cores of the job's node. The configuring host, often a login node, is never asked." },
+            "cores": { "$ref": "#/$defs/param_name", "description": "Parameter holding the target partition's physical cores per node." }
+          }
+        },
+        "nodes": { "$ref": "#/$defs/value" },
+        "cost": { "type": "string", "description": "How to estimate walltime. Throughput is calibrated on the site from a short run, not fixed in the contract." }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Refines the JSON Schema derived from the package's _configure_menu.",
+      "properties": {
+        "required": { "type": "array", "items": { "$ref": "#/$defs/param_name" } },
+        "properties": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/param_name" },
+          "additionalProperties": { "type": "object" }
+        },
+        "review": { "type": "array", "items": { "$ref": "#/$defs/param_name" }, "description": "Parameters a reviewer must see on a guarded site." },
+        "fill": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/param_name" },
+          "additionalProperties": { "type": "string" },
+          "description": "Template for a parameter left empty, resolved at configure time. Only these templates may use {shared_dir}, {private_dir} or {pkg_dir}."
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "description": "PSI/J 0.9.11 resource and attribute names (RL15). duration is in seconds.",
+      "required": ["process_count", "duration"],
+      "additionalProperties": false,
+      "properties": {
+        "node_count": { "$ref": "#/$defs/value" },
+        "process_count": { "$ref": "#/$defs/value" },
+        "processes_per_node": { "$ref": "#/$defs/value" },
+        "cpu_cores_per_process": { "$ref": "#/$defs/value" },
+        "gpu_cores_per_process": { "$ref": "#/$defs/value" },
+        "exclusive_node_use": { "$ref": "#/$defs/value" },
+        "memory": { "$ref": "#/$defs/value" },
+        "duration": { "$ref": "#/$defs/value" },
+        "queue_name": { "$ref": "#/$defs/value" }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/output" },
+      "description": "Every output with its view descriptor template. A service with no outputs lists none."
+    },
+    "progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit"],
+      "properties": {
+        "unit": { "type": "string" },
+        "step_pattern": { "type": "string", "description": "Regex over one stdout line with a named group 'step'." },
+        "announces": {
+          "enum": ["before-write", "after-write"],
+          "default": "after-write",
+          "description": "Whether the step line is printed before or after the step reaches the output. With 'before-write', step k means k-1 steps are readable."
+        },
+        "output":  { "type": "string", "description": "The output each step record points at." },
+        "total": { "$ref": "#/$defs/value" },
+        "done_pattern": { "type": "string" },
+        "ready_pattern": { "type": "string", "description": "For a service: regex for the line that says the port is open." }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ports", "stop"],
+      "properties": {
+        "ports": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "protocol", "port", "health", "protection"],
+            "properties": {
+              "name": { "type": "string" },
+              "protocol": { "enum": ["tcp", "http", "ws", "mcp"] },
+              "port": { "$ref": "#/$defs/value" },
+              "bind": { "$ref": "#/$defs/value" },
+              "health": {
+                "type": "object", "additionalProperties": false, "required": ["kind"],
+                "properties": {
+                  "kind": { "enum": ["tcp-listen", "http-get"] },
+                  "path": { "type": "string" },
+                  "note": { "type": "string" }
+                }
+              },
+              "protection": {
+                "type": "object", "additionalProperties": false, "required": ["bind"],
+                "properties": {
+                  "bind": { "enum": ["loopback", "any"] },
+                  "connect_id": { "$ref": "#/$defs/value" },
+                  "note": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "stop": {
+          "type": "object", "additionalProperties": false, "required": ["signal", "writes", "record"],
+          "properties": {
+            "signal": { "enum": ["SIGTERM", "SIGINT"] },
+            "writes": { "type": "string" },
+            "record": { "const": "clio.service-stop.v1" },
+            "grace_seconds": { "type": "integer", "minimum": 1, "description": "Bounded by jarvis-cd's stop grace (20 s) so the stop record is written before KILL." }
+          }
+        },
+        "runtime": {
+          "type": "object", "additionalProperties": false, "required": ["record", "lifecycle", "endpoint"],
+          "description": "The jarvis-cd service runtime the package reports through ServiceRuntimeReporter; jarvis starts the next package once it says ready.",
+          "properties": {
+            "record": { "const": "jarvis.service-runtime.v2" },
+            "lifecycle": { "type": "array", "items": { "enum": ["starting", "ready", "degraded", "stopping", "stopped", "failed"] } },
+            "endpoint": {
+              "type": "object", "additionalProperties": false, "required": ["host", "port"],
+              "properties": {
+                "host": { "type": "string", "description": "Which node the reported host names." },
+                "port": { "$ref": "#/$defs/value" },
+                "note": { "type": "string" }
+              }
+            }
+          }
+        },
+        "max_lifetime": { "$ref": "#/$defs/value" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputs"],
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Templates of the files the run reads; each is digested with SHA-256 at configure time."
+        },
+        "upstream": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["name", "version"],
+            "properties": { "name": { "type": "string" }, "version": { "type": "string" }, "url": { "type": "string" }, "sha256": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "selftest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["params", "max_seconds"],
+      "properties": {
+        "params": { "type": "object" },
+        "max_seconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+        "script": { "type": "string", "description": "Optional selftest.py with check(context) for package-specific checks." }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "service" } } },
+      "then": { "required": ["service"], "properties": { "progress": { "required": ["ready_pattern"] } } },
+      "else": {
+        "not": { "required": ["service"] },
+        "properties": {
+          "outputs": { "minItems": 1 },
+          "progress": { "required": ["step_pattern", "output", "total"] }
+        }
+      }
+    }
+  ]
+}

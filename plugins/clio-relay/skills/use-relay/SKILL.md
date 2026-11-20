@@ -61,20 +61,22 @@ tool. Do not look for relay's files or build an archive by hand.
 
 Stage from one of two sources:
 
-- **Git at a commit.** `packages(op="stage", package="clio_jarvis.xcompact3d")`
-  with nothing else stages it from relay's pinned clio-jarvis (the result's
-  `default_source` names the URL and commit). For another repository give
-  `git` (an https, ssh or file URL) and `commit` (7 to 40 hex digits; never a
-  branch or a tag), and `path` when the JARVIS repository is deeper in the
-  checkout.
+- **Relay's package sources.** `packages(op="stage",
+  package="clio_jarvis.xcompact3d")` with nothing else stages it from the
+  package repositories installed beside relay. This plugin ships clio-jarvis
+  at its pin, so its packages need no download, no account and no sign-in.
+  The result's `sources` lists the directories relay looked in.
 - **A directory on the relay host.** `packages(op="stage", package="...",
   dir="/abs/path")` stages a package from the person's workspace, such as one
   just written with the JARVIS package skill. `dir` is the JARVIS repository
-  or the checkout that holds it.
+  or the folder that holds it. The archive reaches the site as a job input,
+  through the site's own file transfer (scp on an ssh site). Never push a
+  person's package to a git repository to get it onto a site.
 
 Give `version` only when the package has no `contract.yaml` version and no
-git tag. Staging runs nothing and touches no site: on a guarded site the
-person still reviews the archive, by its SHA-256, before its first run there.
+git tag. Staging
+runs nothing and touches no site: on a guarded site the person still reviews
+the archive, by its SHA-256, before its first run there.
 
 `packages(op="remove", package="...")` takes a package out of relay's
 catalog, every version of it unless `version` or `sha256` narrows it. Use it
