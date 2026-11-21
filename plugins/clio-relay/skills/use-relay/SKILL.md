@@ -12,6 +12,25 @@ SSH, a Globus Compute endpoint or a Tapis tenant. Its five verbs are
 the JARVIS packages `run` takes, and `shutdown` stops relay's long-lived
 processes when the host closes.
 
+## Reads never ask
+
+Three tools only read: `describe`, `exec_read` and `files_read`. They change
+nothing on a site and never ask the person, so use them freely, in planning
+too, and keep `exec`, `files` and `packages` for changes.
+
+- `describe` lists sites, describes one (`site`), observes a job or a
+  service (`job`; for a service it gives the endpoint and whether it is
+  ready) and lists the staged packages (`packages=true`).
+- `exec_read` runs one read-only command, given as an argument list with no
+  shell: listings and file reads (`ls`, `cat`, `head`, `tail`, `grep`,
+  `stat`, `du`, `df`), the scheduler (`squeue`, `sinfo`, `sacct`,
+  `scontrol show`), the machine (`hostname`, `nproc`, `uname`), modules and
+  quotas, Spack queries (`spack find`, `spack info`) and the JARVIS reads
+  below. Anything else is refused with `policy_refused` and the next step
+  `exec`.
+- `files_read` lists, stats, reads and checks files (`op` list, stat, read,
+  has).
+
 ## Start with describe
 
 Call `describe` before anything else. Without arguments it lists the sites;
@@ -51,10 +70,11 @@ says what the command changes; relay asks the person before it runs. Do not inve
 work them out by hand with `ls`, `module` or interface listings when
 JARVIS already reports them.
 
-To read site facts, give `exec` `facts.jarvis.read` followed by exactly one of
-`sched info +json`, `rg facts show +json`, `rg skill list +json` or `rg skill
-show NAME +json`. These run with no shell and no `plan`, even on a guarded
-site. Anything else, answers included, goes through `facts.jarvis.exec`.
+To read site facts, give `exec_read` `facts.jarvis.read` followed by exactly
+one of `sched info +json`, `rg facts show +json`, `rg skill list +json` or `rg
+skill show NAME +json`. These run with no shell and no `plan`, even on a
+guarded site. Anything else, answers included, goes through `exec` with
+`facts.jarvis.exec`.
 
 ## Run work
 
@@ -62,8 +82,9 @@ site. Anything else, answers included, goes through `facts.jarvis.exec`.
   a task; otherwise it waits up to `wait_s` and returns the operation, which
   `describe(job=...)` observes.
 - `exec` runs one short command on the site's login side and returns bounded
-  output.
-- `files` lists, reads, writes and stages small files. `stage` returns the
+  output. Use `exec_read` when the command only reads.
+- `files` writes, stages and removes small files; read them with
+  `files_read`. `stage` returns the
   SHA-256 a JobSpec input names. To hand a staged file to a package, set the
   package parameter to the input's name (such as `body.stl`); relay puts in its
   path on the site. Never write a directory placeholder around it.
@@ -93,8 +114,8 @@ person.
 
 `run` takes a JARVIS package by name, `package: {name, parameters}`, and runs
 only a package relay has staged. `describe(site=...)` lists the staged ones
-under `packages`; `packages(op="list")` lists them too, with where each came
-from. When the package you need is not there, stage it with the `packages`
+under `packages`; `describe(packages=true)` lists them too, with where each
+came from. When the package you need is not there, stage it with the `packages`
 tool. Do not look for relay's files or build an archive by hand.
 
 Stage from one of two sources:
@@ -188,14 +209,15 @@ For a blocking issue, work through these steps:
 1. **Investigate.** Run the issue's own `details.probes`, read the site's
    skills (`rg skill show NAME +json`), and compare what you find with
    `details.evidence`.
-   - Run every probe through `exec`.
+   - Run every probe through `exec_read`; use `exec` only for a probe it
+     refuses.
    - Only light, short probes run on the login node. Anything that must see
      compute nodes, or takes longer, runs in a JARVIS job, such as the
      two-node smoke run the probes name (`jarvis ppl submit`).
    - Do not run commands the issue does not offer, and do not reach compute
      nodes any other way.
-   - On a guarded site, give `exec` a `plan` that says the command is a
-     read-only probe; relay asks the person before it runs.
+   - On a guarded site, a probe that needs `exec` takes a `plan` that says
+     the command is a read-only probe; relay asks the person before it runs.
 2. **Propose.** Tell the person:
    - which value you propose (`accept` for JARVIS's pick, or a value of the
      form `details.answer` lists);
@@ -242,7 +264,7 @@ later job on the site uses it.
 When an install job fails, the run fails `submit_failed` with
 `refusal.data.needs: "jarvis ppl install"`. Its message ends with the last part
 of the install log, and `refusal.data.install_log` is the whole log on the site:
-read it with `files(op="read")`. Find the cause, fix it in the place that owns
+read it with `files_read(op="read")`. Find the cause, fix it in the place that owns
 it (a package parameter, the person's answer to a JARVIS question, the site's
 JARVIS Spack through `spack prepare`), and call the same `run` again. Ask the
 person only for a real decision, such as a choice between two compilers or a
