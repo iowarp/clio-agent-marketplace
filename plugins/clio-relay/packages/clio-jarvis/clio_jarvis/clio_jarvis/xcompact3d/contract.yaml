@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.1
+version: 0.3.2
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -53,6 +53,31 @@ summary: >-
   point-steps per second per MPI rank measured from a short run of the same
   build (see sizing); set walltime with a margin. nprocs must split the grid
   into a 2D pencil grid; configure refuses one that cannot.
+  Fitting the person's budget: size production to the time and nodes the
+  person gave (say, results within an hour on up to 8 nodes), not to the
+  finest grid the cluster could hold. Measure first. A pilot is a short run
+  of the production grid, or close to it, on the production rank count, and it
+  exists to measure seconds per step and the cost of one snapshot write, so
+  it must write at least one snapshot: estimate its seconds per step from the
+  smoke run's throughput (point-steps per second per rank) before submitting,
+  set its ioutput so the first snapshot lands within the first half of its
+  walltime, and its ilast to two snapshots. A pilot that hits its walltime
+  before a snapshot measured nothing about the writes and is wasted. Read the
+  seconds per step from the solver's per-step timing lines, or from the gap
+  between two snapshots divided by ioutput. Then project each candidate: wall
+  seconds = seconds per step x ilast + snapshot write seconds x ilast /
+  ioutput, scaling seconds per step by pilot ranks / candidate ranks (no
+  better than linear; use a measured scaling run if there is one) and by
+  candidate points / pilot points. Offer two or three candidates, each with
+  its grid, nodes and projected wall time, mark exactly one as recommended,
+  the one that fits the person's time and node budget with a margin of about
+  a third, and say what each gives up. If none fits, say so and recommend the
+  closest; do not recommend one that overruns the budget. Coarsening pays
+  most: cost goes with resolution^3 for a periodic span (nx x ny points and a
+  dt that shrinks with h) and resolution^4 for span free, and span free on a
+  finite wing costs tens of times a periodic section, so within an hour
+  prefer a periodic section unless the tips are the point, and shorten the
+  simulated time before giving up the wake entirely.
   Outputs: snapshots of ux, uy, uz, pp, vort, critq and (body case) ep, the
   body indicator, go to a growing BP5 output that ParaView's ADIOS2VTXReader
   follows while the run goes; a slice at mid-span coloured by vort shows the
@@ -73,7 +98,13 @@ install:
   query: xcompact3d@5.0 +clio ^decomp2d-fft io=adios2 ^adios2+mpi+fortran
   repos: [spack]
 parameters:
-  required: [nprocs, n, ilast, ioutput, dt]
+  required: [nprocs, ilast, ioutput, dt]
+  # n sizes only the Taylor-Green grid; the body case takes its grid from resolution.
+  cases:
+    - name: taylor-green
+      when: {geometry: {const: ""}}
+      properties:
+        n: {enum: [33, 65, 129, 257]}
   properties:
     nprocs: {minimum: 1, maximum: 65536}
     ppn: {minimum: 1, maximum: 256}
@@ -128,6 +159,11 @@ sizing:
     throughput in point-steps per second per rank measured on the site with a
     short run of the same build and rank count range; add a margin for
     snapshot writes, which grow with nx x ny x nz x 7 doubles per snapshot.
+    A pilot must write at least one snapshot within its walltime (first
+    snapshot in the first half), so its seconds per step and write time are
+    both measured. Project each candidate's wall time from the pilot's
+    seconds per step and recommend the one that fits the person's stated
+    time and node budget with a margin (see the summary).
 
 outputs:
   - name: snapshots

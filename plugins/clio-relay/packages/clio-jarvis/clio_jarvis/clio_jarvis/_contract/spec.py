@@ -371,6 +371,19 @@ def parameters_schema(menu: Iterable[Mapping[str, Any]], refinement: Mapping[str
     }
     if refinement.get("required"):
         schema["required"] = list(refinement["required"])
+    # A case's rules apply only when the configuration is in that case, so a
+    # parameter one case uses is not checked, or required, in another.
+    rules = []
+    for case in refinement.get("cases") or []:
+        then: dict[str, Any] = {}
+        if case.get("required"):
+            then["required"] = list(case["required"])
+        if case.get("properties"):
+            then["properties"] = {name: dict(extra) for name, extra in case["properties"].items()}
+        if then:
+            rules.append({"if": {"properties": {name: dict(match) for name, match in case["when"].items()}}, "then": then})
+    if rules:
+        schema["allOf"] = rules
     return schema
 
 
@@ -701,6 +714,11 @@ def _check_semantics(contract: Contract) -> None:
     need("parameters", (refinement.get("properties") or {}).keys(), "properties")
     need("parameters", refinement.get("required") or [], "required")
     need("parameters", refinement.get("review") or [], "review")
+    for case in refinement.get("cases") or []:
+        where = f"case {case['name']!r}"
+        need("parameters", case["when"].keys(), f"{where} when")
+        need("parameters", case.get("required") or [], f"{where} required")
+        need("parameters", (case.get("properties") or {}).keys(), f"{where} properties")
     for name, template in (refinement.get("fill") or {}).items():
         need("parameters", {name} | template_fields(template), f"fill {name!r}")
     known = names

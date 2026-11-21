@@ -46,6 +46,11 @@ use `describe` instead.
   SHA-256 a JobSpec input names.
 - `serve` starts a job with ports and returns how to reach it. Each port in
   the endpoint has an `address` (`host:port`): hand that to the client.
+  To serve one package beside a run, such as pvserver beside xcompact3d, give
+  both in one `serve` pipeline: set `service: true` only on the step that
+  serves the ports, and place the steps on their nodes with each step's
+  `host_slice` parameter (pvserver `0:2`, xcompact3d `2:6`, say).
+  The other steps run alongside it in the same job.
 
 A refusal carries a typed reason in `structuredContent.refusal`. Read it and
 act on it: a site that needs sign-in, a missing account or an unreachable host
@@ -122,11 +127,18 @@ wakes you when the task ends, so do not poll `describe` in a loop. When you are
 woken, carry on with the next step of the plan the person approved.
 
 A job that waits in the queue says so: the operation's `result.queue` (and its
-message) names the partition, Slurm's `reason` and `estimated_start`, and
-`idle_partitions`, the partitions with free nodes now, each with `fits` when
-the job's nodes and time would fit there. When the estimate is far off and a
-partition fits, tell the person and offer to cancel and run again on it with
-the package's `queue` parameter. Never switch partitions without their yes.
+message) names the partition, Slurm's `reason`, `estimated_start` and
+`starts_in_s`, and `idle_partitions`, the partitions with free nodes now, each
+with `fits` when the job's nodes and time would fit there. When the estimate
+is far off and a partition fits, relay itself asks the person whether to keep
+waiting or move the job there: the task turns `input_required` with that
+choice. Relay the question as it is; relay moves the job only on the person's
+answer, keeps its id, and runs the operation's later jobs on that partition.
+Do not cancel and rerun to switch partitions yourself.
+
+Leave a job's queue unset (`attributes.queue_name`, or a package's `queue`
+parameter) unless the person names one: the site's `defaults.queue`, shown by
+`describe(site=...)`, applies to a job with none.
 
 An install that asks to choose an MPI asks once per site. A later install's
 approval says it uses the MPI chosen for that site before; approve it to keep

@@ -50,6 +50,15 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.17) runs relay integration 21fffaa5 and bundles clio-jarvis
+  82debc68 (xcompact3d 0.3.2, with case-scoped parameter checks and sizing
+  guidance). When a job waits far off in a busy partition and another has idle
+  nodes that fit, relay asks the person to keep waiting or move it, and moves the
+  pending job in place. The agent leaves the queue unset unless the person names
+  one, so the site's default applies. A coupled pipeline marks only its serving
+  step as the service. `site clean` ends operations whose jobs were cancelled
+  outside relay and cancels those still waiting on the person. The use-relay skill
+  shows the coupled pipeline and says to pass relay's queue question on as it is.
 - `clio-relay` (1.6.16) runs relay integration b5c98e2c. A site's MPI choice
   carries to the next install on that site until the person declines it. A serve
   with `path: auto` takes ssh when frp has no client or token. A queued job shows

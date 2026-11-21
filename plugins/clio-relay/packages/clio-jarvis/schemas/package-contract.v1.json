@@ -116,6 +116,30 @@
           "propertyNames": { "$ref": "#/$defs/param_name" },
           "additionalProperties": { "type": "object" }
         },
+        "cases": {
+          "type": "array",
+          "description": "Rules that hold only in one case of the package, such as a parameter that one case uses and another ignores. A configuration is in the case when every parameter named in when matches its schema; a parameter left out of the configuration matches. Only that case's required and properties are checked.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "when"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "when": {
+                "type": "object",
+                "minProperties": 1,
+                "propertyNames": { "$ref": "#/$defs/param_name" },
+                "additionalProperties": { "type": "object" }
+              },
+              "required": { "type": "array", "items": { "$ref": "#/$defs/param_name" } },
+              "properties": {
+                "type": "object",
+                "propertyNames": { "$ref": "#/$defs/param_name" },
+                "additionalProperties": { "type": "object" }
+              }
+            }
+          }
+        },
         "review": { "type": "array", "items": { "$ref": "#/$defs/param_name" }, "description": "Parameters a reviewer must see on a guarded site." },
         "fill": {
           "type": "object",

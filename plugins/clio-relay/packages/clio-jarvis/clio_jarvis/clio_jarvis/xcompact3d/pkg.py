@@ -161,10 +161,9 @@ class Xcompact3d(ClioApplication):
             {"name": "lateral", "msg": "Domain margin on each side of the body across the flow, in body lengths (body case)", "type": float, "default": 3.0},
             {
                 "name": "n",
-                "msg": "Grid points per side, nx = ny = nz (Taylor-Green case only)",
+                "msg": "Grid points per side, nx = ny = nz: 33, 65, 129 or 257 (Taylor-Green case only; the body case ignores it and sizes its grid from resolution)",
                 "type": int,
                 "default": 65,
-                "choices": [33, 65, 129, 257],
             },
             {"name": "ilast", "msg": "Last time step; the simulated time is ilast x dt, and shedding shows after the flow crosses the domain two to three times", "type": int, "default": 2400},
             {"name": "ioutput", "msg": "Time steps between two snapshots; ilast / ioutput snapshots, 50 to 200 for a smooth live view", "type": int, "default": 20},
