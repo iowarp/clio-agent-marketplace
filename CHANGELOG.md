@@ -11,6 +11,12 @@
 
 ### Changed
 
+- `hidden-law-bench` (0.3.1), `wordle-demo` (0.2.1), `spotter` (0.5.1) and `hdf5-ptc`:
+  each MCP server starts with `uv run --locked`, so it installs exactly its lock and
+  fails if the lock is missing or out of date instead of resolving again on the
+  person's computer. `hidden-law-bench` and `wordle-demo` now ship a `uv.lock`;
+  without one, the first launch resolved `fastmcp>=4.1` and its dependencies from
+  PyPI. A layout test checks both.
 - `ndp` (3.1.0): `work-with-ndp` reads part of a large file through a byte-range
   handle (`connected_data_open` with `range=true`, then GDAL `/vsicurl/`, rasterio,
   h5py or xarray on its URL) and downloads only a whole file or one whose server

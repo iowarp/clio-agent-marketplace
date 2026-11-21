@@ -4,7 +4,7 @@
     "bench": {
       "type": "stdio",
       "command": "uv",
-      "args": ["run", "--project", "${PLUGIN_ROOT}/impl", "hidden-law-bench-mcp"],
+      "args": ["run", "--locked", "--project", "${PLUGIN_ROOT}/impl", "hidden-law-bench-mcp"],
       "env": {
         "BENCH_SECRET_SEED": "${CLIO_SECRET_BENCH_SEED}"
       }
