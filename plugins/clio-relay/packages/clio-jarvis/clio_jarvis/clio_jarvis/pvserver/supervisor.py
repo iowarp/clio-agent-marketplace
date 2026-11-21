@@ -24,8 +24,11 @@ failed at the end. The reported endpoint is this node (rank 0's) and the port.
 jarvis-cd's ``Pkg.ready`` reads that record, and the next package in the
 pipeline starts only once it says ready.
 
-With more than one rank it starts pvserver through the mpiexec of the MPI
-JARVIS chose (JARVIS_MPI_PREFIX, JARVIS_MPI_TYPE), over ``--hosts`` with this
+With more than one rank it runs the MPI launch JARVIS built (``--launch``): the
+package asks jarvis-cd's MPI executor for the command, the same path an MPI
+application launches through, so the launcher, hosts, network selection and
+rank environment are JARVIS's. The supervisor only puts the chosen port in
+place of PORT_PLACEHOLDER and runs it. The package orders the hosts with this
 node first, so rank 0 listens where the supervisor checks.
 
 Without a service runtime only the standard library is used, so any Python
@@ -89,17 +92,20 @@ def listening(port: int) -> bool | None:
     return False if seen_table else None
 
 
-def server_command(args: argparse.Namespace, port: int) -> list[str]:
+#: Stands for the port in a launch built before the supervisor picks it.
+PORT_PLACEHOLDER = "@CLIO_PVSERVER_PORT@"
+
+
+def pvserver_arguments(executable: str, port: int | str, connect_id: int = 0) -> list[str]:
+    """One pvserver rank's command line."""
     command = [
-        args.executable,
+        executable,
         "--force-offscreen-rendering",
         f"--bind-address={BIND}",
         f"--server-port={port}",
     ]
-    if args.connect_id:
-        command.append(f"--connect-id={args.connect_id}")
-    if args.nprocs > 1:
-        command = mpi_launcher(args) + command
+    if connect_id:
+        command.append(f"--connect-id={connect_id}")
     return command
 
 
@@ -112,32 +118,22 @@ def ordered_hosts(hosts: list[str]) -> list[str]:
     raise ValueError(f"this node ({socket.gethostname()}) is not among the hosts {hosts}")
 
 
-def mpi_launcher(args: argparse.Namespace) -> list[str]:
-    """mpiexec of the MPI ParaView was built against, over ``--hosts`` or this node.
+def load_launch(path: str) -> dict:
+    """The MPI launch JARVIS built: a shell command holding PORT_PLACEHOLDER and the launcher's environment."""
+    launch = json.loads(Path(path).read_text(encoding="utf-8"))
+    if PORT_PLACEHOLDER not in str(launch.get("command", "")):
+        raise ValueError(f"the launch in {path} has no {PORT_PLACEHOLDER} for the port")
+    return launch
 
-    JARVIS's Spack installer exports the chosen MPI as JARVIS_MPI_PREFIX and
-    JARVIS_MPI_TYPE; without them mpiexec is taken from PATH.
-    """
-    nprocs = str(args.nprocs)
-    prefix = os.environ.get("JARVIS_MPI_PREFIX", "")
-    launcher = os.path.join(prefix, "bin", "mpiexec") if prefix else ""
-    if not os.path.isfile(launcher):
-        launcher = "mpiexec"
-    kind = os.environ.get("JARVIS_MPI_TYPE", "").strip().lower()
-    hosts = args.hosts.split(",") if args.hosts else []
-    ppn = args.ppn or -(-args.nprocs // max(len(hosts), 1))
-    if kind == "openmpi":
-        if not hosts:
-            return [launcher, "--host", f"localhost:{nprocs}", "-n", nprocs]
-        command = [launcher, "--host", ",".join(f"{host}:{ppn}" for host in hosts), "-x", "PATH", "-x", "LD_LIBRARY_PATH"]
-        if prefix:
-            command += ["--prefix", prefix]
-        return command + ["-n", nprocs]
-    if kind in ("mpich", "intel_mpi", "cray_mpich") or not kind:
-        if not hosts:
-            return [launcher, "-launcher", "fork", "-n", nprocs] if kind else [launcher, "-n", nprocs]
-        return [launcher, "-hosts", ",".join(hosts), "-ppn", str(ppn), "-n", nprocs]
-    return [launcher, "-n", nprocs]
+
+def server_command(args: argparse.Namespace, port: int) -> tuple[list[str] | str, dict[str, str] | None]:
+    """The command to start (a shell line for an MPI launch) and its environment, None meaning ours."""
+    if args.launch_spec is None:
+        return pvserver_arguments(args.executable, port, args.connect_id), None
+    command = str(args.launch_spec["command"]).replace(PORT_PLACEHOLDER, str(port))
+    environment = dict(os.environ)
+    environment.update({key: str(value) for key, value in (args.launch_spec.get("env") or {}).items()})
+    return command, environment
 
 
 class RuntimeReport:
@@ -228,13 +224,15 @@ class Supervisor:
         pipe.close()
 
     def launch(self, port: int, log) -> tuple[subprocess.Popen, threading.Thread]:
-        command = server_command(self.args, port)
-        log.write(f"# {now()} {' '.join(command)}\n")
+        command, environment = server_command(self.args, port)
+        log.write(f"# {now()} {command if isinstance(command, str) else ' '.join(command)}\n")
         log.flush()
         self.accepting.clear()
         self.client_seen.clear()
         server = subprocess.Popen(
             command,
+            shell=isinstance(command, str),
+            env=environment,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             stdin=subprocess.DEVNULL,
@@ -424,8 +422,11 @@ def parse(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--executable", default="pvserver")
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--nprocs", type=int, default=1)
-    parser.add_argument("--ppn", type=int, default=0, help="ranks per host; 0 spreads nprocs evenly")
-    parser.add_argument("--hosts", default="", help="comma-separated hosts for the ranks; empty means this node")
+    parser.add_argument(
+        "--launch",
+        default="",
+        help=f"JSON file with the MPI launch JARVIS built (command with {PORT_PLACEHOLDER}, env); needed above one rank",
+    )
     parser.add_argument("--connect-id", type=int, default=0)
     parser.add_argument("--persist", action="store_true", help="start a new pvserver on the same port after each client session")
     parser.add_argument(
@@ -442,10 +443,13 @@ def parse(argv: list[str]) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.descriptor and not (args.service_instance_id and args.authorization_file):
         parser.error("--descriptor needs --service-instance-id and --authorization-file")
-    if args.hosts:
+    if args.nprocs > 1 and not args.launch:
+        parser.error("more than one rank needs --launch, the MPI launch JARVIS built")
+    args.launch_spec = None
+    if args.launch:
         try:
-            args.hosts = ",".join(ordered_hosts([host for host in args.hosts.split(",") if host]))
-        except ValueError as error:
+            args.launch_spec = load_launch(args.launch)
+        except (OSError, ValueError) as error:
             parser.error(str(error))
     return args
 

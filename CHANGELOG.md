@@ -37,6 +37,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.23) bundles clio-jarvis 53cec00e. pvserver 0.3.3 launches
+  its multi-node ranks through the jarvis-cd MPI executor (MpiExecInfo and Exec);
+  its archive SHA-256 is 29c0672587fbb5c400c3b66646eee09db535c215524d271dcea6afefdda3f4d0.
+  The xcompact3d 0.3.3 files are unchanged.
 - `clio-relay` (1.6.22) runs relay da1dbe95 with jarvis-cd 742d7a4a. On a guarded
   site, `exec` runs `facts.jarvis.read` followed by `sched info +json`, `rg facts
   show +json`, `rg skill list +json` or `rg skill show NAME +json` with no shell and

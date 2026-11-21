@@ -212,7 +212,8 @@ def check(context: dict) -> None:
             sys.executable, str(HERE / "supervisor.py"),
             "--state-dir", str(state),
             "--executable", pvserver,
-            "--nprocs", str(config.get("nprocs") or 1),
+            # One rank: above one the launch comes from JARVIS through the package.
+            "--nprocs", "1",
             "--persist",
         ],
         stdout=subprocess.DEVNULL,

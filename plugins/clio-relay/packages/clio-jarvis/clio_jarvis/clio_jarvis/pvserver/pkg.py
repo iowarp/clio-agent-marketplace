@@ -18,6 +18,7 @@ the rest, and its ``spack load`` environment puts pvserver on PATH.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import posixpath
@@ -31,18 +32,28 @@ import time
 from pathlib import Path
 from typing import Any
 
-from jarvis_cd.shell import Exec, LocalExecInfo
+from jarvis_cd.shell import Exec, LocalExecInfo, MpiExecInfo
+from jarvis_cd.util.hostfile import Hostfile
 
-from clio_jarvis._contract.base import ClioService
+from clio_jarvis._contract.base import ClioService, mpi_safe_env
 
 SUPERVISOR = Path(__file__).resolve().parent / "supervisor.py"
 READY_FILE = "pvserver-ready.json"
 STOP_FILE = "pvserver-stop.json"
 PID_FILE = "pvserver-supervisor.pid"
 LOG_FILE = "pvserver.log"
+LAUNCH_FILE = "pvserver-launch.json"
 DESCRIPTOR_FILE = "dataset-descriptor.json"
 AUTHORIZATION_FILE = "service-authorization.token"
 HOST = "localhost"
+
+
+def _supervisor_module():
+    """supervisor.py as a module, for the pvserver command line and host order it owns."""
+    spec = importlib.util.spec_from_file_location("clio_jarvis_pvserver_supervisor", SUPERVISOR)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    return module
 
 
 class Pvserver(ClioService):
@@ -209,6 +220,69 @@ class Pvserver(ClioService):
             "--authorization-file", str(token_path),
         ]
 
+    def _mpi_launch_arguments(self, state_dir: Path) -> list[str]:
+        """``--launch`` for more than one rank: the MPI launch built by jarvis-cd.
+
+        jarvis-cd's MPI executor builds the command without running it
+        (``dry_run``), the path an MPI application's launch takes: the chosen
+        MPI's launcher and prefix, the hosts, the resource graph's network for
+        the launcher and the ranks, provenance, and its site-fact advisories.
+        The supervisor runs it, putting the port it picks in place of the
+        placeholder, so it can check the port, report the service runtime,
+        restart a persistent server and stop it. Rank 0 is on this node.
+        """
+        nprocs = int(self.config["nprocs"])
+        if nprocs <= 1:
+            return []
+        supervisor = _supervisor_module()
+        hosts = self._clio_hosts()
+        ordered = supervisor.ordered_hosts(hosts) if hosts else []
+        ppn = self.clio_ppn()
+        if ppn is None and ordered:
+            ppn = -(-nprocs // len(ordered))
+        rank_command = shlex.join(
+            supervisor.pvserver_arguments(
+                self.clio_executable(), supervisor.PORT_PLACEHOLDER, int(self.config["connect_id"])
+            )
+        )
+        launch = Exec(
+            rank_command,
+            MpiExecInfo(
+                nprocs=nprocs,
+                ppn=ppn,
+                hostfile=Hostfile(hosts=ordered, find_ips=False) if ordered else None,
+                env=mpi_safe_env(self.mod_env),
+                cwd=str(state_dir),
+                dry_run=True,
+            ),
+        ).run()
+        network = getattr(launch, "network", None)
+        document = {
+            "schema": "clio.pvserver-launch.v1",
+            "built_by": f"jarvis_cd.shell.{type(launch).__name__}",
+            "command": launch.get_cmd(),
+            "env": dict(launch.exec_info.env or {}),
+            "nprocs": nprocs,
+            "ppn": ppn,
+            "hosts": ordered,
+            "network": network,
+        }
+        path = state_dir / LAUNCH_FILE
+        path.write_text(json.dumps(document, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+        applied = (network or {}).get("applied") or {}
+        settings = {**(applied.get("launcher_env") or {}), **(applied.get("rank_env") or {}), **(applied.get("args") or {})}
+        print(
+            f"pvserver MPI launch built by {document['built_by']}: {nprocs} ranks on "
+            f"{','.join(ordered) or 'this node'}; network {json.dumps(settings, sort_keys=True, default=str)}",
+            flush=True,
+        )
+        facts = (network or {}).get("site_facts") or {}
+        for issue in facts.get("issues") or []:
+            print(f"pvserver MPI launch site fact: {json.dumps(issue, sort_keys=True, default=str)}", flush=True)
+        if network and network.get("error"):
+            print(f"pvserver MPI launch network not applied: {network['error']}", flush=True)
+        return ["--launch", str(path)]
+
     def start(self) -> None:
         self._clio_ensure_configured(prepare=True)
         config = self.config
@@ -223,12 +297,11 @@ class Pvserver(ClioService):
             "--executable", self.clio_executable(),
             "--port", str(int(config["port"])),
             "--nprocs", str(int(config["nprocs"])),
-            "--ppn", str(self.clio_ppn() or 0),
-            "--hosts", ",".join(self._clio_hosts()),
             "--connect-id", str(int(config["connect_id"])),
             "--start-timeout", str(int(config["start_timeout"])),
             "--grace", str(self._grace()),
         ]
+        argv += self._mpi_launch_arguments(state_dir)
         argv += self._runtime_arguments(state_dir)
         if config.get("max_lifetime") not in (None, ""):
             argv += ["--max-lifetime", str(int(config["max_lifetime"]))]
