@@ -98,6 +98,19 @@
 - `paraview` (1.0.1): when a job's live view could not attach while it ran, the
   `paraview-scenes` skill has the agent offer once, when the job ends, to open its
   finished output in ParaView, and open it at the last step once the person accepts.
+- `paraview` (1.0.2): the `paraview-scenes` skill says how to join a `pvserver`
+  a job serves: one `set_connector_value` with `pvserver` (the forwarded
+  endpoint the job's result names) and `version`, with no `address`, then
+  `open_view` the job's output by its cluster path. It names the first-attach
+  waits and typed failures (`client_fetching`, `paraview_version_mismatch`,
+  `node_folder_unwritable`) so the agent stops retrying a failure that repeats.
+- `clio-relay` (next release): the `use-relay` skill's "Ask for enough time"
+  sizes a job's request as the measured startup overhead plus steps x seconds
+  per step plus writes, times a safety coefficient of 1.5 at least (2 on one
+  short pilot or none). It overallocates because unused time is not charged
+  when a job ends cleanly, says so in the spend approval, and offers another
+  partition, a shorter run or more nodes when the padded request exceeds the
+  partition's time limit.
 
 ## [0.8.0] - 2026-11-13
 

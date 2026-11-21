@@ -29,7 +29,35 @@ first** (for example a module load line). There is no connect tool.
 - If a call says no ParaView was found, or that the host wants a password or a
   one-time code, tell the person what it says. Sign-in is the person's: the
   connector uses their SSH keys and never a password.
-- Paths are paths on the machine where ParaView runs.
+- Paths are paths on the machine where ParaView runs, or, when you join a
+  `pvserver`, on the machine that `pvserver` runs on.
+
+## Join a pvserver a job serves
+
+A job service can start `pvserver` beside a simulation, in the same cluster
+job, and forward its port to this machine. The service's result names that
+forwarded endpoint (a `host:port` here, such as `127.0.0.1:<port>`) and the
+ParaView version the `pvserver` runs. To show the run live:
+
+- Make one `set_connector_value` call with `values` holding `pvserver` (the
+  forwarded `host:port`, exactly as the result gives it) and `version` (the
+  server's ParaView version, such as `5.13.1`), and `address` and `via` empty.
+  The forward already reaches the server, so the connector opens no SSH of its
+  own; do not point `address` at the compute node.
+- Then `open_view` the job's output by its path on the cluster, the one the
+  job writes, with `growing` while it is still being written. The data is read
+  there, so do not copy it here.
+- The first attach on this machine may fetch a matching ParaView client
+  (`client_fetching`, with progress) and prepare the connector's folder. Wait
+  and call `open_view` again; do not install anything yourself.
+- `paraview_version_mismatch` means `version` does not match the server; set
+  the version the server reports. `node_folder_unwritable` means this host
+  will not let the connector write its folder; tell the person what it names.
+  An attach that fails the same way twice will not pass on a third try: say
+  why, keep the run going, and follow "When the live view could not follow a
+  run" below.
+- The endpoint lives only while the job and its forward do. When the job ends,
+  clear `pvserver` before you open anything on another machine.
 
 ## Open, then read what is there
 

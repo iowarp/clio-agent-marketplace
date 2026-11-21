@@ -110,6 +110,35 @@ change it and call again. `service_after_batch` and `service_blocks_pipeline`
 mean the steps are in the wrong order or role for a serve. `package_unloadable`
 and `deployment_contract_invalid` are faults in the package itself: tell the
 person.
+
+## Ask for enough time
+
+Size a job's time request from what was measured, then pad it generously:
+
+- Projected wall time = measured startup overhead (activating the package's
+  environment and any service started beside it becoming ready) + steps x
+  seconds per step + output writes, all from a pilot or an earlier run of the
+  same build. Take the overhead from the run record's `phase_timings`:
+  `before_first_step_seconds` plus each service package's `ready_seconds`.
+  Only a record without phase timings falls back to the gap from the job's
+  start to its first step; never guess the overhead.
+- Request the projection times a safety coefficient, 1.5 at least and 2 when
+  it rests on one short pilot or none, rounded up. Overallocate rather than
+  cut it close: a job killed at its limit loses its unfinished work, and
+  schedulers such as Slurm charge the time a job used, not the time it asked
+  for, so a job that ends cleanly before its limit costs nothing for the
+  rest. A longer request can wait a little longer in the queue.
+- Say so in the spend approval: the projected time, the coefficient, the
+  padded request, and that unused time is not charged when the job ends
+  cleanly.
+- If the padded request exceeds the partition's time limit (in
+  `partitions`), say so and propose options for the person to pick: another
+  partition with a longer limit, a shorter run, or more nodes when a measured
+  run shows they shorten it. Do not trim the coefficient to fit the limit.
+
+A package's contract can say how to project its own run; the padding and the
+approval above still apply.
+
 ## Stage a package before it runs
 
 `run` takes a JARVIS package by name, `package: {name, parameters}`, and runs
