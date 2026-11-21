@@ -37,6 +37,14 @@
 
 ### Changed
 
+- `clio-relay` (1.6.20): the `use-relay` skill handles JARVIS's `site_fact_uncertain`
+  issues (jarvis-cd 16435cda, `docs/site-facts.md`). JARVIS picks deterministically
+  and asks only when unsure. CLIO investigates with the issue's own read-only
+  probes through `exec` (light ones on the login node, a JARVIS smoke job for
+  anything heavier), proposes a value with its evidence and `consequence_if_wrong`,
+  and records it with `rg facts answer --set_by <person> --proposed_by <agent>`
+  once the person confirms. Then it runs again. Advisory issues are mentioned
+  but do not hold the run.
 - `spack` (1.0.3): pins clio-kit's spack server to `ef42fcf3`, which removes
   `spack_prepare_site` (five user tools, contract `clio-kit-spack-user-v3`, server
   3.0.0) and points a missing clone (exit 127) to `jarvis spack prepare` through relay.

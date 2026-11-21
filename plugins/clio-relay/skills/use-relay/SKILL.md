@@ -150,6 +150,71 @@ unless the person wants to change one.
 Leave a job's queue unset (`attributes.queue_name`, or a package's `queue`
 parameter) unless the person names one: the site's default applies.
 
+## Site facts JARVIS is unsure of
+
+JARVIS decides deployment details, such as the network MPI launches on, with
+fixed rules over the facts it collected, and says nothing when its pick is
+sure. When a pick rests on something it cannot settle alone, it raises a
+`site_fact_uncertain` issue instead of guessing. Your part is the adaptive
+one: find out what this cluster really does, propose a value, and let the
+person decide. JARVIS checks and records the answer; you add no network or
+site logic of your own.
+
+The issue can reach you in a run's `refusal.data.issues` or `result.issues`,
+in `ppl check` output, in a task's question, or in `rg facts show +json`, which
+is read-only and lists every open question and recorded answer. Read these
+fields:
+
+- `severity`: `block` stops the submit; `advisory` lets the run go ahead
+  with JARVIS's pick.
+- `details.reasons[]`: what is uncertain, and the `consequence` of each.
+- `candidates[]`: the ranked options, and `why` each one ranks there or is
+  excluded.
+- `details.evidence`: the per-node facts the question rests on.
+- `details.pick`: what JARVIS would use, and `consequence_if_wrong`.
+- `details.probes[]`: read-only commands, each with the `why`.
+- `details.answer`: the accepted values and the command form.
+- `details.previous_answer`: when the evidence changed since the person last
+  answered, their old answer.
+
+For a blocking issue, work through these steps:
+
+1. **Investigate.** Run the issue's own `details.probes`, read the site's
+   skills (`rg skill show NAME +json`), and compare what you find with
+   `details.evidence`.
+   - Run every probe through `exec`.
+   - Only light, short probes run on the login node. Anything that must see
+     compute nodes, or takes longer, runs in a JARVIS job, such as the
+     two-node smoke run the probes name (`jarvis ppl submit`).
+   - Do not run commands the issue does not offer, and do not reach compute
+     nodes any other way.
+   - On a guarded site, give `exec` a `plan` that says the command is a
+     read-only probe; relay asks the person before it runs.
+2. **Propose.** Tell the person:
+   - which value you propose (`accept` for JARVIS's pick, or a value of the
+     form `details.answer` lists);
+   - the evidence for it;
+   - what `consequence_if_wrong` says would happen if the choice is wrong.
+
+   If there is a `previous_answer`, name it and what changed. Then wait for
+   the person to confirm. Never answer for them.
+3. **Record.** Once they confirm, run `facts.jarvis.exec` followed by `rg facts
+   answer <issue_id> --value <value> --reason "<evidence>" --set_by <person>
+   --proposed_by <agent> +json`. Use the `issue_id` from the issue. Give
+   `exec` a `plan` on a guarded site.
+   - `site_fact_answer_stale` means the evidence changed: read the issue
+     named by `details.current_issue_id` and propose again.
+   - `site_fact_answer_invalid` means JARVIS refused the value: tell the
+     person why, and do not work around it.
+4. **Continue.** Re-run the check or call the same `run` again. JARVIS now
+   uses the confirmed value and stays silent until the evidence changes.
+
+An advisory issue does not hold the run. Mention it to the person with its
+consequence. Investigate and propose an answer the same way only when it
+matters: when the person asks, or when the run is slow or failing in the way
+the issue describes. If the person wants JARVIS to ask again,
+`rg facts forget <fact> +json` drops the recorded answer.
+
 ## Long runs and failed runs
 
 An install, the queue and the run itself can take hours. When `run` or
