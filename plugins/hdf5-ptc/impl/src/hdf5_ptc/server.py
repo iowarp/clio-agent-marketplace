@@ -25,6 +25,7 @@ from pydantic import Field
 from hdf5_ptc import arrays, cf, selection, writers
 from hdf5_ptc.errors import refuse
 from hdf5_ptc.handles import Handles, OpenFile
+from hdf5_ptc.storage import in_file
 
 CALLER_META_KEY = "ai.iowarp.clio/caller"
 PATHS_META_KEY = "ai.iowarp.clio/paths"
@@ -95,7 +96,7 @@ def _result(text: str, payload: dict[str, Any]) -> ToolResult:
 def _obj(f: OpenFile, path: str) -> h5py.HLObject:
     if path not in f.h5:
         refuse("path_not_found", f"{path} is not in {f.handle}; list_objects shows what is")
-    return f.h5[path]
+    return in_file(f.h5[path], f.h5)
 
 
 def _dataset(f: OpenFile, path: str) -> h5py.Dataset:

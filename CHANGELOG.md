@@ -29,6 +29,11 @@
 
 ### Fixed
 
+- `hdf5-ptc` (0.1.1): objects whose contents HDF5 would read from another file are
+  refused with `outside_the_file`: external links, datasets with external storage,
+  and virtual datasets mapped from other files, including a coordinate read to locate
+  a value or copy a subset. A file someone else wrote could otherwise name any file on
+  the computer, and the server's read-only tools returned its bytes.
 - `ndp` (2.1.0) and `connected-data` (2.0.1): NDP search, organizations and tile
   selection, and attaching, opening and downloading a source, are listed
   (`defer=False`). They declared nothing, so CLIO deferred them, and an agent that

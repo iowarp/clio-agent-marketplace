@@ -14,6 +14,8 @@ from typing import Any
 import h5py
 import numpy as np
 
+from hdf5_ptc.storage import in_file
+
 #: Attributes that change what the stored numbers mean.
 MEANING_ATTRS = (
     "long_name",
@@ -168,7 +170,7 @@ def coordinate_values(dataset: h5py.Dataset, index: tuple[int, ...]) -> dict[str
         name = dim.get("name") or f"dim{axis}"
         path = dim.get("coordinate")
         if path and path in dataset.file and dataset.file[path].ndim == 1:
-            coord = dataset.file[path]
+            coord = in_file(dataset.file[path], dataset.file)
             if coord.shape[0] == dataset.shape[axis]:
                 value = plain(coord[index[axis]])
                 when = time_text(value, coord.attrs.get("units"))
