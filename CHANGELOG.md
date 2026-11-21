@@ -37,6 +37,9 @@
 
 ### Changed
 
+- `spack` (1.0.3): pins clio-kit's spack server to `ef42fcf3`, which removes
+  `spack_prepare_site` (five user tools, contract `clio-kit-spack-user-v3`, server
+  3.0.0) and points a missing clone (exit 127) to `jarvis spack prepare` through relay.
 - `spack` (1.0.2): JARVIS owns deployment, so the `spack` skill prepares a site's
   Spack with `jarvis spack prepare` (jarvis-cd 97c78adb), run through relay `exec`
   as `facts.jarvis.exec` plus `spack prepare --root <facts.jarvis.spack_root>

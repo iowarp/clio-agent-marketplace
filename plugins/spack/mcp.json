@@ -6,7 +6,7 @@
       "command": "uvx",
       "args": [
         "--from",
-        "spack-mcp @ git+https://github.com/iowarp/clio-kit@edf67da201c77bfa826c7a1fd8ecb964fb8320a2#subdirectory=mcp-servers/spack",
+        "spack-mcp @ git+https://github.com/iowarp/clio-kit@ef42fcf3dd57eca03602d04d2ac363d441f40b58#subdirectory=mcp-servers/spack",
         "spack-mcp"
       ],
       "env": {
