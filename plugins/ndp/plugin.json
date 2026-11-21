@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "ndp",
-  "version": "3.1.0",
+  "version": "3.2.1",
   "description": "Work with the National Data Platform (NDP) through CLIO's own NDP source: find organizations, datasets and resources (filtered by resource format, with each resource's own description), find data for a place and topic across organizations with coverage checked from each record or its own service, select the tiles of a multi-tile dataset that cover a region, attach and download the selected resources as workspace sources, query NDP Endpoints and publish results.",
   "author": {
     "name": "IoWarp Team"
