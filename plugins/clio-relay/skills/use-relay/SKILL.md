@@ -97,8 +97,10 @@ Size a job's time request from what was measured, then pad it generously:
 - Projected wall time = measured startup overhead (activating the package's
   environment and any service started beside it becoming ready) + steps x
   seconds per step + output writes, all from a pilot or an earlier run of the
-  same build. When the run's record reports per-phase timings, take the
-  overhead from those.
+  same build. Take the overhead from the run record's `phase_timings`:
+  `before_first_step_seconds` plus each service package's `ready_seconds`.
+  Only a record without phase timings falls back to the gap from the job's
+  start to its first step; never guess the overhead.
 - Request the projection times a safety coefficient, 1.5 at least and 2 when
   it rests on one short pilot or none, rounded up. Overallocate rather than
   cut it close: a job killed at its limit loses its unfinished work, and
