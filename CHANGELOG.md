@@ -35,6 +35,12 @@
   system prompt, no tools and no context injections, so its input is exactly the
   conversation; for attention attribution (SPOTTER-AI) and small local models.
 
+### Changed
+
+- `paraview` (1.0.1): when a job's live view could not attach while it ran, the
+  `paraview-scenes` skill has the agent offer once, when the job ends, to open its
+  finished output in ParaView, and open it at the last step once the person accepts.
+
 ## [0.8.0] - 2026-11-13
 
 The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the beta.

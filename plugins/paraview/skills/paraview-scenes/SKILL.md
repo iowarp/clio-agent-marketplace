@@ -89,6 +89,24 @@ time step as `time` (with `time_index`), and `set_timestep` takes `time`, so the
 state channel `{key: "time", path: "/selection/time", tool: "set_timestep"}` links
 it to a chart that selects on the same path, both ways.
 
+## When the live view could not follow a run
+
+A simulation or other job can name an output to watch while it runs. If the
+live view could not attach while it ran (the connector could not reach the
+machine, the job never published where to join, or the attach failed), the
+result still deserves a look. When the job ends, say that its output is
+complete and offer once to open it in ParaView here. Once the person accepts:
+
+- `open_view` the finished output by its path on the machine where ParaView
+  runs (the job's run folder, or a copy the job synced), without `growing`,
+  since nothing is still being written.
+- `set_timestep` to the last step, build the display the job's outputs
+  suggest (a slice, a contour, a colouring) with `run_scene_script`, then
+  `capture` and describe what the view shows.
+
+If they decline, say where the output is so they can open it later. Do not
+retry the live attach after the run has ended.
+
 ## Keep the result
 
 `export_artifact` writes a figure. `export_animation` writes a video of the time
