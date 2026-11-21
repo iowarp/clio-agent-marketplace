@@ -403,3 +403,54 @@ def test_a_vtk_series_index_is_written_after_each_step(era5_like, tmp_path, monk
         )
     assert seen == [1, 2, 3, 4] and written["steps"] == 4
     assert not list((tmp_path / "s").glob("*.tmp"))
+
+
+@pytest.fixture()
+def borrowing(tmp_path: Path) -> Path:
+    """A file whose objects take their contents from a file outside it, three ways."""
+    secret = tmp_path / "elsewhere" / "secret.txt"
+    secret.parent.mkdir()
+    secret.write_bytes(b"not for the model " * 4)
+    other = tmp_path / "elsewhere" / "other.h5"
+    with h5py.File(other, "w") as f:
+        f["data"] = np.arange(8, dtype=np.int32)
+    path = tmp_path / "ws" / "borrowing.h5"
+    path.parent.mkdir()
+    with h5py.File(path, "w") as f:
+        f.create_dataset("external", shape=(72,), dtype="u1", external=[(str(secret), 0, 72)])
+        f["link"] = h5py.ExternalLink(str(other), "/data")
+        layout = h5py.VirtualLayout(shape=(8,), dtype=np.int32)
+        layout[:] = h5py.VirtualSource(str(other), "/data", shape=(8,))
+        f.create_virtual_dataset("virtual", layout)
+        coord = f.create_dataset("x", shape=(72,), dtype="u1", external=[(str(secret), 0, 72)])
+        coord.make_scale("x")
+        f["values"] = np.zeros(72, dtype=np.float32)
+        f["values"].dims[0].attach_scale(coord)
+        f["own"] = np.arange(4, dtype=np.int32)
+    return path
+
+
+async def test_contents_kept_outside_the_file_are_refused(borrowing: Path) -> None:
+    async with Client(mcp) as c:
+        h = _data(await c.call_tool("open_file", {"path": str(borrowing)}, meta=_meta("s9")))[
+            "handle"
+        ]
+        for name in ("/external", "/link", "/virtual"):
+            for tool in ("read", "describe"):
+                with pytest.raises(ToolError, match="outside_the_file"):
+                    await c.call_tool(tool, {"file": h, "path": name}, meta=_meta("s9"))
+        # A coordinate is read to locate a value and to copy a subset; refused the same way.
+        with pytest.raises(ToolError, match="outside_the_file"):
+            await c.call_tool(
+                "reduce", {"file": h, "path": "/values", "ops": ["argmax"]}, meta=_meta("s9")
+            )
+        out = borrowing.parent / "subset.nc"
+        with pytest.raises(ToolError, match="outside_the_file"):
+            await c.call_tool(
+                "write_subset",
+                {"file": h, "items": [{"path": "/values"}], "out_path": str(out)},
+                meta=_meta("s9"),
+            )
+        assert not out.exists() or b"not for the model" not in out.read_bytes()
+        own = await c.call_tool("read", {"file": h, "path": "/own"}, meta=_meta("s9", "direct"))
+        assert "not for the model" not in own.content[0].text
