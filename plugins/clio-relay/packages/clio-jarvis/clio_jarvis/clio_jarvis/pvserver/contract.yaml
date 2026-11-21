@@ -1,12 +1,16 @@
 schema: clio.package-contract.v1
 package: pvserver
-version: 0.3.1
+version: 0.3.2
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
   built by Spack with MPI and ADIOS2. A ParaView client reaches it through an
   SSH tunnel to the reported port and opens clio outputs with the reader their
-  view descriptor names.
+  view descriptor names. Its install does not depend on the application it
+  will view: when a run needs both, submit this install through the normal
+  install path at the same time as the application's, not after it. Install
+  what the candidates offer; a site's own ParaView is used only when it is
+  offered as a candidate and the person picks it.
 
 install:
   method: spack

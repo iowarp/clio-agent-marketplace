@@ -18,23 +18,38 @@ Call `describe` before anything else. Without arguments it lists the sites;
 with `site` it describes one site and its routes. Pick a site from that list;
 do not guess site names.
 
-## Read the site's guide
+## Read what the site knows about itself
 
-A site can carry its own guide: how to submit to that machine, which
-partitions and modules to use, where scratch space is. Get it from
-`describe(site=...)` before the first run there. When the site has a guide,
-the result has a second text block that holds it, and the site's
-`skill.text` reads `(below)`. When the `skill` field says relay cannot find
-the guide, tell the person; do not invent one.
+A site's facts are the site's own, not relay's or this skill's. Before you
+choose a queue, a node count, storage or an MPI for a run, read them from
+`describe(site=...)`:
 
-A site without a guide has no second block. Work from what `describe`
-reports.
+- `facts.sched` is JARVIS's scheduler report for the site: its provider,
+  account and `site_skills`. The partitions it reports (nodes, idle nodes, CPUs
+  and memory per node, time limits) are the result's `partitions`, and the MPI
+  JARVIS found is its `mpi`.
+- `facts.resource_graph` is the site's JARVIS resource graph: where it is, and
+  under `net` the data and control networks JARVIS launches MPI on. When `net`
+  is empty, `collect` gives the job that fills it in; offer it to the person
+  and run it once they agree.
+- A site skill is what the person or the site's admins wrote down about the
+  machine. `facts.sched.site_skills` lists them; read one with the JARVIS
+  command below (`rg skill show NAME +json`).
+- The site can also carry the person's own guide in relay. The result then
+  has a second text block holding it, and `skill.text` reads `(below)`. When
+  the `skill` field says relay cannot find the guide, tell the person. Relay
+  also serves guides as MCP resources (`relay://sites/<site>/skill`,
+  `relay://skills/<name>`); `files` refuses `relay://` URIs, so use
+  `describe`.
 
-Relay also serves the guides as MCP resources, `relay://sites/<site>/skill`
-for a site's and `relay://skills/<name>` for each skill it knows, for clients
-that read resources. They are not files: `files` refuses `relay://` URIs, so
-use `describe` instead.
-
+To change a site fact, run JARVIS on the site with `exec`, giving
+`facts.jarvis.exec` followed by JARVIS's own arguments, such as `rg net set
+--data <network> --reason "..." +json` or `rg skill set NAME --text "..."
++json`. Do it only after the person confirms the fact, and say who
+confirmed it with `--set_by`. On a guarded site, give `exec` a `plan` that
+says what the command changes; relay asks the person before it runs. Do not invent facts about a site, and do not
+work them out by hand with `ls`, `module` or interface listings when
+JARVIS already reports them.
 ## Run work
 
 - `run` submits a job as a PSI/J JobSpec. When CLIO supports tasks it returns
@@ -43,19 +58,31 @@ use `describe` instead.
 - `exec` runs one short command on the site's login side and returns bounded
   output.
 - `files` lists, reads, writes and stages small files. `stage` returns the
-  SHA-256 a JobSpec input names.
-- `serve` starts a job with ports and returns how to reach it. Each port in
-  the endpoint has an `address` (`host:port`): hand that to the client.
+  SHA-256 a JobSpec input names. To hand a staged file to a package, set the
+  package parameter to the input's name (such as `body.stl`); relay puts in its
+  path on the site. Never write a directory placeholder around it.
+- `serve` starts a job that serves ports. Its task completes when the service
+  is ready, with the endpoint in the result, while the service keeps running
+  until it is stopped. Each port in the endpoint has an `address` (`host:port`):
+  hand that to the client. The port is the one the service bound, as JARVIS
+  reports it; never choose one yourself.
   To serve one package beside a run, such as pvserver beside xcompact3d, give
-  both in one `serve` pipeline: set `service: true` only on the step that
-  serves the ports, and place the steps on their nodes with each step's
-  `host_slice` parameter (pvserver `0:2`, xcompact3d `2:6`, say).
-  The other steps run alongside it in the same job.
+  both in one `serve` pipeline, with each step's `host_slice` parameter placing
+  it on its nodes (pvserver `0:2`, xcompact3d `2:6`, say). JARVIS decides which
+  step serves from each package's deployment profile.
 
 A refusal carries a typed reason in `structuredContent.refusal`. Read it and
 act on it: a site that needs sign-in, a missing account or an unreachable host
 are things to tell the person, not to retry.
 
+When JARVIS refuses a pipeline, `refusal.data.issues` lists its typed issues,
+each with `kind`, `field` and `message`, and `refusal.data.kinds` names them.
+`configuration_rule_violated`, `host_slice_invalid`, `host_slice_overlap`,
+`start_mode_invalid` and `service_port_conflict` name a parameter to change:
+change it and call again. `service_after_batch` and `service_blocks_pipeline`
+mean the steps are in the wrong order or role for a serve. `package_unloadable`
+and `deployment_contract_invalid` are faults in the package itself: tell the
+person.
 ## Stage a package before it runs
 
 `run` takes a JARVIS package by name, `package: {name, parameters}`, and runs
@@ -95,78 +122,64 @@ A run, stage or list by name then stages it, and the older archive shows
 `superseded_by`. Run the name, not the old `sha256`, unless the person asks for
 that archive; a guarded site reviews the new one before it runs.
 
-## When a site has no Spack for JARVIS
+## Questions JARVIS asks
 
-A run can refuse `adapter_unavailable` with `refusal.data.missing: "spack"`:
-JARVIS needs a Spack to install the package with, and relay found none at its
-CLIO Spack checkout. This is not something to tell the person and stop on.
-`refusal.data.remedy` (`action: "prepare_spack"`) says what to do:
+JARVIS asks what it cannot decide alone, and relay turns each question into an
+ask for the person: the task turns `input_required` with the question and its
+choices. Relay the question as it is and do not answer it yourself. JARVIS
+keeps the person's answers for the site, so a later install does not ask again
+unless the person wants to change one.
 
-1. Use this plugin's `spack` skill and its `spack_prepare_site` tool, which come
-   with relay. If they are not in the conversation, offer the `spack` plugin.
-2. Call `spack_prepare_site` with `site` (the run's site), `site_home` (the
-   directory above `remedy.root`; relay's default is `~/.clio-relay`) and
-   `site_spack` set to `remedy.site_spacks[0].root`, the site's own Spack. The
-   new checkout reuses it as an upstream; relay never builds into it. When
-   `site_spacks` is empty, leave `site_spack` empty and give `spack_version`.
-3. Follow the skill's two-call flow: make the `exec` call it returns, with its
-   arguments unchanged. On a guarded site the person approves the plan. Then
-   call `spack_prepare_site` again with `relay_result`.
-4. When it returns `"done"`, call the same `run` again. Do not install anything
-   on the login node: JARVIS builds what is missing in its install job, after
-   relay's install ask.
+- **Which MPI.** An install with several MPI candidates asks once for the
+  site.
+- **Which Spack.** When JARVIS has no Spack on the site, the install asks which
+  of the site's own Spack checkouts to use. Each candidate also has a
+  `prepare` command that makes a JARVIS Spack chained to it as an upstream,
+  which is better when the person cannot write to the site's own. To prepare,
+  run `facts.jarvis.exec` followed by `spack prepare --root
+  <facts.jarvis.spack_root> --site_spack <root> +json` with `exec` once the
+  person agrees, then call the same `run` again. Exit 3 with
+  `ambiguous_compiler` lists the compilers to choose from: ask the person, run
+  it again with `--compiler`, and do not pick one yourself.
+- **Moving a queued job.** When a job's start is far off and another
+  partition would take it now, relay asks the person whether to keep waiting
+  or move it, and JARVIS moves the same job on their answer. Do not cancel and
+  rerun to switch partitions yourself. When JARVIS refuses the move, the
+  message says why.
 
-Do not inspect the site by hand (`ls`, `module`) to work out the Spack: the
-refusal already says what relay looked for and what the site has.
+Leave a job's queue unset (`attributes.queue_name`, or a package's `queue`
+parameter) unless the person names one: the site's default applies.
 
-## Long runs and failed installs
+## Long runs and failed runs
 
 An install, the queue and the run itself can take hours. When `run` or
 `serve` returns a task, say what you are waiting for and end your turn: CLIO
-wakes you when the task ends, so do not poll `describe` in a loop. When you are
-woken, carry on with the next step of the plan the person approved.
+wakes you when the task ends or needs the person, so do not poll `describe` in
+a loop. When you are woken, carry on with the next step of the plan the person
+approved. A job waiting in the queue says so in the operation's
+`result.queue` and message: pass the estimated start on to the person.
 
-A job that waits in the queue says so: the operation's `result.queue` (and its
-message) names the partition, Slurm's `reason`, `estimated_start` and
-`starts_in_s`, and `idle_partitions`, the partitions with free nodes now, each
-with `fits` when the job's nodes and time would fit there. When the estimate
-is far off and a partition fits, relay itself asks the person whether to keep
-waiting or move the job there: the task turns `input_required` with that
-choice. Relay the question as it is; relay moves the job only on the person's
-answer, keeps its id, and runs the operation's later jobs on that partition.
-Do not cancel and rerun to switch partitions yourself.
-
-Leave a job's queue unset (`attributes.queue_name`, or a package's `queue`
-parameter) unless the person names one: the site's `defaults.queue`, shown by
-`describe(site=...)`, applies to a job with none.
-
-An install that asks to choose an MPI asks once per site. A later install's
-approval says it uses the MPI chosen for that site before; approve it to keep
-that choice, and decline only when the person wants to choose again.
-
-When a multi-node run fails and the operation's `result.mpi_network_hint` is
-set, the ranks could not reach each other over TCP, usually because Open MPI
-picked an interface every node shares (such as `docker0`) instead of the
-fabric between them. Do not stop at the diagnosis. Compare the network relay
-found, `describe(site=...)` under `info.mpi.network`, with the nodes'
-interfaces (`exec` with `ip -o -4 addr` shows the login side's). Then propose
-the fix to the person: write the nodes' fabric, a CIDR or interface names
-joined by commas, to `mpi_network_hint.site_record` as one line
-`<network> person` with `files(op="write", overwrite=true)`, which a guarded
-site asks the person for, and call the same `run` again. Every later job on
-the site uses it.
+When a run fails, read `result.issues`, JARVIS's typed issues, before the
+logs. Each names its `kind` and the field it is about. An `mpi_network` issue
+means the ranks could not reach each other on the network JARVIS launched
+them on: it names the resource graph field and the networks the nodes share.
+Do not stop at the diagnosis. Propose the fix to the person (the network the
+issue points to, or the resource graph job to collect them again), record it
+with `rg net set` once they confirm, and call the same `run` again. Every
+later job on the site uses it.
 
 When an install job fails, the run fails `submit_failed` with
 `refusal.data.needs: "jarvis ppl install"`. Its message ends with the last part
 of the install log, and `refusal.data.install_log` is the whole log on the site:
-read it with `files(op="read")`. Find the cause, fix it with the tool that owns
-it, and call the same `run` again. The site's Spack configuration belongs to
-the `spack` skill: when the log shows the wrong compiler, for example one with no
-Fortran for a package that needs it, call `spack_prepare_site` again with
-`compiler=` naming one the report lists in `compiler.toolchains`. Ask the
+read it with `files(op="read")`. Find the cause, fix it in the place that owns
+it (a package parameter, the person's answer to a JARVIS question, the site's
+JARVIS Spack through `spack prepare`), and call the same `run` again. Ask the
 person only for a real decision, such as a choice between two compilers or a
 larger allocation.
 
+When a fact JARVIS holds about the site turns out wrong, propose the change to
+the person and record it with JARVIS once they confirm: the network with `rg
+net set`, anything else as a site skill with `rg skill set`.
 ## Sites are the person's
 
 Do not add, edit or remove sites. The person manages them on the Compute page

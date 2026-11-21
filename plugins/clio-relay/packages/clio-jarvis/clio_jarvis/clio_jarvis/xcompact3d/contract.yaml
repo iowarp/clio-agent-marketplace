@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.2
+version: 0.3.3
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -53,23 +53,49 @@ summary: >-
   point-steps per second per MPI rank measured from a short run of the same
   build (see sizing); set walltime with a margin. nprocs must split the grid
   into a 2D pencil grid; configure refuses one that cannot.
+  Before production, in order. Installs: when the run needs more than one
+  package (this solver and a pvserver to watch it, say), submit each install
+  through the normal install path as soon as it is known, all together; they
+  do not depend on each other, so do not wait for one to finish before
+  starting the next. Install what the candidates offer, and use a site's own
+  build only when it is offered as a candidate and the person picks it.
+  Smoke: one smoke run per build, of the case to be run, not one per case;
+  the parameter checks before submit already cover dt, the case's parameters
+  and the decomposition, so a second smoke of another case tells nothing new.
+  When the production grid fits one solver node, that smoke is the pilot:
+  run it at the production grid and inputs on one node with ilast two
+  snapshots, and size production from its seconds per step; the solver and
+  its inputs are the same, so production gives the same results without a
+  separate pilot job and its queue wait. With no earlier run to estimate
+  from, set its ioutput to a few hundred steps so a snapshot still lands
+  early. Run a separate pilot only when the grid needs more than one node.
   Fitting the person's budget: size production to the time and nodes the
   person gave (say, results within an hour on up to 8 nodes), not to the
   finest grid the cluster could hold. Measure first. A pilot is a short run
-  of the production grid, or close to it, on the production rank count, and it
-  exists to measure seconds per step and the cost of one snapshot write, so
-  it must write at least one snapshot: estimate its seconds per step from the
-  smoke run's throughput (point-steps per second per rank) before submitting,
-  set its ioutput so the first snapshot lands within the first half of its
-  walltime, and its ilast to two snapshots. A pilot that hits its walltime
-  before a snapshot measured nothing about the writes and is wasted. Read the
-  seconds per step from the solver's per-step timing lines, or from the gap
-  between two snapshots divided by ioutput. Then project each candidate: wall
-  seconds = seconds per step x ilast + snapshot write seconds x ilast /
-  ioutput, scaling seconds per step by pilot ranks / candidate ranks (no
-  better than linear; use a measured scaling run if there is one) and by
-  candidate points / pilot points. Offer two or three candidates, each with
-  its grid, nodes and projected wall time, mark exactly one as recommended,
+  of the production grid, or close to it, on the fewest nodes that hold it:
+  one solver node whenever the grid fits there (a periodic section of a few
+  million points does; pick an nprocs up to ppn that has a pencil split), more only when
+  one node's memory cannot hold it. Within a node the transposes stay in
+  shared memory, so one node gives the cleanest seconds per step and the
+  first snapshot soonest; across nodes the transposes cross the network and
+  a thin periodic span (nz near 8) can run slower per step on two nodes than
+  on one. It exists to measure seconds per step and the cost of one snapshot
+  write, so it must write a snapshot early: estimate its seconds per step
+  from the smoke run's throughput (point-steps per second per rank), when
+  the smoke was not itself the pilot, before submitting, set its ioutput so the first snapshot lands within the first
+  quarter of its walltime, and its ilast to two snapshots. A pilot that hits
+  its walltime before a snapshot measured nothing about the writes and is
+  wasted. Read the seconds per step from the solver's per-step timing lines,
+  or from the gap between two snapshots divided by ioutput. Then project
+  scaling to each candidate: wall seconds = seconds per step x ilast +
+  snapshot write seconds x ilast / ioutput, scaling seconds per step by
+  candidate points / pilot points and, within one node, by pilot ranks /
+  candidate ranks (no better than linear). Do not assume more nodes speed it
+  up: a candidate on more nodes than the pilot is projected at the
+  one-node figure unless a short run on that node count measured better,
+  so recommend one solver node when it fits the budget, and measure a second
+  node count only when the budget needs it. Offer two or three candidates,
+  each with its grid, nodes and projected wall time, mark exactly one as recommended,
   the one that fits the person's time and node budget with a margin of about
   a third, and say what each gives up. If none fits, say so and recommend the
   closest; do not recommend one that overruns the budget. Coarsening pays
@@ -91,7 +117,10 @@ summary: >-
   read (beside the geometry, say) and open <run_dir>/data.bp5 in ParaView as
   soon as the job runs to watch it grow. While the run goes, the package syncs
   data.bp5 to the file server every second, so a viewer on another machine
-  sees each snapshot as it lands rather than in 30 s bursts.
+  sees each snapshot as it lands rather than in 30 s bursts. If no live view
+  could follow the run, offer when it ends to open the finished data.bp5 in
+  ParaView (a slice at mid-span coloured by vort, at the last step) and open
+  it once the person agrees.
 install:
   method: spack
   # MPI stays the mpi virtual, so the site's MPI (Ares: its openmpi) is reused.
@@ -159,10 +188,12 @@ sizing:
     throughput in point-steps per second per rank measured on the site with a
     short run of the same build and rank count range; add a margin for
     snapshot writes, which grow with nx x ny x nz x 7 doubles per snapshot.
-    A pilot must write at least one snapshot within its walltime (first
-    snapshot in the first half), so its seconds per step and write time are
-    both measured. Project each candidate's wall time from the pilot's
-    seconds per step and recommend the one that fits the person's stated
+    A pilot (the smoke itself when the grid fits one node) runs on the fewest nodes that hold the grid, one solver node
+    when it fits, and writes a snapshot early (first snapshot in the first
+    quarter of its walltime), so its seconds per step and write time are
+    both measured soon. Project each candidate's wall time from the pilot's
+    seconds per step, at no better than the pilot's per-node rate on more
+    nodes unless measured, and recommend the one that fits the person's stated
     time and node budget with a margin (see the summary).
 
 outputs:

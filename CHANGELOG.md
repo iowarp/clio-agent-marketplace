@@ -56,6 +56,16 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.18) runs relay integration caee019f with jarvis-cd bfeff98b and
+  bundles clio-jarvis dc5270e2 (xcompact3d 0.3.3, pvserver 0.3.2). Relay is the
+  middle man: JARVIS owns the site's network, queue moves, install decisions,
+  pipeline checks and Spack preparation, and relay turns JARVIS's questions into
+  asks for the person. A serve forwards the port the service bound, as JARVIS
+  reports it, and its task completes when the service is ready. A package
+  parameter that wraps an input's name in a placeholder is refused. The use-relay
+  skill sends the agent to the site's resource graph, JARVIS's scheduler report
+  and site skills, and to JARVIS's typed issues, and names no cluster, scheduler
+  or MPI of its own.
 - `clio-relay` (1.6.17) runs relay integration 21fffaa5 and bundles clio-jarvis
   82debc68 (xcompact3d 0.3.2, with case-scoped parameter checks and sizing
   guidance). When a job waits far off in a busy partition and another has idle
