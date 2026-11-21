@@ -336,6 +336,12 @@ class Supervisor:
             "launch_network": applied or None,
             "evidence": list(self.recent)[-12:],
         }
+        advisories = launch.get("advisories") or []
+        if advisories:
+            record["advisories"] = advisories
+            record["reason_codes"] = sorted(
+                {code for item in advisories if isinstance(item, dict) for code in item.get("reason_codes") or []}
+            )
         if self.failure is not None:
             record["seen"] = {"cause": self.failure[0], "line": self.failure[1]}
         if self.args.nprocs > 1 and not isinstance(network, dict):

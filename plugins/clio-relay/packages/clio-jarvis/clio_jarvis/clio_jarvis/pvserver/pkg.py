@@ -48,6 +48,27 @@ AUTHORIZATION_FILE = "service-authorization.token"
 HOST = "localhost"
 
 
+def launch_document(launch: Any) -> dict[str, Any]:
+    """``pvserver-launch.json``: jarvis-cd's ``launch_record()`` and the launcher's environment.
+
+    The record (``jarvis.mpi-launch.v1``) is jarvis's own summary of the launch,
+    stored as it is so its site-fact ``advisories`` and their ``reason_codes``
+    are never rebuilt or lost. The supervisor adds only ``env``, which it needs
+    to run the command.
+    """
+    probe = getattr(launch, "launch_record", None)
+    record = probe() if callable(probe) else None
+    if not isinstance(record, dict):
+        raise RuntimeError(
+            "pvserver's MPI launch needs jarvis-cd 2d26101c or newer: its MPI executor has no launch_record()"
+        )
+    document = dict(record)
+    if not document.get("command"):
+        document["command"] = launch.get_cmd()
+    document["env"] = dict(launch.exec_info.env or {})
+    return document
+
+
 def _supervisor_module():
     """supervisor.py as a module, for the pvserver command line and host order it owns."""
     spec = importlib.util.spec_from_file_location("clio_jarvis_pvserver_supervisor", SUPERVISOR)
@@ -256,29 +277,20 @@ class Pvserver(ClioService):
                 dry_run=True,
             ),
         ).run()
-        network = getattr(launch, "network", None)
-        document = {
-            "schema": "clio.pvserver-launch.v1",
-            "built_by": f"jarvis_cd.shell.{type(launch).__name__}",
-            "command": launch.get_cmd(),
-            "env": dict(launch.exec_info.env or {}),
-            "nprocs": nprocs,
-            "ppn": ppn,
-            "hosts": ordered,
-            "network": network,
-        }
         path = state_dir / LAUNCH_FILE
+        document = launch_document(launch)
         path.write_text(json.dumps(document, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+        network = document.get("network")
         applied = (network or {}).get("applied") or {}
         settings = {**(applied.get("launcher_env") or {}), **(applied.get("rank_env") or {}), **(applied.get("args") or {})}
+        hosts = document.get("hosts") or ordered
         print(
-            f"pvserver MPI launch built by {document['built_by']}: {nprocs} ranks on "
-            f"{','.join(ordered) or 'this node'}; network {json.dumps(settings, sort_keys=True, default=str)}",
+            f"pvserver MPI launch built by {document.get('built_by')}: {document.get('nprocs', nprocs)} ranks on "
+            f"{','.join(hosts) or 'this node'}; network {json.dumps(settings, sort_keys=True, default=str)}",
             flush=True,
         )
-        facts = (network or {}).get("site_facts") or {}
-        for issue in facts.get("issues") or []:
-            print(f"pvserver MPI launch site fact: {json.dumps(issue, sort_keys=True, default=str)}", flush=True)
+        for advisory in document.get("advisories") or []:
+            print(f"pvserver MPI launch advisory: {json.dumps(advisory, sort_keys=True, default=str)}", flush=True)
         if network and network.get("error"):
             print(f"pvserver MPI launch network not applied: {network['error']}", flush=True)
         return ["--launch", str(path)]

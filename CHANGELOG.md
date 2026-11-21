@@ -37,6 +37,16 @@
 
 ### Changed
 
+- `clio-relay` (1.6.29) runs relay 2de1b1b6 with jarvis-cd 2d26101c and bundles
+  clio-jarvis 1be94889: xcompact3d 0.3.5 (archive sha256 c59b4cbf), pvserver
+  0.3.6 (f7a30fc9) and gray_scott 0.2.2 (dd9ec4c9). A background service stops
+  when the pipeline's last step returns unless the person keeps it (`after_steps`,
+  default auto), and JARVIS reuses its Spack load capture in check mode too.
+  Relay already keeps that capture per set of packages under the site home
+  (`JARVIS_SPACK_ENV_DIR`), shared by every check, submit, install and run of
+  them. pvserver's `pvserver-launch.json` is now JARVIS's own `launch_record()`,
+  so a launch's site-fact advisories and their `reason_codes` reach CLIO as
+  JARVIS wrote them, in the log and in a start failure.
 - `clio-relay` (1.6.28) bundles clio-jarvis 05d0d1a2: xcompact3d 0.3.5 (archive
   sha256 549f4905), pvserver 0.3.5 (f601c4fb) and gray_scott 0.2.2 (6bd9faea).
   xcompact3d's sizing text never rescales seconds per step to another grid. The
