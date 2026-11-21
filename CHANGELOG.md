@@ -37,6 +37,15 @@
 
 ### Changed
 
+- `clio-relay` (1.6.21) runs relay 0e52f6a0 with jarvis-cd f6cb7587. Relay turns
+  JARVIS's typed Spack failures (exit 6: `compiler_unavailable`, `fetch_failed`,
+  `build_failed`, `concretize_failed`, `install_failed`) into typed errors with
+  JARVIS's kind and issues, or into the install question when the issue has
+  candidates. A blocking `site_fact_uncertain` comes back as `input_missing` with
+  JARVIS's issues untouched; an advisory one lets the run go ahead and reaches
+  `result.site_facts`. Install asks come only from the current check, so a resumed
+  run no longer repeats answered ones. The `scheduler_block` wording names no
+  scheduler.
 - `clio-relay` (1.6.20): the `use-relay` skill handles JARVIS's `site_fact_uncertain`
   issues (jarvis-cd 16435cda, `docs/site-facts.md`). JARVIS picks deterministically
   and asks only when unsure. CLIO investigates with the issue's own read-only
