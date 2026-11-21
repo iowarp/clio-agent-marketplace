@@ -37,6 +37,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.24) runs relay 31b5db33 with jarvis-cd ad924e1f. JARVIS sets
+  `UCX_NET_DEVICES` only when the node's own `ucx_info -d` lists the device as
+  usable; otherwise it raises the advisory `ucx_device_unusable` with per-host
+  evidence, and on older graphs it withholds the device (`device_unverified`,
+  cause `unverified_graph`). Relay passes both through untouched.
 - `clio-relay` (1.6.23) bundles clio-jarvis 53cec00e. pvserver 0.3.3 launches
   its multi-node ranks through the jarvis-cd MPI executor (MpiExecInfo and Exec);
   its archive SHA-256 is 29c0672587fbb5c400c3b66646eee09db535c215524d271dcea6afefdda3f4d0.
