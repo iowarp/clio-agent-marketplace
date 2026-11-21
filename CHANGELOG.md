@@ -37,6 +37,18 @@
 
 ### Changed
 
+- `clio-relay` (1.6.27) runs relay 06a14cd4 with jarvis-cd d9cb80b6 and bundles
+  clio-jarvis 161c2a89: xcompact3d 0.3.5 (archive sha256 96f2a2cb), pvserver
+  0.3.5 (b18118f8) and gray_scott 0.2.2 (f1a2a9ef). JARVIS places ranks by the
+  allocation's geometry and reports `phase_timings`, and the packages' time
+  budgets add that startup overhead. Stopping a service is now its own tool,
+  `cancel`, titled "Cancel a job or stop a service", so a host no longer asks
+  under serve's "Start a service on a site". `site_clean` removes relay's
+  deployment from a site over MCP: destructive, it asks the person on every call
+  and keeps the Spack store, as `clio-relay site clean` does. The `use-relay`
+  skill teaches the read tools (`exec_read`, `files_read`, `describe` with
+  `packages=true` or `job=`), which never ask, and how to stop a service and
+  clean a site without the command line.
 - `clio-relay` (1.6.26) runs relay 2fac2a09 and bundles clio-jarvis 8104f13a:
   xcompact3d 0.3.4 (archive sha256 a8eb4452?) and pvserver 0.3.4 (18443926?).
   xcompact3d now fails with "xcompact3d diverged: ?" and points at its

@@ -112,11 +112,13 @@ class _ClioPackage:
         """Ranks per node for the launch, decided on the host that launches them.
 
         ``ppn``, else ``cores_per_node`` (the target partition's physical cores,
-        both filled at configure), else the tasks per node the batch allocation
-        holds (or its node's physical cores) when this runs inside one, else
-        this host's cores when the ranks run here. Otherwise None, which leaves
-        placement to mpiexec: the configuring host, often a login node, is never
-        asked.
+        both filled at configure), else the physical cores of the job's node
+        when this runs inside a batch allocation, else this host's when the
+        ranks run here. Otherwise None, which leaves placement to mpiexec: the
+        configuring host, often a login node, is never asked. This is a default
+        passed with ``nprocs``: inside an allocation JARVIS's MPI exec bounds it
+        by the scheduler's task geometry and records the decision as
+        ``placement`` in the launch record.
         """
         sizing = self.clio_contract().data["sizing"]["processes_per_node"]
         for name in (sizing["param"], sizing["cores"]):

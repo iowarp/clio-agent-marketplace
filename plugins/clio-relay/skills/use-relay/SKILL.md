@@ -302,6 +302,15 @@ larger allocation.
 When a fact JARVIS holds about the site turns out wrong, propose the change to
 the person and record it with JARVIS once they confirm: the network with `rg
 net set`, anything else as a site skill with `rg skill set`.
+
+## Stop a service, clean a site
+
+Stop a service or cancel a job with `cancel(operation=...)`. When the person
+wants relay's deployment gone from a site, so the next use deploys it again,
+call `site_clean(site=...)`: it asks the person first, refuses while a job of
+the site still runs, and keeps the site's Spack store. Do not look for the
+`clio-relay` command line to do either.
+
 ## Sites are the person's
 
 Do not add, edit or remove sites. The person manages them on the Compute page

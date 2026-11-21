@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.4
+version: 0.3.5
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -51,7 +51,9 @@ summary: >-
   Cost: a run is about nx x ny x nz x ilast point-steps, so walltime in seconds
   is about nx x ny x nz x ilast / (throughput x nprocs), with the site's
   point-steps per second per MPI rank measured from a short run of the same
-  build (see sizing); set walltime with a margin. nprocs must split the grid
+  build (see sizing); add the startup overhead a pilot measured (see below)
+  and request that times a safety coefficient (see "Requesting the time").
+  nprocs must split the grid
   into a 2D pencil grid; configure refuses one that cannot.
   Before production, in order. Installs: when the run needs more than one
   package (this solver and a pvserver to watch it, say), submit each install
@@ -86,9 +88,19 @@ summary: >-
   quarter of its walltime, and its ilast to two snapshots. A pilot that hits
   its walltime before a snapshot measured nothing about the writes and is
   wasted. Read the seconds per step from the solver's per-step timing lines,
-  or from the gap between two snapshots divided by ioutput. Then project
-  scaling to each candidate: wall seconds = seconds per step x ilast +
-  snapshot write seconds x ilast / ioutput, scaling seconds per step by
+  or from the gap between two snapshots divided by ioutput. Also read the
+  pilot's startup overhead: the time from the job starting on its nodes to
+  the solver's first step, which is activating the package environment plus
+  any service started beside the solver becoming ready (a pvserver to watch
+  it, say). Take it from the pilot's run record: metadata.phase_timings
+  before_first_step_seconds plus the ready_seconds of each service package
+  in phase_timings.packages. Only when the record has no phase timings, take
+  it as the gap between the job's start time and the first per-step timing
+  line; never guess it. It does not shrink with the
+  grid or the step count, and on a short run it can be a large share of the
+  wall time. Then project scaling to each candidate: wall seconds = startup
+  overhead + seconds per step x ilast + snapshot write seconds x ilast /
+  ioutput, scaling seconds per step by
   candidate points / pilot points and, within one node, by pilot ranks /
   candidate ranks (no better than linear). Do not assume more nodes speed it
   up: a candidate on more nodes than the pilot is projected at the
@@ -96,14 +108,28 @@ summary: >-
   so recommend one solver node when it fits the budget, and measure a second
   node count only when the budget needs it. Offer two or three candidates,
   each with its grid, nodes and projected wall time, mark exactly one as recommended,
-  the one that fits the person's time and node budget with a margin of about
-  a third, and say what each gives up. If none fits, say so and recommend the
+  the one whose projected wall time fits the person's time and node budget,
+  and say what each gives up. If none fits, say so and recommend the
   closest; do not recommend one that overruns the budget. Coarsening pays
   most: cost goes with resolution^3 for a periodic span (nx x ny points and a
   dt that shrinks with h) and resolution^4 for span free, and span free on a
   finite wing costs tens of times a periodic section, so within an hour
   prefer a periodic section unless the tips are the point, and shorten the
   simulated time before giving up the wake entirely.
+  Requesting the time: ask the scheduler for the projected wall time times a
+  generous safety coefficient, 1.5 at least and 2 when the projection rests
+  on one short pilot or none, rounded up. Overallocate rather than cut it
+  close: a job killed at its limit loses every step after its last snapshot,
+  and schedulers such as Slurm charge the time a job used, not the time it
+  asked for, so a job that ends cleanly before its limit costs nothing for
+  the rest (a longer request can wait a little longer in the queue). Say so
+  in the spend approval: the projected time, the coefficient, the padded
+  request, and that unused time is not charged when the run ends cleanly.
+  If the padded request exceeds the partition's maximum wall time (the time
+  limit in the site's partitions), say so and propose options for the person
+  to pick: another partition with a longer limit, a shorter run (fewer steps
+  or a coarser grid), or more nodes when a measured run shows they shorten
+  it. Do not trim the coefficient to squeeze under the limit.
   Outputs: snapshots of ux, uy, uz, pp, vort, critq and (body case) ep, the
   body indicator, go to a growing BP5 output that ParaView's ADIOS2VTXReader
   follows while the run goes; a slice at mid-span coloured by vort shows the
@@ -205,10 +231,20 @@ sizing:
     A pilot (the smoke itself when the grid fits one node) runs on the fewest nodes that hold the grid, one solver node
     when it fits, and writes a snapshot early (first snapshot in the first
     quarter of its walltime), so its seconds per step and write time are
-    both measured soon. Project each candidate's wall time from the pilot's
-    seconds per step, at no better than the pilot's per-node rate on more
-    nodes unless measured, and recommend the one that fits the person's stated
-    time and node budget with a margin (see the summary).
+    both measured soon. Project each candidate's wall time as the pilot's
+    measured startup overhead (environment activation and any service beside
+    the solver becoming ready: the run record's phase_timings
+    before_first_step_seconds plus each service's ready_seconds, else job
+    start to first step) plus seconds per step x ilast
+    plus the snapshot writes, at no better than the pilot's per-node rate on
+    more nodes unless measured. Request that total times a generous safety
+    coefficient (1.5 at least, 2 when it rests on one short pilot or none) as
+    the job's walltime, since unused time is not charged when the run ends
+    cleanly, and say so in the spend approval. If the padded request exceeds
+    the partition's maximum wall time, say so and let the person pick another
+    partition, a shorter run or more nodes. Recommend the candidate whose
+    projected wall time fits the person's stated time and node budget (see
+    the summary).
 
 outputs:
   - name: snapshots

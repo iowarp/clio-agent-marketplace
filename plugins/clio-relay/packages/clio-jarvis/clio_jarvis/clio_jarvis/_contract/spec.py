@@ -66,23 +66,20 @@ def in_job(environ: Mapping[str, str] | None = None) -> bool:
 
 
 def job_cores_per_node(environ: Mapping[str, str] | None = None) -> int | None:
-    """Ranks per node the job this process runs in can place; None outside a job.
+    """Physical cores per node of the job this process runs in; None outside a job.
 
-    The tasks per node the allocation asked for (SLURM_NTASKS_PER_NODE) when
-    the submission set them: Slurm grants a task slot per CPU, and on a node
-    with hardware threads those CPUs are threads, so counting cores would
-    place fewer ranks than the job holds. Otherwise read on the job's node:
-    ``lscpu`` (or /proc/cpuinfo) for the physical cores, capped by
-    SLURM_CPUS_ON_NODE, the CPUs the allocation grants here, counted in cores
-    rather than hardware threads. The batch shell runs on the first node of a
-    homogeneous partition, so this is the partition's value.
+    Read on the job's node: ``lscpu`` (or /proc/cpuinfo) for the physical
+    cores, capped by SLURM_CPUS_ON_NODE, the CPUs the allocation grants here,
+    counted in cores rather than hardware threads. The batch shell runs on the
+    first node of a homogeneous partition, so this is the partition's value.
+    This is only the package's default: JARVIS's MPI exec bounds ranks per
+    node by the scheduler's task geometry (jarvis-cd docs/scheduler.md, "Ranks
+    per node inside an allocation"), so the package does not read the task
+    geometry itself.
     """
     values = os.environ if environ is None else environ
     if not in_job(values):
         return None
-    match = re.match(r"\s*(\d+)", str(values.get("SLURM_NTASKS_PER_NODE") or ""))
-    if match and int(match.group(1)) > 0:
-        return int(match.group(1))
     cores = physical_cores()
     granted = str(values.get("SLURM_CPUS_ON_NODE") or "").strip()
     if granted.isdigit() and int(granted) > 0:

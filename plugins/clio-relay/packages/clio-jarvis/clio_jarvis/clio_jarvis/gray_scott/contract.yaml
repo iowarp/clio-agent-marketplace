@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: gray_scott
-version: 0.2.1
+version: 0.2.2
 kind: application
 summary: >-
   ADIOS2 Gray-Scott reaction-diffusion on an L x L x L grid. It writes U and V
@@ -49,7 +49,16 @@ sizing:
   cost: >-
     walltime seconds = L^3 x steps / (throughput x nprocs), with the
     throughput in cell-steps per second per rank measured on the site from a
-    short run; add a margin for the steps / plotgap output writes.
+    short run; add the startup overhead that run measured (environment
+    activation and any service beside it becoming ready: the run record's
+    phase_timings before_first_step_seconds plus each service's
+    ready_seconds, else job start to first step) and the steps / plotgap
+    output writes, then request that times a generous safety coefficient
+    (1.5 at least, 2 when it rests on one short run or none): unused time is
+    not charged when the run ends cleanly, so say so in the spend approval,
+    and if the padded request exceeds the partition's maximum wall time, say
+    so and let the person pick another partition, a shorter run or more
+    nodes.
 
 outputs:
   - name: fields
