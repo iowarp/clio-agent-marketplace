@@ -36,10 +36,12 @@ export CLIO_SPACK_ROOT="$HOME/.local/opt/clio-spack"
 export SPACK_USER_CONFIG_PATH="$CLIO_SPACK_ROOT/user-config"
 export SPACK_USER_CACHE_PATH="$CLIO_SPACK_ROOT/user-cache"
 export SPACK_DISABLE_LOCAL_CONFIG=1
-# Spack itself, if `spack` is not on PATH:
-git clone --depth 1 -b releases/v1.0 https://github.com/spack/spack "$CLIO_SPACK_ROOT/spack"
-# The clio recipes:
-git clone --depth 1 https://github.com/iowarp/clio-kit "$CLIO_SPACK_ROOT/clio-kit"
+# Spack itself, if `spack` is not on PATH: release v1.0.4, checked by commit.
+git clone --depth 1 -b v1.0.4 https://github.com/spack/spack "$CLIO_SPACK_ROOT/spack"
+test "$(git -C "$CLIO_SPACK_ROOT/spack" rev-parse HEAD)" = f36409b78591f8b02e8332eb4ad78da62c02571e
+# The clio recipes: clio-kit v2.13.0, checked by commit.
+git clone --depth 1 -b v2.13.0 https://github.com/iowarp/clio-kit "$CLIO_SPACK_ROOT/clio-kit"
+test "$(git -C "$CLIO_SPACK_ROOT/clio-kit" rev-parse HEAD)" = 93df42551d53b1651775587769caef717e79e9e1
 export CLIO_KIT_SPACK_REPO="$CLIO_SPACK_ROOT/clio-kit/spack-repo"
 SPACK="$CLIO_SPACK_ROOT/spack/bin/spack -C $CLIO_KIT_SPACK_REPO/config"
 $SPACK compiler find
@@ -47,6 +49,10 @@ $SPACK install fdmnes
 # A launcher on CLIO's PATH, so every conversation finds it:
 mkdir -p "$HOME/.local/bin" && ln -sf "$($SPACK location -i fdmnes)/bin/fdmnes" "$HOME/.local/bin/fdmnes"
 ```
+
+Spack recipes are Python that runs as the person, so both clones are pinned: if a
+`test` line fails, stop and report it; do not clone another revision. A folder left by an
+earlier install is reused only if its commit passes the same check.
 
 It needs a C and Fortran compiler (gcc and gfortran). If `compiler find` finds no Fortran
 compiler, say so: installing one needs the system's package manager (for example

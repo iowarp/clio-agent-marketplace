@@ -29,6 +29,10 @@
 
 ### Fixed
 
+- `fdmnes` (1.0.1): `install-fdmnes` clones Spack v1.0.4 and clio-kit v2.13.0 and
+  checks each by commit before building, and stops if a check fails. It had cloned
+  Spack's release branch and clio-kit's default branch, so the Spack recipes (Python
+  that runs as the person) were whatever those branches held that day.
 - `ndp` (2.1.0) and `connected-data` (2.0.1): NDP search, organizations and tile
   selection, and attaching, opening and downloading a source, are listed
   (`defer=False`). They declared nothing, so CLIO deferred them, and an agent that
