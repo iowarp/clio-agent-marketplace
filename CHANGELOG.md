@@ -37,6 +37,13 @@
 
 ### Changed
 
+- `clio-relay` (1.6.22) runs relay da1dbe95 with jarvis-cd 742d7a4a. On a guarded
+  site, `exec` runs `facts.jarvis.read` followed by `sched info +json`, `rg facts
+  show +json`, `rg skill list +json` or `rg skill show NAME +json` with no shell and
+  no plan; answers, installs and submits still ask. The pipelines relay writes name
+  no scheduler, so JARVIS detects it. JARVIS's `device_unverified` advisory (UCX
+  devices withheld on hosts the graph never saw) reaches `result.site_facts`
+  untouched. The `use-relay` skill says how to read site facts.
 - `clio-relay` (1.6.21) runs relay 0e52f6a0 with jarvis-cd f6cb7587. Relay turns
   JARVIS's typed Spack failures (exit 6: `compiler_unavailable`, `fetch_failed`,
   `build_failed`, `concretize_failed`, `install_failed`) into typed errors with

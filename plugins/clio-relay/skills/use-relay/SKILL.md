@@ -50,6 +50,12 @@ confirmed it with `--set_by`. On a guarded site, give `exec` a `plan` that
 says what the command changes; relay asks the person before it runs. Do not invent facts about a site, and do not
 work them out by hand with `ls`, `module` or interface listings when
 JARVIS already reports them.
+
+To read site facts, give `exec` `facts.jarvis.read` followed by exactly one of
+`sched info +json`, `rg facts show +json`, `rg skill list +json` or `rg skill
+show NAME +json`. These run with no shell and no `plan`, even on a guarded
+site. Anything else, answers included, goes through `facts.jarvis.exec`.
+
 ## Run work
 
 - `run` submits a job as a PSI/J JobSpec. When CLIO supports tasks it returns
