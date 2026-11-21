@@ -123,7 +123,11 @@
   when a job ends cleanly, says so in the spend approval, and offers another
   partition, a shorter run or more nodes when the padded request exceeds the
   partition's time limit.
-
+- `clio-relay` (next release): "Ask for enough time" takes seconds per step
+  only from a run at production's own grid and decomposition. It never
+  rescales a pilot's figure to another grid or rank count, and it re-pilots or
+  re-measures when production's grid or decomposition differs from the pilot
+  or changes after it, before applying the coefficient.
 ## [0.8.0] - 2026-11-13
 
 The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the beta.

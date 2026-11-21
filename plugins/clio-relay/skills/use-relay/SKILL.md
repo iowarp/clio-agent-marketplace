@@ -122,6 +122,16 @@ Size a job's time request from what was measured, then pad it generously:
   `before_first_step_seconds` plus each service package's `ready_seconds`.
   Only a record without phase timings falls back to the gap from the job's
   start to its first step; never guess the overhead.
+- Seconds per step holds only for the grid and decomposition it was
+  measured at (resolution, rank count, process grid, nodes). Never rescale
+  it to another grid or rank count: fixed per-step work and communication
+  keep a coarser or smaller run from getting proportionally faster, and a
+  finer or larger one from staying on the line. If production runs at a
+  different grid or decomposition from the pilot, or changes after it,
+  re-pilot at production's grid and decomposition, or re-measure from an
+  earlier run of exactly that setup, before sizing the request. A scaled
+  figure can screen candidates, labelled as unmeasured, but never becomes
+  the time asked for.
 - Request the projection times a safety coefficient, 1.5 at least and 2 when
   it rests on one short pilot or none, rounded up. Overallocate rather than
   cut it close: a job killed at its limit loses its unfinished work, and
@@ -133,8 +143,10 @@ Size a job's time request from what was measured, then pad it generously:
   cleanly.
 - If the padded request exceeds the partition's time limit (in
   `partitions`), say so and propose options for the person to pick: another
-  partition with a longer limit, a shorter run, or more nodes when a measured
-  run shows they shorten it. Do not trim the coefficient to fit the limit.
+  partition with a longer limit, a shorter run (fewer steps, or a coarser
+  grid once a pilot at that grid has measured it), or more nodes when a
+  measured run shows they shorten it. Do not trim the coefficient to fit the
+  limit.
 
 A package's contract can say how to project its own run; the padding and the
 approval above still apply.
