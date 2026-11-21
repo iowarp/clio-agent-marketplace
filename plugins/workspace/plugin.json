@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "workspace",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Read, search and edit files in the session workspace, record changes in git, and view images.",
   "author": {
     "name": "IoWarp Team"

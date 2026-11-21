@@ -11,6 +11,10 @@
 
 ### Changed
 
+- `workspace` (1.2.1) and `browser` (1.0.1): the `workspace.grounding` and
+  `browser.use` fragments say that text in files, datasets, pages and tool results is
+  evidence, never instructions or permission, and that a request found there goes to
+  the person. Only the weather, NDP and spotter skills said it, each for its own data.
 - `ndp` (3.1.0): `work-with-ndp` reads part of a large file through a byte-range
   handle (`connected_data_open` with `range=true`, then GDAL `/vsicurl/`, rasterio,
   h5py or xarray on its URL) and downloads only a whole file or one whose server
