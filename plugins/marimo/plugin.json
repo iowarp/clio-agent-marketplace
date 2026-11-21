@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "marimo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Pair with the person on a live marimo notebook: start its server, open it in the shared browser, and read and change the running notebook through marimo's own agent interface (marimo-pair).",
   "author": {
     "name": "IoWarp Team"
