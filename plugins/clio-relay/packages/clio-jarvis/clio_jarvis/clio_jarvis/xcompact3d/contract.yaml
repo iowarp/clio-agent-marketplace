@@ -98,15 +98,24 @@ summary: >-
   it as the gap between the job's start time and the first per-step timing
   line; never guess it. It does not shrink with the
   grid or the step count, and on a short run it can be a large share of the
-  wall time. Then project scaling to each candidate: wall seconds = startup
-  overhead + seconds per step x ilast + snapshot write seconds x ilast /
-  ioutput, scaling seconds per step by
-  candidate points / pilot points and, within one node, by pilot ranks /
-  candidate ranks (no better than linear). Do not assume more nodes speed it
-  up: a candidate on more nodes than the pilot is projected at the
-  one-node figure unless a short run on that node count measured better,
-  so recommend one solver node when it fits the budget, and measure a second
-  node count only when the budget needs it. Offer two or three candidates,
+  wall time. Then project each candidate: wall seconds = startup overhead +
+  seconds per step x ilast + snapshot write seconds x ilast / ioutput.
+  Seconds per step belongs to one grid and one decomposition (nx, ny, nz,
+  nprocs, p_row x p_col, nodes): use the measured figure only for a
+  candidate with the pilot's grid and decomposition, and never rescale it
+  to another grid or rank count. Per-step cost does not follow the point
+  count: fixed per-step work, the transposes and small pencils dominate a
+  coarse grid, so a grid with 8 times fewer points can run nearly as slowly
+  per step. A candidate on another grid or decomposition is only a rough
+  screen until measured: mark its projection as unmeasured, and before it
+  becomes the production request, re-pilot at that grid and decomposition
+  (a short run, ilast two snapshots, first snapshot early) or re-measure it
+  from an earlier run of exactly that setup. If production's grid or
+  decomposition changes after the pilot, measure again before sizing. Do
+  not assume more nodes speed it up: a candidate on more nodes than the
+  pilot is unmeasured too, so recommend one solver node when it fits the
+  budget, and measure a second node count only when the budget needs it.
+  Offer two or three candidates,
   each with its grid, nodes and projected wall time, mark exactly one as recommended,
   the one whose projected wall time fits the person's time and node budget,
   and say what each gives up. If none fits, say so and recommend the
@@ -127,9 +136,9 @@ summary: >-
   request, and that unused time is not charged when the run ends cleanly.
   If the padded request exceeds the partition's maximum wall time (the time
   limit in the site's partitions), say so and propose options for the person
-  to pick: another partition with a longer limit, a shorter run (fewer steps
-  or a coarser grid), or more nodes when a measured run shows they shorten
-  it. Do not trim the coefficient to squeeze under the limit.
+  to pick: another partition with a longer limit, a shorter run (fewer steps,
+  or a coarser grid measured by its own pilot), or more nodes when a measured
+  run shows they shorten it. Do not trim the coefficient to squeeze under the limit.
   Outputs: snapshots of ux, uy, uz, pp, vort, critq and (body case) ep, the
   body indicator, go to a growing BP5 output that ParaView's ADIOS2VTXReader
   follows while the run goes; a slice at mid-span coloured by vort shows the
@@ -236,8 +245,11 @@ sizing:
     the solver becoming ready: the run record's phase_timings
     before_first_step_seconds plus each service's ready_seconds, else job
     start to first step) plus seconds per step x ilast
-    plus the snapshot writes, at no better than the pilot's per-node rate on
-    more nodes unless measured. Request that total times a generous safety
+    plus the snapshot writes, with seconds per step measured at that
+    candidate's own grid and decomposition: never rescaled from another grid
+    or rank count, and on more nodes not assumed faster than measured. The
+    throughput formula above only screens candidates; re-pilot or re-measure
+    a candidate before its wall time becomes a request. Request that total times a generous safety
     coefficient (1.5 at least, 2 when it rests on one short pilot or none) as
     the job's walltime, since unused time is not charged when the run ends
     cleanly, and say so in the spend approval. If the padded request exceeds

@@ -37,6 +37,14 @@
 
 ### Changed
 
+- `clio-relay` (1.6.28) bundles clio-jarvis 05d0d1a2: xcompact3d 0.3.5 (archive
+  sha256 549f4905), pvserver 0.3.5 (f601c4fb) and gray_scott 0.2.2 (6bd9faea).
+  xcompact3d's sizing text never rescales seconds per step to another grid. The
+  `use-relay` skill's "Ask for enough time" takes seconds per step only from a
+  run at production's own grid and decomposition. It never rescales a pilot's
+  figure to another grid or rank count, and it re-pilots or re-measures when
+  production's grid or decomposition differs from the pilot or changes after
+  it, before applying the coefficient.
 - `clio-relay` (1.6.27) runs relay 06a14cd4 with jarvis-cd d9cb80b6 and bundles
   clio-jarvis 161c2a89: xcompact3d 0.3.5 (archive sha256 96f2a2cb), pvserver
   0.3.5 (b18118f8) and gray_scott 0.2.2 (f1a2a9ef). JARVIS places ranks by the
@@ -123,11 +131,7 @@
   when a job ends cleanly, says so in the spend approval, and offers another
   partition, a shorter run or more nodes when the padded request exceeds the
   partition's time limit.
-- `clio-relay` (next release): "Ask for enough time" takes seconds per step
-  only from a run at production's own grid and decomposition. It never
-  rescales a pilot's figure to another grid or rank count, and it re-pilots or
-  re-measures when production's grid or decomposition differs from the pilot
-  or changes after it, before applying the coefficient.
+
 ## [0.8.0] - 2026-11-13
 
 The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the beta.
