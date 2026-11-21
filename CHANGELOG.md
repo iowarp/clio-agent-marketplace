@@ -56,6 +56,11 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.19) runs relay integration cbd3cecf with jarvis-cd 97c78adb.
+  Install decisions keep their answers across MPI rebuilds and on older sites,
+  each install round has its own JARVIS execution, and the site's network comes
+  from the resource graph that JARVIS collects in a job and applies to every MPI
+  launch.
 - `clio-relay` (1.6.18) runs relay integration caee019f with jarvis-cd bfeff98b and
   bundles clio-jarvis dc5270e2 (xcompact3d 0.3.3, pvserver 0.3.2). Relay is the
   middle man: JARVIS owns the site's network, queue moves, install decisions,
