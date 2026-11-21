@@ -13,6 +13,8 @@ def check(context: dict) -> None:
     case = json.loads((run_dir / "clio-case.json").read_text(encoding="utf-8"))
     check("adios2_config.xml selects BP5", 'BP5' in (run_dir / "adios2_config.xml").read_text(encoding="utf-8"))
     check("BP5 metadata index present", (run_dir / "data.bp5" / "md.idx").is_file(), str(run_dir / "data.bp5"))
+    result = json.loads((run_dir / "clio-run-result.json").read_text(encoding="utf-8"))
+    check("the run result says ok", result["status"] == "ok", result.get("cause"))
     if case["case"] != "body":
         return
     nx, ny, nz = case["grid"]

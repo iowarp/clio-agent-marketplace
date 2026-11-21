@@ -37,6 +37,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.26) runs relay 2fac2a09 and bundles clio-jarvis 8104f13a:
+  xcompact3d 0.3.4 (archive sha256 a8eb4452?) and pvserver 0.3.4 (18443926?).
+  xcompact3d now fails with "xcompact3d diverged: ?" and points at its
+  `clio-run-result.json`; pvserver fails with "pvserver did not start: <code>:
+  <message>". Both reach CLIO as the failed operation's message, not a bare exit
+  code; a failed package service keeps that cause after the connector's reason.
 - `clio-relay` (1.6.25) runs relay ff5d63fc with jarvis-cd 7bd046ab. A multi-node
   MPI launch whose graph has no net section, misses launch hosts, or predates UCX
   verification now collects the net facts inside the allocation, saves them, and

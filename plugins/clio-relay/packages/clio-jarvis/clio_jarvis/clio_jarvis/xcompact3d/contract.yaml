@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.3
+version: 0.3.4
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -121,6 +121,20 @@ summary: >-
   could follow the run, offer when it ends to open the finished data.bp5 in
   ParaView (a slice at mid-span coloured by vort, at the last step) and open
   it once the person agrees.
+  Failed runs: Incompact3d ends a diverged run with exit code 0, and a NaN
+  velocity passes its own check, so the package watches the per-step lines.
+  It stops the run at the first NaN or infinite velocity or divergence, or a
+  velocity past 100 x inflow, and a run that ends with no snapshot fails too,
+  as does a solver that exits before its first step (launch_failed, with the
+  launcher's own lines, such as a rank placement the allocation cannot hold).
+  Every run writes clio-run-result.json to run_dir (status ok, diverged,
+  no_output or failed, the cause, the step and time reached, dt, the velocity
+  extremes, snapshots written of expected, seconds per step, the stability
+  numbers and the last solver lines), and a failed run raises with that
+  evidence. A diverged run needs a smaller dt (case.suggested_dt is the
+  bound; halve dt if it diverged within it) or a body thick enough on the
+  grid; a no_output run needs ioutput at most ilast. Change the case before
+  resubmitting; the same inputs diverge the same way.
 install:
   method: spack
   # MPI stays the mpi virtual, so the site's MPI (Ares: its openmpi) is reused.

@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: pvserver
-version: 0.3.3
+version: 0.3.4
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
@@ -10,7 +10,12 @@ summary: >-
   will view: when a run needs both, submit this install through the normal
   install path at the same time as the application's, not after it. Install
   what the candidates offer; a site's own ParaView is used only when it is
-  offered as a candidate and the person picks it.
+  offered as a candidate and the person picks it. A server whose ranks never
+  listen fails typed rather than holding its allocation: a known launcher
+  failure (MPI wire-up, unreachable network, MPI_Init, a missing library)
+  stops it a minute after it shows, anything else at start_timeout, and
+  pvserver-stop.json carries the cause code, the hosts, the launch's network
+  selection and the last output lines, which the start error repeats.
 
 install:
   method: spack

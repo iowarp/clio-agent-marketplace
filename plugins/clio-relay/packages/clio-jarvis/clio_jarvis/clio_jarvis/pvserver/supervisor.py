@@ -16,6 +16,13 @@ On SIGTERM or SIGINT, at the lifetime limit, or when pvserver exits without
 being restarted, it stops the server and writes ``pvserver-stop.json``
 (clio.service-stop.v1).
 
+A server that never listens fails typed: the stop record's ``cause`` names why
+(start_timeout, exited_before_ready, stopped_before_ready, or a known launcher
+failure such as mpi_wireup_failed) with the last output lines, the hosts and
+the launch's network selection, and the service runtime says failed. A known
+launcher failure stops the server FAIL_FAST_SECONDS after it shows rather
+than at the start timeout, so a hung launch does not hold the allocation.
+
 When JARVIS bound a service runtime (``--descriptor`` is given), it also
 reports the service through jarvis-cd's ServiceRuntimeReporter: starting once
 pvserver is launched, ready once rank 0 listens, degraded and ready again
@@ -47,6 +54,7 @@ import subprocess
 import sys
 import threading
 import time
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -94,6 +102,47 @@ def listening(port: int) -> bool | None:
 
 #: Stands for the port in a launch built before the supervisor picks it.
 PORT_PLACEHOLDER = "@CLIO_PVSERVER_PORT@"
+
+#: Launcher output that means the ranks cannot start, by cause. Matched case-insensitively.
+START_FAILURES = (
+    ("mpi_wireup_failed", "cannot find a corresponding process entry"),
+    ("mpi_wireup_failed", "unable to reliably start one or more daemons"),
+    ("mpi_wireup_failed", "has lost communication with"),
+    ("mpi_wireup_failed", "pmix_init failed"),
+    ("mpi_wireup_failed", "received unexpected process identifier"),
+    ("mpi_network_unreachable", "no route to host"),
+    ("mpi_network_unreachable", "connection refused"),
+    ("mpi_init_failed", "mpi_init has failed"),
+    ("mpi_init_failed", "mpi_init_thread has failed"),
+    ("mpi_init_failed", "it looks like mpi_init failed"),
+    ("library_missing", "error while loading shared libraries"),
+    ("pvserver_failed", "failed to bind"),
+)
+
+#: Seconds rank 0 still gets to listen after a start failure shows in the output.
+FAIL_FAST_SECONDS = 60
+
+#: What a stop record says each cause means.
+CAUSE_MESSAGES = {
+    "start_timeout": "rank 0 did not listen within the start timeout",
+    "exited_before_ready": "pvserver exited before rank 0 listened",
+    "stopped_before_ready": "the server was stopped before rank 0 listened",
+    "mpi_wireup_failed": "the MPI ranks could not connect to each other",
+    "mpi_network_unreachable": "a node could not reach another over the network MPI used",
+    "mpi_init_failed": "MPI initialisation failed",
+    "library_missing": "a shared library was not found on a node",
+    "pvserver_failed": "pvserver could not bind its port",
+    "report_failed": "the service runtime record could not be written",
+}
+
+
+def start_failure(line: str) -> str | None:
+    """The cause a launcher or pvserver line names, if it is a known start failure."""
+    lowered = line.lower()
+    for cause, pattern in START_FAILURES:
+        if pattern in lowered:
+            return cause
+    return None
 
 
 def pvserver_arguments(executable: str, port: int | str, connect_id: int = 0) -> list[str]:
@@ -195,6 +244,9 @@ class Supervisor:
         self.accepting = threading.Event()
         self.client_seen = threading.Event()
         self.wake = threading.Event()
+        self.recent: deque[str] = deque(maxlen=40)
+        self.failure: tuple[str, str, float] | None = None
+        self.cause: dict | None = None
 
     def say(self, text: str) -> None:
         if not self.stdout_open:
@@ -216,11 +268,19 @@ class Supervisor:
         for line in iter(pipe.readline, ""):
             log.write(line)
             log.flush()
+            text = line.rstrip("\n")
+            if text.strip():
+                self.recent.append(text)
             if "Accepting connection" in line:
                 self.accepting.set()
             if "Client connected" in line:
                 self.client_seen.set()
-            self.say(line.rstrip("\n"))
+            if self.failure is None and not self.accepting.is_set():
+                cause = start_failure(text)
+                if cause is not None:
+                    self.failure = (cause, text.strip(), time.monotonic())
+                    self.wake.set()
+            self.say(text)
         pipe.close()
 
     def launch(self, port: int, log) -> tuple[subprocess.Popen, threading.Thread]:
@@ -244,14 +304,47 @@ class Supervisor:
         reader.start()
         return server, reader
 
-    def wait_listening(self, server: subprocess.Popen, port: int) -> bool:
+    def wait_listening(self, server: subprocess.Popen, port: int) -> str | None:
+        """None once rank 0 listens, else why it did not: a signal, an exit, a known failure or the timeout."""
         deadline = time.monotonic() + self.args.start_timeout
-        while server.poll() is None and self.stop_reason is None and time.monotonic() < deadline:
+        while True:
             state = listening(port)
             if state or (state is None and self.accepting.is_set()):
-                return True
+                return None
+            if self.stop_reason is not None:
+                return "stopped_before_ready"
+            if server.poll() is not None:
+                return self.failure[0] if self.failure else "exited_before_ready"
+            if self.failure is not None and time.monotonic() > self.failure[2] + FAIL_FAST_SECONDS:
+                return self.failure[0]
+            if time.monotonic() >= deadline:
+                return "start_timeout"
             self.wake.wait(0.2)
-        return False
+            self.wake.clear()
+
+    def diagnosis(self, cause: str) -> dict:
+        """The typed start failure for the stop record and the service runtime."""
+        launch = self.args.launch_spec or {}
+        network = launch.get("network")
+        applied = (network or {}).get("applied") if isinstance(network, dict) else None
+        record = {
+            "code": cause,
+            "message": CAUSE_MESSAGES.get(cause, cause),
+            "start_timeout": self.args.start_timeout,
+            "nprocs": self.args.nprocs,
+            "hosts": launch.get("hosts") or [socket.gethostname()],
+            "launch_network": applied or None,
+            "evidence": list(self.recent)[-12:],
+        }
+        if self.failure is not None:
+            record["seen"] = {"cause": self.failure[0], "line": self.failure[1]}
+        if self.args.nprocs > 1 and not isinstance(network, dict):
+            record["note"] = (
+                "the multi-node launch had no network facts for the site; collect them before a multi-node launch"
+            )
+        elif isinstance(network, dict) and network.get("error"):
+            record["note"] = f"the launch's network selection was not applied: {network['error']}"
+        return record
 
     def run(self) -> int:
         args = self.args
@@ -281,10 +374,16 @@ class Supervisor:
 
         ready_at = None
         restarts = 0
-        if self.stop_reason is None and self.wait_listening(server, port):
-            ready_at = now()
-        elif self.stop_reason is None:
-            self.stop_reason = "failed-to-start"
+        if self.stop_reason is None:
+            why = self.wait_listening(server, port)
+            if why is None:
+                ready_at = now()
+            elif why == "stopped_before_ready":
+                self.cause = self.diagnosis(why)
+            else:
+                self.stop_reason = "failed-to-start"
+                self.cause = self.diagnosis(why)
+                self.say(f"clio-pvserver failed to start cause={why}: {self.cause['message']}")
 
         endpoint = f"cs://{host}:{port}"
         if ready_at is not None:
@@ -336,8 +435,11 @@ class Supervisor:
                 restarts += 1
                 runtime("degraded", f"pvserver client session ended; restarting on port {port} (restart {restarts})")
                 server, reader = self.launch(port, log)
-                if not self.wait_listening(server, port):
-                    self.stop_reason = self.stop_reason or "failed-to-restart"
+                why = self.wait_listening(server, port)
+                if why is not None:
+                    if why != "stopped_before_ready":
+                        self.stop_reason = self.stop_reason or "failed-to-restart"
+                        self.cause = self.diagnosis(why)
                     break
                 ready.update(server_pid=server.pid, restarts=restarts, restarted_at=now())
                 write_json(self.state_dir / READY_FILE, ready)
@@ -346,12 +448,18 @@ class Supervisor:
                     break
                 self.say(f"clio-pvserver restarted port={port} restarts={restarts}")
 
-        if self.stop_reason in ("signal", "max-lifetime"):
+        if self.stop_reason in ("signal", "max-lifetime") and ready_at is not None:
             runtime("stopping", f"stopping pvserver at {endpoint} ({self.stop_reason})")
         server_code = self.stop_server(server)
         reader.join(timeout=5)
         code = self.exit_code(server_code)
-        if code == 0:
+        if ready_at is None or self.cause is not None:
+            cause = self.cause or self.diagnosis(
+                "report_failed" if self.stop_reason == "report-failed" else "stopped_before_ready"
+            )
+            self.cause = cause
+            runtime("failed", f"pvserver at {endpoint} never served: {cause['code']}: {cause['message']}")
+        elif code == 0:
             runtime("stopped", f"pvserver at {endpoint} stopped ({self.stop_reason})")
         else:
             runtime("failed", f"pvserver at {endpoint} ended: {self.stop_reason}, server exit code {server_code}")
@@ -377,13 +485,15 @@ class Supervisor:
             "stopped_at": stopped,
             "restarts": restarts,
             "server_exit_code": server_code,
+            "cause": self.cause,
             "log": str(self.state_dir / LOG_FILE),
         }
         write_json(self.state_dir / STOP_FILE, record)
         log.write(f"# {stopped} stopped: {self.stop_reason}\n")
         log.close()
         (self.state_dir / PID_FILE).unlink(missing_ok=True)
-        self.say(f"clio-pvserver stopped reason={self.stop_reason}")
+        cause = f" cause={self.cause['code']}" if self.cause else ""
+        self.say(f"clio-pvserver stopped reason={self.stop_reason}{cause}")
         return self.exit_code(server_code)
 
     def stop_server(self, server: subprocess.Popen) -> int | None:

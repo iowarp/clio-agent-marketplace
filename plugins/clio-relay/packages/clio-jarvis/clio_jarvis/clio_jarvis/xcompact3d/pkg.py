@@ -337,7 +337,7 @@ class Xcompact3d(ClioApplication):
     def _run_outputs(self) -> list[Path]:
         """What a run writes into run_dir: the snapshots, statistics and restart files."""
         run_dir = Path(self.config["run_dir"])
-        return [self._output()] + [run_dir / name for name in ("statistics.bp5", "checkpoint.bp5", "checkpoint.old", "restart.info")]
+        return [self._output()] + [run_dir / name for name in ("statistics.bp5", "checkpoint.bp5", "checkpoint.old", "restart.info", "clio-run-result.json")]
 
     def start(self) -> None:
         self._clio_ensure_configured(prepare=True)
@@ -349,14 +349,30 @@ class Xcompact3d(ClioApplication):
             elif path.exists():
                 path.unlink()
         command = f"{shlex.quote(self.clio_executable())} input.i3d"
+        from clio_jarvis.xcompact3d import health
+
+        watch = health.SolverWatch(
+            self.runtime_line_callback(),
+            velocity_limit=health.VELOCITY_LIMIT * max(1.0, abs(float(self.config.get("inflow") or 1.0))),
+        )
         done = threading.Event()
         flusher = threading.Thread(target=_flush_output, args=(self._output(), done), daemon=True)
         flusher.start()
         try:
-            self._clio_mpi(command, cwd=str(run_dir))
+            codes = self._clio_mpi(command, cwd=str(run_dir), line_callback=watch, check=False)
         finally:
             done.set()
             flusher.join(timeout=10)
+        try:
+            case = json.loads((run_dir / "clio-case.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            case = {}
+        result = health.verdict(
+            watch, run_dir=run_dir, output=self._output(), config=self.config, case=case, return_codes=codes
+        )
+        print(f"clio-xcompact3d result {json.dumps({k: result[k] for k in ('status', 'cause', 'step', 'snapshots_written')})}", flush=True)
+        if result["status"] != "ok":
+            raise health.RunFailed(health.describe(result, run_dir), result)
 
     def stop(self) -> None:
         """Xcompact3d runs to its last time step."""

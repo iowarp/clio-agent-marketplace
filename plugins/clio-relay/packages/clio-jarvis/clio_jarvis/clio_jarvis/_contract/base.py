@@ -112,10 +112,11 @@ class _ClioPackage:
         """Ranks per node for the launch, decided on the host that launches them.
 
         ``ppn``, else ``cores_per_node`` (the target partition's physical cores,
-        both filled at configure), else the physical cores of the job's node
-        when this runs inside a batch allocation, else this host's when the
-        ranks run here. Otherwise None, which leaves placement to mpiexec: the
-        configuring host, often a login node, is never asked.
+        both filled at configure), else the tasks per node the batch allocation
+        holds (or its node's physical cores) when this runs inside one, else
+        this host's cores when the ranks run here. Otherwise None, which leaves
+        placement to mpiexec: the configuring host, often a login node, is never
+        asked.
         """
         sizing = self.clio_contract().data["sizing"]["processes_per_node"]
         for name in (sizing["param"], sizing["cores"]):
@@ -198,8 +199,13 @@ class _ClioPackage:
         """The program, found on the PATH that ``spack load`` of the install query gives."""
         return self.clio_program
 
-    def _clio_mpi(self, command: str, cwd: str) -> None:
-        """Run ``command`` under MPI with stdout on the progress and artifact providers."""
+    def _clio_mpi(self, command: str, cwd: str, line_callback=None, check: bool = True) -> dict[str, int]:
+        """Run ``command`` under MPI with stdout on the progress and artifact providers.
+
+        ``line_callback`` replaces the runtime callback (wrap it to watch the
+        lines too); with ``check`` false the exit codes come back instead of an
+        error.
+        """
         result = Exec(
             command,
             MpiExecInfo(
@@ -208,12 +214,14 @@ class _ClioPackage:
                 hostfile=self.hostfile,
                 env=mpi_safe_env(self.mod_env),
                 cwd=cwd,
-                line_callback=self.runtime_line_callback(),
+                line_callback=line_callback if line_callback is not None else self.runtime_line_callback(),
             ),
         ).run()
-        failures = {host: code for host, code in result.exit_code.items() if code != 0}
-        if failures:
+        codes = dict(result.exit_code)
+        failures = {host: code for host, code in codes.items() if code != 0}
+        if failures and check:
             raise RuntimeError(f"{self.clio_contract().pkg_type} failed: {failures}")
+        return codes
 
     # -- jarvis-cd deployment contract --------------------------------------
 

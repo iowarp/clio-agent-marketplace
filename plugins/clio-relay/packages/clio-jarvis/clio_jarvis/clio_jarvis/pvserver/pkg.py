@@ -298,7 +298,7 @@ class Pvserver(ClioService):
             "--port", str(int(config["port"])),
             "--nprocs", str(int(config["nprocs"])),
             "--connect-id", str(int(config["connect_id"])),
-            "--start-timeout", str(int(config["start_timeout"])),
+            "--start-timeout", str(self._supervisor_start_timeout()),
             "--grace", str(self._grace()),
         ]
         argv += self._mpi_launch_arguments(state_dir)
@@ -317,11 +317,53 @@ class Pvserver(ClioService):
                 line_callback=self.runtime_line_callback(),
             ),
         )
-        self._clio_service_exec.run()
+        self._clio_starting = True
+        try:
+            self._clio_service_exec.run()
+            self._await_ready()
+        finally:
+            self._clio_starting = False
 
-        deadline = time.monotonic() + int(config["start_timeout"]) + 15
+    def _supervisor_start_timeout(self) -> int:
+        """The supervisor's start timeout: early enough that its typed failure lands before JARVIS's own timer.
+
+        jarvis-cd waits ``start_timeout`` for a background start, from when the
+        start thread begins. The supervisor gives up sooner, by the stop grace
+        and a margin, so start() raises the cause rather than JARVIS's generic
+        timeout.
+        """
+        timeout = int(self.config["start_timeout"])
+        return max(min(timeout, 10), timeout - self._grace() - 30)
+
+    def _start_failure(self) -> str:
+        """Why the server did not start, from the supervisor's stop record, with the log tail."""
+        record = self._read_json(STOP_FILE) or {}
+        cause = record.get("cause") or {}
+        lines = []
+        if cause:
+            lines.append(f"pvserver did not start: {cause.get('code')}: {cause.get('message')}")
+            hosts = cause.get("hosts") or []
+            lines.append(
+                f"ranks {cause.get('nprocs')} on {','.join(hosts) or 'this node'}; "
+                f"start timeout {cause.get('start_timeout')}s"
+            )
+            if cause.get("seen"):
+                lines.append(f"first failure line: {cause['seen'].get('line')}")
+            lines.append(f"launch network: {json.dumps(cause.get('launch_network'), sort_keys=True, default=str)}")
+            if cause.get("note"):
+                lines.append(f"note: {cause['note']}")
+            lines.append(f"stop record: {self._state(STOP_FILE)}")
+        else:
+            lines.append(f"pvserver did not start (supervisor stop reason {record.get('reason')!r})")
+        lines.append(f"log tail:\n{self._log_tail()}")
+        return "\n".join(lines)
+
+    def _await_ready(self) -> None:
+        config = self.config
+        deadline = time.monotonic() + self._supervisor_start_timeout() + self._grace() + 15
         while True:
             if self._read_json(READY_FILE) is not None:
+                self._clio_starting = False
                 background = getattr(self, "starts_in_background", None)
                 if config.get("hold") or (background is not None and background()):
                     self._clio_holding = True
@@ -339,22 +381,28 @@ class Pvserver(ClioService):
             time.sleep(0.2)
         self._terminate(signal.SIGTERM)
         self._finish()
-        raise RuntimeError(f"pvserver did not start; log tail:\n{self._log_tail()}")
+        raise RuntimeError(self._start_failure())
 
     def ready(self) -> bool | None:
         """The service runtime's answer when JARVIS bound one, else the state files.
 
         True once the runtime says ready (or degraded), False once it says
         stopped or failed, None while starting. Without a runtime the stop
-        record means False and the ready record True.
+        record means False and the ready record True. While start() is still
+        running it answers None instead of False, so start() raises the typed
+        cause from the stop record rather than JARVIS a generic failure.
         """
         if self._runtime_path():
-            return super().ready()
-        if self._read_json(STOP_FILE) is not None:
-            return False
-        if self._read_json(READY_FILE) is not None:
-            return True
-        return None
+            state = super().ready()
+        elif self._read_json(STOP_FILE) is not None:
+            state = False
+        elif self._read_json(READY_FILE) is not None:
+            state = True
+        else:
+            state = None
+        if state is False and getattr(self, "_clio_starting", False):
+            return None
+        return state
 
     def _hold(self) -> None:
         """Serve until the supervisor ends; a signal to this process stops the server.
