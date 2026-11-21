@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "spack",
-  "version": "1.0.1",
-  "description": "HPC software through Spack on clio-relay sites, with clio-kit's spack server and the `spack` skill: research what the site already has, prepare a CLIO Spack that reuses it, install the rest through jarvis install jobs on compute nodes, and take choices such as which MPI to the person.",
+  "version": "1.0.2",
+  "description": "HPC software through Spack on clio-relay sites, with clio-kit's spack server and the `spack` skill: research what the site already has, have JARVIS prepare a Spack that reuses it (`jarvis spack prepare` through relay), install the rest through jarvis install jobs on compute nodes, and take choices such as which MPI to the person.",
   "author": {
     "name": "IoWarp Team"
   },

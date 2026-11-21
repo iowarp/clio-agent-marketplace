@@ -37,6 +37,14 @@
 
 ### Changed
 
+- `spack` (1.0.2): JARVIS owns deployment, so the `spack` skill prepares a site's
+  Spack with `jarvis spack prepare` (jarvis-cd 97c78adb), run through relay `exec`
+  as `facts.jarvis.exec` plus `spack prepare --root <facts.jarvis.spack_root>
+  --site_spack <root> +json`, with a `plan` on a guarded site. It reads the
+  `jarvis.spack-site-prep.v1` record, takes `ambiguous_compiler` (exit 3) to the
+  person and reports refusals (exit 5). It no longer calls clio-kit's
+  `spack_prepare_site`, and `JARVIS_SPACK_CONFIG` is gone: relay exports
+  `JARVIS_SPACK_ROOT`. `spack_site_query` still does the read-only research.
 - `paraview` (1.0.1): when a job's live view could not attach while it ran, the
   `paraview-scenes` skill has the agent offer once, when the job ends, to open its
   finished output in ParaView, and open it at the last step once the person accepts.
