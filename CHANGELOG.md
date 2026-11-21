@@ -37,6 +37,14 @@
 
 ### Changed
 
+- `clio-relay` (1.6.25) runs relay ff5d63fc with jarvis-cd 7bd046ab. A multi-node
+  MPI launch whose graph has no net section, misses launch hosts, or predates UCX
+  verification now collects the net facts inside the allocation, saves them, and
+  then applies btl, oob and UCX. Relay passes the new shapes through untouched: the
+  advisory `net_not_collected` with `site_facts.net_plan`, the launch refusals
+  `resource_graph_collect_failed`, `_partial` and `resource_graph_net_invalid`
+  as typed issues on the failed operation, and a `launch_collected` question that
+  the next check asks before submit.
 - `clio-relay` (1.6.24) runs relay 31b5db33 with jarvis-cd ad924e1f. JARVIS sets
   `UCX_NET_DEVICES` only when the node's own `ucx_info -d` lists the device as
   usable; otherwise it raises the advisory `ucx_device_unusable` with per-host
