@@ -9,19 +9,22 @@ description: Use this skill to run jobs, commands, file transfers or services on
 Relay reaches the compute sites the person has set up, such as a cluster over
 SSH, a Globus Compute endpoint or a Tapis tenant. Its five verbs are
 `describe`, `run`, `exec`, `files` and `serve`. Beside them, `packages` stages
-the JARVIS packages `run` takes, `install` installs a package's software on a
-site ahead of any run, and `shutdown` stops relay's long-lived processes when
-the host closes.
+and removes the JARVIS packages `run` takes, `install` installs a package's
+software on a site ahead of any run, and `shutdown` stops relay's long-lived
+processes when the host closes.
 
 ## Reads never ask
 
-Three tools only read: `describe`, `exec_read` and `files_read`. They change
-nothing on a site and never ask the person, so use them freely, in planning
-too, and keep `exec`, `files` and `packages` for changes.
+Four tools only read: `describe`, `exec_read`, `files_read` and
+`packages_read`. They change nothing and never ask the person, so use them
+freely, in planning too, and keep `exec`, `files` and `packages` for changes.
 
 - `describe` lists sites, describes one (`site`), observes a job or a
   service (`job`; for a service it gives the endpoint and whether it is
   ready) and lists the staged packages (`packages=true`).
+- `packages_read` lists the packages relay has staged, with their versions,
+  SHA-256s and where each came from, and relay's package sources. It takes no
+  arguments. `packages` has no list: it only stages and removes.
 - `exec_read` runs one read-only command, given as an argument list with no
   shell: listings and file reads (`ls`, `cat`, `head`, `tail`, `grep`,
   `stat`, `du`, `df`), the scheduler (`squeue`, `sinfo`, `sacct`,
@@ -175,8 +178,8 @@ approval above still apply.
 
 `run` takes a JARVIS package by name, `package: {name, parameters}`, and runs
 only a package relay has staged. `describe(site=...)` lists the staged ones
-under `packages`; `describe(packages=true)` lists them too, with where each
-came from. When the package you need is not there, stage it with the `packages`
+under `packages`; `packages_read` lists them too, with where each came from.
+When the package you need is not there, stage it with the `packages`
 tool. Do not look for relay's files or build an archive by hand.
 
 Stage from one of two sources:
