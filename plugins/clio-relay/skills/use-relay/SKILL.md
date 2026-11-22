@@ -108,6 +108,15 @@ guarded site. Anything else, answers included, goes through `exec` with
   both in one `serve` pipeline, with each step's `host_slice` parameter placing
   it on its nodes (pvserver `0:2`, xcompact3d `2:6`, say). JARVIS decides which
   step serves from each package's deployment profile.
+- Leave a service package's `linger` at the package's default (pvserver keeps
+  serving 600 s after the run ends) unless the person asks for another. The
+  live view attaches while the run is going; linger only keeps the service up
+  afterwards so the person can still look at the final output.
+- When relay cannot bring a running service to this machine, the result is an
+  error with `result.service_error`, whose `reason` says why, while the job
+  runs on. `host_key_unverified` means ssh could not check the compute node's
+  host key: tell the person what the message says, and do not retry or work
+  around the key check. Stop the job with `cancel` if the person wants that.
 
 A refusal carries a typed reason in `structuredContent.refusal`. Read it and
 act on it: a site that needs sign-in, a missing account or an unreachable host
@@ -212,11 +221,13 @@ launches:
 
 - A site without JARVIS gets relay's jarvis-cd first, after the person says
   yes. `install` does this itself; do not look for another way to place JARVIS.
-- JARVIS checks what the site has inside a short job on the compute nodes,
-  never on the login node, and the task waits while that job queues and runs.
-  It asks nothing. Later installs and runs of the same packages read that
-  job's record and skip the job until the site changes. When everything is
-  there, the operation completes with `installed` and nothing is built.
+  On a guarded site the package review says so, and its yes covers jarvis-cd.
+- JARVIS checks what the site has where the site chose (below): on the login
+  node under JARVIS's limits, or inside a short job on the compute nodes, and
+  the task waits while that job queues and runs. Later installs and runs of
+  the same packages read the check's record and skip it until the site
+  changes. When everything is there, the operation completes with `installed`
+  and nothing is built.
 - When JARVIS only has a question (which MPI) and the software is already
   there, the person answers the question and nothing else: relay checks again
   with the answer and the operation completes with nothing built.
@@ -244,6 +255,15 @@ unless the person wants to change one.
 - **Which MPI.** An install with several MPI candidates asks once for the
   site. Installs started together on one site share that question: answer it
   once and every install that asked moves on.
+- **Where checks and builds run.** JARVIS asks, once per site, whether its
+  software checks (or builds) run on the login node under JARVIS's limits, in
+  a compute job, or are asked each time. The question carries JARVIS's
+  recommendation and its evidence (the login node's load, the queue wait, the
+  cost of each package), and may offer a choice for one package only, such as
+  a long build in a compute job while the rest check on the login node. Pass
+  it on with that evidence and let the person pick; do not recommend a place
+  of your own or set any limit. An answer marked for this run only is asked
+  again next time.
 - **Which Spack.** When JARVIS has no Spack on the site, the install asks which
   of the site's own Spack checkouts to use. Each candidate also has a
   `prepare` command that makes a JARVIS Spack chained to it as an upstream,
@@ -372,7 +392,11 @@ then clean again. `cancel` also ends a job the scheduler still lists under an
 operation that already ended. Pass `forget_decisions=true` only when the
 person asks to forget those answers, so the next install asks them again; to
 forget one answer, run JARVIS's `ppl install --forget <selector>` with `exec`
-instead. Do not look for the `clio-relay` command line to do either.
+instead. What relay's runs wrote outside its own directories, such as a case's
+results under the person's home, is the person's: the clean names those
+outputs in its question and keeps them, and the result lists them as
+`outputs_kept`. Pass `remove_outputs=true` only when the person asks to delete
+them too. Do not look for the `clio-relay` command line to do any of this.
 
 ## Sites are the person's
 
