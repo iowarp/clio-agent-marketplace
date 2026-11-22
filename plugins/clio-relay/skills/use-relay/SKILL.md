@@ -85,7 +85,15 @@ guarded site. Anything else, answers included, goes through `exec` with
 - `exec` runs one short command on the site's login side and returns bounded
   output. Use `exec_read` when the command only reads.
 - `files` writes, stages and removes small files; read them with
-  `files_read`. `stage` returns the
+  `files_read`. To move a file that is on this machine, such as a person's STL
+  or a result to open locally, use `files(op="upload", local_path=...,
+  path=...)` or `files(op="download", path=..., local_path=...)`, at any size.
+  Relay streams the bytes itself, checks the SHA-256 on the site and returns
+  only metadata. Never move a file as `content_base64` chunks, from a script or
+  otherwise, and never read it back to check it: the result's `sha256` and
+  `verified` already say it arrived. `local_path` is absolute on the machine
+  relay runs on; when relay cannot open it, the refusal says so, and the person
+  has to make the path reachable for relay. `stage` returns the
   SHA-256 a JobSpec input names. To hand a staged file to a package, set the
   package parameter to the input's name (such as `body.stl`); relay puts in its
   path on the site. Never write a directory placeholder around it.
@@ -179,7 +187,8 @@ Stage from one of two sources:
 Give `version` only when the package has no `contract.yaml` version and no
 git tag. Staging
 runs nothing and touches no site: on a guarded site the person still reviews
-the archive, by its SHA-256, before its first run there.
+the archive, by its SHA-256, before its first run there. A job's packages that
+are not reviewed yet come as one review, so one yes covers a pipeline.
 
 `packages(op="remove", package="...")` takes a package out of relay's
 catalog, every version of it unless `version` or `sha256` narrows it. Use it
@@ -214,9 +223,12 @@ launches:
   nodes, checks again, and the operation completes.
 
 Like `run` it is a task: follow it with the task, or with `describe(job=...)`,
-and cancel it with `install(cancel=...)`. To install several packages, call
-`install` for each at once; they do not wait on each other. A later `run` of
-the same package finds the software installed and goes straight to its job.
+and cancel it with `install(cancel=...)`. To install several packages, such
+as everything a plan runs, make one `install` call whose `spec` lists them all
+in `packages`, the same steps the later `run` or `serve` takes. The person
+then gets one review of the packages, one set of JARVIS questions and one
+install job, instead of one of each per package. A later `run` of the same
+packages finds the software installed and goes straight to its job.
 
 ## Questions JARVIS asks
 
