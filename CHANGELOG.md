@@ -37,6 +37,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.30) runs relay b85d756b. A port forward to a running service
+  now outlives a restart of the relay MCP server: the forward is its own process,
+  and a relay that starts adopts it, or opens it again at once if it died, without
+  waiting for a tool call. A command on an ssh site now returns when it exits on
+  the site, even when a leftover process keeps the ssh session open.
 - `clio-relay` (1.6.29) runs relay 2de1b1b6 with jarvis-cd 2d26101c and bundles
   clio-jarvis 1be94889: xcompact3d 0.3.5 (archive sha256 c59b4cbf), pvserver
   0.3.6 (f7a30fc9) and gray_scott 0.2.2 (dd9ec4c9). A background service stops
