@@ -23,6 +23,7 @@ import numpy as np
 from hdf5_ptc import cf
 from hdf5_ptc.errors import refuse
 from hdf5_ptc.selection import Selection, read
+from hdf5_ptc.storage import in_file
 
 
 def _now() -> str:
@@ -38,7 +39,7 @@ def _coord_subset(dataset: h5py.Dataset, sel: Selection) -> list[tuple[str, np.n
         sl = sel.slices()[axis] if sel.start else slice(None)
         path = dim.get("coordinate")
         if path and path in dataset.file and dataset.file[path].ndim == 1:
-            coord = dataset.file[path]
+            coord = in_file(dataset.file[path], dataset.file)
             out.append((name, np.asarray(coord[sl]), cf.attributes(coord)))
         else:
             idx = np.arange(dataset.shape[axis])[sl]
