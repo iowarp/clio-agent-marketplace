@@ -29,6 +29,11 @@
 
 ### Fixed
 
+- `marimo` (1.0.1): `use-marimo` starts the notebook server with a token from a file
+  only the person's account can read (`--token-password-file`), opens the page with it,
+  and passes it to marimo-pair as `MARIMO_TOKEN`; it says never to use `--no-token` or
+  `--host 0.0.0.0`. The server had run without a token, so any account on the computer
+  could run code in the notebook's kernel.
 - `ndp` (2.1.0) and `connected-data` (2.0.1): NDP search, organizations and tile
   selection, and attaching, opening and downloading a source, are listed
   (`defer=False`). They declared nothing, so CLIO deferred them, and an agent that
