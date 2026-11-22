@@ -37,6 +37,17 @@
 
 ### Changed
 
+- `clio-relay` (1.6.33) runs relay 9791465e with jarvis-cd 5a58ab82 and bundles
+  clio-jarvis b37fb115 (xcompact3d and pvserver 0.3.7, gray_scott 0.2.3: a new
+  output shows on the JARVIS node while the solver runs). A serve call now hands
+  back the endpoint as soon as the service is ready, while its job keeps running.
+  An install asks for approval only when JARVIS finds software missing; a site
+  that has it all answers just JARVIS's questions. Installs on one site share one
+  answer to a site question such as which MPI, and `site_clean` keeps JARVIS's
+  answers unless asked to forget them. `site_clean` refuses while relay's jobs
+  still run on the site, naming them, and a new `clio-relay cancel` command
+  cancels an operation. JARVIS now locks its decision store and probes the build
+  host's compilers before the first build. The use-relay skill covers all of it.
 - `clio-relay` (1.6.32) runs relay 13e19b1b. Installs started at the same time on
   one site no longer race: they share one jarvis-cd ask, the second jarvis-cd
   install waits for the first and reuses it, and an answer or a decline applies to

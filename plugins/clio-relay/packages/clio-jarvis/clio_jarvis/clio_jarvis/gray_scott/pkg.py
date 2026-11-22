@@ -12,12 +12,14 @@ query.
 from __future__ import annotations
 
 import json
-import shlex
 import shutil
 from pathlib import Path
 from typing import Any
 
 from clio_jarvis._contract.base import ClioApplication
+
+#: Seconds between syncs of gs.bp on each node with solver ranks.
+FLUSH_SECONDS = 1.0
 
 CONFIG_DIR = Path(__file__).resolve().parent / "config"
 
@@ -107,8 +109,14 @@ class GrayScott(ClioApplication):
         # A rerun starts a fresh series; a viewer must not see the last run's steps.
         shutil.rmtree(self._output(), ignore_errors=True)
         shutil.rmtree(run_dir / "ckpt.bp", ignore_errors=True)
-        command = f"{shlex.quote(self.clio_executable())} settings.json"
-        self._clio_mpi(command, cwd=str(run_dir))
+        from clio_jarvis._contract import flushwrap
+        from clio_jarvis._contract.files import revealing
+
+        # ADIOS2 does not sync: without a flusher where the ranks write, a viewer
+        # on another node sees gs.bp jump by the page cache's writeback interval.
+        command = flushwrap.bp5_command(self._output(), [self.clio_executable(), "settings.json"], FLUSH_SECONDS)
+        with revealing(self._output()):
+            self._clio_mpi(command, cwd=str(run_dir))
 
     def stop(self) -> None:
         """Gray-Scott runs to completion."""

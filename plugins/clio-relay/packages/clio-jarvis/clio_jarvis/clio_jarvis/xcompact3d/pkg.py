@@ -19,16 +19,14 @@ import hashlib
 import json
 import os
 import re
-import shlex
 import shutil
-import threading
 from pathlib import Path
 from typing import Any
 
 from clio_jarvis._contract.base import ClioApplication
 
 CONFIG_DIR = Path(__file__).resolve().parent / "config"
-#: Seconds between pushes of the snapshots to the file server while the run goes.
+#: Seconds between pushes of the snapshots to the file server on each solver node while the run goes.
 FLUSH_SECONDS = 1.0
 BODY_STL = "body-input.stl"
 
@@ -348,29 +346,27 @@ class Xcompact3d(ClioApplication):
                 shutil.rmtree(path, ignore_errors=True)
             elif path.exists():
                 path.unlink()
-        command = f"{shlex.quote(self.clio_executable())} input.i3d"
+        command = flushed_command(self._output(), [self.clio_executable(), "input.i3d"])
+        from clio_jarvis._contract.files import revealing
         from clio_jarvis.xcompact3d import health
 
         watch = health.SolverWatch(
             self.runtime_line_callback(),
             velocity_limit=health.VELOCITY_LIMIT * max(1.0, abs(float(self.config.get("inflow") or 1.0))),
         )
-        done = threading.Event()
-        flusher = threading.Thread(target=_flush_output, args=(self._output(), done), daemon=True)
-        flusher.start()
-        try:
+        with revealing(self._output()):
             codes = self._clio_mpi(command, cwd=str(run_dir), line_callback=watch, check=False)
-        finally:
-            done.set()
-            flusher.join(timeout=10)
         try:
             case = json.loads((run_dir / "clio-case.json").read_text(encoding="utf-8"))
         except (OSError, ValueError):
             case = {}
         result = health.verdict(
-            watch, run_dir=run_dir, output=self._output(), config=self.config, case=case, return_codes=codes
+            watch, run_dir=run_dir, output=self._output(), config=self.config, case=case, return_codes=codes,
+            launch_env=getattr(self, "mod_env", None),
         )
         print(f"clio-xcompact3d result {json.dumps({k: result[k] for k in ('status', 'cause', 'step', 'snapshots_written')})}", flush=True)
+        if result.get("transport"):
+            print(f"clio-xcompact3d network {health.transport_summary(result['transport'])}", flush=True)
         if result["status"] != "ok":
             raise health.RunFailed(health.describe(result, run_dir), result)
 
@@ -382,29 +378,19 @@ class Xcompact3d(ClioApplication):
         shutil.rmtree(self._output(), ignore_errors=True)
 
 
-def _flush_output(output: Path, done: threading.Event) -> None:
-    """Push the run's BP5 snapshots to the file server every ``FLUSH_SECONDS``.
+def flushed_command(output: Path, program: list[str]) -> str:
+    """Each rank's command: ``program`` with a flusher of the BP5 snapshots on its node.
 
-    ADIOS2 does not sync, so on a shared file system the compute node holds
-    new snapshots in its page cache and writes them back in bursts (Linux's
-    default is 30 s). A viewer on another machine would see the run jump
-    tens of steps at a time. Syncing the data files before the metadata and
-    the index keeps every step the index names on the server. Only this
-    run's output folder is touched, and a sync of unchanged files costs
-    nothing. On several nodes this flushes only the subfiles written here.
+    ADIOS2 does not sync, so on a shared file system the nodes that write
+    hold new snapshots in their page cache and write them back in bursts
+    (Linux's default is 30 s). A viewer on another machine would see the run
+    jump tens of steps at a time. An fsync only pushes the calling node's
+    pages, so :mod:`clio_jarvis._contract.flushwrap` runs as every rank,
+    wherever the MPI launch puts it, and on each node syncs the data files
+    before the metadata and the index every ``FLUSH_SECONDS``, so every
+    step the index names is on the server. The solver then replaces the
+    wrapper as the rank's process. Only this run's output folder is touched.
     """
-    while not done.wait(FLUSH_SECONDS):
-        if not output.is_dir():
-            continue
-        names = sorted(p.name for p in output.glob("data.*"))
-        for name in names + ["md.0", "mmd.0", "md.idx"]:
-            try:
-                fd = os.open(output / name, os.O_RDONLY)
-            except OSError:
-                continue
-            try:
-                os.fsync(fd)
-            except OSError:
-                pass
-            finally:
-                os.close(fd)
+    from clio_jarvis._contract import flushwrap
+
+    return flushwrap.bp5_command(output, program, FLUSH_SECONDS)

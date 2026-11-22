@@ -1,12 +1,13 @@
 schema: clio.package-contract.v1
 package: gray_scott
-version: 0.2.2
+version: 0.2.3
 kind: application
 summary: >-
   ADIOS2 Gray-Scott reaction-diffusion on an L x L x L grid. It writes U and V
   to a growing BP5 output that ParaView's ADIOS2VTXReader can follow while the
   run goes, and with checkpoint_freq set, a checkpoint (ckpt.bp) it can
-  restart from.
+  restart from. On every node with solver ranks a flusher syncs gs.bp each
+  second, so a viewer on another node sees each step as it lands.
 install:
   method: spack
   # MPI stays the mpi virtual, so the site's MPI is reused.

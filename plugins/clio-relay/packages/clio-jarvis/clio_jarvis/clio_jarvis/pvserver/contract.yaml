@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: pvserver
-version: 0.3.6
+version: 0.3.7
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
@@ -16,6 +16,10 @@ summary: >-
   stops it a minute after it shows, anything else at start_timeout, and
   pvserver-stop.json carries the cause code, the hosts, the launch's network
   selection and the last output lines, which the start error repeats.
+  Network fallback warnings (UCX or libfabric skipping a device such as
+  mlx5_0:1 and going on over another transport) stay out of those lines;
+  the stop record reports them under transport as information, never as
+  the cause, and they do not call for a site network change.
 
 install:
   method: spack

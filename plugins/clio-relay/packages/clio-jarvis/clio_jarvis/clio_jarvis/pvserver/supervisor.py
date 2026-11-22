@@ -48,6 +48,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -143,6 +144,125 @@ def start_failure(line: str) -> str | None:
         if pattern in lowered:
             return cause
     return None
+
+
+# -- network fallback warnings ------------------------------------------------------------
+# A copy of clio_jarvis/_contract/transport.py, since this script runs with only the
+# standard library; tests/test_contract.py checks the two stay the same.
+# UCX and libfabric warn when they skip a device they cannot use (say mlx5_0:1) and go on
+# over another transport. Those lines stay out of the failure evidence and the stop record
+# reports them under "transport" as information, never as the cause.
+
+UCX_WARN = re.compile(r"\bUCX\s+WARN\b")
+LIBFABRIC_WARN = re.compile(r"\blibfabric:[^\s]*<warn>")
+OPENFABRICS_SKIP = re.compile(
+    r"(no OpenFabrics connection schemes reported|openib BTL \(OpenFabrics support\) will be disabled|"
+    r"OpenFabrics device found, but there are no active ports)",
+    re.IGNORECASE,
+)
+UNAVAILABLE = re.compile(r"(?:device|transport|interface)\s+'([^']+)'\s+(?:is\s+)?not available", re.IGNORECASE)
+BARE_UNAVAILABLE = re.compile(r"\b([A-Za-z][\w.-]*:\d+)\s+(?:is\s+)?not available", re.IGNORECASE)
+OFFERED = re.compile(r"'([^']+)'\(([^)]+)\)")
+TRANSPORT_SETTINGS = (
+    "UCX_TLS",
+    "UCX_NET_DEVICES",
+    "FI_PROVIDER",
+    "OMPI_MCA_pml",
+    "OMPI_MCA_btl",
+    "OMPI_MCA_mtl",
+    "I_MPI_FABRICS",
+    "I_MPI_OFI_PROVIDER",
+    "MPICH_OFI_PROVIDER",
+)
+TRANSPORT_NOTE = (
+    "Informational: the network library could not use a device it probed and fell back to "
+    "another transport, and the ranks went on communicating. These lines are not the cause "
+    "of the run's result and do not call for a change to the site's network settings."
+)
+TRANSPORT_NOTE_EARLY = (
+    "Informational: the network library could not use a device it probed and offered another "
+    "transport. A warning like this is printed by runs that succeed too, so it does not explain "
+    "why this launch stopped; the failure is in the other lines. Do not change the site's "
+    "network settings on the strength of these lines alone."
+)
+
+
+def transport_library(line: str) -> str | None:
+    """``ucx``, ``libfabric`` or ``openfabrics`` when ``line`` is a transport fallback warning."""
+    if UCX_WARN.search(line):
+        return "ucx"
+    if LIBFABRIC_WARN.search(line):
+        return "libfabric"
+    if OPENFABRICS_SKIP.search(line):
+        return "openfabrics"
+    return None
+
+
+class TransportNotes:
+    """Collects fallback warnings from the launch's output; thread safe."""
+
+    def __init__(self, keep: int = 5) -> None:
+        self.keep = keep
+        self.lock = threading.Lock()
+        self.libraries: list[str] = []
+        self.unavailable: list[str] = []
+        self.offered: dict[str, list[str]] = {}
+        self.lines: list[str] = []
+        self.count = 0
+
+    def observe(self, line: str) -> bool:
+        """Record ``line`` when it is a fallback warning; True if it was one."""
+        which = transport_library(line)
+        if which is None:
+            return False
+        with self.lock:
+            self.count += 1
+            if which not in self.libraries:
+                self.libraries.append(which)
+            for pattern in (UNAVAILABLE, BARE_UNAVAILABLE):
+                for name in pattern.findall(line):
+                    if name not in self.unavailable:
+                        self.unavailable.append(name)
+            if "use one or more of" in line:
+                for device, kind in OFFERED.findall(line.split("use one or more of", 1)[1]):
+                    devices = self.offered.setdefault(kind, [])
+                    if device not in devices and len(devices) < self.keep:
+                        devices.append(device)
+            if len(self.lines) < self.keep and line not in self.lines:
+                self.lines.append(line)
+        return True
+
+    def report(self, env=None, *, progressed: bool = True) -> dict | None:
+        """The stop record's ``transport`` block, or None when no fallback was seen."""
+        with self.lock:
+            if not self.count:
+                return None
+            kinds = list(self.offered)
+            if len(kinds) == 1:
+                used = f"{kinds[0]} (the only transport the library offered instead)"
+            elif kinds:
+                used = f"one of {', '.join(kinds)} (the library offered these instead)"
+            else:
+                used = "a transport other than the ones named unavailable; the library does not say which at its default log level"
+            settings = {name: str(env[name]) for name in TRANSPORT_SETTINGS if env and env.get(name) not in (None, "")}
+            return {
+                "fallback": True,
+                "libraries": list(self.libraries),
+                "unavailable": list(self.unavailable),
+                "offered": {kind: list(devices) for kind, devices in self.offered.items()},
+                "used": used,
+                "launch_settings": settings,
+                "warning_lines": self.count,
+                "examples": list(self.lines),
+                "note": TRANSPORT_NOTE if progressed else TRANSPORT_NOTE_EARLY,
+            }
+
+
+def transport_summary(transport: dict) -> str:
+    """One line for a network fallback, worded as information."""
+    skipped = ", ".join(transport.get("unavailable") or []) or "a device"
+    libraries = "/".join(transport.get("libraries") or [])
+    return f"info, not the cause: {libraries} skipped {skipped} and used {transport['used']}"
 
 
 def pvserver_arguments(executable: str, port: int | str, connect_id: int = 0) -> list[str]:
@@ -247,6 +367,8 @@ class Supervisor:
         self.recent: deque[str] = deque(maxlen=40)
         self.failure: tuple[str, str, float] | None = None
         self.cause: dict | None = None
+        self.transport = TransportNotes()
+        self.launch_env: dict | None = None
 
     def say(self, text: str) -> None:
         if not self.stdout_open:
@@ -269,6 +391,10 @@ class Supervisor:
             log.write(line)
             log.flush()
             text = line.rstrip("\n")
+            if self.transport.observe(text.strip()):
+                # A fallback the library recovered from: logged and shown, never failure evidence.
+                self.say(text)
+                continue
             if text.strip():
                 self.recent.append(text)
             if "Accepting connection" in line:
@@ -285,6 +411,7 @@ class Supervisor:
 
     def launch(self, port: int, log) -> tuple[subprocess.Popen, threading.Thread]:
         command, environment = server_command(self.args, port)
+        self.launch_env = environment
         log.write(f"# {now()} {command if isinstance(command, str) else ' '.join(command)}\n")
         log.flush()
         self.accepting.clear()
@@ -344,6 +471,9 @@ class Supervisor:
             )
         if self.failure is not None:
             record["seen"] = {"cause": self.failure[0], "line": self.failure[1]}
+        transport = self.transport.report(self.launch_env if self.launch_env is not None else os.environ, progressed=False)
+        if transport:
+            record["transport"] = transport
         if self.args.nprocs > 1 and not isinstance(network, dict):
             record["note"] = (
                 "the multi-node launch had no network facts for the site; collect them before a multi-node launch"
@@ -492,9 +622,14 @@ class Supervisor:
             "restarts": restarts,
             "server_exit_code": server_code,
             "cause": self.cause,
+            "transport": self.transport.report(
+                self.launch_env if self.launch_env is not None else os.environ, progressed=ready_at is not None
+            ),
             "log": str(self.state_dir / LOG_FILE),
         }
         write_json(self.state_dir / STOP_FILE, record)
+        if record["transport"]:
+            self.say(f"clio-pvserver network {transport_summary(record['transport'])}")
         log.write(f"# {stopped} stopped: {self.stop_reason}\n")
         log.close()
         (self.state_dir / PID_FILE).unlink(missing_ok=True)

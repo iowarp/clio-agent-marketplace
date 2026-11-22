@@ -367,6 +367,13 @@ class Pvserver(ClioService):
             lines.append(f"stop record: {self._state(STOP_FILE)}")
         else:
             lines.append(f"pvserver did not start (supervisor stop reason {record.get('reason')!r})")
+        transport = record.get("transport")
+        if transport:
+            skipped = ", ".join(transport.get("unavailable") or []) or "a device"
+            lines.append(
+                f"network info, not the cause: {'/'.join(transport.get('libraries') or [])} skipped {skipped} "
+                f"and used {transport.get('used')}; leave the site's network settings as they are"
+            )
         lines.append(f"log tail:\n{self._log_tail()}")
         return "\n".join(lines)
 

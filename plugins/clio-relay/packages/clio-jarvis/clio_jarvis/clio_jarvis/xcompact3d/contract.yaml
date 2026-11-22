@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.5
+version: 0.3.7
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -150,9 +150,10 @@ summary: >-
   statistics (statistics.bp5) every icheckpoint steps; both are off by
   default. All of these go to run_dir; set run_dir to a folder you can
   read (beside the geometry, say) and open <run_dir>/data.bp5 in ParaView as
-  soon as the job runs to watch it grow. While the run goes, the package syncs
-  data.bp5 to the file server every second, so a viewer on another machine
-  sees each snapshot as it lands rather than in 30 s bursts. If no live view
+  soon as the job runs to watch it grow. While the run goes, each node that
+  runs solver ranks syncs data.bp5 to the file server every second, so a
+  viewer on another machine sees each snapshot as it lands rather than in
+  30 s bursts, whichever nodes the solver runs on. If no live view
   could follow the run, offer when it ends to open the finished data.bp5 in
   ParaView (a slice at mid-span coloured by vort, at the last step) and open
   it once the person agrees.
@@ -166,7 +167,12 @@ summary: >-
   no_output or failed, the cause, the step and time reached, dt, the velocity
   extremes, snapshots written of expected, seconds per step, the stability
   numbers and the last solver lines), and a failed run raises with that
-  evidence. A diverged run needs a smaller dt (case.suggested_dt is the
+  evidence. Network fallback warnings (UCX or libfabric skipping a device it
+  cannot use, Open MPI skipping an OpenFabrics port) are kept out of the last
+  lines and reported under transport as information: the device skipped, the
+  transport offered instead and the launch's transport settings. They are
+  never the cause of a verdict and do not call for a site network change. A
+  diverged run needs a smaller dt (case.suggested_dt is the
   bound; halve dt if it diverged within it) or a body thick enough on the
   grid; a no_output run needs ioutput at most ilast. Change the case before
   resubmitting; the same inputs diverge the same way.

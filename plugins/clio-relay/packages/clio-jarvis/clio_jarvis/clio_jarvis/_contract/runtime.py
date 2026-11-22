@@ -28,6 +28,7 @@ from jarvis_cd.artifacts.schema import (
 )
 from jarvis_cd.progress import LineBuffer, ProgressObservation, ProgressState
 
+from .files import fresh_size
 from .spec import VIEW_ROLE, Contract, evaluate, is_view, load_contract
 
 STEP_SCHEMA = "clio.step.v1"
@@ -296,13 +297,14 @@ class ContractProgressAdapter:
 
 
 def _tree_size(path: Path) -> int:
+    # Sizes through an open descriptor: a stat() here can be stale when another node wrote the files.
     if path.is_file():
-        return path.stat().st_size
+        return fresh_size(path)
     total = 0
     for root, _, files in os.walk(path):
         for name in files:
             try:
-                total += (Path(root) / name).stat().st_size
+                total += fresh_size(Path(root) / name)
             except OSError:
                 pass
     return total
