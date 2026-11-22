@@ -37,6 +37,15 @@
 
 ### Changed
 
+- `clio-relay` (1.6.35) runs relay adbf2ff0 with jarvis-cd 58cd5b1a and still bundles
+  clio-jarvis ee210630. JARVIS now asks once per site where its software checks
+  and builds run (the login node under its limits, a compute job, or each
+  time), with its recommendation and evidence, and relay passes the question on
+  as it is. A served view reaches CLIO within seconds of being ready, a compute
+  node's host key is read reliably, and a forward whose key or job is gone
+  stops and says why. A site clean names the outputs its runs wrote and keeps
+  them unless the person asks. The use-relay skill covers all of it and leaves
+  pvserver's linger at its default.
 - `clio-relay` (1.6.34) runs relay 9a748fc5 with jarvis-cd 0fa2b312 and bundles
   clio-jarvis ee210630 (pvserver stays up for a while after its last client
   leaves). No Spack runs on a site's login node any more: JARVIS checks a
