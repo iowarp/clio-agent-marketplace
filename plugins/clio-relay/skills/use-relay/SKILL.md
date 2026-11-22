@@ -212,8 +212,11 @@ launches:
 
 - A site without JARVIS gets relay's jarvis-cd first, after the person says
   yes. `install` does this itself; do not look for another way to place JARVIS.
-- JARVIS checks what the site has. When everything is there, the operation
-  completes at once with `installed` and charges nothing.
+- JARVIS checks what the site has inside a short job on the compute nodes,
+  never on the login node, and the task waits while that job queues and runs.
+  It asks nothing. Later installs and runs of the same packages read that
+  job's record and skip the job until the site changes. When everything is
+  there, the operation completes with `installed` and nothing is built.
 - When JARVIS only has a question (which MPI) and the software is already
   there, the person answers the question and nothing else: relay checks again
   with the answer and the operation completes with nothing built.
