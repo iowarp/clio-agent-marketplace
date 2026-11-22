@@ -636,6 +636,7 @@ class Contract:
             "ports": ports,
             "stop": stop,
             "max_lifetime": evaluate(spec.get("max_lifetime"), config),
+            "linger": evaluate(spec.get("linger"), config),
         }
 
 

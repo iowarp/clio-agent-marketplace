@@ -37,6 +37,13 @@
 
 ### Changed
 
+- `clio-relay` (1.6.34) runs relay 9a748fc5 with jarvis-cd 0fa2b312 and bundles
+  clio-jarvis ee210630 (pvserver stays up for a while after its last client
+  leaves). No Spack runs on a site's login node any more: JARVIS checks a
+  site's software in a short job on the compute nodes and keeps a record that
+  later installs and runs read, so the login node only reads that record. Files
+  move by path, and an install of a plan's packages takes one call with one
+  review. The use-relay skill covers all of it.
 - `clio-relay` (1.6.33) runs relay 9791465e with jarvis-cd 5a58ab82 and bundles
   clio-jarvis b37fb115 (xcompact3d and pvserver 0.3.7, gray_scott 0.2.3: a new
   output shows on the JARVIS node while the solver runs). A serve call now hands

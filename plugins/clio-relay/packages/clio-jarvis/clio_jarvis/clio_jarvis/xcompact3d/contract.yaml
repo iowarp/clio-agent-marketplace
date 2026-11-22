@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.7
+version: 0.3.8
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -134,6 +134,10 @@ summary: >-
   the rest (a longer request can wait a little longer in the queue). Say so
   in the spend approval: the projected time, the coefficient, the padded
   request, and that unused time is not charged when the run ends cleanly.
+  A pvserver in the same pipeline to watch the run stays up for its linger
+  after the solver ends (pvserver's linger, 600 s by default) so the person
+  can still attach: add twice that linger to the padded request, and name
+  it in the spend approval.
   If the padded request exceeds the partition's maximum wall time (the time
   limit in the site's partitions), say so and propose options for the person
   to pick: another partition with a longer limit, a shorter run (fewer steps,
@@ -258,7 +262,9 @@ sizing:
     a candidate before its wall time becomes a request. Request that total times a generous safety
     coefficient (1.5 at least, 2 when it rests on one short pilot or none) as
     the job's walltime, since unused time is not charged when the run ends
-    cleanly, and say so in the spend approval. If the padded request exceeds
+    cleanly, and say so in the spend approval. With a pvserver watching the
+    run in the same job, add twice pvserver's linger (the time it stays up
+    after the solver ends) to that request. If the padded request exceeds
     the partition's maximum wall time, say so and let the person pick another
     partition, a shorter run or more nodes. Recommend the candidate whose
     projected wall time fits the person's stated time and node budget (see

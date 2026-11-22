@@ -249,7 +249,11 @@
             }
           }
         },
-        "max_lifetime": { "$ref": "#/$defs/value" }
+        "max_lifetime": { "$ref": "#/$defs/value" },
+        "linger": {
+          "$ref": "#/$defs/value",
+          "description": "Seconds the service stays up after the pipeline's steps finish, so clients can still attach; the job's walltime must allow for it."
+        }
       }
     },
     "provenance": {

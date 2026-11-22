@@ -183,6 +183,144 @@ def check_relay_launch(context: dict, pvpython: str, mode: str) -> None:
         log.close()
 
 
+def _read(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _phase_stop_seconds(root: Path) -> float | None:
+    """pvserver's stop_seconds in the run record's ``services_after_steps`` phase timing."""
+    for path in root.rglob("*.json"):
+        if path.stat().st_size > 4 * 1024 * 1024:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if "services_after_steps" not in text:
+            continue
+        found = []
+
+        def walk(node):
+            if isinstance(node, dict):
+                phase = node.get("services_after_steps")
+                if isinstance(phase, dict):
+                    for entry in phase.get("packages") or []:
+                        if isinstance(entry, dict) and entry.get("stop_seconds") is not None:
+                            found.append(float(entry["stop_seconds"]))
+                for value in node.values():
+                    walk(value)
+            elif isinstance(node, list):
+                for value in node:
+                    walk(value)
+
+        try:
+            walk(json.loads(text))
+        except ValueError:
+            continue
+        if found:
+            return max(found)
+    return None
+
+
+def check_coupled_linger(context: dict, pvpython: str, ending: str, linger: int) -> None:
+    """pvserver viewing a step (builtin.echo) stays up ``linger`` s after it returns.
+
+    ``ending`` "elapsed" lets the linger run out: ``jarvis ppl run`` ends
+    about ``linger`` s after the step, with stop reason ``linger-ended``, and
+    a client attaches meanwhile. ``ending`` "signal" sends SIGTERM to JARVIS
+    during a long linger, which must stop the server at once.
+    """
+    from clio_jarvis._contract.selftest import REPO_DIR, jarvis_command
+
+    check = context["check"]
+    facts = context["facts"]
+    tag = f"coupled linger {ending}"
+    work = Path(context["work"]) / f"linger-{ending}"
+    root = work / "jarvis"
+    shutil.rmtree(work, ignore_errors=True)
+    work.mkdir(parents=True)
+    env = {**os.environ, "JARVIS_ROOT": str(root)}
+    port = _free_port()
+    log_path = work / "jarvis.log"
+    log = open(log_path, "w", encoding="utf-8")
+    try:
+        for step in (
+            ["init", str(root / "config"), str(root / "private"), str(root / "shared")],
+            ["repo", "add", str(REPO_DIR)],
+            ["ppl", "create", f"linger_{ending}"],
+            ["ppl", "append", "clio_jarvis.pvserver", "pkg", "nprocs=1", "persist=true", f"port={port}", f"linger={linger}"],
+            ["ppl", "append", "builtin.echo"],
+        ):
+            result = subprocess.run(jarvis_command() + step, env=env, cwd=work, stdout=log, stderr=subprocess.STDOUT)
+            if not check(f"{tag}: jarvis {' '.join(step[:2])}", result.returncode == 0, f"rc {result.returncode}"):
+                return
+        began = time.monotonic()
+        run = subprocess.Popen(
+            jarvis_command() + ["ppl", "run"], env=env, cwd=work, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+        )
+        ready_path, ready = None, {}
+        deadline = time.monotonic() + 240
+        while time.monotonic() < deadline and run.poll() is None and not ready.get("lingering"):
+            ready_path = ready_path or next(iter(root.rglob("pvserver-ready.json")), None)
+            ready = _read(ready_path) if ready_path else {}
+            time.sleep(0.5)
+        lingered_at = time.monotonic()
+        if not check(
+            f"{tag}: the ready record says lingering once the step returned",
+            ready.get("lingering") is True and ready.get("linger_seconds") == linger and bool(ready.get("linger_until")),
+            {k: ready.get(k) for k in ("linger", "lingering", "linger_seconds", "linger_until", "linger_capped_by")},
+        ):
+            os.killpg(run.pid, signal.SIGKILL)
+            return
+        log.flush()
+        check(
+            f"{tag}: the step ran, then jarvis waits on pvserver",
+            "Echo!" in log_path.read_text(encoding="utf-8", errors="replace") and run.poll() is None,
+            f"rc {run.poll()}",
+        )
+        check(f"{tag}: still listening while it lingers", _listening(port), f"port {port}")
+        if ending == "elapsed":
+            ok, detail = _connect(work, pvpython, port, f"linger-{ending}")
+            check(f"{tag}: pvpython attaches and renders during the linger", ok, detail)
+        else:
+            time.sleep(5)
+            run.send_signal(signal.SIGTERM)
+        try:
+            code = run.wait(timeout=linger + 120 if ending == "elapsed" else 60)
+        except subprocess.TimeoutExpired:
+            os.killpg(run.pid, signal.SIGKILL)
+            code = run.wait()
+        total = round(time.monotonic() - began, 1)
+        after = round(time.monotonic() - lingered_at, 1)
+        stop = _read(ready_path.with_name("pvserver-stop.json"))
+        block = stop.get("linger") or {}
+        phase = _phase_stop_seconds(root)
+        facts[f"linger_{ending}"] = {
+            "port": port, "linger": linger, "exit_code": code, "run_seconds": total,
+            "seconds_after_lingering": after, "services_after_steps_stop_seconds": phase, "stop": stop,
+        }
+        if ending == "elapsed":
+            check(
+                f"{tag}: it stops on its own once the linger ends, exit 0",
+                code == 0 and stop.get("reason") == "linger-ended" and block.get("ended") == "elapsed"
+                and block.get("seconds") == linger and not _listening(port),
+                f"rc {code}, reason {stop.get('reason')}, linger {block}, {after} s after lingering",
+            )
+            check(
+                f"{tag}: the run lasted the linger (services_after_steps stop_seconds)",
+                after >= linger - 5 and phase is not None and phase >= linger - 5,
+                f"stop_seconds {phase}, {after} s after lingering began, run {total} s",
+            )
+        else:
+            check(
+                f"{tag}: SIGTERM to jarvis ends the linger at once",
+                stop.get("reason") == "signal" and block.get("ended") == "signal" and after < 45 and not _listening(port),
+                f"rc {code}, reason {stop.get('reason')}, linger {block}, {after} s after lingering",
+            )
+    finally:
+        log.close()
+
+
 def _wait_restart(state: Path, supervisor: subprocess.Popen, restarts: int = 1, timeout: float = 60) -> bool:
     """Wait until the ready record counts ``restarts`` restarts."""
     deadline = time.monotonic() + timeout
@@ -262,3 +400,5 @@ def check(context: dict) -> None:
     check("SIGTERM stops it with exit 0 and a stop record", code == 0 and record.get("reason") == "signal", f"rc {code}, {record.get('reason')}")
     check_relay_launch(context, pvpython, "start")
     check_relay_launch(context, pvpython, "run")
+    check_coupled_linger(context, pvpython, "elapsed", 40)
+    check_coupled_linger(context, pvpython, "signal", 600)

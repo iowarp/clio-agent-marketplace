@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: gray_scott
-version: 0.2.3
+version: 0.2.4
 kind: application
 summary: >-
   ADIOS2 Gray-Scott reaction-diffusion on an L x L x L grid. It writes U and V
@@ -56,7 +56,9 @@ sizing:
     ready_seconds, else job start to first step) and the steps / plotgap
     output writes, then request that times a generous safety coefficient
     (1.5 at least, 2 when it rests on one short run or none): unused time is
-    not charged when the run ends cleanly, so say so in the spend approval,
+    not charged when the run ends cleanly, so say so in the spend approval.
+    With a pvserver watching the run in the same job, add twice pvserver's
+    linger (the time it stays up after the solver ends) to that request,
     and if the padded request exceeds the partition's maximum wall time, say
     so and let the person pick another partition, a shorter run or more
     nodes.

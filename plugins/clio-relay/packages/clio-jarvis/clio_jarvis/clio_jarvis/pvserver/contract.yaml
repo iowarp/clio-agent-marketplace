@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: pvserver
-version: 0.3.7
+version: 0.3.8
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
@@ -20,6 +20,16 @@ summary: >-
   mlx5_0:1 and going on over another transport) stay out of those lines;
   the stop record reports them under transport as information, never as
   the cause, and they do not call for a site network change.
+  In a pipeline with a solver, pvserver outlives it: once the pipeline's
+  steps finish it keeps serving for linger seconds (default 600, 0 for
+  none) so a client can still attach and look at the final output, then
+  stops with reason linger-ended. The linger ends before the job's wall
+  time (the scheduler's time left, else walltime), and at once on jarvis
+  ppl stop, a cancel or a signal; after a failed step there is none.
+  pvserver-ready.json says lingering with linger_until, and the stop record
+  carries a linger block. Request the job's walltime as the solver's
+  walltime plus twice the linger (20 minutes more at the default), since a
+  job ends, and is charged, when its pipeline does.
 
 install:
   method: spack
@@ -38,9 +48,11 @@ parameters:
     connect_id: {minimum: 0, maximum: 2147483647}
     # No default and no cap: absent means the server runs until it is stopped.
     max_lifetime: {minimum: 1}
+    # No cap either; 0 means the server stops with the pipeline's steps.
+    linger: {minimum: 0}
     start_timeout: {minimum: 5, maximum: 3600}
     walltime: {minimum: 1}
-  review: [nprocs, port, connect_id, max_lifetime, walltime, queue]
+  review: [nprocs, port, connect_id, max_lifetime, linger, walltime, queue]
   fill:
     state_dir: "{shared_dir}/pvserver"
 
@@ -103,6 +115,7 @@ service:
         protocol is tcp (base_url tcp://host:port), which needs jarvis-cd
         4007fd14 or newer; the ready message names cs://.
   max_lifetime: {param: max_lifetime}
+  linger: {param: linger}
 
 provenance:
   inputs: []
@@ -115,6 +128,8 @@ selftest:
   # The generic runner's 'jarvis ppl run' starts and then stops the server.
   # selftest.py also serves it as relay does, with no lifetime: through
   # 'ppl start', a held wait and 'ppl stop', and through 'ppl run' with hold.
+  # Then coupled to a step (builtin.echo) it lingers: once to the end of a
+  # 40 s linger with a client attaching, once stopped by SIGTERM mid-linger.
   params: {nprocs: 1, ppn: 1, port: 0, start_timeout: 120}
   max_seconds: 600
   script: selftest.py

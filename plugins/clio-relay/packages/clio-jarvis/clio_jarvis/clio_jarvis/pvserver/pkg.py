@@ -11,6 +11,13 @@ the pipeline starts the next package once pvserver listens. Otherwise
 supervisor stops pvserver and writes ``pvserver-stop.json`` in the state
 directory. A client reaches the server through an SSH tunnel to that port.
 
+Coupled to a solver, pvserver outlives it: when jarvis-cd stops the service
+because the pipeline's steps returned, the server first lingers ``linger``
+seconds (default 600) so a client can still attach and look at the final
+output, then stops. The linger ends before the job's wall time does, and at
+once on ``jarvis ppl stop``, a cancel or a signal. After a failed step the
+server stops at once, so the failure is reported without delay.
+
 pvserver comes from Spack's builtin ``paraview`` recipe through the contract's
 install query; ``jarvis ppl install`` reuses the site's MPI and Mesa and builds
 the rest, and its ``spack load`` environment puts pvserver on PATH.
@@ -136,6 +143,15 @@ class Pvserver(ClioService):
                 "default": None,
                 "required": False,
             },
+            {
+                "name": "linger",
+                "msg": (
+                    "Seconds the server stays up after the pipeline's steps (the solver it views) finish, "
+                    "so a client can still attach; never past the job's end; 0 means stop with the steps"
+                ),
+                "type": int,
+                "default": 600,
+            },
             {"name": "start_timeout", "msg": "Seconds to wait for the port to open", "type": int, "default": 120},
             {
                 "name": "state_dir",
@@ -145,7 +161,10 @@ class Pvserver(ClioService):
             },
             {
                 "name": "walltime",
-                "msg": "Wall-time limit in seconds; absent means no limit",
+                "msg": (
+                    "Wall-time limit in seconds; absent means no limit. Coupled to a solver, "
+                    "ask for the solver's padded walltime plus twice the linger"
+                ),
                 "type": int,
                 "default": None,
                 "required": False,
@@ -317,6 +336,7 @@ class Pvserver(ClioService):
         argv += self._runtime_arguments(state_dir)
         if config.get("max_lifetime") not in (None, ""):
             argv += ["--max-lifetime", str(int(config["max_lifetime"]))]
+        argv += self._linger_arguments()
         if config.get("persist"):
             argv.append("--persist")
         self._clio_service_exec = Exec(
@@ -481,8 +501,108 @@ class Pvserver(ClioService):
         self._clio_service_exec = None
         return code
 
+    def _linger_seconds(self) -> int:
+        value = self.config.get("linger")
+        return 0 if value in (None, "") else max(0, int(value))
+
+    def _linger_arguments(self) -> list[str]:
+        """``--linger`` and what bounds it: the job's end from the scheduler, else ``walltime``.
+
+        The scheduler's facts come from the batch job's environment (Slurm's
+        SLURM_JOB_END_TIME, or SLURM_JOB_ID for squeue's time left); without
+        a batch job only ``walltime`` bounds the linger.
+        """
+        seconds = self._linger_seconds()
+        if not seconds:
+            return []
+        argv = ["--linger", str(seconds)]
+        if self.config.get("walltime") not in (None, ""):
+            argv += ["--walltime", str(int(self.config["walltime"]))]
+
+        def job_env(name: str) -> str:
+            return str(os.environ.get(name) or self.mod_env.get(name) or "").strip()
+
+        end = job_env("SLURM_JOB_END_TIME")
+        if end.isdigit() and int(end) > 0:
+            argv += ["--job-end", end]
+        job = job_env("SLURM_JOB_ID")
+        if job.isdigit():
+            argv += ["--job-id", job]
+        return argv
+
+    def _steps_finished(self) -> bool:
+        """True when this pipeline ran a step (an application, not a service) and it returned."""
+        from jarvis_cd.core.pkg import Library, Service
+
+        started = getattr(getattr(self, "pipeline", None), "_started_instances", None) or []
+        return any(instance is not self and not isinstance(instance, (Service, Library)) for instance in started)
+
+    def _lingers(self) -> bool:
+        """Linger only for jarvis-cd's after-steps stop: this instance holds and no failure is being handled.
+
+        jarvis-cd stops a service that served the steps in the same process,
+        on the instance whose background start() holds, once every step
+        returned OK. Cleanup after a failure runs inside ``except``, and
+        ``jarvis ppl stop``, a cancel and the end of the job reach the server
+        from another process or as a signal: those stop it at once.
+        """
+        return bool(
+            self._linger_seconds()
+            and self._clio_holding
+            and sys.exc_info()[0] is None
+            and self._steps_finished()
+        )
+
+    def _linger(self) -> bool:
+        """Ask the supervisor to linger and wait for it to end; False when there is none to ask.
+
+        SIGTERM, SIGINT or SIGHUP to JARVIS meanwhile (in the main thread) is
+        passed on as SIGTERM, which ends the linger at once.
+        """
+        if self._supervisor_pid() is None:
+            return False
+        seconds = self._linger_seconds()
+        self._terminate(signal.SIGUSR1)
+        deadline = time.monotonic() + 20
+        ready = self._read_json(READY_FILE) or {}
+        while not ready.get("lingering") and self._supervisor_pid() is not None and time.monotonic() < deadline:
+            time.sleep(0.2)
+            ready = self._read_json(READY_FILE) or {}
+        if ready.get("lingering"):
+            capped = f" (shortened from {seconds} s to end before the job: {ready['linger_capped_by']})" if ready.get("linger_capped_by") else ""
+            print(
+                f"pvserver: the pipeline's steps finished; it stays up {ready.get('linger_seconds')} s more, "
+                f"until {ready.get('linger_until')}, for clients to attach at port {ready.get('port')}{capped}; "
+                "jarvis ppl stop or a cancel ends it sooner",
+                flush=True,
+            )
+
+        def forward(number, _frame):
+            self._terminate(signal.SIGTERM)
+
+        previous = {}
+        for number in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+            try:
+                previous[number] = signal.signal(number, forward)
+            except ValueError:  # not the main thread
+                break
+        try:
+            deadline = time.monotonic() + seconds + self._grace() + 30
+            while self._supervisor_pid() is not None and time.monotonic() < deadline:
+                time.sleep(0.5)
+        finally:
+            for number, handler in previous.items():
+                signal.signal(number, handler)
+        return self._supervisor_pid() is None
+
     def stop(self) -> None:
-        """SIGTERM the supervisor and wait for it; nothing running is not an error."""
+        """SIGTERM the supervisor and wait for it; nothing running is not an error.
+
+        After the pipeline's steps finished, the server first lingers (see
+        ``_lingers``) so a client can still attach.
+        """
+        if self._lingers() and self._linger():
+            return
         self._terminate(signal.SIGTERM)
         if self._clio_service_exec is not None and not self._clio_holding:
             code = self._finish()

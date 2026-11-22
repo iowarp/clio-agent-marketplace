@@ -16,6 +16,18 @@ On SIGTERM or SIGINT, at the lifetime limit, or when pvserver exits without
 being restarted, it stops the server and writes ``pvserver-stop.json``
 (clio.service-stop.v1).
 
+SIGUSR1 asks it to linger: the package sends it once the pipeline's steps (the
+solver pvserver views) have finished, so a client still has ``--linger``
+seconds to attach and look at the final output. The server keeps serving, and
+with ``--persist`` keeps restarting after each client session, until the
+linger ends (stop reason ``linger-ended``). The linger never runs past the
+job: it ends the stop grace and LINGER_MARGIN_SECONDS before the job's end,
+read from the scheduler (``--job-end``, or ``squeue`` for ``--job-id``) or
+else from ``--walltime`` counted from the supervisor's start. SIGTERM or
+SIGINT during the linger stops the server at once. The ready record says
+``lingering`` with ``linger_until``, and the stop record's ``linger`` block
+says how long it lasted and how it ended.
+
 A server that never listens fails typed: the stop record's ``cause`` names why
 (start_timeout, exited_before_ready, stopped_before_ready, or a known launcher
 failure such as mpi_wireup_failed) with the last output lines, the hosts and
@@ -99,6 +111,64 @@ def listening(port: int) -> bool | None:
             if len(parts) > 3 and parts[3] == "0A" and int(parts[1].rsplit(":", 1)[1], 16) == port:
                 return True
     return False if seen_table else None
+
+
+#: Seconds a linger keeps clear of the job's end, beyond the stop grace.
+LINGER_MARGIN_SECONDS = 60
+
+
+def parse_scheduler_duration(text: str) -> int | None:
+    """Seconds in a Slurm duration ([days-]hours:minutes:seconds, minutes:seconds or minutes).
+
+    None for anything else, such as UNLIMITED, NOT_SET or INVALID.
+    """
+    text = text.strip()
+    days = 0
+    if "-" in text:
+        head, text = text.split("-", 1)
+        if not head.isdigit():
+            return None
+        days = int(head)
+    parts = text.split(":")
+    if not text or len(parts) > 3 or not all(part.isdigit() for part in parts):
+        return None
+    numbers = [int(part) for part in parts]
+    if days:
+        numbers += [0] * (3 - len(numbers))  # days-hours[:minutes[:seconds]]
+    elif len(numbers) == 1:
+        numbers = [0, numbers[0], 0]  # minutes
+    elif len(numbers) == 2:
+        numbers = [0, *numbers]  # minutes:seconds
+    hours, minutes, seconds = numbers
+    return days * 86400 + hours * 3600 + minutes * 60 + seconds
+
+
+def job_time_left(args: argparse.Namespace, elapsed: float) -> tuple[int | None, str | None]:
+    """Seconds left in the job and where that came from; (None, None) when nothing bounds it.
+
+    The scheduler's own answer comes first: an end time it exported
+    (``--job-end``, e.g. Slurm's SLURM_JOB_END_TIME), then ``squeue`` for the
+    job's time left. Without either, ``--walltime`` counts from this
+    supervisor's start, a little after the job's.
+    """
+    if args.job_end:
+        return int(args.job_end - time.time()), "scheduler end time"
+    if args.job_id:
+        try:
+            result = subprocess.run(
+                ["squeue", "--noheader", "--jobs", str(args.job_id), "--format=%L"],
+                capture_output=True, text=True, timeout=15,
+            )
+        except (OSError, subprocess.SubprocessError):
+            result = None
+        if result is not None and result.returncode == 0:
+            for line in result.stdout.splitlines():
+                left = parse_scheduler_duration(line)
+                if left is not None:
+                    return left, "squeue time left"
+    if args.walltime is not None:
+        return int(args.walltime - elapsed), "walltime"
+    return None, None
 
 
 #: Stands for the port in a launch built before the supervisor picks it.
@@ -369,6 +439,8 @@ class Supervisor:
         self.cause: dict | None = None
         self.transport = TransportNotes()
         self.launch_env: dict | None = None
+        self.linger_requested = False
+        self.linger: dict | None = None
 
     def say(self, text: str) -> None:
         if not self.stdout_open:
@@ -385,6 +457,38 @@ class Supervisor:
             self.stop_reason = "signal"
             self.stop_signal = signal.Signals(number).name
         self.wake.set()
+
+    def on_linger(self, _number: int, _frame) -> None:
+        self.linger_requested = True
+        self.wake.set()
+
+    def begin_linger(self, elapsed: float) -> float:
+        """Start the linger the package asked for; returns its end on the monotonic clock."""
+        requested = int(self.args.linger)
+        left, source = job_time_left(self.args, elapsed)
+        seconds, capped_by = requested, None
+        if left is not None:
+            room = max(0, left - self.args.grace - LINGER_MARGIN_SECONDS)
+            if room < seconds:
+                seconds, capped_by = room, source
+        until = datetime.now(timezone.utc).timestamp() + seconds
+        self.linger = {
+            "reason": "steps_finished",
+            "requested_seconds": requested,
+            "seconds": seconds,
+            "started_at": now(),
+            "until": datetime.fromtimestamp(until, timezone.utc).isoformat(timespec="seconds"),
+            "capped_by": capped_by,
+            "job_seconds_left": left,
+            "job_time_source": source,
+            "ended": None,
+            "ended_at": None,
+        }
+        return time.monotonic() + seconds
+
+    def end_linger(self, how: str) -> None:
+        if self.linger is not None and self.linger["ended"] is None:
+            self.linger.update(ended=how, ended_at=now())
 
     def forward(self, pipe, log) -> None:
         for line in iter(pipe.readline, ""):
@@ -487,14 +591,18 @@ class Supervisor:
         self.state_dir.mkdir(parents=True, exist_ok=True)
         for name in (READY_FILE, STOP_FILE):
             (self.state_dir / name).unlink(missing_ok=True)
-        (self.state_dir / PID_FILE).write_text(f"{os.getpid()}\n", encoding="ascii")
+        # Handlers first: the package signals the pid in the pid file, and
+        # SIGUSR1's default action would end this process.
         for number in (signal.SIGTERM, signal.SIGINT):
             signal.signal(number, self.on_signal)
+        signal.signal(signal.SIGUSR1, self.on_linger)
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
         signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+        (self.state_dir / PID_FILE).write_text(f"{os.getpid()}\n", encoding="ascii")
 
         port = args.port or free_port()
         started = now()
+        clock = time.monotonic()
         log = open(self.state_dir / LOG_FILE, "a", encoding="utf-8")
         host = socket.gethostname()
         try:
@@ -538,18 +646,50 @@ class Supervisor:
                 "started_at": started,
                 "ready_at": ready_at,
                 "max_lifetime": args.max_lifetime,
+                "linger": args.linger,
+                "lingering": False,
                 "restarts": 0,
             }
             write_json(self.state_dir / READY_FILE, ready)
-            listens = (
+            served = (
                 f"pvserver rank 0 accepts connections at {endpoint} (ParaView client-server protocol, "
                 f"bound to {BIND} on {host}: reach it through an SSH tunnel to {host})"
             )
+            listens = served
+            if args.linger:
+                listens += f"; it stays up {args.linger} s after the pipeline's steps finish"
             if not runtime("ready", listens):
                 self.stop_reason = "report-failed"
             self.say(f"clio-pvserver ready port={port} url=cs://{BIND}:{port}")
             end = time.monotonic() + args.max_lifetime if args.max_lifetime is not None else None
+            linger_end = None
             while self.stop_reason is None:
+                if self.linger_requested and linger_end is None:
+                    self.wake.clear()
+                    linger_end = self.begin_linger(time.monotonic() - clock)
+                    linger = self.linger
+                    ready.update(
+                        lingering=True,
+                        linger_seconds=linger["seconds"],
+                        linger_started_at=linger["started_at"],
+                        linger_until=linger["until"],
+                        linger_capped_by=linger["capped_by"],
+                    )
+                    write_json(self.state_dir / READY_FILE, ready)
+                    capped = f", shortened to end before the job does ({linger['capped_by']})" if linger["capped_by"] else ""
+                    listens = (
+                        f"{served}; the pipeline's steps finished and it stays up "
+                        f"{linger['seconds']} s more, until {linger['until']}{capped}"
+                    )
+                    runtime("ready", listens)
+                    self.say(
+                        f"clio-pvserver lingering seconds={linger['seconds']} until={linger['until']} "
+                        f"requested={linger['requested_seconds']}"
+                        + (f" capped_by={linger['capped_by'].replace(' ', '_')}" if linger["capped_by"] else "")
+                    )
+                if linger_end is not None and time.monotonic() >= linger_end:
+                    self.stop_reason = "linger-ended"
+                    break
                 if end is not None and time.monotonic() > end:
                     self.stop_reason = "max-lifetime"
                     break
@@ -584,7 +724,7 @@ class Supervisor:
                     break
                 self.say(f"clio-pvserver restarted port={port} restarts={restarts}")
 
-        if self.stop_reason in ("signal", "max-lifetime") and ready_at is not None:
+        if self.stop_reason in ("signal", "max-lifetime", "linger-ended") and ready_at is not None:
             runtime("stopping", f"stopping pvserver at {endpoint} ({self.stop_reason})")
         server_code = self.stop_server(server)
         reader.join(timeout=5)
@@ -596,13 +736,18 @@ class Supervisor:
             self.cause = cause
             runtime("failed", f"pvserver at {endpoint} never served: {cause['code']}: {cause['message']}")
         elif code == 0:
-            runtime("stopped", f"pvserver at {endpoint} stopped ({self.stop_reason})")
+            lingered = (
+                f" after lingering {self.linger['seconds']} s past the pipeline's steps"
+                if self.stop_reason == "linger-ended" and self.linger
+                else ""
+            )
+            runtime("stopped", f"pvserver at {endpoint} stopped ({self.stop_reason}){lingered}")
         else:
             runtime("failed", f"pvserver at {endpoint} ended: {self.stop_reason}, server exit code {server_code}")
         return self.finish(log, port, started, ready_at, restarts, server_code)
 
     def exit_code(self, server_code: int | None) -> int:
-        if self.stop_reason in ("signal", "max-lifetime"):
+        if self.stop_reason in ("signal", "max-lifetime", "linger-ended"):
             return 0
         if self.stop_reason == "server-exited":
             return server_code if server_code else 0
@@ -610,6 +755,7 @@ class Supervisor:
 
     def finish(self, log, port: int, started: str, ready_at: str | None, restarts: int, server_code: int | None) -> int:
         stopped = now()
+        self.end_linger("elapsed" if self.stop_reason == "linger-ended" else str(self.stop_reason))
         record = {
             "schema": STOP_SCHEMA,
             "reason": self.stop_reason,
@@ -622,6 +768,7 @@ class Supervisor:
             "restarts": restarts,
             "server_exit_code": server_code,
             "cause": self.cause,
+            "linger": self.linger,
             "transport": self.transport.report(
                 self.launch_env if self.launch_env is not None else os.environ, progressed=ready_at is not None
             ),
@@ -634,7 +781,10 @@ class Supervisor:
         log.close()
         (self.state_dir / PID_FILE).unlink(missing_ok=True)
         cause = f" cause={self.cause['code']}" if self.cause else ""
-        self.say(f"clio-pvserver stopped reason={self.stop_reason}{cause}")
+        lingered = (
+            f" lingered={self.linger['seconds']} linger_ended={self.linger['ended']}" if self.linger else ""
+        )
+        self.say(f"clio-pvserver stopped reason={self.stop_reason}{cause}{lingered}")
         return self.exit_code(server_code)
 
     def stop_server(self, server: subprocess.Popen) -> int | None:
@@ -667,6 +817,13 @@ def _positive_int(text: str) -> int:
     return value
 
 
+def _nonnegative_int(text: str) -> int:
+    value = int(text)
+    if value < 0:
+        raise argparse.ArgumentTypeError(f"must be zero or more seconds, not {value}")
+    return value
+
+
 def parse(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--state-dir", required=True)
@@ -688,6 +845,20 @@ def parse(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("--start-timeout", type=int, default=120)
     parser.add_argument("--grace", type=int, default=15)
+    parser.add_argument(
+        "--linger",
+        type=_nonnegative_int,
+        default=0,
+        help="seconds to keep serving after SIGUSR1 (the pipeline's steps finished); 0 means stop then",
+    )
+    parser.add_argument(
+        "--walltime",
+        type=_positive_int,
+        default=None,
+        help="the job's wall time in seconds, counted from this start; bounds the linger without a scheduler answer",
+    )
+    parser.add_argument("--job-id", default="", help="the batch job's ID; squeue gives its time left for the linger")
+    parser.add_argument("--job-end", type=float, default=None, help="the job's end as Unix seconds, from the scheduler")
     parser.add_argument("--descriptor", default="", help="dataset descriptor JSON; given when JARVIS bound a service runtime")
     parser.add_argument("--service-instance-id", default="")
     parser.add_argument("--authorization-file", default="", help="file holding the service's bearer token")
