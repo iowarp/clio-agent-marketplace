@@ -4,6 +4,11 @@
 
 ### Added
 
+- `cad` (0.1.0): parametric CAD with the `cadquery` skill. The part is a script
+  run on CLIO's own uv and Python with `cadquery>=2.8`, whose cadquery-ocp has
+  wheels for Python 3.11 to 3.14, so the first run resolves on a 3.14 CLIO Python
+  where an older pin such as 2.6.1 does not. It exports STEP and an STL that is
+  read back and checked for watertightness and dimensions before a solver uses it.
 - `clio-relay` (1.6.16): relay's MCP server, run with `uvx` from a pinned commit of
   iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
   the protocol and security for new endpoints, then adds, probes, edits and removes
