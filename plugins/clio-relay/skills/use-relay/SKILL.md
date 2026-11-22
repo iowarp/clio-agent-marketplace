@@ -93,7 +93,9 @@ guarded site. Anything else, answers included, goes through `exec` with
   is ready, with the endpoint in the result, while the service keeps running
   until it is stopped. Each port in the endpoint has an `address` (`host:port`):
   hand that to the client. The port is the one the service bound, as JARVIS
-  reports it; never choose one yourself.
+  reports it; never choose one yourself. The task completes within seconds of
+  the service coming up, while its job still runs: connect to the endpoint or
+  open the view right away, in the same turn, since a short job may end soon.
   To serve one package beside a run, such as pvserver beside xcompact3d, give
   both in one `serve` pipeline, with each step's `host_slice` parameter placing
   it on its nodes (pvserver `0:2`, xcompact3d `2:6`, say). JARVIS decides which
@@ -203,6 +205,9 @@ launches:
   yes. `install` does this itself; do not look for another way to place JARVIS.
 - JARVIS checks what the site has. When everything is there, the operation
   completes at once with `installed` and charges nothing.
+- When JARVIS only has a question (which MPI) and the software is already
+  there, the person answers the question and nothing else: relay checks again
+  with the answer and the operation completes with nothing built.
 - When something is missing, the person gets the same asks a run's install
   gets: approve the install job and its wall time, and answer any question
   JARVIS has (below). JARVIS then builds it as a job on the site's compute
@@ -343,9 +348,13 @@ net set`, anything else as a site skill with `rg skill set`.
 
 Stop a service or cancel a job with `cancel(operation=...)`. When the person
 wants relay's deployment gone from a site, so the next use deploys it again,
-call `site_clean(site=...)`: it asks the person first, refuses while a job of
-the site still runs, and keeps the site's Spack store and JARVIS's recorded
-answers (which MPI, which compiler). Pass `forget_decisions=true` only when the
+call `site_clean(site=...)`: it asks the person first and keeps the site's
+Spack store and JARVIS's recorded answers (which MPI, which compiler). It
+removes nothing while relay's jobs still run there, as the site's scheduler
+reports them, and its refusal names each job and its operation: tell the
+person, and cancel them with `cancel(operation=...)` only if they want that,
+then clean again. `cancel` also ends a job the scheduler still lists under an
+operation that already ended. Pass `forget_decisions=true` only when the
 person asks to forget those answers, so the next install asks them again; to
 forget one answer, run JARVIS's `ppl install --forget <selector>` with `exec`
 instead. Do not look for the `clio-relay` command line to do either.
