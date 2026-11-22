@@ -47,6 +47,17 @@
   the script in `used`, so CLIO opens them in its 3D view; a solver-frame copy is
   registered as intermediate. `geometry-to-glb` is only for meshes with fields.
 
+- `clio-relay` (1.6.38) runs relay 77a49109 with jarvis-cd 3b651c68 and still bundles
+  clio-jarvis ee210630. `run`, `serve` and `exec` declare that they confirm
+  themselves (`io.iowarp/confirm`), so a host that leaves the confirm to relay
+  shows the person one form per call. Each job travels as one typed snapshot
+  (`io.iowarp.clio-relay/job`) on the confirm, the task status, the tool results
+  and `describe`'s job list, for a host to draw as the job's card. For a package
+  run the card is JARVIS's own plan of the submit (directives, components with
+  their nodes, couplings and the script), the submit is bound to it, and a plan
+  that changed after the yes is shown again rather than submitted; each
+  component's state comes from JARVIS while the job runs.
+
 - `clio-relay` (1.6.37) runs relay 5fe5e6a9 with jarvis-cd acbf4308 and still bundles
   clio-jarvis ee210630. Runs write under the site's outputs directory
   (`~/clio-relay-runs` unless set), outside relay's own, so `site clean` keeps
