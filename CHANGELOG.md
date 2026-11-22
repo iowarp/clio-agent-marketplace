@@ -37,6 +37,14 @@
 
 ### Changed
 
+- `clio-relay` (1.6.36) runs relay 49cf7e02 with jarvis-cd 58cd5b1a and still bundles
+  clio-jarvis ee210630. Where JARVIS builds is now offered like where it checks:
+  relay sets no build default, so a new site shows JARVIS's recommendation, and
+  a build the person places on the login node runs JARVIS's own install there
+  under JARVIS's limits, as a background task with no time limit that only the
+  person cancels. Listing the staged packages is its own read-only tool,
+  `packages_read`, so it works in plan mode; `packages` only stages and removes.
+  The use-relay skill covers both.
 - `clio-relay` (1.6.35) runs relay adbf2ff0 with jarvis-cd 58cd5b1a and still bundles
   clio-jarvis ee210630. JARVIS now asks once per site where its software checks
   and builds run (the login node under its limits, a compute job, or each
