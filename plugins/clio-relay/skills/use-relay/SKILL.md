@@ -222,7 +222,8 @@ keeps the person's answers for the site, so a later install does not ask again
 unless the person wants to change one.
 
 - **Which MPI.** An install with several MPI candidates asks once for the
-  site.
+  site. Installs started together on one site share that question: answer it
+  once and every install that asked moves on.
 - **Which Spack.** When JARVIS has no Spack on the site, the install asks which
   of the site's own Spack checkouts to use. Each candidate also has a
   `prepare` command that makes a JARVIS Spack chained to it as an upstream,
@@ -343,8 +344,11 @@ net set`, anything else as a site skill with `rg skill set`.
 Stop a service or cancel a job with `cancel(operation=...)`. When the person
 wants relay's deployment gone from a site, so the next use deploys it again,
 call `site_clean(site=...)`: it asks the person first, refuses while a job of
-the site still runs, and keeps the site's Spack store. Do not look for the
-`clio-relay` command line to do either.
+the site still runs, and keeps the site's Spack store and JARVIS's recorded
+answers (which MPI, which compiler). Pass `forget_decisions=true` only when the
+person asks to forget those answers, so the next install asks them again; to
+forget one answer, run JARVIS's `ppl install --forget <selector>` with `exec`
+instead. Do not look for the `clio-relay` command line to do either.
 
 ## Sites are the person's
 
