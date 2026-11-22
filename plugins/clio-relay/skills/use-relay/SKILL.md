@@ -9,8 +9,9 @@ description: Use this skill to run jobs, commands, file transfers or services on
 Relay reaches the compute sites the person has set up, such as a cluster over
 SSH, a Globus Compute endpoint or a Tapis tenant. Its five verbs are
 `describe`, `run`, `exec`, `files` and `serve`. Beside them, `packages` stages
-the JARVIS packages `run` takes, and `shutdown` stops relay's long-lived
-processes when the host closes.
+the JARVIS packages `run` takes, `install` installs a package's software on a
+site ahead of any run, and `shutdown` stops relay's long-lived processes when
+the host closes.
 
 ## Reads never ask
 
@@ -189,6 +190,28 @@ After a plugin update the package sources may build a new archive of a name.
 A run, stage or list by name then stages it, and the older archive shows
 `superseded_by`. Run the name, not the old `sha256`, unless the person asks for
 that archive; a guarded site reviews the new one before it runs.
+
+## Install ahead of a run
+
+When the person wants a package's software on a site before running it ("install
+xcompact3d on ares, don't run anything yet"), call `install` with the site and
+the same `spec` a run would take, `package: {name, parameters}`, with the
+package staged first. It is `run`'s install step on its own, and nothing
+launches:
+
+- A site without JARVIS gets relay's jarvis-cd first, after the person says
+  yes. `install` does this itself; do not look for another way to place JARVIS.
+- JARVIS checks what the site has. When everything is there, the operation
+  completes at once with `installed` and charges nothing.
+- When something is missing, the person gets the same asks a run's install
+  gets: approve the install job and its wall time, and answer any question
+  JARVIS has (below). JARVIS then builds it as a job on the site's compute
+  nodes, checks again, and the operation completes.
+
+Like `run` it is a task: follow it with the task, or with `describe(job=...)`,
+and cancel it with `install(cancel=...)`. To install several packages, call
+`install` for each at once; they do not wait on each other. A later `run` of
+the same package finds the software installed and goes straight to its job.
 
 ## Questions JARVIS asks
 

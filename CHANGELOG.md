@@ -37,6 +37,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.31) runs relay f1749784. A new `install` tool installs a
+  package's software on a site ahead of any run: JARVIS checks the site, the person
+  gets the same asks as a run's install, and JARVIS builds it in a job on the
+  compute nodes with nothing launched after it. A site without JARVIS gets relay's
+  jarvis-cd first, after a yes. The use-relay skill says when to use it.
 - `clio-relay` (1.6.30) runs relay b85d756b. A port forward to a running service
   now outlives a restart of the relay MCP server: the forward is its own process,
   and a relay that starts adopts it, or opens it again at once if it died, without
