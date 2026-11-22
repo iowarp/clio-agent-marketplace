@@ -232,16 +232,20 @@ launches:
   there, the person answers the question and nothing else: relay checks again
   with the answer and the operation completes with nothing built.
 - When something is missing, the person gets the same asks a run's install
-  gets: approve the install job and its wall time, and answer any question
-  JARVIS has (below). JARVIS then builds it as a job on the site's compute
-  nodes, checks again, and the operation completes.
+  gets: approve the install and answer any question JARVIS has (below),
+  including where it builds. JARVIS then builds it where the site chose and
+  checks again, and the operation completes. In a compute job, the approval
+  names the job's wall time. On the login node, JARVIS's own install runs
+  there under the limits JARVIS sets, as a background task with progress and
+  no time limit: a long build is expected, so keep following it and do not
+  cancel it yourself. Only the person stops it, with `install(cancel=...)`.
 
 Like `run` it is a task: follow it with the task, or with `describe(job=...)`,
 and cancel it with `install(cancel=...)`. To install several packages, such
 as everything a plan runs, make one `install` call whose `spec` lists them all
 in `packages`, the same steps the later `run` or `serve` takes. The person
 then gets one review of the packages, one set of JARVIS questions and one
-install job, instead of one of each per package. A later `run` of the same
+build, instead of one of each per package. A later `run` of the same
 packages finds the software installed and goes straight to its job.
 
 ## Questions JARVIS asks
@@ -262,7 +266,9 @@ unless the person wants to change one.
   cost of each package), and may offer a choice for one package only, such as
   a long build in a compute job while the rest check on the login node. Pass
   it on with that evidence and let the person pick; do not recommend a place
-  of your own or set any limit. An answer marked for this run only is asked
+  of your own or set any limit. Builds are offered the same way as checks:
+  relay has no default of its own, so a site that has not answered shows
+  JARVIS's recommendation. An answer marked for this run only is asked
   again next time.
 - **Which Spack.** When JARVIS has no Spack on the site, the install asks which
   of the site's own Spack checkouts to use. Each candidate also has a
