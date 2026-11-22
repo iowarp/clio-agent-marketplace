@@ -37,6 +37,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.32) runs relay 13e19b1b. Installs started at the same time on
+  one site no longer race: they share one jarvis-cd ask, the second jarvis-cd
+  install waits for the first and reuses it, and an answer or a decline applies to
+  every install waiting on it. Package builds share JARVIS's and Spack's locks.
 - `clio-relay` (1.6.31) runs relay f1749784. A new `install` tool installs a
   package's software on a site ahead of any run: JARVIS checks the site, the person
   gets the same asks as a run's install, and JARVIS builds it in a job on the
