@@ -97,7 +97,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --project plugins/spotter/impl --python 3.13 --frozen --extra dev
+      - run: uv sync --project plugins/spotter/impl --python 3.13 --locked --extra dev
       - run: uv run --no-sync ruff check src tests
         working-directory: plugins/spotter/impl
       - run: uv run --no-sync pyright

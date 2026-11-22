@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "hidden-law-bench",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A simulated bench apparatus whose governing law is drawn from a secret seed: controllable inputs with stated ranges, noisy readings of the time for ten cycles, and every reading's history by branch, recorded for the study's views.",
   "author": {
     "name": "IoWarp Team"

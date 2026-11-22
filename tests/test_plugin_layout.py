@@ -106,6 +106,22 @@ class PluginManifestTests(unittest.TestCase):
                     self.assertIn(server["type"], ("stdio", "streamable-http", "sse"))
 
 
+    def test_uv_run_servers_install_only_their_lock(self) -> None:
+        # A server run with ``uv run --project`` installs from its lock, and fails rather
+        # than resolving again when the lock is missing or out of date.
+        for path in sorted(PLUGINS.glob("*/mcp.json")):
+            data = json.loads(path.read_text(encoding="utf-8"))
+            for name, server in data["mcpServers"].items():
+                args = server.get("args", [])
+                if server.get("command") != "uv" or "--project" not in args:
+                    continue
+                with self.subTest(plugin=path.parent.name, server=name):
+                    self.assertIn("--locked", args)
+                    project = args[args.index("--project") + 1]
+                    folder = project.replace("${PLUGIN_ROOT}", str(path.parent))
+                    self.assertTrue((Path(folder) / "uv.lock").is_file(), folder)
+
+
 class SkillAndFragmentTests(unittest.TestCase):
     def test_skill_names_match_their_hyphenated_folders(self) -> None:
         seen: dict[str, str] = {}
