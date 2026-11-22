@@ -24,8 +24,11 @@ first** (for example a module load line). There is no connect tool.
   call (`values` with `address`, `via`, `prepare`), then call the scene tool.
   Each call restarts the connector, so give the values together. Use the host names
   the person gives; do not guess them.
-- The first call on a machine prepares a folder there and can take a minute;
-  later calls take seconds.
+- The first call on a machine prepares a folder there, which can take a
+  while; it reports each setup step as progress, so wait for it. Later calls
+  take seconds. `setup_stalled` means a setup step printed nothing for a long
+  time and was stopped; tell the person the step and its last line, which the
+  error names.
 - If a call says no ParaView was found, or that the host wants a password or a
   one-time code, tell the person what it says. Sign-in is the person's: the
   connector uses their SSH keys and never a password.
@@ -72,6 +75,14 @@ Read field names from it; never guess one. Keep the scene id it returns: passing
 - `measure_field` gives exact minimum, maximum, mean, median and a histogram.
   Pick an isovalue from it; a guessed one is often outside the data and gives
   an empty surface.
+- `measure_over_time` gives the same exact statistics (minimum, maximum, mean,
+  standard deviation, median) of one field at every time step: use it for a
+  quantity across all of a run's snapshots, such as how a peak or a mean moves,
+  to plot or compare. It measures every object, filters included, at each
+  step's own time. On a source still being written it measures every step
+  written so far, so call it while the run goes and again as new steps arrive.
+  It reports progress per step and can be cancelled. `start`, `end` and
+  `stride` pick part of a long run; the view stays on its step.
 - `capture` renders a PNG at the camera on the person's screen. Look at it
   before you describe what the view shows.
 - `inspect_selection` gives the exact values at the point the person picked.
@@ -104,6 +115,18 @@ objects by id or label, e.g. `objects["o1"]` for the dataset) and `folder`.
 - `set_timestep` moves in time or follows the latest step. The person may park
   the view on an earlier step; say when newer steps exist rather than moving
   them.
+- `watch_steps` reports each new step of a source still being written, as it
+  is written: use it to follow a run step by step and say how far it has got.
+  Start it as a background task when the run begins and read each step from
+  the task's status; called directly, it reports each step as progress and
+  lasts until the watch ends. Progress counts the steps written, against the
+  run's expected steps when the view knows them. It ends by itself with the
+  run: `complete` (the expected steps are written), `finished` (the writer
+  closed its output), `not_growing`, `stalled` (no new step and nothing
+  changing on disk for a while) or `cancelled`, and returns every step it
+  saw. Then `measure_over_time` gives the series over the whole run. Give
+  `max_seconds` only when the person asks for a time limit. The view follows
+  the newest step unless the person parked it.
 - `set_camera` and `fit_camera` place the camera.
 - Large geometry, volumes and image slices are drawn by ParaView and sent as
   images; the view says so.

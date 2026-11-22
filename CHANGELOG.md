@@ -183,6 +183,18 @@
   `open_view` the job's output by its cluster path. It names the first-attach
   waits and typed failures (`client_fetching`, `paraview_version_mismatch`,
   `node_folder_unwritable`) so the agent stops retrying a failure that repeats.
+- `paraview` (1.0.3): the `paraview-scenes` skill names `measure_over_time`, the
+  exact statistics of one field at every time step, for a quantity across all of
+  a run's snapshots. On a source still being written it measures the steps
+  written so far, so the agent can follow a quantity live while the run goes.
+  It also names `watch_steps`, which reports each new step of a source still
+  being written as task status (or progress when called directly), so the agent
+  can follow a run step by step: started as a background task when the run
+  begins, it ends by itself with the run (`complete`, `finished`, `not_growing`,
+  `stalled` or `cancelled`), and `max_seconds` is given only when the person
+  asks for a time limit. Setting up a machine reports each step as progress, so
+  the agent waits for it, and `setup_stalled` (a step that fell silent) is told
+  to the person.
 - `clio-relay` (next release): the `use-relay` skill's "Ask for enough time"
   sizes a job's request as the measured startup overhead plus steps x seconds
   per step plus writes, times a safety coefficient of 1.5 at least (2 on one
