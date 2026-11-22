@@ -42,6 +42,11 @@
 
 ### Changed
 
+- `cad` (0.1.1): the `cadquery` skill hands the part over. Once its checks pass,
+  the STL and the STEP are registered with `create_artifact` as deliverables, with
+  the script in `used`, so CLIO opens them in its 3D view; a solver-frame copy is
+  registered as intermediate. `geometry-to-glb` is only for meshes with fields.
+
 - `clio-relay` (1.6.37) runs relay 5fe5e6a9 with jarvis-cd acbf4308 and still bundles
   clio-jarvis ee210630. Runs write under the site's outputs directory
   (`~/clio-relay-runs` unless set), outside relay's own, so `site clean` keeps
