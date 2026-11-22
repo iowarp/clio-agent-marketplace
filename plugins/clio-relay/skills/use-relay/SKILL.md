@@ -115,6 +115,14 @@ guarded site. Anything else, answers included, goes through `exec` with
   serving 600 s after the run ends) unless the person asks for another. The
   live view attaches while the run is going; linger only keeps the service up
   afterwards so the person can still look at the final output.
+- Runs write under the site's outputs directory, `describe`'s
+  `info.facts.outputs_dir`, which `site_clean` keeps. Leave a package's
+  `run_dir` at its default, which lands there. When you set a path for a run's
+  results yourself, put it under that directory, never under relay's own
+  directory (`~/.clio-relay`): relay refuses a job that names one.
+- When another of relay's services still runs on the site, such as a viewer
+  kept up for review, the new `run` or `serve` asks the person whether to end
+  it when the new job is submitted. Relay asks; never answer for them.
 - When relay cannot bring a running service to this machine, the result is an
   error with `result.service_error`, whose `reason` says why, while the job
   runs on. `host_key_unverified` means ssh could not check the compute node's
@@ -401,8 +409,10 @@ then clean again. `cancel` also ends a job the scheduler still lists under an
 operation that already ended. Pass `forget_decisions=true` only when the
 person asks to forget those answers, so the next install asks them again; to
 forget one answer, run JARVIS's `ppl install --forget <selector>` with `exec`
-instead. What relay's runs wrote outside its own directories, such as a case's
-results under the person's home, is the person's: the clean names those
+instead. When the person wants to start from nothing, so the next install asks
+which MPI and where installs run again, that is a request to forget those
+answers. What relay's runs wrote, under the outputs directory or elsewhere
+under the person's home, is the person's: the clean names those
 outputs in its question and keeps them, and the result lists them as
 `outputs_kept`. Pass `remove_outputs=true` only when the person asks to delete
 them too. Do not look for the `clio-relay` command line to do any of this.

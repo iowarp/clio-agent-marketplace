@@ -42,6 +42,17 @@
 
 ### Changed
 
+- `clio-relay` (1.6.37) runs relay 5fe5e6a9 with jarvis-cd acbf4308 and still bundles
+  clio-jarvis ee210630. Runs write under the site's outputs directory
+  (`~/clio-relay-runs` unless set), outside relay's own, so `site clean` keeps
+  them unless the person asks, and relay names a run's outputs where they live; a job naming a path inside relay's directory is
+  refused. A confirm that names relay's or JARVIS's facts is a typed choice, so a
+  host still asks it; a plain yes/no only confirms the call's own arguments. A
+  new job on a site where another of relay's services still runs asks whether to
+  end it when the job is submitted. JARVIS asks where installs check and build
+  once per site, for every package. The use-relay skill puts run outputs under
+  `describe`'s `outputs_dir` and says a start from nothing forgets JARVIS's
+  answers.
 - `clio-relay` (1.6.36) runs relay 49cf7e02 with jarvis-cd 58cd5b1a and still bundles
   clio-jarvis ee210630. Where JARVIS builds is now offered like where it checks:
   relay sets no build default, so a new site shows JARVIS's recommendation, and
@@ -200,6 +211,10 @@
   asks for a time limit. Setting up a machine reports each step as progress, so
   the agent waits for it, and `setup_stalled` (a step that fell silent) is told
   to the person.
+- `paraview` (1.0.4): the `paraview-scenes` skill says the view's default colour
+  range is the 2nd to 98th percentile of the shown values (clio-kit 95d50d06), and
+  how to set the range from `measure_field` with `RescaleTransferFunction` when a
+  feature still reads faint, symmetric for a signed field on a diverging map.
 - `clio-relay` (next release): the `use-relay` skill's "Ask for enough time"
   sizes a job's request as the measured startup overhead plus steps x seconds
   per step plus writes, times a safety coefficient of 1.5 at least (2 on one

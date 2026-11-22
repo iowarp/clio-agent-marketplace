@@ -103,6 +103,7 @@ objects by id or label, e.g. `objects["o1"]` for the dataset) and `folder`.
 - One step builds one idea (the cloud shells; the isobars) and gets a `label`.
 - Read field names and ranges from the scene first, and choose values from
   `measure_field`, not guesses.
+- The view's default colour range is the 2nd to 98th percentile of the shown values. If a feature still reads faint, measure the field (measure_field on the shown object) and set the range in run_scene_script with `GetColorTransferFunction(f).RescaleTransferFunction(lo, hi)` (kept as set). For a signed field with a diverging map, set a symmetric range (±the larger of |p2|, |p98|).
 - The result lists what the script made, with the ids to use later. A script that
   fails leaves nothing behind and says why; fix it and run it again.
 - The step is saved with the scene and replayed when the scene is restored, so the
