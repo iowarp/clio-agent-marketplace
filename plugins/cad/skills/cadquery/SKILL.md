@@ -58,5 +58,12 @@ In PowerShell:
 - When a solver needs the part in its own frame (an immersed-boundary grid, a
   mesher's domain), write that copy as a separate file and record the transform,
   so the design file stays as the person specified it.
-- To show the part in CLIO's 3D view, convert the STL with the visuals plugin's
-  `geometry-to-glb` skill.
+
+## Hand it over
+
+- Once the checks pass, register the STL and the STEP with `create_artifact`,
+  purpose `deliverable`, with the script in `used`. CLIO opens a registered STL
+  or STEP in its 3D view; a file only written to the workspace shows nowhere.
+  Register a solver-frame copy as `intermediate`.
+- The `geometry-to-glb` skill is only for a mesh with per-vertex fields shown in a
+  `clio.mesh-viewport.v1` component. A part needs no conversion to be seen.
