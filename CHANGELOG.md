@@ -42,6 +42,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.40) runs relay 0889629b with jarvis-cd a28999b1 and still bundles
+  clio-jarvis ee210630. A guarded `serve` no longer fails before submission with
+  "validation errors for JobSpec". Its card shows JARVIS's plan of the service's job,
+  with its components and advisories, but no batch script, because relay adds the
+  service's connector when it starts it.
+
 - `clio-relay` (1.6.39) runs relay bee13a84 with jarvis-cd a28999b1 and still bundles
   clio-jarvis ee210630. The job card's `started_at` is the scheduler's start of the
   job itself, not of an install before it; components carry the package's name
