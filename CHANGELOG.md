@@ -42,6 +42,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.46) runs relay 2.0.0a5 (3294eb9c), a pre-release: `serve(service=<op>,
+  until="steps")` waits for a running service's compute steps to end, as a task that
+  completes with their result or, without tasks, a bounded wait, so an agent waits
+  rather than polls; the held-services question describes its field, and stopping a
+  running service asks to end its programs and release its nodes.
+
 - `clio-relay` (1.6.45) runs relay 2.0.0a4 (aa85f9cb), a pre-release: when JARVIS's plan
   changed after the person's yes only in the input it seals (such as the environment a
   software check filled in), relay submits under the new plan without asking again, and
