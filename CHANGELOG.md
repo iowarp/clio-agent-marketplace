@@ -42,7 +42,9 @@
 
 ### Changed
 
-- `clio-relay` (1.6.48) bundles clio-jarvis 1052c95, whose xcompact3d 0.3.10 refuses a grid
+- `clio-relay` (1.6.48) runs relay 2.0.0a6, a pre-release that pins JARVIS d6b02dc5: an
+  application's own failure is no longer classed as an MPI network fault, and the graph
+  advisory is fixed. It also bundles clio-jarvis 1052c95, whose xcompact3d 0.3.10 refuses a grid
   the FFT cannot take (the transformed length, n periodic or n - 1 open, must be even with no
   prime factor above 5) and names the nearest valid counts, beside the CFL and diffusion
   checks; its own sizing now keeps that rule, where nx 376 with open ends diverged at step 1.
