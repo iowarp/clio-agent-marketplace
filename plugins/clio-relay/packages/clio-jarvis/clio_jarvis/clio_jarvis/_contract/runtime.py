@@ -39,7 +39,9 @@ _STRUCTURES = {
     "directory": ArtifactStructure.DIRECTORY,
     "glob": ArtifactStructure.COLLECTION,
 }
-_ROLES = {"restart": ArtifactRole.CHECKPOINT}
+_ROLES = {"restart": ArtifactRole.CHECKPOINT, "result": ArtifactRole.VALIDATION}
+_KINDS = {"result": "run_result"}
+_MEDIA_TYPES = {"json": "application/json"}
 
 
 def _exists(path: str, kind: str) -> bool:
@@ -314,8 +316,8 @@ class ContractArtifactAdapter:
     """RL40 outputs as jarvis-cd artifacts.
 
     Snapshots outputs carry their view descriptor and grow with each step.
-    Statistics and restart outputs are reported once, when the run ends, if
-    the run wrote them.
+    Statistics, restart and result outputs are reported once, when the run
+    ends, if the run wrote them.
     """
 
     def __init__(self, contract: Contract, config: Mapping[str, Any]) -> None:
@@ -416,16 +418,17 @@ class ContractArtifactAdapter:
             record["return_code"] = return_code
         path = PurePosixPath(location)
         fmt = output["format"]
+        role = output.get("role", VIEW_ROLE)
         return ArtifactObservation(
             artifact_id=self.ids[output["name"]],
             logical_name=output["name"],
-            kind="scientific_dataset",
-            role=_ROLES.get(output.get("role", VIEW_ROLE), ArtifactRole.OUTPUT),
+            kind=_KINDS.get(role, "scientific_dataset"),
+            role=_ROLES.get(role, ArtifactRole.OUTPUT),
             structure=_STRUCTURES[output["path_kind"]],
             ownership=ArtifactOwnership.SHARED,
             state=state,
             location=ArtifactLocation.cluster_path(path),
-            media_type="application/x-adios2-bp" if fmt.startswith("adios2") else None,
+            media_type="application/x-adios2-bp" if fmt.startswith("adios2") else _MEDIA_TYPES.get(fmt),
             format=fmt,
             size_bytes=size,
             message=f"{output['name']}: {state.value}",

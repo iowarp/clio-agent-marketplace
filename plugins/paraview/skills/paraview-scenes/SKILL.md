@@ -65,10 +65,11 @@ ParaView version the `pvserver` runs. To show the run live:
   (its `linger`) still holds the job's nodes. As soon as the run is over
   (`watch_steps` ends `complete` or `finished`, or the run's job ends) and the
   service still runs, say in that same reply that it still holds the job's
-  nodes, and until when if the job says, and ask whether to end it now with
-  the tool that started it (relay's `cancel(operation=...)`). "It stops by
-  itself later" is not the offer. End it only on their yes; never end it
-  yourself.
+  nodes, and until when if the job says, and offer to end it now by calling
+  the tool that started it (relay's `cancel(operation=...)`). Relay's own
+  confirm is the question the person answers, so do not ask first with
+  `ask_user` or in words: that asks them twice. "It stops by itself later" is
+  not the offer. Never end a service without that confirm.
 
 ## Open, then read what is there
 

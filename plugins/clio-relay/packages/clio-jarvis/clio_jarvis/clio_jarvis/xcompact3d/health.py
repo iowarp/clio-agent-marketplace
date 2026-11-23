@@ -78,12 +78,36 @@ class SolverWatch:
         self.recent: deque[str] = deque(maxlen=12)
         # Network fallback warnings, kept out of ``recent`` so they never read as the failure.
         self.transport = TransportNotes()
+        self.exit_code: int | None = None
 
     def __getattr__(self, name: str) -> Any:
-        # finalize and finalize_process belong to the progress and artifact callback.
+        # finalize belongs to the progress and artifact callback.
         if name.startswith("finalize") and self.inner is not None:
             return getattr(self.inner, name)
         raise AttributeError(name)
+
+    def finalize_process(self, return_code: int) -> None:
+        """Hold the providers' end of the run until :meth:`release`.
+
+        jarvis-cd calls this when the MPI launch exits, before :func:`verdict`
+        writes clio-run-result.json; finalizing then would report the run's
+        outputs without that file.
+        """
+        with self.lock:
+            if self.exit_code in (None, 0):
+                self.exit_code = return_code
+
+    def release(self) -> None:
+        """Finalize the progress and artifact providers with the held exit code."""
+        with self.lock:
+            code, self.exit_code = self.exit_code, None
+        if code is None or self.inner is None:
+            return
+        finalizer = getattr(self.inner, "finalize_process", None)
+        if callable(finalizer):
+            finalizer(code)
+        elif callable(plain := getattr(self.inner, "finalize", None)):
+            plain()
 
     def __call__(self, stream_name: str, line: str) -> None:
         if self.inner is not None:

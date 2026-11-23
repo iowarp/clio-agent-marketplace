@@ -12,6 +12,10 @@ Submit with `sbatch --parsable`. Record the job id at once in the workspace
 (for example `jobs/job_ids.txt`), together with the submit time and the
 script path.
 
+This skill is for jobs you submit yourself. A job that relay's `run` or
+`serve` started is waited on through relay (its task, or `serve`'s
+`until="steps"`), never with this helper or `sacct`.
+
 Wait in bounded steps with the bundled helper. `SKILL_ROOT` is the skill
 directory reported by `load_skill`:
 

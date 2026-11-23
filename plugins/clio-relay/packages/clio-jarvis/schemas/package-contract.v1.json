@@ -40,9 +40,9 @@
       "properties": {
         "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$" },
         "role": {
-          "enum": ["snapshots", "statistics", "restart"],
+          "enum": ["snapshots", "statistics", "restart", "result"],
           "default": "snapshots",
-          "description": "snapshots: the growing series a viewer follows (needs reader). statistics and restart: files reported as artifacts when the run ends, if the run wrote them."
+          "description": "snapshots: the growing series a viewer follows (needs reader). statistics, restart and result: files reported as artifacts when the run ends, if the run wrote them; result is the package's verdict on the run."
         },
         "description": { "type": "string", "description": "What the output holds and when the run writes it." },
         "path": { "type": "string", "minLength": 1, "description": "Template over the configured parameters and {shared_dir}, for example '{outdir}/gs.bp'." },

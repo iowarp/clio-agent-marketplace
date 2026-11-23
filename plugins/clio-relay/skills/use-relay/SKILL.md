@@ -107,6 +107,17 @@ guarded site. Anything else, answers included, goes through `exec` with
   reports it; never choose one yourself. The task completes within seconds of
   the service coming up, while its job still runs: connect to the endpoint or
   open the view right away, in the same turn, since a short job may end soon.
+  The task ending at ready says the service is up, not that the run is done.
+  To wait for the run, call `serve(service=<operation>, until="steps")` once
+  the service is ready and the view is open. With tasks it returns the task
+  `<operation>.steps`, which completes when every compute step has ended, or
+  the job has, and carries `until` and the operation's outputs: say what you
+  are waiting for and end the turn. Without tasks it waits up to `wait_s`
+  (at most 300 s); call it again while `until.ended` is false. Where `serve`
+  has no `until`, wait on a live view's `watch_steps` (it returns when the run
+  is `complete` or `finished`) or relay's notice when the operation changes.
+  Never wait by reading: no `run_code` scripts, `cat` or `exec` reads of a
+  result file, and no `sacct`. See "Long runs and failed runs".
   To serve one package beside a run, such as pvserver beside xcompact3d, give
   both in one `serve` pipeline, with each step's `host_slice` parameter placing
   it on its nodes (pvserver `0:2`, xcompact3d `2:6`, say). JARVIS decides which
@@ -369,10 +380,20 @@ the issue describes. If the person wants JARVIS to ask again,
 
 An install, the queue and the run itself can take hours. When `run` or
 `serve` returns a task, say what you are waiting for and end your turn: CLIO
-wakes you when the task ends or needs the person, so do not poll `describe` in
-a loop. When you are woken, carry on with the next step of the plan the person
-approved. A job waiting in the queue says so in the operation's
-`result.queue` and message: pass the estimated start on to the person.
+wakes you when the task ends or needs the person. Waiting is event driven, so
+polling of any form only adds noise and cost: `describe` in a loop, repeated
+`exec` or `cat` reads of a result file or log, scheduler queries such as
+`sacct` or `squeue`, or a `run_code` script that loops over any of these with
+sleeps. A file that is not there yet reads as a failed command, so such a loop
+fills the conversation with failures. This holds for a `serve` too, whose task
+ended at ready while its run goes on: wait with `serve(service=<operation>,
+until="steps")`, whose result carries the operation's outputs, so the run's
+result file needs no separate read.
+Some sites run Slurm without accounting, where `sacct` always fails; relay's
+operation state is the job's state there. When you are woken, carry on with
+the next step of the plan the person approved. A job waiting in the queue says
+so in the operation's `result.queue` and message: pass the estimated start on
+to the person.
 
 When a run fails, read `result.issues`, JARVIS's typed issues, before the
 logs. Each names its `kind` and the field it is about. An `mpi_network` issue
@@ -398,7 +419,12 @@ net set`, anything else as a site skill with `rg skill set`.
 
 ## Stop a service, clean a site
 
-Stop a service or cancel a job with `cancel(operation=...)`. When the person
+Stop a service or cancel a job with `cancel(operation=...)`. Relay confirms a
+stop with the person itself, naming the service and the nodes it releases, so
+that confirm is the question: to offer a stop, call `cancel` and let its
+confirm ask, rather than asking first in your own words, which asks the person
+twice.
+When the person
 wants relay's deployment gone from a site, so the next use deploys it again,
 call `site_clean(site=...)`: it asks the person first and keeps the site's
 Spack store and JARVIS's recorded answers (which MPI, which compiler). It

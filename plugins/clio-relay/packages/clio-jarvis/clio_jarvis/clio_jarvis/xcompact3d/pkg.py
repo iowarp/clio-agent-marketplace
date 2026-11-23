@@ -357,13 +357,17 @@ class Xcompact3d(ClioApplication):
         with revealing(self._output()):
             codes = self._clio_mpi(command, cwd=str(run_dir), line_callback=watch, check=False)
         try:
-            case = json.loads((run_dir / "clio-case.json").read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            case = {}
-        result = health.verdict(
-            watch, run_dir=run_dir, output=self._output(), config=self.config, case=case, return_codes=codes,
-            launch_env=getattr(self, "mod_env", None),
-        )
+            try:
+                case = json.loads((run_dir / "clio-case.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                case = {}
+            result = health.verdict(
+                watch, run_dir=run_dir, output=self._output(), config=self.config, case=case, return_codes=codes,
+                launch_env=getattr(self, "mod_env", None),
+            )
+        finally:
+            # After clio-run-result.json is written, so it is among the run's outputs.
+            watch.release()
         print(f"clio-xcompact3d result {json.dumps({k: result[k] for k in ('status', 'cause', 'step', 'snapshots_written')})}", flush=True)
         if result.get("transport"):
             print(f"clio-xcompact3d network {health.transport_summary(result['transport'])}", flush=True)

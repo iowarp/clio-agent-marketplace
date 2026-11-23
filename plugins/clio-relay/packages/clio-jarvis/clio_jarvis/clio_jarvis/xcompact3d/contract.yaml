@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.8
+version: 0.3.9
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -171,7 +171,9 @@ summary: >-
   no_output or failed, the cause, the step and time reached, dt, the velocity
   extremes, snapshots written of expected, seconds per step, the stability
   numbers and the last solver lines), and a failed run raises with that
-  evidence. Network fallback warnings (UCX or libfabric skipping a device it
+  evidence. The file is the run's run-result output, so it comes back with
+  the run's outputs and needs no separate read. Network fallback warnings
+  (UCX or libfabric skipping a device it
   cannot use, Open MPI skipping an OpenFabrics port) are kept out of the last
   lines and reported under transport as information: the device skipped, the
   transport offered instead and the launch's transport settings. They are
@@ -305,6 +307,15 @@ outputs:
     path: "{run_dir}/checkpoint.bp5"
     path_kind: directory
     format: adios2-bp5
+  - name: run-result
+    role: result
+    description: >-
+      clio-run-result.json, the run's verdict (schema clio.xcompact3d-run.v1):
+      status, cause, the step and time reached, snapshots written of expected,
+      seconds per step and the stability numbers. Every run writes it.
+    path: "{run_dir}/clio-run-result.json"
+    path_kind: file
+    format: json
 
 progress:
   unit: step

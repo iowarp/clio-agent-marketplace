@@ -42,6 +42,17 @@
 
 ### Changed
 
+- `clio-relay` (1.6.47) runs relay 2.0.0a5 and bundles clio-jarvis d0aad10, whose
+  xcompact3d 0.3.9 declares `clio-run-result.json` as its `run-result` output, so the run's
+  verdict comes back with its outputs. The `use-relay` skill waits on a serve's compute steps
+  with `serve(service=<operation>, until="steps")` where relay has it, falls back to
+  `watch_steps` or relay's notices where it does not, and never waits by reading: no
+  `run_code`, `cat` or `sacct` loops. A service the person chose to release is stopped through
+  relay's cancel, whose confirm already is the person's ask, so CLIO does not ask again.
+- `paraview` (1.0.8) offers to end a service that still holds nodes through relay's cancel,
+  and once the person chose release it does not ask a second time.
+- `slurm` (0.6.1) says `hpc-batch-jobs` is for jobs the agent submits itself; a job started by
+  relay's `run` or `serve` is waited on through relay, never with `wait_job.sh` or `sacct`.
 - `clio-relay` (1.6.46) runs relay 2.0.0a5 (3294eb9c), a pre-release: `serve(service=<op>,
   until="steps")` waits for a running service's compute steps to end, as a task that
   completes with their result or, without tasks, a bounded wait, so an agent waits
