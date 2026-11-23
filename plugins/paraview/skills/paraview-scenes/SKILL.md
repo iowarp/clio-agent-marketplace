@@ -91,6 +91,13 @@ each): each becomes a view, and opening one never moves the others. The other
 tools act on the view you opened last; to act on another open view, call
 `open_view(scene=...)` with its scene id first.
 
+A view is opened once. Opening a scene that is already open makes no new view:
+the result says `already_open` and the person sees the view they already have.
+Never call `open_view` to read a view's step or state, in a loop or otherwise:
+`scene_state` lists every open view with its step, and `scene_state(scene=...)`
+reads one view without changing which view the other tools act on. To follow
+steps as they arrive, use `watch_steps`.
+
 ## Look and measure before you claim
 
 - `measure_field` gives exact minimum, maximum, mean, median and a histogram.
@@ -193,6 +200,6 @@ ffmpeg), with an optional label per step such as its date; write it into the
 person's workspace to share it. A live view only works while ParaView runs, so a
 dashboard that shows one should name its exported animation as the view's
 `recordingUri`; the dashboard plays it when the live view cannot run. `export_scene` writes the scene manifest
-and a ParaView state file. `scene_state` says where ParaView is attached and what
-the scene holds. Report the machine, the source, the time step, the filters, the
+and a ParaView state file. `scene_state` says where ParaView is attached, what
+the scene holds and which views are open. Report the machine, the source, the time step, the filters, the
 field and its association, and the image you captured.
