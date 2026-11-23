@@ -61,6 +61,12 @@ ParaView version the `pvserver` runs. To show the run live:
   run" below.
 - The endpoint lives only while the job and its forward do. When the job ends,
   clear `pvserver` before you open anything on another machine.
+- A service can outlive the run it shows: a `pvserver` kept up for review
+  (its `linger`) still holds the job's nodes. When you finish with the view
+  and the service still runs, tell the person it still holds the nodes, and
+  until when if the job says, and offer to end it now with the tool that
+  started it (relay's `cancel(operation=...)`). End it only on their yes;
+  never end it yourself.
 
 ## Open, then read what is there
 
