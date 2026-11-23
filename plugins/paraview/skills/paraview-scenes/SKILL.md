@@ -62,11 +62,13 @@ ParaView version the `pvserver` runs. To show the run live:
 - The endpoint lives only while the job and its forward do. When the job ends,
   clear `pvserver` before you open anything on another machine.
 - A service can outlive the run it shows: a `pvserver` kept up for review
-  (its `linger`) still holds the job's nodes. When you finish with the view
-  and the service still runs, tell the person it still holds the nodes, and
-  until when if the job says, and offer to end it now with the tool that
-  started it (relay's `cancel(operation=...)`). End it only on their yes;
-  never end it yourself.
+  (its `linger`) still holds the job's nodes. As soon as the run is over
+  (`watch_steps` ends `complete` or `finished`, or the run's job ends) and the
+  service still runs, say in that same reply that it still holds the job's
+  nodes, and until when if the job says, and ask whether to end it now with
+  the tool that started it (relay's `cancel(operation=...)`). "It stops by
+  itself later" is not the offer. End it only on their yes; never end it
+  yourself.
 
 ## Open, then read what is there
 
@@ -75,6 +77,19 @@ file series; mark a series that is still being written as `growing`. The result
 lists every object with its fields and their exact ranges, and the time steps.
 Read field names from it; never guess one. Keep the scene id it returns: passing
 `scene` to `open_view` reopens exactly that scene.
+
+On a growing source, call `open_view` as soon as the run starts. It waits for the
+first readable step, reporting progress, and if the source stops changing before
+one can be read, it fails with the reason; tell the person that reason.
+
+## Several views at once
+
+Each scene has a view of its own, side by side, each at its own step and drawn its
+own way. To show two variables of one run, open the same path twice with a view
+descriptor whose display names each variable (or a `scene` name of your own for
+each): each becomes a view, and opening one never moves the others. The other
+tools act on the view you opened last; to act on another open view, call
+`open_view(scene=...)` with its scene id first.
 
 ## Look and measure before you claim
 
@@ -109,6 +124,11 @@ objects by id or label, e.g. `objects["o1"]` for the dataset) and `folder`.
 - One step builds one idea (the cloud shells; the isobars) and gets a `label`.
 - Read field names and ranges from the scene first, and choose values from
   `measure_field`, not guesses.
+- On a growing source the script's filters run again at every new step, early
+  ones included, where an array may be empty or not there yet. Prefer ParaView's
+  own filters (`Calculator`, `Gradient`, `Contour`) to a `ProgrammableFilter`. In
+  a `ProgrammableFilter`, return before any reduction when the input has no
+  points or lacks the array.
 - The view's default colour range is the 2nd to 98th percentile of the shown values. If a feature still reads faint, measure the field (measure_field on the shown object) and set the range in run_scene_script with `GetColorTransferFunction(f).RescaleTransferFunction(lo, hi)` (kept as set). For a signed field with a diverging map, set a symmetric range (±the larger of |p2|, |p98|).
 - The result lists what the script made, with the ids to use later. A script that
   fails leaves nothing behind and says why; fix it and run it again.
