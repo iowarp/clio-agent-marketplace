@@ -42,6 +42,13 @@
 
 ### Changed
 
+- `clio-relay` (1.6.39) runs relay bee13a84 with jarvis-cd a28999b1 and still bundles
+  clio-jarvis ee210630. The job card's `started_at` is the scheduler's start of the
+  job itself, not of an install before it; components carry the package's name
+  (gray_scott, not `pkg`); and JARVIS's advisories, such as a launch over TCP
+  because UCX could not be verified, show on the card and in the confirm. A site
+  that linked a retired skill (`ares`) no longer shows a broken skill link.
+
 - `cad` (0.1.1): the `cadquery` skill hands the part over. Once its checks pass,
   the STL and the STEP are registered with `create_artifact` as deliverables, with
   the script in `used`, so CLIO opens them in its 3D view; a solver-frame copy is
