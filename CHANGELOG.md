@@ -42,6 +42,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.45) runs relay 2.0.0a4 (aa85f9cb), a pre-release: when JARVIS's plan
+  changed after the person's yes only in the input it seals (such as the environment a
+  software check filled in), relay submits under the new plan without asking again, and
+  when the directives, components or script changed, the second ask says what changed.
+
 - `clio-relay` (1.6.44) runs relay 2.0.0a3 (45187727), a pre-release: each job card
   names its resource (`resource: relay://jobs/{operation_id}`), so a host reads the
   URI it watches from the card or the task's `_meta`, and a Win32-OpenSSH ssh gets an
