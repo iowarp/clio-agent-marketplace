@@ -42,6 +42,14 @@
 
 ### Changed
 
+- `clio-relay` (1.6.43) runs relay 2.0.0a2 (5c8ce8dd), a pre-release with the retake-1u
+  findings: steady quiet reports from exec, one job reconciler that feeds the job card,
+  the Compute list and the confirm text, a `relay://jobs/{operation_id}` resource, a
+  typed `connection_lost` refusal when the ssh transport dies, and JARVIS advisories
+  that keep the agent's guidance out of the person's line. Its README names all
+  thirteen tools and the Spending picker, and the catalog's instructions describe
+  Spending, as relay's own copy does.
+
 - `clio-relay` (1.6.42) runs relay 2.0.0a1, a pre-release cut at e35f5ce2 plus a lighter
   CLI import, from its released wheel instead of a git pin. The server is a hash-locked
   project in `server/` (its one dependency is the release wheel, `no-build`, with

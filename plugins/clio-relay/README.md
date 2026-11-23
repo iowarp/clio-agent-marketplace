@@ -2,11 +2,14 @@
 
 This folder is relay's plugin for CLIO. Installing it gives CLIO:
 
-- relay's MCP server, launched from `mcp.json`, with the five tools `describe`,
-  `run`, `exec`, `files` and `serve`;
+- relay's MCP server, launched from `mcp.json`, with the five verbs
+  `describe`, `run`, `exec`, `files` and `serve`, and beside them `install`,
+  the read tools `exec_read`, `files_read` and `packages_read`, `packages`,
+  `cancel`, `site_clean` and `shutdown` (see relay's
+  [architecture](https://github.com/iowarp/clio-relay/blob/jaimecernuda-relay-rework/docs/architecture.md));
 - the Compute page in CLIO's left bar, where a person adds, probes, edits and
-  removes compute endpoints (relay's sites) and picks each one's protocol and
-  security;
+  removes compute endpoints (relay's sites) and picks each one's protocol,
+  security and spending;
 - a Globus account, whose grant file CLIO hands relay as
   `CLIO_RELAY_GRANT_FILE_GLOBUS`;
 - the JARVIS packages in `packages/`: clio-jarvis at the commit its
