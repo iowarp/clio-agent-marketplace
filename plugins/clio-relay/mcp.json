@@ -3,10 +3,13 @@
   "mcpServers": {
     "relay": {
       "type": "stdio",
-      "command": "uvx",
+      "command": "uv",
       "args": [
-        "--from",
-        "clio-relay[tapis] @ git+https://github.com/iowarp/clio-relay@e35f5ce236d7fdb06b48896bb8b49cbecc2fb476",
+        "run",
+        "--project",
+        "${PLUGIN_ROOT}/server",
+        "--frozen",
+        "--no-dev",
         "clio-relay",
         "serve"
       ],

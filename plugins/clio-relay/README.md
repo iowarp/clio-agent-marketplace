@@ -26,9 +26,11 @@ CLIO's fence lets a plugin server write only to its own data folder, so
 a terminal, point `CLIO_RELAY_CONFIG_DIR` and `CLIO_RELAY_STATE_DIR` at those
 folders.
 
-`mcp.json` runs relay with `uvx` from a pinned commit of this repository. The
-published copy lives in the CLIO agent marketplace as `plugins/clio-relay/`;
-when relay changes, move both pins to the new commit. To move clio-jarvis,
+`mcp.json` runs relay with `uv run --project ${PLUGIN_ROOT}/server --frozen
+--no-dev` from `server/`, a hash-locked project whose one dependency is a released
+clio-relay wheel. The published copy lives in the CLIO agent marketplace as
+`plugins/clio-relay/`; when relay changes, cut a release, point
+`server/pyproject.toml` at its wheel and run `uv lock --project server`. To move clio-jarvis,
 copy its `clio_jarvis/`, `schemas/`, `spack/` and `pyproject.toml` from the new
 commit into `packages/clio-jarvis/` and update `commit` in its
 `.clio-relay-source.json`. Relay ships `spack/`, the Spack repository the

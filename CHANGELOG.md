@@ -42,6 +42,17 @@
 
 ### Changed
 
+- `clio-relay` (1.6.42) runs relay 2.0.0a1, a pre-release cut at e35f5ce2 plus a lighter
+  CLI import, from its released wheel instead of a git pin. The server is a hash-locked
+  project in `server/` (its one dependency is the release wheel, `no-build`, with
+  atomicwrites held at 1.4.0, the last release with a wheel) started with
+  `uv run --project ${PLUGIN_ROOT}/server --frozen --no-dev`, so a first launch does no
+  git fetch, no source build and no resolve. It still bundles clio-jarvis ee210630.
+
+- `spack` (1.0.4) runs clio-kit's spack server from the `spack-mcp-v1.0.0` release
+  wheel, built at `ef42fcf3`, through the same hash-locked `server/` project and
+  `uv run --frozen --no-dev` form, so a first launch no longer fetches the clio-kit
+  monorepo.
 - `clio-relay` (1.6.41) runs relay e35f5ce2 with jarvis-cd a28999b1 and still bundles
   clio-jarvis ee210630. A service's card is now bound like a run's: JARVIS plans the
   full service job, with the connector and the service's parameters, and the card shows
