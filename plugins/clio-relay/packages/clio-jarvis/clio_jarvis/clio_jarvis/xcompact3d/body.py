@@ -30,6 +30,13 @@ CFL_LIMIT = 0.2
 #: dt nu sum(1/dx^2) must stay below this with the hyperviscous second derivative
 #: (isecondder = 5): 0.0077 ran and 0.013 diverged on a NACA 4412 section.
 DIFFUSION_LIMIT = 0.0075
+#: The body case's boundaries along x, y, z (input_i3d): open ends, periodic sides.
+BODY_BOUNDARIES = (2, 0, 0)
+#: Default initial noise, a fraction of the inflow added point by point. It only has to
+#: break the symmetry so a wake starts to shed; its grid-scale vorticity is about
+#: init_noise x inflow x resolution, so 0.05 at resolution 24 gives about 1.2, as strong
+#: as the wake itself, and a mid-span slice shows noise rather than the wake.
+INIT_NOISE = 0.005
 
 
 class CaseError(ValueError):
@@ -213,17 +220,67 @@ def mask_for(
 # -- the case ----------------------------------------------------------------
 
 
+#: Boundary codes of input.i3d (ncl*): 0 periodic, 1 free-slip, 2 Dirichlet (inflow,
+#: convective outflow).
+BOUNDARY_NAMES = {0: "periodic", 1: "free-slip", 2: "Dirichlet/open"}
+
+
+def fft_length(n: int, ncl: int) -> int:
+    """The length 2DECOMP&FFT's Poisson solver transforms along a direction of n points:
+    n when the direction is periodic, n - 1 for a free-slip or Dirichlet one."""
+    return n if ncl == 0 else n - 1
+
+
+def fft_ok(n: int, ncl: int) -> bool:
+    """Whether n points are valid along a direction with boundary ``ncl``: Incompact3d's
+    rule is n = 2^(1+a) 3^b 5^c when periodic and that plus 1 otherwise, so the FFT
+    length is even and has no prime factor above 5. An odd length (nx = 376 with open
+    ends, 375 = 3 x 5^3) passes the prime test but breaks the pressure solve, and the
+    run diverges at its first step whatever dt is."""
+    m = fft_length(n, ncl)
+    if m < 2 or m % 2:
+        return False
+    for p in (2, 3, 5):
+        while m % p == 0:
+            m //= p
+    return m == 1
+
+
 def nice(n: int, periodic: bool) -> int:
-    """Smallest count >= n whose FFT length (n, or n - 1 when not periodic) is 2^a 3^b 5^c."""
+    """Smallest count >= n that is valid along a periodic or a non-periodic direction."""
     n = max(n, 8)
-    while True:
-        m = n if periodic else n - 1
-        for p in (2, 3, 5):
-            while m % p == 0:
-                m //= p
-        if m == 1:
-            return n
+    ncl = 0 if periodic else 2
+    while not fft_ok(n, ncl):
         n += 1
+    return n
+
+
+def valid_near(n: int, ncl: int) -> tuple[int | None, int]:
+    """The nearest valid counts below and above n (below is None when there is none)."""
+    below = next((m for m in range(n - 1, 2, -1) if fft_ok(m, ncl)), None)
+    above = n + 1
+    while not fft_ok(above, ncl):
+        above += 1
+    return below, above
+
+
+def check_grid(grid: tuple[int, int, int], boundaries: tuple[int, int, int]) -> None:
+    """Refuse a grid the FFT cannot take, before any job runs, naming the valid sizes
+    on either side of each bad count."""
+    bad = []
+    for axis, n, ncl in zip("xyz", grid, boundaries):
+        if fft_ok(n, ncl):
+            continue
+        below, above = valid_near(n, ncl)
+        length = "n" if ncl == 0 else "n - 1"
+        near = f"{below} or {above}" if below is not None else str(above)
+        bad.append(
+            f"n{axis} = {n} along a {BOUNDARY_NAMES.get(ncl, f'ncl {ncl}')} direction "
+            f"({length} = {fft_length(n, ncl)} must be even with no prime factor above 5); "
+            f"use {near}"
+        )
+    if bad:
+        raise CaseError("the grid does not suit the FFT: " + "; ".join(bad))
 
 
 def nice_dt(limit: float) -> float:
@@ -338,6 +395,7 @@ def plan_body(
             "or check that the STL is a closed solid"
         )
 
+    check_grid((nx, ny, nz), BODY_BOUNDARIES)
     cfl = inflow * dt / h
     nu = inflow / re
     diffusion = dt * nu * (2.0 / (h * h) + 1.0 / (dz * dz))
@@ -401,6 +459,7 @@ def input_i3d(
     ioutput: int,
     icheckpoint: int = 100000000,
     initstat: int = 100000000,
+    init_noise: float = INIT_NOISE,
 ) -> str:
     nx, ny, nz = case.grid
     xlx, yly, zlz = case.domain
@@ -438,7 +497,7 @@ iin = 1
 re = {re / inflow:.10g}
 u1 = {inflow:.10g}
 u2 = {inflow:.10g}
-init_noise = 0.05
+init_noise = {init_noise:.10g}
 inflow_noise = 0.0
 dt = {dt:.10g}
 ifirst = 1

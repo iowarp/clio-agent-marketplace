@@ -42,6 +42,14 @@
 
 ### Changed
 
+- `clio-relay` (1.6.48) bundles clio-jarvis 1052c95, whose xcompact3d 0.3.10 refuses a grid
+  the FFT cannot take (the transformed length, n periodic or n - 1 open, must be even with no
+  prime factor above 5) and names the nearest valid counts, beside the CFL and diffusion
+  checks; its own sizing now keeps that rule, where nx 376 with open ends diverged at step 1.
+  A diverged run's advice changes `dt` only when it was above `suggested_dt` and otherwise
+  names the grid, body or Reynolds number, instead of telling the agent to halve `dt`.
+  `init_noise` is a parameter, 0.005 by default, so the live slice shows the wake rather
+  than the start-up noise.
 - `slurm` (0.6.2): `wait_job.sh` works on sites without Slurm accounting. Where `sacct` has
   no record it reads the job from `scontrol`, and a job it saw that the controller has since
   forgotten ends the wait with exit 4 (ended, outcome unknown) instead of looping to the

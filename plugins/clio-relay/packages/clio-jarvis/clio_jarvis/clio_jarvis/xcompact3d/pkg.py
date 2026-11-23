@@ -158,6 +158,16 @@ class Xcompact3d(ClioApplication):
             {"name": "downstream", "msg": "Domain length behind the body for the wake, in body lengths (body case)", "type": float, "default": 10.0},
             {"name": "lateral", "msg": "Domain margin on each side of the body across the flow, in body lengths (body case)", "type": float, "default": 3.0},
             {
+                "name": "init_noise",
+                "msg": (
+                    "Initial noise as a fraction of the inflow (body case). It only breaks the symmetry so the "
+                    "wake sheds; its vorticity is about init_noise x inflow x resolution, so keep that well "
+                    "below the wake's (about inflow) or a slice shows the noise, not the wake"
+                ),
+                "type": float,
+                "default": 0.005,
+            },
+            {
                 "name": "n",
                 "msg": "Grid points per side, nx = ny = nz: 33, 65, 129 or 257 (Taylor-Green case only; the body case ignores it and sizes its grid from resolution)",
                 "type": int,
@@ -264,6 +274,7 @@ class Xcompact3d(ClioApplication):
                 ioutput=ioutput,
                 icheckpoint=_every(config.get("icheckpoint")),
                 initstat=_every(config.get("initstat")),
+                init_noise=float(config["init_noise"]),
             ),
             encoding="utf-8",
         )
@@ -313,6 +324,10 @@ class Xcompact3d(ClioApplication):
             count=1,
             flags=re.MULTILINE,
         )
+        from clio_jarvis.xcompact3d import body
+
+        boundaries = tuple(int(float(i3d_value(text, ncl))) for ncl in ("nclx1", "ncly1", "nclz1"))
+        body.check_grid((n, n, n), boundaries)  # type: ignore[arg-type]
         (run_dir / "input.i3d").write_text(text, encoding="utf-8")
 
         spacing = []

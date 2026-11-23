@@ -191,6 +191,43 @@ def has_snapshot(output: Path, wait_seconds: float = SNAPSHOT_WAIT_SECONDS) -> b
     return wait_for_size(output / "md.idx", 64, seconds=wait_seconds)
 
 
+def diverged_advice(case: dict[str, Any], dt: float, step: int | None) -> str:
+    """What to change after a divergence, from the case's own numbers: dt only when it
+    was above the stability bound, else the grid, the body or the physics. Guessing a
+    smaller dt for a run that was already stable costs simulated time and fixes nothing."""
+    from clio_jarvis.xcompact3d import body
+
+    bound = case.get("suggested_dt")
+    early = step is not None and step <= 10
+    parts: list[str] = []
+    grid = case.get("grid")
+    if case.get("case") == "body" and grid and len(grid) == 3:
+        try:
+            body.check_grid(tuple(int(n) for n in grid), body.BODY_BOUNDARIES)  # type: ignore[arg-type]
+        except body.CaseError as exc:
+            parts.append(f"The grid breaks the pressure solve, which diverges at once whatever dt is: {exc}.")
+    if bound is not None and dt > float(bound):
+        parts.append(
+            f"dt {dt:g} is above the stability bound case.suggested_dt {float(bound):g}; use that bound."
+        )
+    elif bound is not None:
+        parts.append(
+            f"dt {dt:g} was within the stability bound (case.cfl {case.get('cfl')}, case.diffusion_number "
+            f"{case.get('diffusion_number')}, suggested_dt {float(bound):g}), so dt is not the cause; keep it."
+        )
+    if bound is None or dt <= float(bound):
+        across = case.get("points_across_body")
+        parts.append(
+            "A run that diverges in its first steps with a stable dt points to the setup: the grid sizes, "
+            "the body mask (points_across_body"
+            + (f" {across}" if across is not None else "")
+            + ", raise resolution below 3) and the decomposition."
+            if early
+            else "Raise resolution or lower re: the grid does not resolve the flow at this Reynolds number."
+        )
+    return " ".join(parts)
+
+
 def verdict(
     watch: SolverWatch,
     *,
@@ -253,11 +290,7 @@ def verdict(
         "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     if status == "diverged":
-        result["adapt"] = (
-            "The case is numerically unstable. Lower dt (case.suggested_dt is the stability bound "
-            "for the grid; halve it when the run diverged within it), and when it diverged in the "
-            "first steps also check the body mask (points_across_body) and the decomposition."
-        )
+        result["adapt"] = diverged_advice(case, float(config["dt"]), watch.step)
     elif status == "no_output":
         result["adapt"] = (
             "Nothing was written. Check that ioutput is at most ilast and that run_dir is writable; "
@@ -299,6 +332,8 @@ def describe(result: dict[str, Any], run_dir: Path) -> str:
     transport = result.get("transport")
     if transport:
         parts.append(f"; {transport_summary(transport)}")
+    if result.get("adapt"):
+        parts.append(f"; next: {result['adapt']}")
     parts.append(f"; details in {run_dir / RESULT_FILE}")
     return "".join(parts)
 

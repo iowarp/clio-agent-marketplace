@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.9
+version: 0.3.10
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -18,7 +18,12 @@ summary: >-
   body lengths of wake behind it and lateral body lengths each side. The
   spacing is h = 1 / resolution in x and y, so the grid is about (upstream +
   body length + downstream) x resolution by (body height + 2 x lateral) x
-  resolution points, rounded up to FFT-friendly counts. span periodic runs a
+  resolution points, each rounded up to a count the FFT takes: along a
+  periodic direction (y, and z for a periodic span) n = 2^(1+a) 3^b 5^c, and
+  along the open x direction n - 1 is, so the transformed length is even with
+  no prime factor above 5 (nx 385 works, nx 376 does not). Configure refuses
+  a grid that breaks the rule and names the nearest valid counts; a grid
+  that breaks it diverges at its first step whatever dt is. span periodic runs a
   section extruded along z as a thin periodic slab with nz = max(8, span length
   x resolution / 2) points rounded up, so dz is about 2h, except that a span shorter than 16 /
   resolution gets dz = span length / 8, which is finer and tightens the time
@@ -30,6 +35,11 @@ summary: >-
   Reynolds number: re = U L / nu. Bluff bodies start to shed near re 50; 100 to
   3000 gives laminar to unsteady wakes at these resolutions, and higher re
   needs a finer grid than these cases afford.
+  Initial noise: init_noise (default 0.005 of the inflow) only breaks the
+  symmetry so the wake sheds. Its vorticity is about init_noise x inflow x
+  resolution and fades slowly, so keep that well below the wake's, about
+  inflow; 0.05 at resolution 24 gives about 1.2 and a slice shows noise
+  rather than the wake for the first time units.
   Time step: work dt out before submitting, because configure checks it only
   when the job starts, after any approval, and refuses an unstable one. Two
   limits hold together. Convection: CFL = inflow x dt / h at most 0.2, aim for
@@ -178,10 +188,14 @@ summary: >-
   lines and reported under transport as information: the device skipped, the
   transport offered instead and the launch's transport settings. They are
   never the cause of a verdict and do not call for a site network change. A
-  diverged run needs a smaller dt (case.suggested_dt is the
-  bound; halve dt if it diverged within it) or a body thick enough on the
-  grid; a no_output run needs ioutput at most ilast. Change the case before
-  resubmitting; the same inputs diverge the same way.
+  diverged run's adapt says what to change, from the case's own numbers:
+  dt only when it was above case.suggested_dt (then use that bound, not a
+  guess); within the bound dt is not the cause, so keep it and change the
+  grid, the body's points_across_body or the Reynolds number as adapt names.
+  Never cut dt below the stability bound by guesswork: it shortens the
+  simulated time and fixes nothing. A no_output run needs ioutput at most
+  ilast. Change the case before resubmitting; the same inputs diverge the
+  same way.
 install:
   method: spack
   # MPI stays the mpi virtual, so the site's MPI (Ares: its openmpi) is reused.
@@ -208,12 +222,13 @@ parameters:
     upstream: {minimum: 0.5}
     downstream: {minimum: 1}
     lateral: {minimum: 0.5}
+    init_noise: {minimum: 0, maximum: 0.5}
     ilast: {minimum: 1}
     ioutput: {minimum: 1}
     dt: {exclusiveMinimum: 0}
     re: {exclusiveMinimum: 0}
     walltime: {minimum: 1}
-  review: [geometry, run_dir, nprocs, ppn, resolution, span, angle, inflow, re, ilast, ioutput, dt, n, icheckpoint, initstat, walltime, queue]
+  review: [geometry, run_dir, nprocs, ppn, resolution, span, angle, inflow, re, init_noise, ilast, ioutput, dt, n, icheckpoint, initstat, walltime, queue]
   fill:
     input_template: "{pkg_dir}/config/input_DNS_Re1600.i3d"
     run_dir: "{shared_dir}/run"
@@ -229,8 +244,9 @@ sizing:
     nx x ny x nz grid points. Body case: about (upstream + body length +
     downstream) x resolution by (body height + 2 x lateral) x resolution, by
     max(8, span x resolution / 2) for a periodic span or (body depth + 2 x
-    lateral) x resolution for span free, each rounded up to an FFT-friendly
-    count; clio-case.json records the grid chosen. Taylor-Green case: n x n x n.
+    lateral) x resolution for span free, each rounded up to a count the FFT
+    takes (n periodic, n - 1 open, even with no prime factor above 5);
+    clio-case.json records the grid chosen. Taylor-Green case: n x n x n.
   decomposition: pencil2d
   ranks: >-
     nprocs = p_row x p_col, a 2D pencil grid that 2DECOMP&FFT needs with p_row
