@@ -42,6 +42,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.41) runs relay e35f5ce2 with jarvis-cd a28999b1 and still bundles
+  clio-jarvis ee210630. A service's card is now bound like a run's: JARVIS plans the
+  full service job, with the connector and the service's parameters, and the card shows
+  its batch script. The start submits that same script, so the yes binds to it. Per-start
+  secrets stay out of the sealed job.
+
 - `clio-relay` (1.6.40) runs relay 0889629b with jarvis-cd a28999b1 and still bundles
   clio-jarvis ee210630. A guarded `serve` no longer fails before submission with
   "validation errors for JobSpec". Its card shows JARVIS's plan of the service's job,
