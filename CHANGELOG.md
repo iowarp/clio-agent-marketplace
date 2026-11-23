@@ -42,6 +42,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.44) runs relay 2.0.0a3 (45187727), a pre-release: each job card
+  names its resource (`resource: relay://jobs/{operation_id}`), so a host reads the
+  URI it watches from the card or the task's `_meta`, and a Win32-OpenSSH ssh gets an
+  overlapped stdin, so a held stdin can no longer hang it at the session's end.
+
 - `clio-relay` (1.6.43) runs relay 2.0.0a2 (5c8ce8dd), a pre-release with the retake-1u
   findings: steady quiet reports from exec, one job reconciler that feeds the job card,
   the Compute list and the confirm text, a `relay://jobs/{operation_id}` resource, a
