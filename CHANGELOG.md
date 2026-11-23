@@ -42,6 +42,10 @@
 
 ### Changed
 
+- `slurm` (0.6.2): `wait_job.sh` works on sites without Slurm accounting. Where `sacct` has
+  no record it reads the job from `scontrol`, and a job it saw that the controller has since
+  forgotten ends the wait with exit 4 (ended, outcome unknown) instead of looping to the
+  limit and then reporting an unknown id.
 - `clio-relay` (1.6.47) runs relay 2.0.0a5 and bundles clio-jarvis d0aad10, whose
   xcompact3d 0.3.9 declares `clio-run-result.json` as its `run-result` output, so the run's
   verdict comes back with its outputs. The `use-relay` skill waits on a serve's compute steps

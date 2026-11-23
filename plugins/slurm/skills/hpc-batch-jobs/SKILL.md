@@ -22,14 +22,20 @@ directory reported by `load_skill`:
     bash SKILL_ROOT/scripts/wait_job.sh JOBID 540 PATH/TO/progress_file
 
 The helper prints one status line and exits with:
-- 0 when the job has reached a final state (State, ExitCode, Elapsed and node
-  from `sacct`);
+- 0 when the job has reached a final state (State, ExitCode, Elapsed and node);
 - 3 when the job is still queued or running at the limit. Call it again in the
   next step;
+- 4 when the job has ended but the site kept no record of how: it has no Slurm
+  accounting and the controller has forgotten the job. Judge it by its output
+  files and log;
 - 2 for a malformed or unknown job id.
 
-A job counts as finished only when `sacct` reports a final state, so a
-transient `squeue` failure cannot end the wait early.
+The record comes from `sacct`. On a site without accounting, or before `sacct`
+has the job, it comes from `scontrol`, which holds a job for a few minutes after
+it ends. A job counts as finished only when one of them reports a final state,
+or when the controller says it no longer knows a job the helper saw before, so a
+transient `squeue` or controller failure cannot end the wait early. Do not call
+`sacct` yourself on a site where it says accounting is disabled.
 
 Rules for wait steps:
 - Keep each wait at or below 540 s unless the runtime states a longer tool
