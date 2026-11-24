@@ -42,6 +42,8 @@
 
 ### Changed
 
+- `clio-relay` (1.6.60): relay 2.0.0a8. A service whose own job waits long in its queue now
+  asks to move to a queue that would start it sooner, as a run's job already did.
 - `clio-relay` (1.6.59): relay 2.0.0a7 and its redesigned Compute page. The page lists only the
   person's endpoints, under column headers, with the defaults for new endpoints behind a gear.
   "Add endpoint" opens a tabbed dialog (Catalog, Saved, Your own): pick a site, then its
