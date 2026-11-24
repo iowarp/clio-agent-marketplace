@@ -42,6 +42,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.52) bundles clio-jarvis edb8fc6: a package fetching its input over https
+  trusts the operating system's CA bundle as well as Python's own, so a site Python whose
+  frozen bundle is out of date (as Spack's is on Ares) still verifies the server.
 - `clio-relay` (1.6.51) bundles clio-jarvis a8e9669: every package checks its parameters
   against its contract when JARVIS checks the pipeline, so a plan or submit refuses a value
   configure would refuse in the job (such as an empty `case_dir`) before any job starts. The

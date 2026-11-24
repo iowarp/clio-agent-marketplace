@@ -22,6 +22,7 @@ import json
 import os
 import shutil
 import socket
+import ssl
 import tarfile
 import time
 import urllib.request
@@ -33,6 +34,30 @@ SOURCE_NAME = "clio-input-source.json"
 STALE_SECONDS = 600.0
 CHUNK = 1 << 20
 _TOUCH_BYTES = 64 << 20
+# The operating system's CA bundle, where distributions keep it. A Python or
+# OpenSSL built by a package manager trusts the bundle frozen into its own
+# prefix, which falls behind the roots servers move to; the system's copy is
+# kept current by the site.
+SYSTEM_CA_FILES = (
+    "/etc/ssl/certs/ca-certificates.crt",
+    "/etc/pki/tls/certs/ca-bundle.crt",
+    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+    "/etc/ssl/ca-bundle.pem",
+    "/etc/ssl/cert.pem",
+)
+
+
+def tls_context() -> ssl.SSLContext:
+    """A verifying context trusting Python's default roots and the system's bundle."""
+    context = ssl.create_default_context()
+    for path in SYSTEM_CA_FILES:
+        if os.path.isfile(path):
+            try:
+                context.load_verify_locations(cafile=path)
+            except (OSError, ssl.SSLError):
+                continue
+            break
+    return context
 
 
 class _Hashing:
@@ -115,7 +140,7 @@ def fetch_archive(
         files: dict[str, dict[str, Any]] = {}
         say(f"clio-fetch {url}")
         started = time.monotonic()
-        with urllib.request.urlopen(url, timeout=timeout) as response:
+        with urllib.request.urlopen(url, timeout=timeout, context=tls_context()) as response:
             stream = _Hashing(response, digest, touch)
             with tarfile.open(fileobj=stream, mode="r|*") as archive:  # type: ignore[call-overload]
                 for member in archive:
