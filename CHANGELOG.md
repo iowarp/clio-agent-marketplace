@@ -42,6 +42,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.61): relay 2.0.0a9. The Compute page's dialogs show what is chosen: the
+  defaults dialog its saved Spending, and the Save step its name, Security and Spending once a
+  test passes. Saving the defaults is said in the person's language.
 - `clio-relay` (1.6.60): relay 2.0.0a8. A service whose own job waits long in its queue now
   asks to move to a queue that would start it sooner, as a run's job already did.
 - `clio-relay` (1.6.59): relay 2.0.0a7 and its redesigned Compute page. The page lists only the
