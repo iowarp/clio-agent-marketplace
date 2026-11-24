@@ -13,8 +13,8 @@ directory. A client reaches the server through an SSH tunnel to that port.
 
 Coupled to a solver, pvserver outlives it: when jarvis-cd stops the service
 because the pipeline's steps returned, the server first lingers ``linger``
-seconds (default 600) so a client can still attach and look at the final
-output, then stops. The linger ends before the job's wall time does, and at
+seconds (default 180) so a following view draws the last steps and a client
+can still attach and look at the final output, then stops. The linger ends before the job's wall time does, and at
 once on ``jarvis ppl stop``, a cancel or a signal. After a failed step the
 server stops at once, so the failure is reported without delay.
 
@@ -147,10 +147,11 @@ class Pvserver(ClioService):
                 "name": "linger",
                 "msg": (
                     "Seconds the server stays up after the pipeline's steps (the solver it views) finish, "
-                    "so a client can still attach; never past the job's end; 0 means stop with the steps"
+                    "so a following view draws the last steps and a client can still attach; never past "
+                    "the job's end; a cancel ends it at once; 0 means stop with the steps and lose the tail"
                 ),
                 "type": int,
-                "default": 600,
+                "default": 180,
             },
             {"name": "start_timeout", "msg": "Seconds to wait for the port to open", "type": int, "default": 120},
             {

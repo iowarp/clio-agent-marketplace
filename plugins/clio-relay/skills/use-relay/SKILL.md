@@ -23,8 +23,10 @@ freely, in planning too, and keep `exec`, `files` and `packages` for changes.
   service (`job`; for a service it gives the endpoint and whether it is
   ready) and lists the staged packages (`packages=true`).
 - `packages_read` lists the packages relay has staged, with their versions,
-  SHA-256s and where each came from, and relay's package sources. It takes no
-  arguments. `packages` has no list: it only stages and removes.
+  SHA-256s and where each came from, and relay's package sources. Under
+  `available` it lists every package those sources hold, staged or not, each
+  with a summary; `match` keeps those whose name or summary holds every word
+  (`match="lammps"`). `packages` has no list: it only stages and removes.
 - `exec_read` runs one read-only command, given as an argument list with no
   shell: listings and file reads (`ls`, `cat`, `head`, `tail`, `grep`,
   `stat`, `du`, `df`), the scheduler (`squeue`, `sinfo`, `sacct`,
@@ -123,9 +125,16 @@ guarded site. Anything else, answers included, goes through `exec` with
   it on its nodes (pvserver `0:2`, xcompact3d `2:6`, say). JARVIS decides which
   step serves from each package's deployment profile.
 - Leave a service package's `linger` at the package's default (pvserver keeps
-  serving 600 s after the run ends) unless the person asks for another. The
-  live view attaches while the run is going; linger only keeps the service up
-  afterwards so the person can still look at the final output.
+  serving 180 s after the run ends) unless the person asks for a longer one.
+  The linger lets a following view draw the run's last steps and the person
+  look at the final output. Never set it to 0, even when the person wants the
+  nodes back at once: the view then loses the steps it had not drawn. To free
+  the nodes as soon as the view has the last step, wait for that (the live
+  view's `watch_steps` returns `complete` or `finished`), then call
+  `cancel(operation=<the serve operation>)`: the linger ends at once, the
+  view keeps its last picture, and relay's own confirm asks the person. Do
+  this when the person asked for the nodes back; otherwise the linger ends by
+  itself.
 - A run never waits for its viewer. When you write or change a package whose
   output a live view follows, have it write each step whole as it comes (to a
   temporary name, then renamed) and go straight on: the view reads whatever is
@@ -200,6 +209,23 @@ Size a job's time request from what was measured, then pad it generously:
 
 A package's contract can say how to project its own run; the padding and the
 approval above still apply.
+
+## Find the application's package first
+
+A package is one application, written generically, and takes that
+application's own input: a LAMMPS script, a namelist, a settings file, an
+input bundle. The case the person asks for (an obstacle in a channel, a
+protein in water, a wing at an angle) is that input, which you write for them
+now; it is not a package. Before writing anything, call
+`packages_read(match="<application>")` and read `available`. When a source
+holds a package for the application, read its `contract.yaml` in that
+source (its parameters say which input it takes), then stage it and run it
+with the case as its input. Write a package with the `jarvis-package` skill only when no source
+holds one for the application, and then a generic one that takes the
+application's input, never one built around this case. jarvis-cd's own
+`builtin.*` packages belong to the site's JARVIS: they are not among relay's
+sources and relay does not run them. When the person wants the case again
+later, offer to save how you wrote it as a skill of their own.
 
 ## Stage a package before it runs
 

@@ -1,10 +1,19 @@
 ---
 name: jarvis-package
 title: Writing a JARVIS package for relay
-description: Use this skill to write a new JARVIS package that relay can stage, install and run on the person's compute sites, for an application or service relay does not ship yet (a solver, an MD engine, a pipeline step). It says where the bundled examples are, how the package folder is laid out, what its contract must hold and how to check it before staging.
+description: Use this skill to write a new JARVIS package that relay can stage, install and run on the person's compute sites, for an application relay's package sources hold no package for (check packages_read's available first). The package is generic and takes the application's own input; the person's case is that input, not a package. It says where the bundled examples are, how the package folder is laid out, what its contract must hold and how to check it before staging.
 ---
 
 # Writing a JARVIS package for relay
+
+First make sure one is needed: `packages_read(match="<application>")` lists
+under `available` every package relay's sources hold. When one is there for
+the application, use it and write the person's case as its input instead
+(see `use-relay`). When none is, write one package for the application, not
+for the case: it takes the application's own input (a script, a namelist, a
+settings file, or several files as one input bundle) as a parameter, and the
+case reaches it as that input. A package built around one case (an obstacle
+flow, one protein) cannot run the next case and is the wrong shape.
 
 Relay runs a program on a site as a JARVIS package with a contract: `pkg.py`
 (the JARVIS class), `contract.yaml` (what relay reads before it runs anything),
@@ -63,6 +72,10 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   returns its parameters from `_configure_menu` as one literal list of literal
   dicts, each with `name`, `msg` and `type`. Keep `nprocs`, `ppn`,
   `cores_per_node`, `walltime` and `queue` as the shipped packages have them.
+- Take the application's input as a parameter naming a file (`script`, say,
+  or `input` for a bundle unpacked into the run directory). A run sets it to
+  the name of a job input, and relay puts that file in place (see `use-relay`).
+  Keep every case-specific value in that input, not in `pkg.py` or the contract.
 - The contract needs every part: `install`, `parameters`, `resources`,
   `sizing`, `outputs`, `progress`, `provenance` and `selftest`, plus
   `service` for a service. A missing part refuses the package and names it.

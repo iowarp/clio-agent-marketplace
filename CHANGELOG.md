@@ -42,6 +42,13 @@
 
 ### Changed
 
+- `clio-relay` (1.6.58): `use-relay` and `jarvis-package` look for the application's package
+  before writing one, through `packages_read`'s `available` and `match`, which list every package
+  relay's sources hold. A package is generic and takes the application's own input, and the
+  person's case is that input. Before it, the agent wrote a package around one case (an obstacle
+  flow, one protein) while a generic one existed. It bundles clio-jarvis e463507: pvserver 0.3.9
+  lingers 180 s by default, not 600 s, and the skill frees the nodes sooner by cancelling the
+  serve once the live view has the last step, never by a linger of 0, which lost the last steps.
 - `clio-relay` (1.6.57) adds the `jarvis-package` skill, which `use-relay` names when a run
   needs a package relay does not ship: it points at the bundled clio-jarvis through
   `packages_read`'s sources, lays out a package repository beside its schemas, lists what a

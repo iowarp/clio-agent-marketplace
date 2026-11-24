@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
-version: 0.3.10
+version: 0.3.11
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -145,7 +145,7 @@ summary: >-
   in the spend approval: the projected time, the coefficient, the padded
   request, and that unused time is not charged when the run ends cleanly.
   A pvserver in the same pipeline to watch the run stays up for its linger
-  after the solver ends (pvserver's linger, 600 s by default) so the person
+  after the solver ends (pvserver's linger, 180 s by default) so the person
   can still attach: add twice that linger to the padded request, and name
   it in the spend approval.
   If the padded request exceeds the partition's maximum wall time (the time

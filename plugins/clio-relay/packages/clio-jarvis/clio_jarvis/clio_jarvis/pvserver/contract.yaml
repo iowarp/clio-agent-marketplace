@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: pvserver
-version: 0.3.8
+version: 0.3.9
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
@@ -21,14 +21,14 @@ summary: >-
   the stop record reports them under transport as information, never as
   the cause, and they do not call for a site network change.
   In a pipeline with a solver, pvserver outlives it: once the pipeline's
-  steps finish it keeps serving for linger seconds (default 600, 0 for
+  steps finish it keeps serving for linger seconds (default 180, 0 for
   none) so a client can still attach and look at the final output, then
   stops with reason linger-ended. The linger ends before the job's wall
   time (the scheduler's time left, else walltime), and at once on jarvis
   ppl stop, a cancel or a signal; after a failed step there is none.
   pvserver-ready.json says lingering with linger_until, and the stop record
   carries a linger block. Request the job's walltime as the solver's
-  walltime plus twice the linger (20 minutes more at the default), since a
+  walltime plus twice the linger (6 minutes more at the default), since a
   job ends, and is charged, when its pipeline does.
 
 install:
