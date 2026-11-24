@@ -42,6 +42,11 @@ job, and forward its port to this machine. The service's result names that
 forwarded endpoint (a `host:port` here, such as `127.0.0.1:<port>`) and the
 ParaView version the `pvserver` runs. To show the run live:
 
+- As soon as the version is known, before the job runs (a pvserver package
+  names it when you review the job), set `version` alone with one
+  `set_connector_value`. The client fetch (about a gigabyte) then runs while
+  the job queues and installs, rather than after the service is ready, and a
+  later connector change resumes it instead of starting it over.
 - Make one `set_connector_value` call with `values` holding `pvserver` (the
   forwarded `host:port`, exactly as the result gives it) and `version` (the
   server's ParaView version, such as `5.13.1`), and `address` and `via` empty.

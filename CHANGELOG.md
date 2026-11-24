@@ -52,6 +52,9 @@
   names the grid, body or Reynolds number, instead of telling the agent to halve `dt`.
   `init_noise` is a parameter, 0.005 by default, so the live slice shows the wake rather
   than the start-up noise.
+- `paraview` (1.0.9) sets the connector's `version` as soon as a job's pvserver version is
+  known, before the job runs, so the ParaView client is fetched while the job queues and
+  installs instead of after its service is ready.
 - `slurm` (0.6.2): `wait_job.sh` works on sites without Slurm accounting. Where `sacct` has
   no record it reads the job from `scontrol`, and a job it saw that the controller has since
   forgotten ends the wait with exit 4 (ended, outcome unknown) instead of looping to the
