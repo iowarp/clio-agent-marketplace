@@ -205,18 +205,30 @@ def value_params(value: Any) -> set[str]:
         if "param" in value:
             return {value["param"]}
         (operands,) = value.values()
-        return {item for item in operands if isinstance(item, str)}
+        names: set[str] = set()
+        for item in operands:
+            names |= {item} if isinstance(item, str) else value_params(item)
+        return names
     return set()
 
 
+def _operand(item: Any, config: Mapping[str, Any]) -> Any:
+    if isinstance(item, str):
+        return config.get(item)
+    return evaluate(item, config)
+
+
 def evaluate(value: Any, config: Mapping[str, Any]) -> Any:
-    """Evaluate a literal, ``{param: name}`` or integer arithmetic value."""
+    """Evaluate a literal, ``{param: name}`` or integer arithmetic value.
+
+    An operand is a number, a parameter name or another arithmetic value.
+    """
     if not isinstance(value, Mapping):
         return value
     if "param" in value:
         return config.get(value["param"])
     (operator, operands) = next(iter(value.items()))
-    a, b = (config.get(item) if isinstance(item, str) else item for item in operands)
+    a, b = (_operand(item, config) for item in operands)
     if a is None or b is None:
         return None
     if operator == "mul":

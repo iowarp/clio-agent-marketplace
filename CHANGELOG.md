@@ -42,6 +42,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.56) bundles clio-jarvis 96a133f: a contract's arithmetic operand may be
+  arithmetic itself, so a frame count that includes the first frame,
+  `{add: [{div: [nsteps, nstout]}, 1]}`, passes the site's check instead of being refused.
 - `clio-relay` (1.6.55) and `paraview` (1.0.10): a run never waits for its viewer. The skills say
   to write each step whole and go straight on, with no ready marker, gate or timeout on the view,
   and to judge any wait in a package by progress rather than by a time limit.

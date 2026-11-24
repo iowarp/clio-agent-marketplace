@@ -9,27 +9,28 @@
   "$defs": {
     "param_name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$" },
     "value": {
-      "description": "A literal, a parameter reference {param: name}, or integer arithmetic over them.",
+      "description": "A literal, a parameter reference {param: name}, or integer arithmetic over them. An operand may itself be arithmetic, so frames = steps / interval + 1 is {add: [{div: [nsteps, nstout]}, 1]}.",
       "oneOf": [
         { "type": ["integer", "number", "string", "boolean"] },
         {
           "type": "object", "additionalProperties": false, "required": ["param"],
           "properties": { "param": { "$ref": "#/$defs/param_name" } }
         },
-        {
-          "type": "object", "additionalProperties": false, "minProperties": 1, "maxProperties": 1,
-          "properties": {
-            "div": { "$ref": "#/$defs/operands" },
-            "mul": { "$ref": "#/$defs/operands" },
-            "add": { "$ref": "#/$defs/operands" },
-            "ceil_div": { "$ref": "#/$defs/operands" }
-          }
-        }
+        { "$ref": "#/$defs/arithmetic" }
       ]
     },
     "operands": {
       "type": "array", "minItems": 2, "maxItems": 2,
-      "items": { "anyOf": [ { "type": "number" }, { "$ref": "#/$defs/param_name" } ] }
+      "items": { "anyOf": [ { "type": "number" }, { "$ref": "#/$defs/param_name" }, { "$ref": "#/$defs/arithmetic" } ] }
+    },
+    "arithmetic": {
+      "type": "object", "additionalProperties": false, "minProperties": 1, "maxProperties": 1,
+      "properties": {
+        "div": { "$ref": "#/$defs/operands" },
+        "mul": { "$ref": "#/$defs/operands" },
+        "add": { "$ref": "#/$defs/operands" },
+        "ceil_div": { "$ref": "#/$defs/operands" }
+      }
     },
     "output": {
       "type": "object",
