@@ -42,6 +42,8 @@
 
 ### Changed
 
+- `clio-relay` (1.6.54) bundles clio-jarvis 949cf25: wrf's history output names the reader
+  as paraview.simple does (NetCDFReader), so the live view opens its first step at once.
 - `clio-relay` (1.6.53) bundles clio-jarvis bb66ff8: wrf reads rank 0's log afresh on every
   poll, so on a shared file system a run that ended with SUCCESS COMPLETE WRF on another
   node is no longer judged failed on a cut log, and a case namelist's history_interval_m

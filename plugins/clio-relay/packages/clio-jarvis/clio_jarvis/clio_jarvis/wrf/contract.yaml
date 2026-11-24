@@ -97,7 +97,7 @@ outputs:
     path: "{run_dir}/wrfout_d01_*"
     path_kind: glob
     format: netcdf
-    reader: NetCDFCFReader
+    reader: NetCDFReader
     expected_steps: {div: [run_minutes, history_interval]}
     follow: {signal: file-count, poll_seconds: 10}
     time: {unit: simulated minutes, step_interval: {param: history_interval}}
