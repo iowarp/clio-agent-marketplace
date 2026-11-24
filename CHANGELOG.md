@@ -42,6 +42,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.64): jarvis-cd's `builtin` packages are no longer a relay package source, at the person's
+  direction: they hardcode a case or a site's setup, so they are a reference only. `packages/jarvis-cd/` and
+  `scripts/vendor_jarvis_builtin.py` are gone. The use-relay and jarvis-package skills say to use a clio-jarvis
+  package or write a generic one, taking every site fact from JARVIS and the resource graph.
+
 - `clio-relay` (1.6.63): relay 2.0.0a11. The Compute page shows the defaults for new endpoints as a row again,
   with no gear, and the Add endpoint dialog is wider and taller.
 
