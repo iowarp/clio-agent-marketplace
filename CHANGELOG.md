@@ -42,6 +42,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.49) bundles clio-jarvis 8e3e42d, which adds `wrf` 0.1.0: WRF ARW 4.6.1
+  on a real-data case (real.exe's output, such as NCAR's CONUS 12 km benchmark), installed
+  from Spack's builtin `wrf` recipe so a site that already built WRF is reused with nothing to
+  build. It writes the run's namelist, refuses a run past the boundary data or patches under
+  10 cells, counts each netCDF history file as a step and reports `clio-run-result.json`.
 - `clio-relay` (1.6.48) runs relay 2.0.0a6, a pre-release that pins JARVIS d6b02dc5: an
   application's own failure is no longer classed as an MPI network fault, and the graph
   advisory is fixed. It also bundles clio-jarvis 1052c95, whose xcompact3d 0.3.10 refuses a grid
