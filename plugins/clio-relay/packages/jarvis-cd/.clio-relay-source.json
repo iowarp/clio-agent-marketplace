@@ -1,0 +1,20 @@
+{
+  "commit": "ff96c29f9089e2eea12897ef2d72c0249c55624d",
+  "excluded": [
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/a.chr21.1.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/a.chr21.2.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/a.scerevisiae.1.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/a.scerevisiae.2.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/b.chr21.1.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/b.chr21.2.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/b.scerevisiae.1.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/b.scerevisiae.2.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/c.scerevisiae.1.fq",
+    "builtin/builtin/rna_seq_star_deseq2/bench/ngs-test-data/reads/c.scerevisiae.2.fq"
+  ],
+  "generator": "scripts/vendor_jarvis_builtin.py",
+  "max_file_bytes": 524288,
+  "path": "builtin",
+  "repository": "https://github.com/grc-iit/jarvis-cd",
+  "tree_sha256": "5a9cac3ceaa372f55fa5359eebce7ac7ee019a11b6aae3ed1dede6e358375d06"
+}

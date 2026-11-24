@@ -28,6 +28,8 @@ jobs:
         run: uv run --no-project --python 3.13 python scripts/check_model_pins.py .
       - name: Reject dataset-specific literals in plugin prompts
         run: uv run --no-project --python 3.13 python scripts/check_skill_literals.py .
+      - name: Check the vendored jarvis-cd builtin against relay's pin
+        run: uv run --no-project --python 3.13 python scripts/vendor_jarvis_builtin.py --check --pin .
 
   plugin-check:
     # The install resolver, run against this checkout: loads every plugin

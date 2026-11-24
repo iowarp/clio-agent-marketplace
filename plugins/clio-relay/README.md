@@ -13,7 +13,8 @@ This folder is relay's plugin for CLIO. Installing it gives CLIO:
 - a Globus account, whose grant file CLIO hands relay as
   `CLIO_RELAY_GRANT_FILE_GLOBUS`;
 - the JARVIS packages in `packages/`: clio-jarvis at the commit its
-  `.clio-relay-source.json` names. `mcp.json` hands that folder to relay as
+  `.clio-relay-source.json` names, and jarvis-cd's `builtin` repository at
+  relay's JARVIS_PIN, without bench data over 512 KiB. `mcp.json` hands that folder to relay as
   `CLIO_RELAY_PACKAGE_SOURCES`, so staging one needs no download and no
   account;
 - sign-in pages on the loopback address and on `https://tacc.tapis.io`;
@@ -39,3 +40,10 @@ commit into `packages/clio-jarvis/` and update `commit` in its
 `.clio-relay-source.json`. Relay ships `spack/`, the Spack repository the
 contracts install from, with each package, reads the Python requirements from
 `pyproject.toml` and installs them on the site with its jarvis-cd.
+
+`packages/jarvis-cd/` is generated, never edited by hand. After every relay
+bump, run `python scripts/vendor_jarvis_builtin.py` from the repository root:
+it reads JARVIS_PIN from the locked clio-relay wheel, writes jarvis-cd's
+builtin repository at that commit and stamps the commit and a tree digest in
+its `.clio-relay-source.json`. CI runs it with `--check --pin`, which fails
+when the copy was edited or no longer matches the pin.

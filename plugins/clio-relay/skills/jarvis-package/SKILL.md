@@ -26,7 +26,10 @@ through relay; do not offer it for this.
 ## Find the bundled clio-jarvis
 
 `packages_read` lists relay's package sources under `sources`. The folder
-`<source>/clio-jarvis` is clio-jarvis at the pin this plugin bundles:
+`<source>/clio-jarvis` is clio-jarvis at the pin this plugin bundles, and
+`<source>/jarvis-cd/builtin` is jarvis-cd's builtin repository at relay's
+JARVIS pin (packages without contracts, useful for how a `pkg.py` installs
+and launches an application). The clio-jarvis layout:
 
 - `clio_jarvis/clio_jarvis/_contract/`: the shared code every package uses
   (`base.py` with `ClioApplication` and `ClioService`, `spec.py` with
