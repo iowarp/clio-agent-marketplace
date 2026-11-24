@@ -25,6 +25,32 @@ wheels = [
 ]
 
 [[package]]
+name = "aioquic"
+version = "1.9.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "cryptography" },
+    { name = "pylsqpack" },
+    { name = "pyopenssl" },
+    { name = "service-identity" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f7/8b/8527007b92a7dd5490fe707906328321788900034599831c2a58e10899b0/aioquic-1.9.2.tar.gz", hash = "sha256:badbe512bc69f45e52414159a050140eab0f7ba3f91aab228e55dfa42f409504", size = 292913, upload-time = "2026-11-24T13:15:59.782Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/47/31/1f0ce819cb721b0f1716fcea3b6d81be0da2c41ea5575d67e4fa19c5aeda/aioquic-1.9.2-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:33a0392eb4346e84fd2144edacc25d8e9567dd5ebba9b82a3458df203efdc042", size = 135148, upload-time = "2026-11-24T13:15:44.172Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/34/69e64d28dbce6b1c92457bb0fea6f77d1dd7fd083b17c226a35a794e3518/aioquic-1.9.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:ac319ea6d84a023dfe565b4119fa6eb47129693fb67e19dc5b441152db026605", size = 135612, upload-time = "2026-11-24T13:15:45.742Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/70/667ca883e9d771d25e60e29cc325776358666c49c6c08ad7e043f03da3ff/aioquic-1.9.2-cp310-abi3-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:55241ece2e040015c36ecb78b018f14f3719fcfa81179e394609581b765e1ade", size = 142557, upload-time = "2026-11-24T13:15:46.996Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/76/b43b65546df4cd704761f3e1fd31773ff09dd78389706652f84112fe8f12/aioquic-1.9.2-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a0d333505cdaf1b8a2edc9b82ea4476e3182ee34ae87ee68d250e8d8d718b308", size = 145033, upload-time = "2026-11-24T13:15:48.514Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/a7/8897bab1ac3c180187b34c7ff5cd350c027fe38a3b9fbccc21b6a9cbc433/aioquic-1.9.2-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:97569cd13011d7b0046bbc8baa20732fd5b6f6f2c5dbc8d622e9431661a44b40", size = 143603, upload-time = "2026-11-24T13:15:49.731Z" },
+    { url = "https://files.pythonhosted.org/packages/76/bf/408a4e2c4ccb4932505f6ac950b39cfc799132d5dc58387d3cd458b5c0b4/aioquic-1.9.2-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:fe18cda1b3af5ab7e892f144aee33838d3a347ffd445f71338c291394310749a", size = 144708, upload-time = "2026-11-24T13:15:51.221Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/ee/bcac04e871311d28d566151c1672b473612013209d3cdd2c97b576d1460f/aioquic-1.9.2-cp310-abi3-musllinux_1_2_i686.whl", hash = "sha256:599cf3c4fcde8b5c78129f3712ce5659e5e7a49b48e270e5097aa43fb5fa570c", size = 143169, upload-time = "2026-11-24T13:15:52.466Z" },
+    { url = "https://files.pythonhosted.org/packages/57/a8/f9b7afb16710dfb946d64b57918865de51dd9bbbcf6033003027366f118c/aioquic-1.9.2-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:5b807a47a97d464df00896c889df3d5f07d8359c06d42ce8b5e3d0044897bcb0", size = 143852, upload-time = "2026-11-24T13:15:53.756Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/0d/208799ad72df825347122b35bf65ab6c5f38e43ff77364413b950eef71d9/aioquic-1.9.2-cp310-abi3-win32.whl", hash = "sha256:068b01eb65905ccacf337b99488752de9793143c0f08588aa5e6aef39dcb1b1b", size = 137432, upload-time = "2026-11-24T13:15:55.12Z" },
+    { url = "https://files.pythonhosted.org/packages/52/4e/c876e80038d49a4a5c39aa465959ebefcaed045b3a9839d92f0debbb0508/aioquic-1.9.2-cp310-abi3-win_amd64.whl", hash = "sha256:acfb3141e1747f6f1ce6e9213a8c53cf318ef8b2068411aa60480bcf6f7ea9a9", size = 137957, upload-time = "2026-11-24T13:15:56.882Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/af/d9436d3083b64eb1a0bae0589490add0d7d51d9b965576eb13c6572b1aa3/aioquic-1.9.2-cp310-abi3-win_arm64.whl", hash = "sha256:2036fe7e989df4da4ee132877072090436b405f933389b635ea22170cdf2bdf9", size = 137855, upload-time = "2026-11-24T13:15:58.306Z" },
+]
+
+[[package]]
 name = "annotated-doc"
 version = "0.0.7"
 source = { registry = "https://pypi.org/simple" }
@@ -330,10 +356,12 @@ wheels = [
 
 [[package]]
 name = "clio-relay"
-version = "2.0.0a6"
-source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a6/clio_relay-2.0.0a6-py3-none-any.whl" }
+version = "2.0.0a7"
+source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a7/clio_relay-2.0.0a7-py3-none-any.whl" }
 dependencies = [
+    { name = "aioquic" },
     { name = "clio-schemas" },
+    { name = "cryptography" },
     { name = "fastapi" },
     { name = "fastmcp" },
     { name = "fastmcp-slim", extra = ["client", "server"] },
@@ -352,7 +380,7 @@ dependencies = [
     { name = "websockets" },
 ]
 wheels = [
-    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a6/clio_relay-2.0.0a6-py3-none-any.whl", hash = "sha256:e6c02dc06231714e431aec9b568b1cca5dc809569d07410445e8074b4b62f21a" },
+    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a7/clio_relay-2.0.0a7-py3-none-any.whl", hash = "sha256:18569cca37b887710965d1c719d52f3350a15299afbb7cf7d1626c5b823c7452" },
 ]
 
 [package.optional-dependencies]
@@ -362,7 +390,9 @@ tapis = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aioquic", specifier = ">=1.9.1,<1.10" },
     { name = "clio-schemas", specifier = "==0.2.1" },
+    { name = "cryptography", specifier = ">=50.0.0" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "fastmcp", specifier = "==4.2.1" },
     { name = "fastmcp-slim", extras = ["client", "server"], specifier = "==4.2.1" },
@@ -390,14 +420,14 @@ provides-extras = ["globus", "iri", "tapis", "testing"]
 
 [[package]]
 name = "clio-relay-server"
-version = "2.0.0a6"
+version = "2.0.0a7"
 source = { virtual = "." }
 dependencies = [
     { name = "clio-relay", extra = ["tapis"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a6/clio_relay-2.0.0a6-py3-none-any.whl" }]
+requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a7/clio_relay-2.0.0a7-py3-none-any.whl" }]
 
 [[package]]
 name = "clio-schemas"
@@ -1439,6 +1469,38 @@ crypto = [
 ]
 
 [[package]]
+name = "pylsqpack"
+version = "1.1.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1b/ad/374451e432655be7c3359a3582fc8d1089b6faff02827c740d379635c746/pylsqpack-1.1.3.tar.gz", hash = "sha256:cd4de1c914be239e99b6251f0c03ceeca5fe4d19dc67b727e921dcf3d3587d4d", size = 684355, upload-time = "2026-11-24T13:09:31.004Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/03/4fa26cfaa04418be035d163f417a6001981de2baa66a418c8f7603a4de19/pylsqpack-1.1.3-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:11242dfb87124853c1af0931dc766c34f99e000ceca9cf1912883297b19509c5", size = 167394, upload-time = "2026-11-24T13:09:15.427Z" },
+    { url = "https://files.pythonhosted.org/packages/33/9b/08f11df22548f57e982779c85d35b35d0ec68c7a50252e5123b5192f6e40/pylsqpack-1.1.3-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:b220afff798cf59baf15489a4f1bd8d5f167d0f3224695380b767e8dffe8316b", size = 173224, upload-time = "2026-11-24T13:09:16.977Z" },
+    { url = "https://files.pythonhosted.org/packages/77/0d/f0e363cb23d9c4c3e0289d0f4d0062a3c6f505e965664c2c2700a7e7a37c/pylsqpack-1.1.3-cp310-abi3-manylinux1_i686.manylinux_2_28_i686.manylinux_2_5_i686.whl", hash = "sha256:b733be9fc7ea9ac37945a3333a11c79838d8d9886fb9f6169376fc258333530b", size = 254258, upload-time = "2026-11-24T13:09:18.514Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/75/13192bb11ffc5bfc910ff34efc94ee3a4947b192f4afd04615953853ee9d/pylsqpack-1.1.3-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c1f1c495c161415a371535e524ab1a68753fe15c6534aaf87a3a50bfd804e85c", size = 257012, upload-time = "2026-11-24T13:09:19.913Z" },
+    { url = "https://files.pythonhosted.org/packages/72/2c/6be8235386edd3539d1e83b729e7000ca1f90f1238e8c8108790fb7dce61/pylsqpack-1.1.3-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4cac49c32d9f455bea012223b8e2bc64e79d4b94eb8a8a7f60a239947b09df97", size = 258106, upload-time = "2026-11-24T13:09:21.503Z" },
+    { url = "https://files.pythonhosted.org/packages/91/a4/21ddfb1c4cc8f1147f0bde9ffe49dfc23e06af726edf85e38e43665e5f65/pylsqpack-1.1.3-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:ff53d63bf96a90973fbfceb7381c11bf1656bd9704f703259f9ba38f71c6040d", size = 254331, upload-time = "2026-11-24T13:09:22.846Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/5c/003eae92e4a250b14a7b585b4fb886aad60a906816aac51a4c5f689e4d1d/pylsqpack-1.1.3-cp310-abi3-musllinux_1_2_i686.whl", hash = "sha256:6ba422e788309d0564f80cde1704d8857ae288951b7707f9fee7ab660ae56109", size = 253868, upload-time = "2026-11-24T13:09:24.245Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/1d/5b26e793a048313caf3926e5052ed0d29b35f9a732cbedcf74ae817535e8/pylsqpack-1.1.3-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:20e870f903bfad70c3b65536049091d5d325367bcde6855dd6d2b7b419c45ae6", size = 256183, upload-time = "2026-11-24T13:09:25.638Z" },
+    { url = "https://files.pythonhosted.org/packages/93/1a/378879683fd5347c5360cfd03353629cac64dea2c9d4f79b7fc6aa082f92/pylsqpack-1.1.3-cp310-abi3-win32.whl", hash = "sha256:8fdb02cb2d4c7e5b31ad6959398ccc2d6963f449f5776bf754a3425fbbb830f2", size = 160260, upload-time = "2026-11-24T13:09:27.005Z" },
+    { url = "https://files.pythonhosted.org/packages/27/86/be6bebbd52d95f72d6b6d441f9f9e2833134098686043d7c7f1511f732d1/pylsqpack-1.1.3-cp310-abi3-win_amd64.whl", hash = "sha256:f25a63d645a3e3ad59c5d453048f91b2d9b0f3655b146d1491c18c783d584a56", size = 164965, upload-time = "2026-11-24T13:09:28.341Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/b4/4521b886d0c1323e7a3561f88288d8d7d0ff5f9c0eaf3c5ca783bad690c0/pylsqpack-1.1.3-cp310-abi3-win_arm64.whl", hash = "sha256:bc3967c423fbba759b4353d0b467753b8f510c6f769bf3f68317ac4b8dfef9db", size = 162245, upload-time = "2026-11-24T13:09:29.591Z" },
+]
+
+[[package]]
+name = "pyopenssl"
+version = "26.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3f/e8/7325d258199b159eb2c03fe32107533e2832e70e63f4fb88a6aa00023201/pyopenssl-26.4.0.tar.gz", hash = "sha256:28dfcce0162b9211413e26dfbfdf1d24317fbeba18fc93c12400a1856b2a0bc7", size = 182046, upload-time = "2026-08-01T19:50:50.512Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/ad/2cf6d3fa2fae5c79e1ed9960c0d42badd0f94d81dd12b50604cdc839e648/pyopenssl-26.4.0-py3-none-any.whl", hash = "sha256:f0eb0cb2d581d3ad2b9c489468485e7f2ab6727d08401bcf9d824c3caddf3c1c", size = 56026, upload-time = "2026-08-01T19:50:48.94Z" },
+]
+
+[[package]]
 name = "pyperclip"
 version = "1.11.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1720,6 +1782,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1c/03/e834bcd866f2f8a49a85eaff47340affa3bfa391ee9912a952a1faa68c7b/secretstorage-3.5.0.tar.gz", hash = "sha256:f04b8e4689cbce351744d5537bf6b1329c6fc68f91fa666f60a380edddcd11be", size = 19884, upload-time = "2025-11-23T19:02:53.191Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/46/f5af3402b579fd5e11573ce652019a67074317e18c1935cc0b4ba9b35552/secretstorage-3.5.0-py3-none-any.whl", hash = "sha256:0ce65888c0725fcb2c5bc0fdb8e5438eece02c523557ea40ce0703c266248137", size = 15554, upload-time = "2025-11-23T19:02:51.545Z" },
+]
+
+[[package]]
+name = "service-identity"
+version = "26.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "cryptography" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/61/87/ad52e2c582c0f0e7f0a1b86950494c38d67422dc0f5ed9044a5fb9569a49/service_identity-26.1.0.tar.gz", hash = "sha256:6358c52882c96e66ac4a55eb3a72c7dd4a70763f8cc6fa4e70abde2656f4bf3b", size = 42898, upload-time = "2026-05-30T12:04:55.184Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/93/eb/2433e1af4ff903499144de4846569fb3300b816179ae99a03c2f011b666a/service_identity-26.1.0-py3-none-any.whl", hash = "sha256:68c32dadbb69135fb951077677e07cd7f6031020f3a8c8f47a28cda8a0742118", size = 11370, upload-time = "2026-05-30T12:04:53.911Z" },
 ]
 
 [[package]]

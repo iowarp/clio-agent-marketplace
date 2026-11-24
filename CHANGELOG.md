@@ -42,7 +42,15 @@
 
 ### Changed
 
-- `clio-relay` (1.6.58): `use-relay` and `jarvis-package` look for the application's package
+- `clio-relay` (1.6.59): relay 2.0.0a7 and its redesigned Compute page. The page lists only the
+  person's endpoints, under column headers, with the defaults for new endpoints behind a gear.
+  "Add endpoint" opens a tabbed dialog (Catalog, Saved, Your own): pick a site, then its
+  protocol, test it, then save it. Each catalog machine is one site with its protocols. Removing
+  an endpoint offers Undo. The page follows CLIO's language (en, es, ja, el). The
+  `clio-relay-compute` catalog adds `Icon`, `clio.dialog.v1` and `clio.picker.v1`. The server
+  environment is byte-compiled when it is built, and `CLIO_RELAY_SAVED_SSH_CONFIG` takes CLIO's
+  saved SSH hosts (`CLIO_SAVED_SSH_CONFIG`) for the dialog's Saved tab.
+- `clio-relay` (1.6.58):  `use-relay` and `jarvis-package` look for the application's package
   before writing one, through `packages_read`'s `available` and `match`, which list every package
   relay's sources hold. A package is generic and takes the application's own input, and the
   person's case is that input. Before it, the agent wrote a package around one case (an obstacle
