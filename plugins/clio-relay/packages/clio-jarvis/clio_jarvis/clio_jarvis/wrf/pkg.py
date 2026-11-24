@@ -9,6 +9,10 @@ a ``namelist.input`` with the run length, history interval and process grid
 set. wrf.exe runs there under MPI; rank 0 writes its log to ``rsl.out.0000``,
 which the package follows and turns into progress lines.
 
+``case_url`` names a tar archive of the case instead: when ``case_dir`` lacks
+it, the job fetches the archive on the site (:mod:`clio_jarvis._contract.fetch`)
+and later runs reuse what landed.
+
 The software is a Spack ``wrf`` (em_real, dmpar). A site that already built
 one, as a Spack upstream or module, is reused as it is: the install plans
 nothing to build.
@@ -28,10 +32,13 @@ from pathlib import Path
 from typing import Any
 
 from clio_jarvis._contract.base import ClioApplication
+from clio_jarvis._contract.fetch import fetch_archive
+from clio_jarvis._contract.spec import in_job
 
 #: Files of $WRF_HOME/run that are not tables: the run writes its own namelist.
 _NOT_TABLES = re.compile(r"(^namelist\.input|\.exe$|^README|^Makefile$|\.(?:csh|sh|py)$)")
 _CASE_FILES = ("wrfinput_d01", "wrfbdy_d01", "namelist.input")
+_TABLE_SUFFIXES = (".dat", ".TBL", ".tbl", ".formatted")
 _TIMING = re.compile(r"^Timing for main: time (?P<time>\S+) on domain\s+1:\s+(?P<seconds>[0-9.]+) elapsed seconds")
 _HISTORY = re.compile(r"^Timing for Writing (?P<file>wrfout_d01_\S+) for domain\s+1:")
 _SUCCESS = "SUCCESS COMPLETE WRF"
@@ -229,6 +236,13 @@ class Wrf(ClioApplication):
                 "type": str,
                 "default": "",
             },
+            {
+                "name": "case_url",
+                "msg": "https URL of a tar archive holding the case; when case_dir lacks the case, the job fetches it once and extracts only the case's files into case_dir",
+                "type": str,
+                "default": "",
+            },
+            {"name": "case_sha256", "msg": "The case archive's SHA-256; empty records the digest the fetch saw", "type": str, "default": ""},
             {"name": "run_minutes", "msg": "Simulated minutes from the case's start; must end within the boundary data, which the case's namelist end time marks", "type": int, "default": 180},
             {"name": "history_interval", "msg": "Simulated minutes between two history files (wrfout_d01_*)", "type": int, "default": 60},
             {"name": "time_step", "msg": "Model time step in seconds; empty keeps the case's (about 6 x dx in km)", "type": int, "default": None, "required": False},
@@ -242,8 +256,24 @@ class Wrf(ClioApplication):
     def _clio_prepare(self, config: dict[str, Any]) -> None:
         case = Path(os.path.expanduser(str(config["case_dir"])))
         missing = [name for name in _CASE_FILES if not (case / name).is_file()]
+        url = str(config.get("case_url") or "")
+        if missing and url:
+            if not in_job() and not self._clio_runs_here():
+                # A scheduled pipeline configured on its submitting host: the job fetches.
+                return
+            fetch_archive(
+                url,
+                case,
+                want=lambda name: name in _CASE_FILES or name.endswith(_TABLE_SUFFIXES),
+                required=_CASE_FILES,
+                sha256=str(config.get("case_sha256") or ""),
+            )
+            missing = []
         if missing:
-            raise ValueError(f"case_dir {case} lacks {', '.join(missing)}: it must hold real.exe's output and its namelist.input")
+            raise ValueError(
+                f"case_dir {case} lacks {', '.join(missing)}: it must hold real.exe's output and its "
+                "namelist.input, or set case_url to an archive of the case for the job to fetch"
+            )
         text = (case / "namelist.input").read_text(encoding="utf-8", errors="replace")
         start, end = case_window(text)
         minutes = int(config["run_minutes"])
@@ -318,7 +348,7 @@ class Wrf(ClioApplication):
                 links[source.name] = source
         for source in sorted(case.iterdir()):
             if source.is_file() and source.name != "namelist.input" and (
-                source.name in _CASE_FILES or source.suffix in (".dat", ".TBL", ".tbl", ".formatted")
+                source.name in _CASE_FILES or source.suffix in _TABLE_SUFFIXES
             ):
                 links[source.name] = source
         for name, source in links.items():

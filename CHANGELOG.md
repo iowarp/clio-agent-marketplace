@@ -42,6 +42,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.50) bundles clio-jarvis c6edbfe: `wrf` 0.1.1 takes `case_url` and
+  `case_sha256`, so on a guarded site the reviewed package fetches a public case such as
+  NCAR's CONUS 12 km benchmark inside its job, extracting only the case's files, instead of
+  the agent downloading it through the person's computer.
 - `clio-relay` (1.6.49) bundles clio-jarvis 8e3e42d, which adds `wrf` 0.1.0: WRF ARW 4.6.1
   on a real-data case (real.exe's output, such as NCAR's CONUS 12 km benchmark), installed
   from Spack's builtin `wrf` recipe so a site that already built WRF is reused with nothing to

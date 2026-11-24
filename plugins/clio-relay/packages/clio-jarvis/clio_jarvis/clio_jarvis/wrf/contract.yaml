@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: wrf
-version: 0.1.0
+version: 0.1.1
 kind: application
 summary: >-
   WRF ARW 4.6 on a real-data case (em_real, dmpar). case_dir holds what
@@ -15,10 +15,14 @@ summary: >-
   (https://www2.mmm.ucar.edu/wrf/users/benchmark/v44/v4.4_bench_conus12km.tar.gz,
   3.2 GB): 425 x 300 x 35 points, 72 s step, 12 h of boundary data from
   2019-11-26_12:00:00. Only wrfinput_d01, wrfbdy_d01, namelist.input and the
-  *.dat tables are needed; tar can extract just those while it downloads, and
-  the reference output wrfout_d01_2019-11-27_00:00:00.gnu with diffwrf.py
-  checks a full 12 h run. Keep case data outside the relay home, which a site
-  clean deletes.
+  *.dat tables are needed. With case_url set to such an archive and case_dir
+  absent or empty, the job fetches the archive on the site once, streaming it
+  through tar so only the case's files land in case_dir, with its SHA-256 and
+  source in clio-input-source.json; later runs reuse the case. This works on
+  a guarded site, where the package is the reviewed code that downloads, and
+  nothing passes through the person's computer. The reference output
+  wrfout_d01_2019-11-27_00:00:00.gnu with diffwrf.py checks a full 12 h run.
+  Keep case data outside the relay home, which a site clean deletes.
 install:
   method: spack
   # MPI stays the mpi virtual, so the site's MPI and any site WRF are reused.
@@ -32,13 +36,15 @@ parameters:
     ppn: {minimum: 1, maximum: 256}
     cores_per_node: {minimum: 1, maximum: 1024}
     case_dir: {minLength: 2}
+    case_url: {pattern: "^(https://\\S+)?$"}
+    case_sha256: {pattern: "^([0-9a-fA-F]{64})?$"}
     run_minutes: {minimum: 1}
     history_interval: {minimum: 1}
     time_step: {minimum: 1}
     nproc_x: {minimum: -1}
     nproc_y: {minimum: -1}
     walltime: {minimum: 1}
-  review: [nprocs, ppn, case_dir, run_minutes, history_interval, time_step, walltime, queue]
+  review: [nprocs, ppn, case_dir, case_url, case_sha256, run_minutes, history_interval, time_step, walltime, queue]
   fill:
     run_dir: "{shared_dir}/run"
 
@@ -76,6 +82,9 @@ sizing:
     startup the run record measured. Request that times a safety coefficient
     of 1.5 at least, 2 when it rests on one short run or none: unused time is
     not charged when the run ends cleanly, so say so in the spend approval.
+    The first run that fetches its case through case_url also downloads the
+    archive inside the job (3.2 GB for CONUS 12 km, a few minutes at site
+    bandwidth); add that time once.
     NCAR measured about 0.4 s per step for the CONUS 12 km case on 144 cores.
 
 outputs:
