@@ -87,9 +87,10 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   with the job's hostfile, `nprocs`, the ranks per node `clio_ppn` decides and
   the Spack environment), and write under `shared_dir` and `private_dir`. No
   `mpirun` line, module, launcher flag, node name or site path in the package.
-  jarvis-cd's own `builtin` packages hardcode these; read one only as a
-  reference for how an application installs and launches. Relay never runs
-  them.
+  jarvis-cd's own `builtin` packages hardcode these; read one in jarvis-cd's
+  repository (`builtin/` in grc-iit/jarvis-cd) only as a reference for how an
+  application installs and launches. Relay never installs, registers or runs
+  them, so a package never depends on a `builtin.*` step.
 - A value is a literal, `{param: name}` or two-operand arithmetic, `div`,
   `mul`, `add` or `ceil_div`, whose operands are numbers, parameter names or
   more arithmetic: frames that include the first are

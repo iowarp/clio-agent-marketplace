@@ -42,6 +42,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.65): relay 2.0.0a13. jarvis-cd's `builtin` packages are not installed or registered for relay at all,
+  at the person's direction: relay's site setup removes them from its jarvis-cd environment, every JARVIS root drops the
+  `builtin` repository `jarvis init` lists, and relay collects the site's networks with its own package. clio-jarvis and
+  the person's own packages are the only sources. The use-relay and jarvis-package skills say so, and point to jarvis-cd's
+  repository for reading a builtin package as a reference. The Spanish defaults row title is shorter.
+
 - `clio-relay` (1.6.64): relay 2.0.0a12. The `clio-relay-compute` catalog allows the wide Add endpoint dialog,
   which 1.6.63's catalog refused, so CLIO showed no Compute page. Relay installs jarvis-cd 1.9.0 on a site from
   its release wheel, checked by SHA-256, in place of a GitHub archive of a commit, and never stages or runs

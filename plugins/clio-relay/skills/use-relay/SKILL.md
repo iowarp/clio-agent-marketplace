@@ -222,10 +222,13 @@ holds a package for the application, read its `contract.yaml` in that
 source (its parameters say which input it takes), then stage it and run it
 with the case as its input. Write a package with the `jarvis-package` skill only when no source
 holds one for the application, and then a generic one that takes the
-application's input, never one built around this case. Relay never stages,
-lists or runs jarvis-cd's own `builtin.*` packages: they hardcode a case or a
-site's setup. Read one only as a reference for how an application installs
-and launches, and take every site fact (MPI, launcher, nodes, paths) from the
+application's input, never one built around this case. Relay never installs,
+stages, lists or runs jarvis-cd's own `builtin.*` packages: they are written
+for a person to drive and hardcode a case or a site's setup, so a site relay
+set up has none. clio-jarvis is relay's own source of packages. Read a builtin
+package in jarvis-cd's repository (`builtin/` in grc-iit/jarvis-cd) only as a
+reference for how an application installs and launches, and take every site
+fact (MPI, launcher, nodes, paths) from the
 resource graph and JARVIS, as the `jarvis-package` skill says. When the person wants the case again
 later, offer to save how you wrote it as a skill of their own.
 
