@@ -42,6 +42,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.51) bundles clio-jarvis a8e9669: every package checks its parameters
+  against its contract when JARVIS checks the pipeline, so a plan or submit refuses a value
+  configure would refuse in the job (such as an empty `case_dir`) before any job starts. The
+  `wrf` summary now says `case_dir` is always required, with `case_url` fetching into it.
 - `clio-relay` (1.6.50) bundles clio-jarvis c6edbfe: `wrf` 0.1.1 takes `case_url` and
   `case_sha256`, so on a guarded site the reviewed package fetches a public case such as
   NCAR's CONUS 12 km benchmark inside its job, extracting only the case's files, instead of

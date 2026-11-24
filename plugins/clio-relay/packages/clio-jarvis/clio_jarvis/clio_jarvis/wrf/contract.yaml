@@ -15,8 +15,9 @@ summary: >-
   (https://www2.mmm.ucar.edu/wrf/users/benchmark/v44/v4.4_bench_conus12km.tar.gz,
   3.2 GB): 425 x 300 x 35 points, 72 s step, 12 h of boundary data from
   2019-11-26_12:00:00. Only wrfinput_d01, wrfbdy_d01, namelist.input and the
-  *.dat tables are needed. With case_url set to such an archive and case_dir
-  absent or empty, the job fetches the archive on the site once, streaming it
+  *.dat tables are needed. case_dir is always required: with case_url set to
+  such an archive and case_dir naming a directory that lacks the case, the job
+  fetches the archive on the site once, streaming it
   through tar so only the case's files land in case_dir, with its SHA-256 and
   source in clio-input-source.json; later runs reuse the case. This works on
   a guarded site, where the package is the reviewed code that downloads, and

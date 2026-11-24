@@ -136,6 +136,17 @@ class _ClioPackage:
         self._clio_prepare(resolved)
         self._clio_write_record(self.clio_contract(), resolved)
 
+    def check_config(self, config: dict[str, Any]) -> None:
+        """The contract's defaults, fills and parameter schema, as configure applies them.
+
+        JARVIS calls this on the submitting host before a plan or submit, so a
+        value configure would refuse in the job is refused before any job starts.
+        """
+        contract = self.clio_contract()
+        names = {entry["name"] for entry in contract.menu}
+        given = {name: config[name] for name in names if name in config}
+        contract.check_parameters(contract.resolve_config(given, self._clio_placement()))
+
     def _clio_resolve(self, kwargs: Mapping[str, Any]) -> dict[str, Any]:
         """Apply the contract's defaults and fill rules to ``self.config`` and check it."""
         contract = self.clio_contract()
