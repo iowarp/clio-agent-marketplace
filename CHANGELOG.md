@@ -42,6 +42,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.55) and `paraview` (1.0.10): a run never waits for its viewer. The skills say
+  to write each step whole and go straight on, with no ready marker, gate or timeout on the view,
+  and to judge any wait in a package by progress rather than by a time limit.
 - `clio-relay` (1.6.54) bundles clio-jarvis 949cf25: wrf's history output names the reader
   as paraview.simple does (NetCDFReader), so the live view opens its first step at once.
 - `clio-relay` (1.6.53) bundles clio-jarvis bb66ff8: wrf reads rank 0's log afresh on every

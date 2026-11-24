@@ -86,7 +86,10 @@ Read field names from it; never guess one. Keep the scene id it returns: passing
 
 On a growing source, call `open_view` as soon as the run starts. It waits for the
 first readable step, reporting progress, and if the source stops changing before
-one can be read, it fails with the reason; tell the person that reason.
+one can be read, it fails with the reason; tell the person that reason. The run
+never waits for the view: it writes its steps as they come, and the view shows
+the ones already written when it attaches and follows from there. Never make a
+run hold for a view, or fail when none attaches.
 
 ## Several views at once
 

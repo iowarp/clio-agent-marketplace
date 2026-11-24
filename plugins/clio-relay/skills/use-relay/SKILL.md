@@ -126,6 +126,14 @@ guarded site. Anything else, answers included, goes through `exec` with
   serving 600 s after the run ends) unless the person asks for another. The
   live view attaches while the run is going; linger only keeps the service up
   afterwards so the person can still look at the final output.
+- A run never waits for its viewer. When you write or change a package whose
+  output a live view follows, have it write each step whole as it comes (to a
+  temporary name, then renamed) and go straight on: the view reads whatever is
+  on disk when it attaches, so early steps are not lost. Never add a ready
+  marker, a gate or a pause that holds the run until a view attaches, and never
+  a timeout that fails it when none does. Anything a package does wait on is
+  judged by progress, not by a time limit: it says what it waits on and fails
+  only when that stops changing.
 - Runs write under the site's outputs directory, `describe`'s
   `info.facts.outputs_dir`, which `site_clean` keeps. Leave a package's
   `run_dir` at its default, which lands there. When you set a path for a run's
