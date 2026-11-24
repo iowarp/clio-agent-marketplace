@@ -42,6 +42,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.69): relay 2.0.0a17. An operation now has an owner: a relay server of another version only
+  reports another server's operation and never advances it, and an older one never takes over a newer one's. Site clean
+  removes only that site's own deployment (its `remote_dir` and the hop under it). On Windows a local job whose
+  supervisor died is settled instead of staying running. The jarvis-cd pin (1.9.1) and the clio-jarvis bundle are
+  unchanged.
 - `clio-relay` (1.6.68): relay 2.0.0a16. It fixes an a15 regression: on an ssh site every `jarvis execution get`,
   `cancel`, `stop` and `move` printed JARVIS's help, so relay could not observe, cancel or move a JARVIS job there.
   The jarvis-cd pin (1.9.1) and the clio-jarvis bundle are unchanged.
