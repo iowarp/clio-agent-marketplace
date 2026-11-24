@@ -91,6 +91,15 @@ def set_namelist(text: str, group: str, name: str, value: Any) -> str:
     return text[: start.end()] + body + text[stop:]
 
 
+def drop_namelist(text: str, name: str) -> str:
+    """Remove every ``name = ...`` line."""
+    return re.sub(rf"(?im)^[ \t]*{re.escape(name)}[ \t]*=.*\n?", "", text)
+
+
+#: WRF reads these intervals in minutes, and its _d, _h, _m and _s forms win over the plain one.
+_UNIT_FORMS = {"history_interval": ("_d", "_h", "_m", "_s"), "restart_interval": ("_d", "_h", "_m", "_s")}
+
+
 def case_window(text: str) -> tuple[dt.datetime, dt.datetime]:
     """The start and end time of domain 1 in a namelist's &time_control."""
 
@@ -181,28 +190,41 @@ class RslFollower:
         if _SUCCESS in text:
             self.success = True
 
+    def _read_from(self, offset: int) -> bytes:
+        # A fresh open each time: on a shared file system (NFS close-to-open) a handle kept
+        # open does not see what rank 0 writes from another node until its attributes expire.
+        try:
+            with self.log.open("rb") as handle:
+                handle.seek(offset)
+                return handle.read()
+        except FileNotFoundError:
+            return b""
+
     def _follow(self) -> None:
-        handle = None
-        pending = ""
+        offset = 0
+        pending = b""
+        quiet = 0
         while True:
             finishing = self._done.is_set()
-            if handle is None and self.log.is_file():
-                handle = self.log.open("r", encoding="utf-8", errors="replace")
-            chunk = handle.read() if handle is not None else ""
+            chunk = self._read_from(offset)
             if chunk:
-                pending += chunk
-                *lines, pending = pending.split("\n")
-                for line in lines:
+                offset += len(chunk)
+                quiet = 0
+                *lines, pending = (pending + chunk).split(b"\n")
+                for raw in lines:
+                    line = raw.decode("utf-8", errors="replace")
                     self("stdout", line)
                     self.observe(line)
                 continue
             if finishing:
-                if pending:
-                    self("stdout", pending)
-                    self.observe(pending)
-                if handle is not None:
-                    handle.close()
-                return
+                # The launch has returned; read until the log stops growing for a few polls.
+                quiet += 1
+                if quiet >= 4:
+                    if pending:
+                        line = pending.decode("utf-8", errors="replace")
+                        self("stdout", line)
+                        self.observe(line)
+                    return
             time.sleep(0.5)
 
 
@@ -314,6 +336,8 @@ class Wrf(ClioApplication):
         if config.get("time_step") not in (None, ""):
             values.append(("domains", "time_step", int(config["time_step"])))
         for group, name, value in values:
+            for suffix in _UNIT_FORMS.get(name, ()):
+                text = drop_namelist(text, name + suffix)
             text = set_namelist(text, group, name, value)
         run_dir = Path(config["run_dir"])
         run_dir.mkdir(parents=True, exist_ok=True)

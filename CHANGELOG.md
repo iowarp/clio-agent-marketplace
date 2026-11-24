@@ -42,6 +42,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.53) bundles clio-jarvis bb66ff8: wrf reads rank 0's log afresh on every
+  poll, so on a shared file system a run that ended with SUCCESS COMPLETE WRF on another
+  node is no longer judged failed on a cut log, and a case namelist's history_interval_m
+  (or _d, _h, _s) no longer overrides the history interval asked for.
 - `clio-relay` (1.6.52) bundles clio-jarvis edb8fc6: a package fetching its input over https
   trusts the operating system's CA bundle as well as Python's own, so a site Python whose
   frozen bundle is out of date (as Spack's is on Ares) still verifies the server.
