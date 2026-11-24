@@ -26,10 +26,7 @@ through relay; do not offer it for this.
 ## Find the bundled clio-jarvis
 
 `packages_read` lists relay's package sources under `sources`. The folder
-`<source>/clio-jarvis` is clio-jarvis at the pin this plugin bundles, and
-`<source>/jarvis-cd/builtin` is jarvis-cd's builtin repository at relay's
-JARVIS pin (packages without contracts, useful for how a `pkg.py` installs
-and launches an application). The clio-jarvis layout:
+`<source>/clio-jarvis` is clio-jarvis at the pin this plugin bundles:
 
 - `clio_jarvis/clio_jarvis/_contract/`: the shared code every package uses
   (`base.py` with `ClioApplication` and `ClioService`, `spec.py` with
@@ -85,6 +82,14 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
 - `install` is a Spack spec. Depend on the `mpi` virtual and never pin an MPI,
   so the site's MPI is reused. Use Spack's builtin recipe when it has one, as
   `wrf` does, so software the site already built is found.
+- Take every site fact from JARVIS and the resource graph, never from
+  `pkg.py`: launch the program with `self._clio_mpi(...)` (JARVIS's MPI exec,
+  with the job's hostfile, `nprocs`, the ranks per node `clio_ppn` decides and
+  the Spack environment), and write under `shared_dir` and `private_dir`. No
+  `mpirun` line, module, launcher flag, node name or site path in the package.
+  jarvis-cd's own `builtin` packages hardcode these; read one only as a
+  reference for how an application installs and launches. Relay never runs
+  them.
 - A value is a literal, `{param: name}` or two-operand arithmetic, `div`,
   `mul`, `add` or `ceil_div`, whose operands are numbers, parameter names or
   more arithmetic: frames that include the first are

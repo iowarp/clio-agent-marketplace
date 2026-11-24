@@ -220,14 +220,13 @@ now; it is not a package. Before writing anything, call
 `packages_read(match="<application>")` and read `available`. When a source
 holds a package for the application, read its `contract.yaml` in that
 source (its parameters say which input it takes), then stage it and run it
-with the case as its input. jarvis-cd's `builtin.*` packages have no
-`contract.yaml`: read the package's `README.md` and the `_configure_menu`
-in its `pkg.py` instead, and once it is staged its parameters are in
-`packages_read`. Relay knows no outputs or progress for such a package, so
-find where it writes from its README and pkg.py, and watch that directory
-with `exec_read` while it runs. Write a package with the `jarvis-package` skill only when no source
+with the case as its input. Write a package with the `jarvis-package` skill only when no source
 holds one for the application, and then a generic one that takes the
-application's input, never one built around this case. When the person wants the case again
+application's input, never one built around this case. Relay never stages,
+lists or runs jarvis-cd's own `builtin.*` packages: they hardcode a case or a
+site's setup. Read one only as a reference for how an application installs
+and launches, and take every site fact (MPI, launcher, nodes, paths) from the
+resource graph and JARVIS, as the `jarvis-package` skill says. When the person wants the case again
 later, offer to save how you wrote it as a skill of their own.
 
 ## Stage a package before it runs
@@ -243,10 +242,7 @@ Stage from one of two sources:
 - **Relay's package sources.** `packages(op="stage",
   package="clio_jarvis.xcompact3d")` with nothing else stages it from the
   package repositories installed beside relay. This plugin ships clio-jarvis
-  at its pin and jarvis-cd's `builtin` repository at relay's JARVIS pin
-  (`builtin.<name>`), so their packages need no download, no account and no
-  sign-in. A staged builtin package replaces the site JARVIS's own copy for
-  that job only.
+  at its pin, so its packages need no download, no account and no sign-in.
   The result's `sources` lists the directories relay looked in.
 - **A directory on the relay host.** `packages(op="stage", package="...",
   dir="/abs/path")` stages a package from the person's workspace, such as one
