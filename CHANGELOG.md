@@ -42,6 +42,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.67): relay 2.0.0a15, with jarvis-cd 1.9.1. Relay now leaves jarvis-cd's `builtin` packages out with
+  jarvis-cd's own option: every JARVIS call relay makes sets `JARVIS_NO_BUILTIN=1`, and every JARVIS root it sets up
+  records `no_builtin: true`, so JARVIS never registers or resolves them. A site set up by an earlier relay is asked
+  again for the new jarvis-cd. The workarounds that deleted the packages and dropped the repository are gone.
 - `clio-relay` (1.6.66): bundles clio-jarvis `d054b96`, which adds a generic `warpx` package. It takes WarpX's native
   inputs file and builds through a clio-jarvis Spack recipe that fixes Spack's own for builds without Python, and it
   publishes one AMReX plotfile per interval for ParaView to follow. A glob view, such as WarpX's plotfiles or WRF's
