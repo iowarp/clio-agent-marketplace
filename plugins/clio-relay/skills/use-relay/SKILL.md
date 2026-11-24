@@ -218,7 +218,7 @@ Stage from one of two sources:
   The result's `sources` lists the directories relay looked in.
 - **A directory on the relay host.** `packages(op="stage", package="...",
   dir="/abs/path")` stages a package from the person's workspace, such as one
-  just written with the JARVIS package skill. `dir` is the JARVIS repository
+  just written with the `jarvis-package` skill. `dir` is the JARVIS repository
   or the folder that holds it. The archive reaches the site as a job input,
   through the site's own file transfer (scp on an ssh site). Never push a
   person's package to a git repository to get it onto a site.

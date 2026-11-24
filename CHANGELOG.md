@@ -42,6 +42,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.57) adds the `jarvis-package` skill, which `use-relay` names when a run
+  needs a package relay does not ship: it points at the bundled clio-jarvis through
+  `packages_read`'s sources, lays out a package repository beside its schemas, lists what a
+  contract holds, and checks it statically before staging. Before it, the agent looked for
+  the skill by name, offered the separate Jarvis connector and read clio-jarvis from GitHub.
 - `clio-relay` (1.6.56) bundles clio-jarvis 96a133f: a contract's arithmetic operand may be
   arithmetic itself, so a frame count that includes the first frame,
   `{add: [{div: [nsteps, nstout]}, 1]}`, passes the site's check instead of being refused.
