@@ -42,6 +42,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.68): relay 2.0.0a16. It fixes an a15 regression: on an ssh site every `jarvis execution get`,
+  `cancel`, `stop` and `move` printed JARVIS's help, so relay could not observe, cancel or move a JARVIS job there.
+  The jarvis-cd pin (1.9.1) and the clio-jarvis bundle are unchanged.
 - `clio-relay` (1.6.67): relay 2.0.0a15, with jarvis-cd 1.9.1. Relay now leaves jarvis-cd's `builtin` packages out with
   jarvis-cd's own option: every JARVIS call relay makes sets `JARVIS_NO_BUILTIN=1`, and every JARVIS root it sets up
   records `no_builtin: true`, so JARVIS never registers or resolves them. A site set up by an earlier relay is asked
