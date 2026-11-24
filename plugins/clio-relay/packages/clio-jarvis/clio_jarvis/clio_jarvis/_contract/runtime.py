@@ -50,6 +50,13 @@ def _exists(path: str, kind: str) -> bool:
     return Path(path).exists()
 
 
+def _size(path: str, kind: str) -> int | None:
+    """Bytes under ``path``, or under every match of a glob; None when absent."""
+    matches = [Path(match) for match in glob.glob(path)] if kind == "glob" else [Path(path)]
+    present = [match for match in matches if match.exists()]
+    return sum(_tree_size(match) for match in present) if present else None
+
+
 def _positive_int(value: Any) -> int | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
@@ -348,20 +355,21 @@ class ContractArtifactAdapter:
         for output in self.views:
             if output["name"] not in self.state:
                 continue
-            path = Path(self._path(output))
-            if final is ArtifactState.FINALIZED and not path.exists():
+            path = self._path(output)
+            kind = output["path_kind"]
+            if final is ArtifactState.FINALIZED and not _exists(path, kind):
                 state = ArtifactState.FAILED
             else:
                 state = final
-            size = _tree_size(path) if path.exists() else None
             observations.append(
-                self._observation(output, state, growing=False, size=size, return_code=return_code)
+                self._observation(output, state, growing=False, size=_size(path, kind), return_code=return_code)
             )
         for output in written:
-            path = Path(self._path(output))
-            size = _tree_size(path) if path.exists() else None
             observations.append(
-                self._observation(output, final, growing=False, size=size, return_code=return_code)
+                self._observation(
+                    output, final, growing=False,
+                    size=_size(self._path(output), output["path_kind"]), return_code=return_code,
+                )
             )
         return observations
 

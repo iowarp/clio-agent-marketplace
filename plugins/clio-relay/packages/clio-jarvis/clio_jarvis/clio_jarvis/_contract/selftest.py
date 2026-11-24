@@ -14,6 +14,7 @@ the execution's progress and artifact records, the package's
 
 from __future__ import annotations
 
+import glob
 import importlib.util
 import json
 import os
@@ -156,7 +157,7 @@ class SelfTest:
 
     # -- jarvis ----------------------------------------------------------------
 
-    def jarvis(self, *args: str, timeout: float = 300, log: str | None = None) -> subprocess.CompletedProcess:
+    def jarvis(self, *args: str, timeout: float | None = 300, log: str | None = None) -> subprocess.CompletedProcess:
         command = jarvis_command() + list(args)
         print(f"[selftest {self.package}] $ {shlex.join(args)}", flush=True)
         result = subprocess.run(
@@ -239,11 +240,14 @@ class SelfTest:
         }
         pipeline_file = self.work / "pipeline.yaml"
         pipeline_file.write_text(yaml.safe_dump(pipeline, sort_keys=False), encoding="utf-8")
-        result = self.jarvis("ppl", "load", "yaml", str(pipeline_file), log="jarvis-ppl-load.log")
+        # Load and the install check concretize with the site's Spack, which
+        # can take minutes per spec; that is the site's time, not the
+        # package's, so neither has a time limit.
+        result = self.jarvis("ppl", "load", "yaml", str(pipeline_file), timeout=None, log="jarvis-ppl-load.log")
         if not report.check("jarvis ppl load", result.returncode == 0, result.stderr[-400:] if result.returncode else None):
             raise CheckFailed("jarvis ppl load failed")
         # The software comes from the package's Spack linkage only; the self-test never builds it.
-        result = self.jarvis("ppl", "install", "+check", "+json", timeout=900, log="jarvis-ppl-install-check.log")
+        result = self.jarvis("ppl", "install", "+check", "+json", timeout=None, log="jarvis-ppl-install-check.log")
         install = _last_json(result.stdout)
         report.facts["install"] = install.get("installers")
         if not report.check(
@@ -353,7 +357,7 @@ class SelfTest:
                 event is not None and event.get("state") == "finalized",
                 event.get("state") if event else "no artifact event",
             )
-            exists = Path(path).exists()
+            exists = bool(glob.glob(path)) if output["path_kind"] == "glob" else Path(path).exists()
             report.check(f"output {output['name']} exists", exists, path)
             if exists:
                 self._check_with_reader(output, path, int(expected or 0))

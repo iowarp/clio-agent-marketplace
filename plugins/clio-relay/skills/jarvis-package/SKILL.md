@@ -35,11 +35,12 @@ through relay; do not offer it for this.
   nearest to the new program before writing: `gray_scott` (a short MPI
   solver with a growing BP5 output), `xcompact3d` (an input file, a geometry
   and a long case), `wrf` (a case fetched on the site, one netCDF file per
-  step, a Spack builtin recipe) and `pvserver` (a service).
+  step, a Spack builtin recipe), `warpx` (a native inputs file, one AMReX
+  plotfile per interval, a fixed Spack recipe) and `pvserver` (a service).
 - `schemas/package-contract.v1.json`: the contract's schema. Check a part
   you are unsure of here rather than guessing.
 - `spack/`: clio-jarvis's own Spack recipes, for software Spack's builtin
-  repository lacks.
+  repository lacks or builds wrongly.
 
 Read these files where they are; do not fetch clio-jarvis from GitHub.
 
@@ -81,7 +82,11 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   `service` for a service. A missing part refuses the package and names it.
 - `install` is a Spack spec. Depend on the `mpi` virtual and never pin an MPI,
   so the site's MPI is reused. Use Spack's builtin recipe when it has one, as
-  `wrf` does, so software the site already built is found.
+  `wrf` does, so software the site already built is found. When that recipe
+  fails for the variants you need, subclass it in the repository's `spack/`,
+  fix only the fault, as clio-jarvis's `warpx` recipe does, and list `spack`
+  under `install.repos`. A Spack recipe is not a JARVIS package, so this does
+  not break the builtin rule below.
 - Take every site fact from JARVIS and the resource graph, never from
   `pkg.py`: launch the program with `self._clio_mpi(...)` (JARVIS's MPI exec,
   with the job's hostfile, `nprocs`, the ranks per node `clio_ppn` decides and

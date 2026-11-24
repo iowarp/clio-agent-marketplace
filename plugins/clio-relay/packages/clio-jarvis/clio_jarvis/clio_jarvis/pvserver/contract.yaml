@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: pvserver
-version: 0.3.9
+version: 0.3.10
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
@@ -128,7 +128,7 @@ selftest:
   # The generic runner's 'jarvis ppl run' starts and then stops the server.
   # selftest.py also serves it as relay does, with no lifetime: through
   # 'ppl start', a held wait and 'ppl stop', and through 'ppl run' with hold.
-  # Then coupled to a step (builtin.echo) it lingers: once to the end of a
+  # Then coupled to a step (a trivial one the check writes) it lingers: once to the end of a
   # 40 s linger with a client attaching, once stopped by SIGTERM mid-linger.
   params: {nprocs: 1, ppn: 1, port: 0, start_timeout: 120}
   max_seconds: 600

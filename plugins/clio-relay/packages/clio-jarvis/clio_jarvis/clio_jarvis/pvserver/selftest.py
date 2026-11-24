@@ -35,6 +35,32 @@ print("PVCONNECT ok", connection.GetURI())
 Disconnect()
 """
 
+# The coupled step pvserver lingers after: a trivial application in a JARVIS
+# repository the check writes itself, so it needs no package outside clio-jarvis.
+STEP_REPO = "clio_selftest_step"
+STEP_PKG = '''from jarvis_cd.core.pkg import Application
+
+
+class Step(Application):
+    """Prints one line and returns: the step pvserver views."""
+
+    def _configure_menu(self):
+        return []
+
+    def start(self):
+        print("clio-selftest step done", flush=True)
+'''
+
+
+def _write_step_repo(work: Path) -> Path:
+    repo = work / STEP_REPO
+    package = repo / STEP_REPO / "step"
+    package.mkdir(parents=True)
+    (repo / STEP_REPO / "__init__.py").write_text("", encoding="utf-8")
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "pkg.py").write_text(STEP_PKG, encoding="utf-8")
+    return repo
+
 
 def _listening(port: int) -> bool:
     """True when something listens on ``port``, read from /proc/net/tcp (never by connecting)."""
@@ -223,7 +249,7 @@ def _phase_stop_seconds(root: Path) -> float | None:
 
 
 def check_coupled_linger(context: dict, pvpython: str, ending: str, linger: int) -> None:
-    """pvserver viewing a step (builtin.echo) stays up ``linger`` s after it returns.
+    """pvserver viewing a step (a trivial step of the check's own) stays up ``linger`` s after it returns.
 
     ``ending`` "elapsed" lets the linger run out: ``jarvis ppl run`` ends
     about ``linger`` s after the step, with stop reason ``linger-ended``, and
@@ -239,6 +265,7 @@ def check_coupled_linger(context: dict, pvpython: str, ending: str, linger: int)
     root = work / "jarvis"
     shutil.rmtree(work, ignore_errors=True)
     work.mkdir(parents=True)
+    step_repo = _write_step_repo(work)
     env = {**os.environ, "JARVIS_ROOT": str(root)}
     port = _free_port()
     log_path = work / "jarvis.log"
@@ -247,9 +274,10 @@ def check_coupled_linger(context: dict, pvpython: str, ending: str, linger: int)
         for step in (
             ["init", str(root / "config"), str(root / "private"), str(root / "shared")],
             ["repo", "add", str(REPO_DIR)],
+            ["repo", "add", str(step_repo)],
             ["ppl", "create", f"linger_{ending}"],
             ["ppl", "append", "clio_jarvis.pvserver", "pkg", "nprocs=1", "persist=true", f"port={port}", f"linger={linger}"],
-            ["ppl", "append", "builtin.echo"],
+            ["ppl", "append", f"{STEP_REPO}.step"],
         ):
             result = subprocess.run(jarvis_command() + step, env=env, cwd=work, stdout=log, stderr=subprocess.STDOUT)
             if not check(f"{tag}: jarvis {' '.join(step[:2])}", result.returncode == 0, f"rc {result.returncode}"):

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "clio-jarvis"
 version = "0.2.0"
-description = "JARVIS packages that meet the clio relay package contract: Gray-Scott, Xcompact3d, WRF and pvserver"
+description = "JARVIS packages that meet the clio relay package contract: Gray-Scott, Xcompact3d, WRF, WarpX and pvserver"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "BSD-3-Clause"}
@@ -22,7 +22,7 @@ clio-jarvis = "clio_jarvis.__main__:main"
 where = ["clio_jarvis"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.xml", "*.i3d", "NOTICE"]
+"*" = ["*.yaml", "*.xml", "*.i3d", "*.inputs", "NOTICE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
