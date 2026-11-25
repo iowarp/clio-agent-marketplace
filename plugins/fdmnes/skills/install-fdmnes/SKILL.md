@@ -11,9 +11,14 @@ one. Reading, normalizing and comparing spectra work without it; only `run_xanes
 
 ## Look first
 
-FDMNES may already be installed, from this conversation or another: `fdmnes_status` finds
-`fdmnes` on PATH; also check `command -v fdmnes`. If it is there, use it and do not ask to
-build it again.
+`binary_missing` means only that the connector found no FDMNES where it looks: its **FDMNES
+program** value and `fdmnes` or `fdmnes_linux` on PATH. FDMNES may be elsewhere: a Spack
+install (`spack find -p fdmnes`, or this skill's own `~/.local/opt/clio-spack`), a cluster
+module (`module avail fdmnes`), or an unpacked download in another folder. Before offering a
+build, look there yourself, and ask the person when you cannot tell. When you find one, ask
+with `ask_user` whether to use it (name its path). Once the person agrees, set **FDMNES
+program** (`fdmnes`) to it with `set_connector_value`; the value belongs to this conversation,
+so tell them they can save it as their default in the FDMNES connector's settings.
 
 ## Ask first
 
@@ -60,7 +65,4 @@ after FDMNES releases a new one. Report that error as it is; do not bypass the c
 
 ## Check
 
-Call `fdmnes_status`: it finds the program with no setting. Set the connector's **FDMNES
-program** only for an FDMNES somewhere else (a cluster module); that value belongs to this
-conversation, so tell the person they can save it as their default in the FDMNES
-connector's settings. Then run the calculation again.
+Call `fdmnes_status`: it finds the program with no setting. Then run the calculation again.

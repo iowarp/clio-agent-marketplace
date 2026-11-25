@@ -10,6 +10,17 @@ gRASPA runs only on a GPU: NVIDIA (built with the NVIDIA HPC SDK) or AMD (built 
 ROCm/HIP). The gRASPA connector never downloads or builds it. Without it here,
 `prepare_graspa` still writes complete run folders and `read_graspa` reads them back.
 
+## Look first
+
+`binary_missing` means only that the connector found no gRASPA where it looks: its **gRASPA
+program** value and `nvc_main.x`, `hip_main.x`, `graspa` or `sycl.out` on PATH. On a machine
+with a GPU, gRASPA may be elsewhere: a Spack install (`spack find -p graspa`), a module
+(`module avail graspa`), or a build folder. Look there yourself, and ask the person when you
+cannot tell. When you find one, ask with `ask_user` whether to use it (name its path). Once
+the person agrees, set **gRASPA program** (`graspa`) to it with `set_connector_value` and use
+`run_graspa`; the value belongs to this conversation, so tell them they can save it as their
+default in the gRASPA connector's settings.
+
 ## Ask where it runs
 
 Ask once with `ask_user`:
@@ -46,5 +57,4 @@ cd <run folder> && <path>/nvc_main.x > graspa_stdout.txt
 
 Submit them as Slurm jobs (one per folder, or an array) with a GPU requested, copy the
 folders back if they ran on another file system, then `read_graspa` each one. Where
-gRASPA runs on this machine, set the connector's **gRASPA program** value to it and use
-`run_graspa`.
+gRASPA was built on this machine, set **gRASPA program** as in "Look first".

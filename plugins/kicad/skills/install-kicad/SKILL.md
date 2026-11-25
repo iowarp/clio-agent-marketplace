@@ -1,6 +1,6 @@
 ---
 name: install-kicad
-description: Install KiCad for KiCad MCP Pro on Linux, macOS or Windows, and run it without a screen (headless) so the server's IPC tools work, including how to skip KiCad's first-run wizard.
+description: Find a KiCad already on the machine (a portable or unusual folder included) and point KiCad MCP Pro at it, or install one, on Linux, macOS or Windows; and run it without a screen (headless) so the server's IPC tools work, including how to skip KiCad's first-run wizard.
 ---
 
 # Install KiCad and run it headless
@@ -19,6 +19,24 @@ KiCad MCP Pro needs two things from KiCad:
 With `KICAD_MCP_KICAD_INSTANCE=auto` the server starts that KiCad itself on the first tool that
 needs it, and `kicad_session_status` says which way it took. Everything below is what the
 server does, so you can do it by hand or tell the user what is missing.
+
+## 0. Look on the machine first
+
+"KiCad was not found" means only that the server found no `kicad-cli` where it looks:
+`KICAD_CLI_PATH`, PATH and KiCad's standard install folders (the ones in the table below). A
+portable or unzipped KiCad on another drive, or one in a conda environment, is not among
+them. Before offering an install, look for `kicad-cli` (`kicad-cli.exe` on Windows) yourself:
+on Windows, a few folder levels deep on each drive (`Get-ChildItem <drive>:\ -Recurse -Depth 4
+-Filter kicad-cli.exe -ErrorAction SilentlyContinue`); on macOS, `mdfind "kMDItemFSName ==
+'KiCad.app'"`; on Linux, `conda env list` and `find /opt ~ -maxdepth 5 -name kicad-cli`. When
+you cannot tell, ask the person whether they have KiCad somewhere.
+
+When you find one, run it with `version`, then ask with `ask_user` whether to use that copy
+(name its path and version) or install another. Once the person agrees, set the KiCad
+connector's **Where KiCad is** (`kicad_cli`) to its full path with `set_connector_value`; from
+your next step the server uses only that install. The value belongs to this conversation, so
+tell them they can save it as their default in the KiCad connector's settings. Install (below)
+only when there is no copy or the person wants a new one.
 
 ## 1. Install
 
@@ -71,13 +89,9 @@ field `signing_key_fingerprint`) in `/etc/apt/keyrings/kicad.gpg`.
 On Ubuntu, the `ngspice` package conflicts with KiCad's own `libngspice-kicad`. For circuit
 simulation, install ngspice through conda instead (the spice plugin's `install-simulator`).
 
-If the server did not find an install, record where it is yourself: set the KiCad connector's
-**Where KiCad is** setting (`kicad_cli`) to the full path of `kicad-cli` with
-`set_connector_value` (the setting is agent-settable, so you need not ask the person), or start
-the server with `KICAD_CLI_PATH=/path/to/kicad-cli`.
-Setting it also makes the server use only that install when it starts KiCad. Find the path
-from the install itself (for example `winget list --id KiCad.KiCad`, then the folder above);
-never guess one.
+If the server still does not find the new install, set `kicad_cli` as in step 0, with the
+path read from the install itself (for example `winget list --id KiCad.KiCad`, then the folder
+above); never guess one.
 
 ## 2. Run KiCad with no screen
 

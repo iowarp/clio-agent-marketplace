@@ -13,8 +13,9 @@ the person, and never use a service whose own AI lays the board out.
 
 The connector attaches to a running KiCad or starts one (headless where KiCad 11 allows,
 else on a virtual display). `kicad_session_status` says which, or what is missing. When
-KiCad is not installed, follow the `install-kicad` skill; installing system software is the
-person's decision, so say what you will run first.
+KiCad is not found, follow the `install-kicad` skill: it looks for a copy elsewhere on the
+machine first; installing system software is the person's decision, so say what you will
+run first.
 
 ## The path, and who does each step
 
@@ -31,10 +32,11 @@ person's decision, so say what you will run first.
 5. **Simulation.** Simulate power stages and filters on the spice connector, from
    `export_spice_netlist`; this connector does not simulate. When the spice connector is not
    on, offer it (`offer_plugin` with plugin `spice` and what you would simulate). When it finds
-   no simulator, its plugin's `install-simulator` skill asks the person to install one or to
-   skip simulation. A board with nothing to simulate (a regulator used exactly as its
-   datasheet's reference circuit, no filters) may skip it, and your summary says so. Whenever
-   simulation is skipped, the summary says what stays unverified.
+   no simulator, its plugin's `install-simulator` skill looks for one on the machine, then asks
+   the person to use it, install one or skip simulation. A board with nothing to simulate (a
+   regulator used exactly as its datasheet's reference circuit, no filters) may skip it, and
+   your summary says so. Whenever simulation is skipped, the summary says what stays
+   unverified.
 6. **Outline and holes.** `pcb_import_outline_dxf` draws the enclosure's outline and holes;
    `pcb_set_board_outline_shape` draws one from points; `pcb_add_mounting_holes` adds holes by
    pattern.

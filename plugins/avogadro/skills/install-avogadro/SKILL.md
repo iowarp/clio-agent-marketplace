@@ -17,14 +17,21 @@ macOS and Windows: the streamed view is Linux only (it needs an X display). Avog
 still be installed for the person to use on their desktop (`brew install --cask avogadro`,
 `winget install --id OpenChemistry.Avogadro2`), and structures move as files.
 
-## 0. Look before installing
+## 0. Look on the machine first
 
-Avogadro may already be installed, in this conversation or another. `avogadro_status`
-finds it on PATH (`avogadro2`) and where this skill installs it
-(`~/.local/opt/avogadro-<version>/squashfs-root/AppRun`); also check
-`command -v avogadro2` and `ls -d ~/.local/opt/avogadro-*` yourself. If it is there, use
-it: do not ask to install it again, and install only what `avogadro_status` still reports
-missing (often only the display programs).
+`not_installed` means only that `avogadro_status` found no Avogadro where it looks: the
+connector's **Where Avogadro is**, `avogadro2` on PATH, and where this skill installs it
+(`~/.local/opt/avogadro-<version>/squashfs-root/AppRun`). Avogadro may be elsewhere: an
+AppImage in Downloads or `/opt`, an unpacked `squashfs-root`, a distribution package outside
+PATH. Before offering an install, look yourself (`find ~ /opt -maxdepth 4 -iname
+'avogadro2*'`, and the AppRun of any unpacked copy). When you cannot tell, ask the person
+whether they have it somewhere.
+
+When you find one, ask with `ask_user` whether to use it (name its path). Once the person
+agrees, set **Where Avogadro is** (`avogadro`) to its path with `set_connector_value` and
+call `avogadro_status` again; the value belongs to this conversation, so tell them they can
+save it as their default in the Avogadro connector's settings. Install only what
+`avogadro_status` still reports missing (often only the display programs).
 
 ## 1. Ask first
 
@@ -81,7 +88,3 @@ on a minimal system they are missing and Avogadro exits at start. Check with
 
 Call `avogadro_status`: installed as above, it finds Avogadro and both programs with no
 setting, in this conversation and every later one. Then `open_in_avogadro`.
-
-Set the connector's **Where Avogadro is** only for an Avogadro somewhere else (a system
-package outside PATH, a shared install): that value belongs to this conversation, so tell
-the person they can save it as their default in the Avogadro connector's settings.

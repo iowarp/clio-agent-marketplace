@@ -24,4 +24,4 @@ Defaults are B3LYP and 6-31G*. Choose them with `method-ladder`.
   level.
 
 NWChem's own output is in the run folder (the calculator's `.nwo`); read it when a run
-fails or an SCF does not converge. When NWChem is not installed, use `install-nwchem`.
+fails or an SCF does not converge. When NWChem is not found, use `install-nwchem`.
