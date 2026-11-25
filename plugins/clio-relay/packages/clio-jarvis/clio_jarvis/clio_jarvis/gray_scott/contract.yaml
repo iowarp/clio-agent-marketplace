@@ -1,5 +1,6 @@
 schema: clio.package-contract.v1
 package: gray_scott
+title: Gray-Scott
 version: 0.2.4
 kind: application
 summary: >-

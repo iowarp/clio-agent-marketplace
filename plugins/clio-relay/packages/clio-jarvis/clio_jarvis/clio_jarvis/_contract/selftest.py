@@ -246,12 +246,12 @@ class SelfTest:
         result = self.jarvis("ppl", "load", "yaml", str(pipeline_file), timeout=None, log="jarvis-ppl-load.log")
         if not report.check("jarvis ppl load", result.returncode == 0, result.stderr[-400:] if result.returncode else None):
             raise CheckFailed("jarvis ppl load failed")
-        # The software comes from the package's Spack linkage only; the self-test never builds it.
+        # The software comes from the package's install part only; the self-test never installs it.
         result = self.jarvis("ppl", "install", "+check", "+json", timeout=None, log="jarvis-ppl-install-check.log")
         install = _last_json(result.stdout)
         report.facts["install"] = install.get("installers")
         if not report.check(
-            "Spack install satisfied",
+            "install satisfied",
             result.returncode == 0 and install.get("satisfied") is True,
             None if install.get("satisfied") else (install.get("issues") or result.stderr[-400:]),
         ):

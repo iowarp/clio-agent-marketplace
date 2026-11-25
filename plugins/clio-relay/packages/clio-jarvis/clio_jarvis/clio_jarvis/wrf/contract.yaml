@@ -1,5 +1,6 @@
 schema: clio.package-contract.v1
 package: wrf
+title: WRF
 version: 0.1.1
 kind: application
 summary: >-

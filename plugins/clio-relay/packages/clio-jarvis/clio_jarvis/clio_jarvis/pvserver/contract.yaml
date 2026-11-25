@@ -1,6 +1,7 @@
 schema: clio.package-contract.v1
 package: pvserver
-version: 0.3.11
+title: ParaView server
+version: 0.3.12
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
@@ -120,6 +121,11 @@ service:
         reaches cs://host:port through an SSH tunnel to host. The runtime's
         protocol is tcp (base_url tcp://host:port), which needs jarvis-cd
         4007fd14 or newer; the ready message names cs://.
+  # The solver's outputs flow into pvserver, though JARVIS starts pvserver first.
+  data_flow:
+    direction: in
+    kind: stream
+    label: outputs it views
   max_lifetime: {param: max_lifetime}
   linger: {param: linger}
 

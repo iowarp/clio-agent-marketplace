@@ -7,6 +7,30 @@
   "required": ["schema", "package", "version", "kind", "summary", "install", "parameters", "resources", "sizing", "outputs", "progress", "provenance", "selftest"],
   "additionalProperties": false,
   "$defs": {
+    "install_method": { "enum": ["spack", "pip", "conda", "container"] },
+    "install_query": {
+      "type": "string", "minLength": 1,
+      "description": "spack: a Spack spec, where MPI stays the mpi virtual (the spec never names an MPI, so the site's MPI is reused). pip: pip requirements. conda: conda specs. container: the image to pull. pip and conda never name an MPI."
+    },
+    "install_repos": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "spack only: Spack repositories holding recipes the query needs beyond Spack's builtin, relative to the clio-jarvis repository root."
+    },
+    "install_channels": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "conda only: the channels the specs come from, in order (conda-forge when empty)."
+    },
+    "install_option": {
+      "if": { "properties": { "method": { "const": "spack" } } },
+      "then": { "required": ["repos"], "not": { "required": ["channels"] } },
+      "else": {
+        "if": { "properties": { "method": { "const": "conda" } } },
+        "then": { "not": { "required": ["repos"] } },
+        "else": { "not": { "anyOf": [{ "required": ["repos"] }, { "required": ["channels"] }] } }
+      }
+    },
     "param_name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$" },
     "value": {
       "description": "A literal, a parameter reference {param: name}, or integer arithmetic over them. An operand may itself be arithmetic, so frames = steps / interval + 1 is {add: [{div: [nsteps, nstout]}, 1]}.",
@@ -62,24 +86,34 @@
   "properties": {
     "schema": { "const": "clio.package-contract.v1" },
     "package": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 40, "description": "The software's name as a person knows it (LAMMPS, GROMACS), for questions and cards. Without one, hosts show the package name." },
     "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([.+-][0-9A-Za-z.-]+)?$" },
     "kind": { "enum": ["application", "service"] },
     "summary": { "type": "string", "minLength": 1 },
     "install": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["method", "query", "repos"],
-      "description": "The package's Spack linkage. It becomes the install_method, install_query and install_repos menu defaults, which jarvis-cd's Spack installer plans: it finds what the site has and builds the rest.",
+      "required": ["method", "query"],
+      "description": "How JARVIS installs the software. It becomes the install_method, install_query, install_repos and install_channels menu defaults, and install_methods when there are alternatives. jarvis-cd's installer for the method finds what the site has and installs the rest; with alternatives JARVIS uses the method this site fits and asks the person when several fit. MPI and compiled HPC codes use spack only, so the site's Spack and MPI are reused.",
+      "allOf": [{ "$ref": "#/$defs/install_option" }],
       "properties": {
-        "method": { "const": "spack" },
-        "query": {
-          "type": "string", "minLength": 1,
-          "description": "Spack spec of the software. MPI stays the mpi virtual: the spec never names an MPI, so the site's MPI is reused."
-        },
-        "repos": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Spack repositories holding recipes the query needs beyond Spack's builtin, relative to the clio-jarvis repository root."
+        "method": { "$ref": "#/$defs/install_method" },
+        "query": { "$ref": "#/$defs/install_query" },
+        "repos": { "$ref": "#/$defs/install_repos" },
+        "channels": { "$ref": "#/$defs/install_channels" },
+        "alternatives": {
+          "type": "array", "minItems": 1,
+          "description": "Other ways to install the same software, each with a different method. The first entry is method, query, repos and channels above.",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["method", "query"],
+            "allOf": [{ "$ref": "#/$defs/install_option" }],
+            "properties": {
+              "method": { "$ref": "#/$defs/install_method" },
+              "query": { "$ref": "#/$defs/install_query" },
+              "repos": { "$ref": "#/$defs/install_repos" },
+              "channels": { "$ref": "#/$defs/install_channels" }
+            }
+          }
         }
       }
     },
@@ -248,6 +282,15 @@
                 "note": { "type": "string" }
               }
             }
+          }
+        },
+        "data_flow": {
+          "type": "object", "additionalProperties": false, "required": ["direction", "kind"],
+          "description": "Which way data moves between this service and the pipeline's other steps, whatever order JARVIS starts them in (it starts a service first). in: the steps that declare outputs write what this service reads; out: this service feeds every other step. Relay declares the matching couplings to JARVIS, so the plan and the job card draw producer to consumer.",
+          "properties": {
+            "direction": { "enum": ["in", "out"] },
+            "kind": { "enum": ["stream", "file", "service", "interceptor", "control", "other"] },
+            "label": { "type": "string" }
           }
         },
         "max_lifetime": { "$ref": "#/$defs/value" },

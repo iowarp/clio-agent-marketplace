@@ -42,6 +42,15 @@
 
 ### Changed
 
+- `clio-relay` (1.6.73): relay 2.0.0a19 with the jarvis-cd 1.9.2 pin, and bundles clio-jarvis `4f9ef07`. Every
+  choice relay asks is a titled select: each option has a label, one line saying where it runs, what it costs and
+  its limits, and JARVIS's recommendation with its reason, typed in `_meta` as well. The run approval names the
+  package by its contract title and the cost in words ("Run LAMMPS on ares? It may use up to 5 min on 2 nodes
+  (about 0.17 node-hours)."), and its job card names each component the same way. JARVIS passes on every install
+  method (Spack, pip, conda, container) as its own question; a service that crashes beside a finished application
+  is reported on its own; the Compute page reads faster. clio-jarvis `4f9ef07` adds contract titles (`LAMMPS`,
+  `ParaView server`). The use-relay skill draws each coupling's data flow and passes install-method questions on.
+  Proven live on Ares: a 2-node LAMMPS run from a clean site, and get, move and cancel on a held install.
 - `clio-relay` (1.6.72): bundles clio-jarvis `8c45bc6`, pvserver 0.3.11. A pvserver that crashes (a segfault in
   a filter, a nonzero exit) starts again on the same port up to `crash_restarts` times (default 3), so the ParaView
   view rejoins it and rebuilds its scenes; the ready record counts crashes and the stop record lists each one. The

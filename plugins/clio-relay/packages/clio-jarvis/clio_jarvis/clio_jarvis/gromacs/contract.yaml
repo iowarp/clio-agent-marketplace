@@ -1,5 +1,6 @@
 schema: clio.package-contract.v1
 package: gromacs
+title: GROMACS
 version: 0.1.0
 kind: application
 summary: >-

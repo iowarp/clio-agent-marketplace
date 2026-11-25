@@ -435,22 +435,51 @@ class Contract:
     def defaults(self) -> dict[str, Any]:
         return {entry["name"]: entry.get("default") for entry in self.menu}
 
-    def install(self) -> dict[str, Any]:
-        """The Spack linkage as jarvis-cd menu values.
+    def install_options(self) -> list[dict[str, Any]]:
+        """The install block's first entry, then its alternatives."""
+        return install_options(self.data["install"])
 
-        Repositories are POSIX paths relative to the package directory (the one
-        holding pkg.py), such as ``../../../spack``. jarvis-cd resolves them
-        against that directory wherever the package is loaded, which is the
-        site the job runs on, so no host's absolute path is stored.
+    def install(self) -> dict[str, Any]:
+        """The install part as jarvis-cd menu values.
+
+        Spack repositories are POSIX paths relative to the package directory
+        (the one holding pkg.py), such as ``../../../spack``. jarvis-cd
+        resolves them against that directory wherever the package is loaded,
+        which is the site the job runs on, so no host's absolute path is
+        stored. With alternatives, ``install_method`` stays empty and
+        ``install_methods`` lists them all, so JARVIS picks the one this site
+        fits and asks the person when several do.
         """
-        spec = self.data["install"]
-        return {
-            "install_method": spec["method"],
-            "install_query": spec["query"],
-            "install_repos": [
-                Path(os.path.relpath(REPO_ROOT / repo, self.pkg_dir)).as_posix() for repo in spec["repos"]
-            ],
+        options = [self._menu_option(option) for option in self.install_options()]
+        first = options[0]
+        values: dict[str, Any] = {
+            "install_method": first["method"] if len(options) == 1 else "",
+            "install_query": first["query"],
+            "install_repos": first.get("repos", []),
         }
+        if "channels" in first:
+            values["install_channels"] = first["channels"]
+        if len(options) > 1:
+            values["install_methods"] = options
+        return values
+
+    def _menu_option(self, option: Mapping[str, Any]) -> dict[str, Any]:
+        entry: dict[str, Any] = {"method": option["method"], "query": option["query"]}
+        if "repos" in option:
+            entry["repos"] = [
+                Path(os.path.relpath(REPO_ROOT / repo, self.pkg_dir)).as_posix() for repo in option["repos"]
+            ]
+        if "channels" in option:
+            entry["channels"] = list(option["channels"])
+        return entry
+
+    def _described_install(self) -> dict[str, Any]:
+        """The install part as relay reads it: the first option, then its alternatives."""
+        first, *rest = (
+            {key: list(value) if isinstance(value, list) else value for key, value in option.items()}
+            for option in self.install_options()
+        )
+        return {**first, "alternatives": rest} if rest else first
 
     def resolve_config(
         self, config: Mapping[str, Any], placement: Mapping[str, Any] | None = None
@@ -585,12 +614,9 @@ class Contract:
             "version": self.version,
             "sha256": self.sha256,
             "kind": self.kind,
+            "title": self.data.get("title") or self.pkg_type,
             "summary": self.data["summary"],
-            "install": {
-                "method": self.data["install"]["method"],
-                "query": self.data["install"]["query"],
-                "repos": list(self.data["install"]["repos"]),
-            },
+            "install": self._described_install(),
             "parameters": self.parameters_schema(),
             "review": list(self.data["parameters"].get("review") or []),
             "sizing": dict(self.data["sizing"]),
@@ -686,13 +712,68 @@ def load_contract(pkg_dir: str | Path) -> Contract:
     class_name, menu = read_menu(pkg_dir)
     contract = Contract(pkg_dir=pkg_dir, data=data, class_name=class_name, menu=menu)
     _check_semantics(contract)
-    contract.sha256 = package_sha256(pkg_dir, data["install"]["repos"])
+    contract.sha256 = package_sha256(pkg_dir, spack_repos(data["install"]))
     return contract
+
+
+def install_options(spec: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """An install block's first entry, then its alternatives, each without alternatives."""
+    first = {key: value for key, value in spec.items() if key != "alternatives"}
+    return [first, *(dict(option) for option in spec.get("alternatives") or [])]
+
+
+def spack_repos(spec: Mapping[str, Any]) -> list[str]:
+    """The Spack repositories every install option names, in order, once each."""
+    repos: list[str] = []
+    for option in install_options(spec):
+        for repo in option.get("repos") or []:
+            if repo not in repos:
+                repos.append(repo)
+    return repos
+
+
+#: Names a pip or conda query must not install: an MPI (conda's mpi4py pulls one in).
+_PACKAGE_MANAGER_MPI = re.compile(
+    r"^\s*(?:[\w.-]+::)?(openmpi|mpich|mvapich2?|intel-mpi|impi[-_]rt|intel-oneapi-mpi|"
+    r"cray-mpich|hpcx-mpi|msmpi|mpi4py|mpi)\b",
+    re.IGNORECASE,
+)
+
+#: MPI decompositions: such a code is compiled against the site's MPI, so Spack installs it.
+_MPI_DECOMPOSITIONS = {"pencil2d", "block3d"}
 
 
 def _check_install(contract: Contract) -> None:
     package = contract.package
-    spec = contract.data["install"]
+    methods = [option["method"] for option in contract.install_options()]
+    duplicated = sorted({method for method in methods if methods.count(method) > 1})
+    if duplicated:
+        raise ContractError(package, "install", f"lists the method {duplicated[0]!r} twice")
+    for option in contract.install_options():
+        if option["method"] == "spack":
+            _check_spack(package, option)
+        elif option["method"] in ("pip", "conda"):
+            _check_package_manager(contract, option)
+
+
+def _check_package_manager(contract: Contract, option: Mapping[str, Any]) -> None:
+    package, method = contract.package, option["method"]
+    decomposition = contract.data["sizing"]["decomposition"]
+    if decomposition in _MPI_DECOMPOSITIONS:
+        raise ContractError(
+            package, "install",
+            f"{method} cannot install a {decomposition} MPI code; use spack so the site's MPI is reused",
+        )
+    for token in option["query"].split():
+        match = _PACKAGE_MANAGER_MPI.match(token)
+        if match:
+            raise ContractError(
+                package, "install",
+                f"{method} query names the MPI {match.group(1)!r}; MPI comes from the site's Spack",
+            )
+
+
+def _check_spack(package: str, spec: Mapping[str, Any]) -> None:
     match = _MPI_PROVIDERS.search(spec["query"])
     if match:
         raise ContractError(

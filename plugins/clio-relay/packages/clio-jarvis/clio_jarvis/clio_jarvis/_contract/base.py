@@ -54,7 +54,7 @@ def mpi_safe_env(env: Mapping[str, Any]) -> dict[str, str]:
 class _ClioPackage:
     """Shared RL40 behaviour. Mixed in ahead of a jarvis-cd base class."""
 
-    #: Program the Spack install puts on PATH; the deployment contract probes it.
+    #: Program the package's install puts on PATH; the deployment contract probes it.
     clio_program: str = ""
     #: None: check the program is on PATH without running it.
     clio_probe_arguments: tuple[str, ...] | None = ("--version",)
@@ -70,30 +70,42 @@ class _ClioPackage:
             self._clio_contract_cache = load_contract(Path(self.pkg_dir))
         return self._clio_contract_cache
 
-    def configure_menu(self) -> list[dict[str, Any]]:
-        """jarvis-cd's menu with the contract's Spack linkage as the install defaults.
+    #: Install menu keys the contract fills, with the entry to add when jarvis-cd's menu lacks one.
+    _CLIO_INSTALL_ENTRIES: dict[str, dict[str, Any]] = {
+        "install_repos": {
+            "msg": "Spack repositories with recipes the install_query needs beyond Spack's builtin",
+            "type": list,
+            "args": [{"name": "repo", "msg": "Spack repository directory, relative to the package directory", "type": str}],
+        },
+        "install_channels": {
+            "msg": "Conda channels the install_query comes from, in order",
+            "type": list,
+            "args": [{"name": "channel", "msg": "Conda channel", "type": str}],
+        },
+        "install_methods": {
+            "msg": "Ways to install the package; JARVIS uses the one this site fits and asks when several fit",
+            "type": list,
+        },
+    }
 
-        ``jarvis ppl install`` plans the query in the pipeline's Spack
-        environment: it reuses what the site already has and builds the rest
-        from Spack's builtin repository and the repositories named here. Those
-        are relative to the package directory and jarvis-cd resolves them on
-        the host that loads the package, the site that runs the job.
+    def configure_menu(self) -> list[dict[str, Any]]:
+        """jarvis-cd's menu with the contract's install part as the install defaults.
+
+        ``jarvis ppl install`` hands each package to the installer for its
+        method, which reuses what the site already has and installs the rest.
+        Spack repositories are relative to the package directory and jarvis-cd
+        resolves them on the host that loads the package, the site that runs
+        the job.
         """
         install = self.clio_contract().install()
         menu = [dict(entry) for entry in super().configure_menu()]  # type: ignore[misc]
         for entry in menu:
-            if entry.get("name") in ("install_method", "install_query", "install_repos"):
+            if entry.get("name") in install:
                 entry["default"] = install[entry["name"]]
-        if not any(entry.get("name") == "install_repos" for entry in menu):
-            menu.append(
-                {
-                    "name": "install_repos",
-                    "msg": "Spack repositories with recipes the install_query needs beyond Spack's builtin",
-                    "type": list,
-                    "default": install["install_repos"],
-                    "args": [{"name": "repo", "msg": "Spack repository directory, relative to the package directory", "type": str}],
-                }
-            )
+        present = {entry.get("name") for entry in menu}
+        for name, entry in self._CLIO_INSTALL_ENTRIES.items():
+            if name in install and name not in present:
+                menu.append({"name": name, **entry, "default": install[name]})
         return menu
 
     def _clio_placement(self) -> dict[str, Any]:
@@ -209,7 +221,7 @@ class _ClioPackage:
     # -- launching ------------------------------------------------------------
 
     def clio_executable(self) -> str:
-        """The program, found on the PATH that ``spack load`` of the install query gives."""
+        """The program, found on the PATH the package's install gives (spack load, venv, env)."""
         return self.clio_program
 
     def _clio_mpi(self, command: str, cwd: str, line_callback=None, check: bool = True) -> dict[str, int]:
@@ -260,7 +272,8 @@ class _ClioPackage:
         requirement = RuntimeRequirement(
             requirement_id=contract.package,
             description=(
-                f"{self.clio_executable()} available through PATH from the Spack install "
+                f"{self.clio_executable()} available through PATH from the "
+                f"{contract.data['install']['method']} install "
                 f"{contract.data['install']['query']!r} (jarvis ppl install)"
             ),
             required_capabilities=self.clio_capabilities,

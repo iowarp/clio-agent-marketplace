@@ -1,5 +1,6 @@
 schema: clio.package-contract.v1
 package: xcompact3d
+title: Xcompact3d
 version: 0.3.11
 kind: application
 summary: >-
