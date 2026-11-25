@@ -48,6 +48,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.80): relay 2.0.0a27, at jarvis-cd 1.9.9. When a Spack at the site fails only because of some
+  repos in the person's user config, JARVIS's question first offers, and recommends, leaving out only those repos:
+  JARVIS uses its own copy of the scope without them, so the good repos and the site copies built from them stay
+  usable. Running without the user config stays as the fallback.
 - `clio-relay` (1.6.79): relay 2.0.0a26, at jarvis-cd 1.9.8. When a Spack at the site fails, for example on a broken
   repo in the person's user config, JARVIS's question is asked as written: run its Spack commands without the user
   config (with what that leaves out), skip that Spack, or fix it and check again. A site copy that does not load is
