@@ -356,8 +356,8 @@ wheels = [
 
 [[package]]
 name = "clio-relay"
-version = "2.0.0a20"
-source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a20/clio_relay-2.0.0a20-py3-none-any.whl" }
+version = "2.0.0a23"
+source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a23/clio_relay-2.0.0a23-py3-none-any.whl" }
 dependencies = [
     { name = "aioquic" },
     { name = "clio-schemas" },
@@ -380,7 +380,7 @@ dependencies = [
     { name = "websockets" },
 ]
 wheels = [
-    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a20/clio_relay-2.0.0a20-py3-none-any.whl", hash = "sha256:6e56a43cb64b38fc4c8ec1ed8b081d4ff251b4a7bd64deecd774775b4eae3d55" },
+    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a23/clio_relay-2.0.0a23-py3-none-any.whl", hash = "sha256:f2ae26325b6c7ee5217722ccec222adea99a49ace45f99b407937862bbc77f7c" },
 ]
 
 [package.optional-dependencies]
@@ -420,14 +420,14 @@ provides-extras = ["globus", "iri", "tapis", "testing"]
 
 [[package]]
 name = "clio-relay-server"
-version = "2.0.0a20"
+version = "2.0.0a23"
 source = { virtual = "." }
 dependencies = [
     { name = "clio-relay", extra = ["tapis"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a20/clio_relay-2.0.0a20-py3-none-any.whl" }]
+requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a23/clio_relay-2.0.0a23-py3-none-any.whl" }]
 
 [[package]]
 name = "clio-schemas"

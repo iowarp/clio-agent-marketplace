@@ -42,6 +42,20 @@
 
 ### Changed
 
+- `clio-relay` (1.6.75): relay 2.0.0a23, with the jarvis-cd 1.9.6 pin. A person's Decline is its own outcome,
+  not a failure: the result is not an error and carries `declined` (the question, and what relay did not do), and
+  a job card's outcome reads "declined". The Compute page's Local label and "This computer" row show in the page's
+  language. It also carries a21 and a22:
+  - every ask is one short question, with its detail typed in `_meta`;
+  - an install's walltime is JARVIS's estimate unless the site sets one, and a time past the partition is the
+    person's choice;
+  - a failed JARVIS command shows JARVIS's own error;
+  - a site's named JARVIS that lacks a package's Python requirements is refused, naming them;
+  - the `jarvis_graph` site setting;
+  - the jarvis-cd 1.9.3 to 1.9.5 container fixes.
+
+  Proven live on Ares: a held install moved and cancelled, and an install declined at its approval with nothing
+  submitted.
 - `clio-relay` (1.6.74): relay 2.0.0a20. A job card's revision now rises with every change to the job (each
   component state, progress step and output tail), not only when its state moves, and every change announces
   `relay://jobs/{op}`, whoever observed it, so a card no longer sticks on Running after the job ends. The Compute
