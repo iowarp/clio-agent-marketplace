@@ -48,6 +48,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.76): found for a remote cluster. Its keywords add ssh, cluster, supercomputer, remote compute,
+  mpi, jarvis, tapis and pbs, so a search for any of them offers relay now that the ssh plugin is retired. The
+  use-relay skill says a site is reached only through relay, never with `ssh`, `scp` or `sbatch` in a shell or
+  with `apt` probes; JARVIS installs site software through `install`; and a site not yet set up is added by the
+  person on the Compute page.
+- `slurm` (0.6.3): the hpc-batch-jobs skill covers jobs on CLIO's own machine; a remote site goes through relay.
 - `clio-relay` (1.6.75): relay 2.0.0a23, with the jarvis-cd 1.9.6 pin. A person's Decline is its own outcome,
   not a failure: the result is not an error and carries `declined` (the question, and what relay did not do), and
   a job card's outcome reads "declined". The Compute page's Local label and "This computer" row show in the page's

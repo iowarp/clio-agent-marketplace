@@ -13,6 +13,19 @@ and removes the JARVIS packages `run` takes, `install` installs a package's
 software on a site ahead of any run, and `shutdown` stops relay's long-lived
 processes when the host closes.
 
+## Relay is the way to a site
+
+Reach a compute site only through relay, even one you could reach over SSH
+yourself. Do not run `ssh`, `scp`, `rsync` or `sbatch` for a site through a
+shell tool, and do not probe the site's system packages (`apt`, `dnf`, `yum`,
+`brew`): relay keeps the person's guard, their asks and the record of what ran.
+Software on a site is installed by JARVIS through relay's `install` (or a
+`run`'s install step), from the site's Spack, modules and MPI; never by hand.
+
+When the site the person names is not in `describe`'s list, or no site is set
+up yet, ask the person to add it on the Compute page, then call `describe`
+again. Do not set it up yourself.
+
 ## Reads never ask
 
 Four tools only read: `describe`, `exec_read`, `files_read` and

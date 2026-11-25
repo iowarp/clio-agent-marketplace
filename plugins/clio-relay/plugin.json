@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "clio-relay",
-  "version": "1.6.75",
-  "description": "Relay: run jobs, commands, file transfers and services on your compute endpoints, and manage those endpoints on the Compute page.",
+  "version": "1.6.76",
+  "description": "Relay: run jobs, commands, file transfers and services on your compute sites (clusters and supercomputers over SSH, Globus Compute, Tapis), install their software through JARVIS, and manage those sites on the Compute page.",
   "author": {
     "name": "IoWarp Team"
   },
@@ -12,7 +12,16 @@
     "compute",
     "sites",
     "slurm",
-    "globus"
+    "globus",
+    "ssh",
+    "cluster",
+    "supercomputer",
+    "remote compute",
+    "remote",
+    "mpi",
+    "jarvis",
+    "tapis",
+    "pbs"
   ],
   "extensions": {
     "ai.iowarp.clio": {
