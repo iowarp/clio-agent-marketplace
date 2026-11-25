@@ -124,6 +124,14 @@ guarded site. Anything else, answers included, goes through `exec` with
   both in one `serve` pipeline, with each step's `host_slice` parameter placing
   it on its nodes (pvserver `0:2`, xcompact3d `2:6`, say). JARVIS decides which
   step serves from each package's deployment profile.
+- The order of a pipeline's packages is the order JARVIS starts them in, not
+  the way data moves: a service starts before the solver that feeds it. When
+  you describe or draw a pipeline, take the direction from the job card's
+  `couplings` (each `from` feeds its `to`) and the components' order there,
+  which is producer first, never from the packages' order: xcompact3d feeds
+  pvserver, so draw xcompact3d --> pvserver. Relay fills the couplings from
+  the packages' contracts; give a job's `couplings` yourself only when a
+  contract cannot say, such as two solvers where one reads the other's output.
 - Leave a service package's `linger` at the package's default (pvserver keeps
   serving 180 s after the run ends) unless the person asks for a longer one.
   The linger lets a following view draw the run's last steps and the person
@@ -340,6 +348,22 @@ unless the person wants to change one.
   person agrees, then call the same `run` again. Exit 3 with
   `ambiguous_compiler` lists the compilers to choose from: ask the person, run
   it again with `--compiler`, and do not pick one yourself.
+- **How a package installs.** JARVIS owns the install method: Spack, pip
+  (into a venv JARVIS keeps for the pipeline), conda (into an env from a conda
+  JARVIS finds, or the Miniforge it offers to install in the site home), or a
+  container (pulled with the site's engine, rootless podman or Apptainer,
+  never a shared Docker daemon). Relay passes whichever JARVIS resolves
+  through the same `install` ask, and the ask says which method each package
+  uses. When a package offers several methods that fit the site, or JARVIS
+  cannot tell which python, conda or engine to use, it asks (`install_method`,
+  `python_missing`, `conda_missing`, `conda_select`, `container_engine`). Pass
+  the question on with its candidates and let the person pick; never pick a
+  method, an env or an engine yourself. MPI and compiled HPC codes always come
+  from the site's Spack and modules: JARVIS refuses a pip or conda MPI
+  (`mpi_from_package_manager`), so do not try to work around it with `exec`.
+  A failed install says its method and kind (`pip_install_failed`,
+  `conda_install_failed`, `container_pull_failed` and the like) with
+  JARVIS's remedy; relay it as it is.
 - **Moving a queued job.** When a job's start is far off and another
   partition would take it now, relay asks the person whether to keep waiting
   or move it, and JARVIS moves the same job on their answer. Do not cancel and

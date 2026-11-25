@@ -83,13 +83,21 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
 - The contract needs every part: `install`, `parameters`, `resources`,
   `sizing`, `outputs`, `progress`, `provenance` and `selftest`, plus
   `service` for a service. A missing part refuses the package and names it.
-- `install` is a Spack spec. Depend on the `mpi` virtual and never pin an MPI,
+- `install` names a `method` and its `query`. `method: spack`, the method for
+  every application, takes a Spack spec. Depend on the `mpi` virtual and never pin an MPI,
   so the site's MPI is reused. Use Spack's builtin recipe when it has one, as
   `wrf` does, so software the site already built is found. When that recipe
   fails for the variants you need, subclass it in the repository's `spack/`,
   fix only the fault, as clio-jarvis's `warpx` recipe does, and list `spack`
   under `install.repos`. A Spack recipe is not a JARVIS package, so this does
   not break the builtin rule below.
+- `method: pip`, `conda` or `container` is only for software with no MPI and
+  nothing compiled against the site, such as a Python-only analysis tool: pip
+  takes requirements, conda takes package specs (with `channels`), a container
+  takes an image. List other methods that also fit under `install.alternatives`;
+  JARVIS then asks the person which one the site uses, and never picks for
+  them. The contract refuses an MPI (or an MPI decomposition) installed with
+  pip or conda: an MPI code is a Spack package, whatever else it offers.
 - Take every site fact from JARVIS and the resource graph, never from
   `pkg.py`: launch the program with `self._clio_mpi(...)` (JARVIS's MPI exec,
   with the job's hostfile, `nprocs`, the ranks per node `clio_ppn` decides and
