@@ -42,6 +42,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.71): relay 2.0.0a18. Two looks at one install operation, in one relay server or two of the same
+  version, no longer both move it on when its check job ends, so each question is asked once. A fault while relay
+  checks a task no longer ends the agent's hold on it, so later answers still reach relay. The jarvis-cd pin (1.9.1)
+  and the clio-jarvis bundle are unchanged.
 - `clio-relay` (1.6.70): bundles clio-jarvis `0d94ab4`, which adds generic `lammps` and `gromacs` packages. `lammps`
   takes a native LAMMPS input script and `gromacs` takes GROMACS's own case files (structure, topology, .mdp files)
   with the gmx stages before the watched run. Each writes one VTK PolyData particle frame per output interval while
