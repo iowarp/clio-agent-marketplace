@@ -15,10 +15,15 @@ processes when the host closes.
 
 ## Relay is the way to a site
 
-Reach a compute site only through relay, even one you could reach over SSH
-yourself. Do not run `ssh`, `scp`, `rsync` or `sbatch` for a site through a
-shell tool, and do not probe the site's system packages (`apt`, `dnf`, `yum`,
-`brew`): relay keeps the person's guard, their asks and the record of what ran.
+Relay owns the connection to every site the person has set up, whatever its
+transport. Reach a configured site only through relay's tools, never from a
+shell tool: run no `ssh`, `scp`, `rsync` or scheduler command (`sbatch`,
+`squeue`, `qsub`) for it, do not check its connection, host name or
+credentials yourself, and do not probe the site's system packages (`apt`,
+`dnf`, `yum`, `brew`): relay keeps the person's guard, their asks and the
+record of what ran. `describe(site=...)` reaches the site and, when relay
+cannot, says why with a typed refusal or the sign-in it needs. A site's
+transport and config are how relay reaches it, not something to open or test.
 Software on a site is installed by JARVIS through relay's `install` (or a
 `run`'s install step), from the site's Spack, modules and MPI; never by hand.
 
