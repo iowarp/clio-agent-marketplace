@@ -48,6 +48,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.78): relay 2.0.0a25, at jarvis-cd 1.9.7. When JARVIS finds the site's own copies of a package before a
+  Spack build, the person is asked "use the site's copy, or build with Spack?" as JARVIS wrote it: each copy and the
+  Spack build with JARVIS's meaning and its recommended mark, and the answer is recorded through JARVIS's decisions, so
+  a site copy installs nothing. When JARVIS finds none, the install approval says so. An install job's card is
+  labelled from the package or spec it installs, such as "Install lammps@20240829.1".
 - `clio-relay` (1.6.77): relay 2.0.0a24. Its MCP server instructions open with relay as the way to reach a compute
   site (never `ssh`, `scp` or a scheduler command in a shell, even for a host in an ssh config; a site not listed is
   added by the person on the Compute page), then name each configured site with its transport, such as "ares
