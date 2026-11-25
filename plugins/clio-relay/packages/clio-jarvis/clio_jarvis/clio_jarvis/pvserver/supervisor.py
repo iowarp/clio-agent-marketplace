@@ -12,6 +12,15 @@ pvserver serves one client session and exits when that client disconnects
 supervisor then starts a new pvserver on the same port and prints
 ``clio-pvserver restarted port=N``, so the service outlives its clients.
 
+With ``--crash-restarts N`` a pvserver that crashes (a nonzero exit or a
+signal, such as a segfault in a filter) is started again on the same port up
+to N times: the supervisor kills what is left of its process group, waits for
+the port to close, prints ``clio-pvserver crashed signal_SIGSEGV restarting
+crashes=K``, reports degraded and then ready again, and counts the crash in
+the ready record (``crashes``, ``last_crash`` with its last output lines). A
+client that saved its scene can join again and rebuild it. A crash past the
+budget ends the service as before; the stop record lists every crash.
+
 On SIGTERM or SIGINT, at the lifetime limit, or when pvserver exits without
 being restarted, it stops the server and writes ``pvserver-stop.json``
 (clio.service-stop.v1).
@@ -618,6 +627,7 @@ class Supervisor:
 
         ready_at = None
         restarts = 0
+        crashes: list[dict] = []
         if self.stop_reason is None:
             why = self.wait_listening(server, port)
             if why is None:
@@ -649,6 +659,8 @@ class Supervisor:
                 "linger": args.linger,
                 "lingering": False,
                 "restarts": 0,
+                "crashes": 0,
+                "crash_restarts": args.crash_restarts,
             }
             write_json(self.state_dir / READY_FILE, ready)
             served = (
@@ -704,12 +716,27 @@ class Supervisor:
                 if self.stop_reason is not None:
                     break
                 # A clean exit after a client session is pvserver's normal end of
-                # session; anything else is a real failure.
-                if not (args.persist and code == 0 and self.client_seen.is_set()):
+                # session; a crash (a nonzero exit or a signal) restarts within
+                # the crash budget; anything else ends the service.
+                session_ended = args.persist and code == 0 and self.client_seen.is_set()
+                if session_ended:
+                    restarts += 1
+                    runtime("degraded", f"pvserver client session ended; restarting on port {port} (restart {restarts})")
+                elif code != 0 and len(crashes) < args.crash_restarts:
+                    crash = self.crash_note(code)
+                    crashes.append(crash)
+                    self.reap(server, port)
+                    runtime(
+                        "degraded",
+                        f"pvserver crashed ({crash['how']}); restarting on port {port} "
+                        f"(crash restart {len(crashes)} of {args.crash_restarts})",
+                    )
+                    self.say(f"clio-pvserver crashed {crash['how'].replace(' ', '_')} restarting crashes={len(crashes)}")
+                else:
+                    if code != 0 and args.crash_restarts:
+                        crashes.append(self.crash_note(code))
                     self.stop_reason = "server-exited"
                     break
-                restarts += 1
-                runtime("degraded", f"pvserver client session ended; restarting on port {port} (restart {restarts})")
                 server, reader = self.launch(port, log)
                 why = self.wait_listening(server, port)
                 if why is not None:
@@ -717,12 +744,20 @@ class Supervisor:
                         self.stop_reason = self.stop_reason or "failed-to-restart"
                         self.cause = self.diagnosis(why)
                     break
-                ready.update(server_pid=server.pid, restarts=restarts, restarted_at=now())
+                ready.update(
+                    server_pid=server.pid,
+                    restarts=restarts,
+                    restarted_at=now(),
+                    crashes=len(crashes),
+                    crash_restarts=args.crash_restarts,
+                    last_crash=crashes[-1] if crashes else None,
+                )
                 write_json(self.state_dir / READY_FILE, ready)
-                if not runtime("ready", f"{listens}; restart {restarts}"):
+                note = f"; restart {restarts}" if session_ended else f"; back after crash {len(crashes)}"
+                if not runtime("ready", f"{listens}{note}"):
                     self.stop_reason = "report-failed"
                     break
-                self.say(f"clio-pvserver restarted port={port} restarts={restarts}")
+                self.say(f"clio-pvserver restarted port={port} restarts={restarts} crashes={len(crashes)}")
 
         if self.stop_reason in ("signal", "max-lifetime", "linger-ended") and ready_at is not None:
             runtime("stopping", f"stopping pvserver at {endpoint} ({self.stop_reason})")
@@ -744,7 +779,34 @@ class Supervisor:
             runtime("stopped", f"pvserver at {endpoint} stopped ({self.stop_reason}){lingered}")
         else:
             runtime("failed", f"pvserver at {endpoint} ended: {self.stop_reason}, server exit code {server_code}")
-        return self.finish(log, port, started, ready_at, restarts, server_code)
+        return self.finish(log, port, started, ready_at, restarts, server_code, crashes)
+
+    def crash_note(self, code: int) -> dict:
+        """What a crashed pvserver left: its exit, when, and its last output lines."""
+        how = f"exit code {code}"
+        name = None
+        number = -code if code < 0 else code - 128 if code > 128 else None
+        if number:
+            try:
+                name = signal.Signals(number).name
+                how = f"signal {name}"
+            except ValueError:
+                pass
+        return {"code": code, "signal": name, "how": how, "at": now(), "evidence": list(self.recent)[-12:]}
+
+    def reap(self, server: subprocess.Popen, port: int) -> None:
+        """Kill what is left of a crashed server's process group (ranks on this
+        node, a wedged mpiexec) and wait for its port to close, so the restart
+        is not taken as ready on the old socket."""
+        try:
+            os.killpg(server.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+        deadline = time.monotonic() + self.args.grace
+        while listening(port) and time.monotonic() < deadline:
+            time.sleep(0.2)
+        self.recent.clear()
+        self.failure = None
 
     def exit_code(self, server_code: int | None) -> int:
         if self.stop_reason in ("signal", "max-lifetime", "linger-ended"):
@@ -753,7 +815,16 @@ class Supervisor:
             return server_code if server_code else 0
         return 1
 
-    def finish(self, log, port: int, started: str, ready_at: str | None, restarts: int, server_code: int | None) -> int:
+    def finish(
+        self,
+        log,
+        port: int,
+        started: str,
+        ready_at: str | None,
+        restarts: int,
+        server_code: int | None,
+        crashes: list[dict] | None = None,
+    ) -> int:
         stopped = now()
         self.end_linger("elapsed" if self.stop_reason == "linger-ended" else str(self.stop_reason))
         record = {
@@ -766,6 +837,8 @@ class Supervisor:
             "ready_at": ready_at,
             "stopped_at": stopped,
             "restarts": restarts,
+            "crashes": crashes or [],
+            "crash_restarts": self.args.crash_restarts,
             "server_exit_code": server_code,
             "cause": self.cause,
             "linger": self.linger,
@@ -837,6 +910,12 @@ def parse(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("--connect-id", type=int, default=0)
     parser.add_argument("--persist", action="store_true", help="start a new pvserver on the same port after each client session")
+    parser.add_argument(
+        "--crash-restarts",
+        type=_nonnegative_int,
+        default=0,
+        help="times a crashed pvserver (nonzero exit or signal) is started again on the same port; 0 means a crash ends the service",
+    )
     parser.add_argument(
         "--max-lifetime",
         type=_positive_int,

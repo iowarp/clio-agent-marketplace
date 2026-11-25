@@ -42,6 +42,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.72): bundles clio-jarvis `8c45bc6`, pvserver 0.3.11. A pvserver that crashes (a segfault in
+  a filter, a nonzero exit) starts again on the same port up to `crash_restarts` times (default 3), so the ParaView
+  view rejoins it and rebuilds its scenes; the ready record counts crashes and the stop record lists each one. The
+  relay server (2.0.0a18) and the jarvis-cd pin (1.9.1) are unchanged.
+- `paraview` (1.0.11): the paraview-scenes skill builds geometry from ParaView's filters and sources, never from
+  hand-built `vtkCellArray` cells in a ProgrammableFilter, which can crash pvserver.
 - `clio-relay` (1.6.71): relay 2.0.0a18. Two looks at one install operation, in one relay server or two of the same
   version, no longer both move it on when its check job ends, so each question is asked once. A fault while relay
   checks a task no longer ends the agent's hold on it, so later answers still reach relay. The jarvis-cd pin (1.9.1)

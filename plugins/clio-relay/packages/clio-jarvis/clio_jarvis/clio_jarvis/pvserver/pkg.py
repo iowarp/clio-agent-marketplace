@@ -131,6 +131,12 @@ class Pvserver(ClioService):
                 "default": True,
             },
             {
+                "name": "crash_restarts",
+                "msg": "Times a crashed pvserver (nonzero exit or signal) starts again on the same port, so a client can rejoin and rebuild its scene; 0 means a crash ends the service",
+                "type": int,
+                "default": 3,
+            },
+            {
                 "name": "hold",
                 "msg": "Keep start running until the server stops, so a hand-run 'jarvis ppl run' serves until it is signalled",
                 "type": bool,
@@ -340,6 +346,8 @@ class Pvserver(ClioService):
         argv += self._linger_arguments()
         if config.get("persist"):
             argv.append("--persist")
+        crash_restarts = config.get("crash_restarts")
+        argv += ["--crash-restarts", str(max(0, int(3 if crash_restarts in (None, "") else crash_restarts)))]
         self._clio_service_exec = Exec(
             shlex.join(argv),
             LocalExecInfo(

@@ -1,6 +1,6 @@
 schema: clio.package-contract.v1
 package: pvserver
-version: 0.3.10
+version: 0.3.11
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
@@ -30,6 +30,10 @@ summary: >-
   carries a linger block. Request the job's walltime as the solver's
   walltime plus twice the linger (6 minutes more at the default), since a
   job ends, and is charged, when its pipeline does.
+  A pvserver that crashes (a segfault in a filter, a nonzero exit) starts
+  again on the same port up to crash_restarts times (default 3), so a
+  client can rejoin and rebuild its scene; the ready record counts crashes
+  with the last one's output, and the stop record lists every crash.
 
 install:
   method: spack
@@ -50,6 +54,8 @@ parameters:
     max_lifetime: {minimum: 1}
     # No cap either; 0 means the server stops with the pipeline's steps.
     linger: {minimum: 0}
+    # 0 means a crash ends the service.
+    crash_restarts: {minimum: 0}
     start_timeout: {minimum: 5, maximum: 3600}
     walltime: {minimum: 1}
   review: [nprocs, port, connect_id, max_lifetime, linger, walltime, queue]
