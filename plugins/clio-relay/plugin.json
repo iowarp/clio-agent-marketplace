@@ -1,16 +1,18 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "clio-relay",
-  "version": "1.6.76",
+  "version": "1.6.77",
   "description": "Relay: run jobs, commands, file transfers and services on your compute sites (clusters and supercomputers over SSH, Globus Compute, Tapis), install their software through JARVIS, and manage those sites on the Compute page.",
   "author": {
     "name": "IoWarp Team"
   },
   "license": "MIT",
+  "category": "HPC",
   "keywords": [
     "hpc",
     "compute",
     "sites",
+    "compute site",
     "slurm",
     "globus",
     "ssh",

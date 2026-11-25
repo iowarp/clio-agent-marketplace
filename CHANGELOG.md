@@ -48,6 +48,13 @@
 
 ### Changed
 
+- `clio-relay` (1.6.77): relay 2.0.0a24. Its MCP server instructions open with relay as the way to reach a compute
+  site (never `ssh`, `scp` or a scheduler command in a shell, even for a host in an ssh config; a site not listed is
+  added by the person on the Compute page), then name each configured site with its transport, such as "ares
+  (ssh)", so a search of recorded instructions finds relay by a site name. The install approval states what
+  JARVIS found (the spec, the Spack packages already on the site, the MPI it builds against, its estimate), and its
+  Approve and Decline say what each does. plugin.json gets `category` "HPC" and the keyword "compute site"; CLIO
+  warns about the top-level field and ignores it until it reads a native plugin's category.
 - `clio-relay` (1.6.76): found for a remote cluster. Its keywords add ssh, cluster, supercomputer, remote compute,
   mpi, jarvis, tapis and pbs, so a search for any of them offers relay now that the ssh plugin is retired. The
   use-relay skill says a site is reached only through relay, never with `ssh`, `scp` or `sbatch` in a shell or
