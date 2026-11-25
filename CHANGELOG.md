@@ -42,6 +42,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.74): relay 2.0.0a20. A job card's revision now rises with every change to the job (each
+  component state, progress step and output tail), not only when its state moves, and every change announces
+  `relay://jobs/{op}`, whoever observed it, so a card no longer sticks on Running after the job ends. The Compute
+  page draws again with no sites. Proven live on Ares: a 2-node LAMMPS run followed to its end over MCP tasks and
+  the job resource, get, move and cancel on a held install, and an install that reaches its Spack placement choice.
 - `clio-relay` (1.6.73): relay 2.0.0a19 with the jarvis-cd 1.9.2 pin, and bundles clio-jarvis `4f9ef07`. Every
   choice relay asks is a titled select: each option has a label, one line saying where it runs, what it costs and
   its limits, and JARVIS's recommendation with its reason, typed in `_meta` as well. The run approval names the
