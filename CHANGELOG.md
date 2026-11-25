@@ -48,6 +48,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.79): relay 2.0.0a26, at jarvis-cd 1.9.8. When a Spack at the site fails, for example on a broken
+  repo in the person's user config, JARVIS's question is asked as written: run its Spack commands without the user
+  config (with what that leaves out), skip that Spack, or fix it and check again. A site copy that does not load is
+  asked as written too: another of the site's copies, a Spack build, or forget the choice. The use-relay skill and
+  relay's instructions say relay owns the connection to every site, so the agent reads no ssh config and probes no
+  host itself.
 - `clio-relay` (1.6.78): relay 2.0.0a25, at jarvis-cd 1.9.7. When JARVIS finds the site's own copies of a package before a
   Spack build, the person is asked "use the site's copy, or build with Spack?" as JARVIS wrote it: each copy and the
   Spack build with JARVIS's meaning and its recommended mark, and the answer is recorded through JARVIS's decisions, so
