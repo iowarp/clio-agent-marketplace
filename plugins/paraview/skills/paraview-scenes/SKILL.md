@@ -145,6 +145,19 @@ objects by id or label, e.g. `objects["o1"]` for the dataset) and `folder`.
   own filters (`Calculator`, `Gradient`, `Contour`) to a `ProgrammableFilter`. In
   a `ProgrammableFilter`, return before any reduction when the input has no
   points or lacks the array.
+- Never build cells by hand (`vtkCellArray.SetData`, raw offsets and
+  connectivity arrays, `InsertNextCell` loops) in a script or a
+  `ProgrammableFilter`. A wrong offset or a freed numpy buffer gives garbage
+  bounds and can crash the ParaView server when the view resets its camera.
+  Make geometry with ParaView's own sources and filters instead: `Glyph`,
+  `ExtractSurface`, `Delaunay2D`, `TableToPoints`, `Line`, `PolyLineSource`,
+  `Sphere`. To add values to existing points, attach arrays to the input's copy
+  with `vtk.numpy_interface.dataset_adapter` (`output.PointData.append(arr,
+  name)`) and keep its cells.
+- A script that makes geometry should check it before it ends: read
+  `obj.GetDataInformation().GetBounds()` and raise when a bound is not finite,
+  min exceeds max, or the values are near 1e-308. The failing script then
+  leaves nothing behind; rebuild that step from filters.
 - The view's default colour range is the 2nd to 98th percentile of the shown values. If a feature still reads faint, measure the field (measure_field on the shown object) and set the range in run_scene_script with `GetColorTransferFunction(f).RescaleTransferFunction(lo, hi)` (kept as set). For a signed field with a diverging map, set a symmetric range (±the larger of |p2|, |p98|).
 - The result lists what the script made, with the ids to use later. A script that
   fails leaves nothing behind and says why; fix it and run it again.
