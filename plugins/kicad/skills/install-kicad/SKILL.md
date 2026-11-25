@@ -23,9 +23,10 @@ server does, so you can do it by hand or tell the user what is missing.
 ## 0. Look on the machine first
 
 "KiCad was not found" means only that the server found no `kicad-cli` where it looks:
-`KICAD_CLI_PATH`, PATH and KiCad's standard install folders (the ones in the table below). A
-portable or unzipped KiCad on another drive, or one in a conda environment, is not among
-them. Before offering an install, look for `kicad-cli` (`kicad-cli.exe` on Windows) yourself:
+`KICAD_CLI_PATH`, PATH and KiCad's standard install folders (the Windows and macOS ones in the
+table below). A portable or unzipped KiCad on another drive, or one in a conda environment,
+is not among them. Before offering an install, look for `kicad-cli` (`kicad-cli.exe` on
+Windows) yourself:
 on Windows, a few folder levels deep on each drive (`Get-ChildItem <drive>:\ -Recurse -Depth 4
 -Filter kicad-cli.exe -ErrorAction SilentlyContinue`); on macOS, `mdfind "kMDItemFSName ==
 'KiCad.app'"`; on Linux, `conda env list` and `find /opt ~ -maxdepth 5 -name kicad-cli`. When
@@ -40,9 +41,11 @@ only when there is no copy or the person wants a new one.
 
 ## 1. Install
 
-Installing system software is the person's decision: ask once (`ask_user`), naming the
-command, and offer a no-admin route where there is one. Then run it yourself; the sandbox and
-the operating system each ask the person before anything changes:
+Installing software is the person's decision: ask once (`ask_user`), naming the command.
+Offer the **per-user** install for their system (the first row for it below): it needs no
+administrator rights and raises no UAC or password prompt. Offer a machine-wide install only
+when the person asks for one. Then run it yourself; the sandbox and the operating system each
+ask the person before anything changes:
 
 - **A folder the sandbox blocks** (a user-space install, Homebrew's own folders): retry with
   `access_paths`; CLIO raises the folder card.
@@ -55,25 +58,26 @@ the operating system each ask the person before anything changes:
   privileges'` (macOS shows its password dialog); on a **Linux desktop**, run it as
   `pkexec <command>` (the system's authentication dialog). As root in a container no prompt
   is needed. Never ask for a password in the conversation and never pipe one to `sudo`.
-- If the person declines, give them the exact command to run in their own terminal, or use
-  the no-admin route.
+- If the person declines, give them the exact command to run in their own terminal.
 
 | System | Command | Notes |
 | --- | --- | --- |
-| Ubuntu, Debian | `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt update && sudo apt install --no-install-recommends kicad kicad-symbols kicad-footprints kicad-templates` | `kicad-packages3d` adds the 3D models (several GB); install it only when 3D views or STEP exports need component bodies |
-| Ubuntu, nightly (KiCad 11 preview, for `api-server`) | `sudo add-apt-repository ppa:kicad/kicad-dev-nightly && sudo apt install kicad-nightly` | Installs beside KiCad 10 as `kicad-cli-nightly`, `pcbnew-nightly` |
-| Fedora | `sudo dnf install kicad` | |
-| Arch | `sudo pacman -S kicad kicad-library` | |
-| macOS | `brew install --cask kicad` | `--appdir=~/Applications` installs without administrator rights. Or the disk image from kicad.org. `kicad-cli` is in `<Applications>/KiCad/KiCad.app/Contents/MacOS/` |
-| Windows | `winget install --id KiCad.KiCad -e --accept-source-agreements --accept-package-agreements` | Machine-wide, so Windows asks for approval (UAC). `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
-| Windows, no admin rights | `winget install --id KiCad.KiCad -e --scope user --accept-source-agreements --accept-package-agreements` | A per-user install: no UAC prompt. `kicad-cli.exe` is in `%LOCALAPPDATA%\Programs\KiCad\<version>\bin\`. Offer it when the person cannot approve an administrator prompt |
-| Conda (no admin rights) | `conda install -c conda-forge kicad` | A user-space install; useful where installing system packages is not allowed |
+| Windows, per user | `winget install --id KiCad.KiCad -e --scope user --accept-source-agreements --accept-package-agreements` | No UAC prompt. `kicad-cli.exe` is in `%LOCALAPPDATA%\Programs\KiCad\<version>\bin\` |
+| Windows, machine-wide (only when asked) | `winget install --id KiCad.KiCad -e --scope machine --accept-source-agreements --accept-package-agreements` | Windows asks for approval (UAC). `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
+| macOS, per user | `brew install --cask kicad --appdir=~/Applications` | No password. Without Homebrew, open the disk image from kicad.org and drag KiCad into `~/Applications`. `kicad-cli` is in `~/Applications/KiCad/KiCad.app/Contents/MacOS/` |
+| macOS, machine-wide (only when asked) | `brew install --cask kicad` | Into `/Applications`; macOS may ask for the password |
+| Linux, per user | `conda create -y -p "$HOME/.local/opt/kicad" -c conda-forge kicad` (or `micromamba`) | No root. `kicad-cli` is in `~/.local/opt/kicad/bin/`; set `kicad_cli` to it (end of this step). Where neither conda nor micromamba is available, say so and offer the system package |
+| Ubuntu, Debian, system (only when asked, or no per-user route) | `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt update && sudo apt install --no-install-recommends kicad kicad-symbols kicad-footprints kicad-templates` | `kicad-packages3d` adds the 3D models (several GB); install it only when 3D views or STEP exports need component bodies |
+| Ubuntu, nightly (KiCad 11 preview, for `api-server`) | `sudo add-apt-repository ppa:kicad/kicad-dev-nightly && sudo apt install kicad-nightly` | System-wide; installs beside KiCad 10 as `kicad-cli-nightly`, `pcbnew-nightly` |
+| Fedora, system (only when asked) | `sudo dnf install kicad` | |
+| Arch, system (only when asked) | `sudo pacman -S kicad kicad-library` | |
 
 **Disk space for the 3D models.** The 3D model package is several gigabytes once unpacked,
 more than the rest of KiCad together. Before installing it, read its size
 (`apt-cache show kicad-packages3d`, field `Installed-Size`, in kB; on macOS and Windows the
-models come with the installer) and the free space where it goes (`df -h /usr` on Linux and
-macOS, `Get-PSDrive C` on Windows), and tell the person both. When the space is short, offer
+models come with the installer) and the free space where it goes (`df -h` on the install
+folder on Linux and macOS, `Get-PSDrive` for its drive on Windows), and tell the person both.
+When the space is short, offer
 the choice: skip the models (the 3D view and STEP export then show the board, tracks and
 pads without component bodies), or let the person free space. Never free space yourself by
 deleting folders you did not create, and never CLIO's own folders: a running connector's
@@ -89,9 +93,9 @@ field `signing_key_fingerprint`) in `/etc/apt/keyrings/kicad.gpg`.
 On Ubuntu, the `ngspice` package conflicts with KiCad's own `libngspice-kicad`. For circuit
 simulation, install ngspice through conda instead (the spice plugin's `install-simulator`).
 
-If the server still does not find the new install, set `kicad_cli` as in step 0, with the
-path read from the install itself (for example `winget list --id KiCad.KiCad`, then the folder
-above); never guess one.
+If the server does not find the new install (always so for the Linux per-user route, which is
+outside its places), set `kicad_cli` as in step 0, with the path read from the install itself
+(for example `winget list --id KiCad.KiCad`, then the folder above); never guess one.
 
 ## 2. Run KiCad with no screen
 
