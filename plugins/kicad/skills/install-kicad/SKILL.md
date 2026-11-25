@@ -48,6 +48,7 @@ the operating system each ask the person before anything changes:
 | Arch | `sudo pacman -S kicad kicad-library` | |
 | macOS | `brew install --cask kicad` | `--appdir=~/Applications` installs without administrator rights. Or the disk image from kicad.org. `kicad-cli` is in `<Applications>/KiCad/KiCad.app/Contents/MacOS/` |
 | Windows | `winget install --id KiCad.KiCad -e --accept-source-agreements --accept-package-agreements` | Machine-wide, so Windows asks for approval (UAC). `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
+| Windows, no admin rights | `winget install --id KiCad.KiCad -e --scope user --accept-source-agreements --accept-package-agreements` | A per-user install: no UAC prompt. `kicad-cli.exe` is in `%LOCALAPPDATA%\Programs\KiCad\<version>\bin\`. Offer it when the person cannot approve an administrator prompt |
 | Conda (no admin rights) | `conda install -c conda-forge kicad` | A user-space install; useful where installing system packages is not allowed |
 
 **Disk space for the 3D models.** The 3D model package is several gigabytes once unpacked,
@@ -70,8 +71,13 @@ field `signing_key_fingerprint`) in `/etc/apt/keyrings/kicad.gpg`.
 On Ubuntu, the `ngspice` package conflicts with KiCad's own `libngspice-kicad`. For circuit
 simulation, install ngspice through conda instead (the spice plugin's `install-simulator`).
 
-If the server did not find an install, point it at the CLI: `KICAD_CLI_PATH=/path/to/kicad-cli`.
-Setting it also makes the server use only that install when it starts KiCad.
+If the server did not find an install, record where it is yourself: set the KiCad connector's
+**Where KiCad is** setting (`kicad_cli`) to the full path of `kicad-cli` with
+`set_connector_value` (the setting is agent-settable, so you need not ask the person), or start
+the server with `KICAD_CLI_PATH=/path/to/kicad-cli`.
+Setting it also makes the server use only that install when it starts KiCad. Find the path
+from the install itself (for example `winget list --id KiCad.KiCad`, then the folder above);
+never guess one.
 
 ## 2. Run KiCad with no screen
 
