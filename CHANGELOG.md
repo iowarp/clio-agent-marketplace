@@ -40,6 +40,12 @@
   system prompt, no tools and no context injections, so its input is exactly the
   conversation; for attention attribution (SPOTTER-AI) and small local models.
 
+### Removed
+
+- `ssh` (1.0.0): retired. Its only tool was the `ssh_execute` built-in, which CLIO no
+  longer has (relay's sites run remote commands and transfers), so the plugin could
+  not resolve. Remote work goes through `clio-relay`.
+
 ### Changed
 
 - `clio-relay` (1.6.75): relay 2.0.0a23, with the jarvis-cd 1.9.6 pin. A person's Decline is its own outcome,
