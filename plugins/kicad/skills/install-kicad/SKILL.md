@@ -24,12 +24,14 @@ server does, so you can do it by hand or tell the user what is missing.
 
 "KiCad was not found" means only that the server found no `kicad-cli` where it looks:
 `KICAD_CLI_PATH`, PATH and KiCad's standard install folders (the Windows and macOS ones in the
-table below). A portable or unzipped KiCad on another drive, or one in a conda environment,
-is not among them. Before offering an install, look for `kicad-cli` (`kicad-cli.exe` on
+table below). A portable or unzipped KiCad on another drive, or a Flatpak KiCad, is not among
+them. Before offering an install, look for `kicad-cli` (`kicad-cli.exe` on
 Windows) yourself:
 on Windows, a few folder levels deep on each drive (`Get-ChildItem <drive>:\ -Recurse -Depth 4
 -Filter kicad-cli.exe -ErrorAction SilentlyContinue`); on macOS, `mdfind "kMDItemFSName ==
-'KiCad.app'"`; on Linux, `conda env list` and `find /opt ~ -maxdepth 5 -name kicad-cli`. When
+'KiCad.app'"`; on Linux, `flatpak list --app --columns=application | grep org.kicad.KiCad`
+(a Flatpak KiCad needs the wrappers from the Linux per-user row below) and
+`find /opt ~ -maxdepth 5 -name kicad-cli`. When
 you cannot tell, ask the person whether they have KiCad somewhere.
 
 When you find one, run it with `version`, then ask with `ask_user` whether to use that copy
@@ -66,7 +68,7 @@ ask the person before anything changes:
 | Windows, machine-wide (only when asked) | `winget install --id KiCad.KiCad -e --scope machine --accept-source-agreements --accept-package-agreements` | Windows asks for approval (UAC). `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
 | macOS, per user | `brew install --cask kicad --appdir=~/Applications` | No password. Without Homebrew, open the disk image from kicad.org and drag KiCad into `~/Applications`. `kicad-cli` is in `~/Applications/KiCad/KiCad.app/Contents/MacOS/` |
 | macOS, machine-wide (only when asked) | `brew install --cask kicad` | Into `/Applications`; macOS may ask for the password |
-| Linux, per user | `conda create -y -p "$HOME/.local/opt/kicad" -c conda-forge kicad` (or `micromamba`) | No root. `kicad-cli` is in `~/.local/opt/kicad/bin/`; set `kicad_cli` to it (end of this step). Where neither conda nor micromamba is available, say so and offer the system package |
+| Linux, per user (Flatpak) | `flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo && flatpak install --user -y flathub org.kicad.KiCad` | No root. `kicad-cli` is inside the sandbox at `/app/bin/kicad-cli`, so write two `#!/bin/sh` wrappers in `~/.local/bin/` (`chmod +x`): `kicad-cli` with `exec flatpak run --command=/app/bin/kicad-cli org.kicad.KiCad "$@"` and `pcbnew` with `exec flatpak run --command=/app/bin/pcbnew org.kicad.KiCad "$@"`, then set `kicad_cli` to `~/.local/bin/kicad-cli` (full path). The Flatpak reads and writes the home folder, `/media` and `/run/media` only; for a board elsewhere, `flatpak override --user --filesystem=<folder> org.kicad.KiCad`. Where `flatpak` is missing, say so and offer the system package. conda-forge has no KiCad package |
 | Ubuntu, Debian, system (only when asked, or no per-user route) | `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt update && sudo apt install --no-install-recommends kicad kicad-symbols kicad-footprints kicad-templates` | `kicad-packages3d` adds the 3D models (several GB); install it only when 3D views or STEP exports need component bodies |
 | Ubuntu, nightly (KiCad 11 preview, for `api-server`) | `sudo add-apt-repository ppa:kicad/kicad-dev-nightly && sudo apt install kicad-nightly` | System-wide; installs beside KiCad 10 as `kicad-cli-nightly`, `pcbnew-nightly` |
 | Fedora, system (only when asked) | `sudo dnf install kicad` | |
@@ -93,8 +95,8 @@ field `signing_key_fingerprint`) in `/etc/apt/keyrings/kicad.gpg`.
 On Ubuntu, the `ngspice` package conflicts with KiCad's own `libngspice-kicad`. For circuit
 simulation, install ngspice through conda instead (the spice plugin's `install-simulator`).
 
-If the server does not find the new install (always so for the Linux per-user route, which is
-outside its places), set `kicad_cli` as in step 0, with the path read from the install itself
+If the server does not find the new install (always so for the Linux Flatpak route, whose
+`kicad-cli` is only reachable through the wrapper), set `kicad_cli` as in step 0, with the path read from the install itself
 (for example `winget list --id KiCad.KiCad`, then the folder above); never guess one.
 
 ## 2. Run KiCad with no screen
