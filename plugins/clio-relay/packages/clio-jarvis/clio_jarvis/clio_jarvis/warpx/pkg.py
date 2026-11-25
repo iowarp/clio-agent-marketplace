@@ -134,8 +134,9 @@ class PlotfilePublisher:
         raise AttributeError(name)
 
     def emit(self, line: str) -> None:
+        # The providers read whole lines, as the MPI launch hands them over: with their newline.
         if self.inner is not None:
-            self.inner("stdout", line)
+            self.inner("stdout", line if line.endswith("\n") else line + "\n")
 
     def __call__(self, stream_name: str, line: str) -> None:
         if self.inner is not None:

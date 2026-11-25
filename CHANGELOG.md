@@ -42,6 +42,13 @@
 
 ### Changed
 
+- `clio-relay` (1.6.70): bundles clio-jarvis `0d94ab4`, which adds generic `lammps` and `gromacs` packages. `lammps`
+  takes a native LAMMPS input script and `gromacs` takes GROMACS's own case files (structure, topology, .mdp files)
+  with the gmx stages before the watched run. Each writes one VTK PolyData particle frame per output interval while
+  the solver runs, so a view following the newest frame moves as the run goes. Package output lines now end in a
+  newline, so steps published after the solver's last line of output are counted (this also applies to `warpx`).
+  Both packages passed their self-tests on Ares. The relay server, the jarvis-cd pin (1.9.1) and the skills'
+  guidance are unchanged apart from the jarvis-package skill naming the two packages.
 - `clio-relay` (1.6.69): relay 2.0.0a17. An operation now has an owner: a relay server of another version only
   reports another server's operation and never advances it, and an older one never takes over a newer one's. Site clean
   removes only that site's own deployment (its `remote_dir` and the hop under it). On Windows a local job whose

@@ -36,7 +36,10 @@ through relay; do not offer it for this.
   solver with a growing BP5 output), `xcompact3d` (an input file, a geometry
   and a long case), `wrf` (a case fetched on the site, one netCDF file per
   step, a Spack builtin recipe), `warpx` (a native inputs file, one AMReX
-  plotfile per interval, a fixed Spack recipe) and `pvserver` (a service).
+  plotfile per interval, a fixed Spack recipe), `lammps` (a native input
+  script, one particle frame per dump interval), `gromacs` (GROMACS's own
+  case files, the gmx stages before the watched run, one frame per output
+  interval) and `pvserver` (a service).
 - `schemas/package-contract.v1.json`: the contract's schema. Check a part
   you are unsure of here rather than guessing.
 - `spack/`: clio-jarvis's own Spack recipes, for software Spack's builtin
