@@ -82,7 +82,10 @@ choose a queue, a node count, storage or an MPI for a run, read them from
   `$JARVIS_RESOURCE_GRAPH`, or `setting`) is the site's own: use it as it is,
   and never collect into it or edit it. Only relay's own graph (`source`
   `relay`) offers `collect`, the job that fills an empty `net`; offer it to
-  the person and run it once they agree.
+  the person and run it once they agree. A `net` in JARVIS's older list form
+  reads `form: legacy_list` with the advisory `resource_graph_net_legacy`: the
+  net is there, nothing needs collecting first, and the first multi-node
+  launch collects it again into relay's own home, never into the site's file.
 - A site skill is what the person or the site's admins wrote down about the
   machine. `facts.sched.site_skills` lists them; read one with the JARVIS
   command below (`rg skill show NAME +json`).
@@ -557,7 +560,8 @@ logs. Each names its `kind` and the field it is about. An `mpi_network` issue
 means the ranks could not reach each other on the network JARVIS launched
 them on: it names the resource graph field and the networks the nodes share.
 Do not stop at the diagnosis. Propose the fix to the person (the network the
-issue points to, or the resource graph job to collect them again), record it
+issue points to, or, on relay's own graph, the resource graph job to collect
+them again), record it
 with `rg net set` once they confirm, and call the same `run` again. Every
 later job on the site uses it.
 

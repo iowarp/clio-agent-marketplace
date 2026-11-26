@@ -48,6 +48,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.94): relay 2.0.0a36, on jarvis-cd 1.9.18. A worker site's sign-in installs the relay this computer
+  runs: the plugin's own release wheel, checked file by file against the installed copy, so a clean sign-in no longer
+  needs `relay_wheel` set by hand; an editable or local-path relay is refused with the reason. JARVIS reads the software in
+  the effective resource graph, reports an older list-form `net` as `form: legacy_list` with the advisory
+  `resource_graph_net_legacy` instead of a missing net, and keeps all its state in relay's home. `use-relay` says a
+  legacy-form net needs no collecting, and offers the collect job for an `mpi_network` issue only on relay's own graph.
 - `clio-relay` (1.6.93): relay 2.0.0a35, on jarvis-cd 1.9.17. `describe` partition entries carry `min_nodes` and `max_nodes`, the
   queue's per-job node limits, and the scheduler's queue `limits` as JARVIS reports them on Slurm, PBS, LSF and Flux, with
   `limits_unknown`, `limits_source` and `state`; before JARVIS is placed, sinfo gives the same shape with what it cannot

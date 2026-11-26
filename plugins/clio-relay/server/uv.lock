@@ -356,8 +356,8 @@ wheels = [
 
 [[package]]
 name = "clio-relay"
-version = "2.0.0a35"
-source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a35/clio_relay-2.0.0a35-py3-none-any.whl" }
+version = "2.0.0a36"
+source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a36/clio_relay-2.0.0a36-py3-none-any.whl" }
 dependencies = [
     { name = "aioquic" },
     { name = "clio-schemas" },
@@ -380,7 +380,7 @@ dependencies = [
     { name = "websockets" },
 ]
 wheels = [
-    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a35/clio_relay-2.0.0a35-py3-none-any.whl", hash = "sha256:7fa0d513ff4822bfcd2973134171b424cf58614ffd44171cb5e57687832225dc" },
+    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a36/clio_relay-2.0.0a36-py3-none-any.whl", hash = "sha256:55f0c089c111ba06c2e6e1291f07a9ed23951f877b3555fa3a9fed68589c8237" },
 ]
 
 [package.optional-dependencies]
@@ -427,7 +427,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a35/clio_relay-2.0.0a35-py3-none-any.whl" }]
+requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a36/clio_relay-2.0.0a36-py3-none-any.whl" }]
 
 [[package]]
 name = "clio-schemas"
