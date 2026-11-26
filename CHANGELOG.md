@@ -48,6 +48,8 @@
 
 ### Changed
 
+- `clio-relay` (1.6.84): relay at commit dad251ce, with the jarvis-cd 1.9.14 candidate 96ea53d7. JARVIS also sets
+  each MPI rank's thread counts (OpenMP, OpenBLAS and MKL) from that rank's share of the allocation.
 - `clio-relay` (1.6.83): relay at commit 6d391fc3, ahead of 2.0.0a31, with the jarvis-cd 1.9.14 candidate (472b753b).
   When JARVIS's install fails and offers a setting the person can change, such as where the build's temporary files
   go, the agent sees it in JARVIS's own words and can give a value; the install approval names it, and JARVIS
