@@ -48,6 +48,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.81): relay 2.0.0a28, at jarvis-cd 1.9.12. A JARVIS failure reaches the agent whole, in JARVIS's own
+  words, with the full output's path to read; only JARVIS's real decisions are asked. An install asks each decision once,
+  then the approval once and last, with the spec and time. Saving an endpoint that reaches a saved one offers to update it.
+  A site with no scheduler no longer reads "None".
 - `clio-relay` (1.6.80): relay 2.0.0a27, at jarvis-cd 1.9.9. When a Spack at the site fails only because of some
   repos in the person's user config, JARVIS's question first offers, and recommends, leaving out only those repos:
   JARVIS uses its own copy of the scope without them, so the good repos and the site copies built from them stay
