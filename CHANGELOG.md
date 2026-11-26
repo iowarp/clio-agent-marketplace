@@ -48,6 +48,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.98): relay 2.0.0a42, on jarvis-cd 1.9.22. JARVIS keeps its own Spack's install tree short
+  enough for Linux's 127-character shebang limit, so a fresh site's install no longer needs a short `spack_root`.
+  No JARVIS action has a fixed time limit, and a service's start timeout is a stall window. A worker site serves
+  a package's port, such as ParaView's pvserver, over ssh or frp.
 - `clio-relay` (1.6.97): relay 2.0.0a41, on jarvis-cd 1.9.19. JARVIS's Spack commands have no fixed time limit:
   a slow first `spack compiler find` on a fresh site keeps going and writes a "still running" line to install.log
   every minute, and an install refuses only after 10 minutes with no activity, with a typed refusal in its issues.
