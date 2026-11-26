@@ -44,6 +44,7 @@ def candidates(root: Path) -> list[Path]:
         for env in ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)"):
             if os.environ.get(env):
                 folders.append(Path(os.environ[env]) / "Blender Foundation")
+                folders.append(Path(os.environ[env]) / "Steam" / "steamapps" / "common")
         folders.append(Path(os.environ.get("USERPROFILE") or Path.home()) / "scoop" / "apps" / "blender" / "current")
     elif sys.platform == "darwin":
         for app in (Path("/Applications"), Path.home() / "Applications", root):
