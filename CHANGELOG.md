@@ -48,6 +48,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.88): `use-relay` sizes a job's time as (startup + measured run) times a safety coefficient,
+  with a short pilot first when nothing is measured, never from a padded guess. `jarvis-package` has a package
+  expose the application's own parallel-decomposition controls as parameters.
 - `clio-relay` (1.6.87): relay 2.0.0a31, with the jarvis-cd 1.9.14 release. It carries JARVIS's install settings,
   its threads per MPI rank, and a site clean that removes each install's outputs with `--remove-outputs`.
 - `clio-relay` (1.6.86): relay a0fc1156 as a built wheel (pre-release `build-a0fc1156`), so the plugin installs

@@ -80,6 +80,19 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   or `input` for a bundle unpacked into the run directory). A run sets it to
   the name of a job input, and relay puts that file in place (see `use-relay`).
   Keep every case-specific value in that input, not in `pkg.py` or the contract.
+- Expose the application's own parallel-decomposition controls as
+  parameters. Many MPI codes split the work further than the rank count,
+  through options of their own: groups of ranks that each take part of the
+  problem, a process grid, a domain split, task or band groups. Read the
+  application's parallel documentation for every such control it has, and
+  make each one a parameter, passed where the application reads it (its
+  command line, usually). Default each to the application's own default, so
+  leaving it unset runs as the program would, and say in `msg` what it
+  splits and what it must divide. A package with only the input and the rank
+  count leaves the person no way to tune a run, and a pilot can't compare
+  decompositions. A control that lives inside the application's input file
+  stays in that input. Leave threads per rank alone: JARVIS sets them from
+  each rank's share of the allocation.
 - The contract needs every part: `install`, `parameters`, `resources`,
   `sizing`, `outputs`, `progress`, `provenance` and `selftest`, plus
   `service` for a service. A missing part refuses the package and names it.

@@ -198,8 +198,17 @@ person.
 
 ## Ask for enough time
 
-Size a job's time request from what was measured, then pad it generously:
+Size a job's time request from what was measured, then pad it generously.
+The request is (startup overhead + measured run time) x a safety coefficient,
+and every term in it comes from a measurement:
 
+- When nothing has been measured at the setup you mean to run, run a short
+  pilot of it first (a few steps or iterations, in a short job), and size
+  production from what the pilot measured. An estimate of the run time (from
+  the application's documentation, a similar case, or your own reckoning)
+  never becomes the time asked for, however much it is padded: a guess times
+  two is still a guess. If the person cannot wait for a pilot, say the
+  request is unmeasured and let them choose.
 - Projected wall time = measured startup overhead (activating the package's
   environment and any service started beside it becoming ready) + steps x
   seconds per step + output writes, all from a pilot or an earlier run of the
@@ -217,12 +226,14 @@ Size a job's time request from what was measured, then pad it generously:
   earlier run of exactly that setup, before sizing the request. A scaled
   figure can screen candidates, labelled as unmeasured, but never becomes
   the time asked for.
-- Request the projection times a safety coefficient, 1.5 at least and 2 when
-  it rests on one short pilot or none, rounded up. Overallocate rather than
-  cut it close: a job killed at its limit loses its unfinished work, and
-  schedulers such as Slurm charge the time a job used, not the time it asked
-  for, so a job that ends cleanly before its limit costs nothing for the
-  rest. A longer request can wait a little longer in the queue.
+- Request the measured projection times a safety coefficient, 1.5 at least
+  and 2 when it rests on one short pilot, rounded up. The coefficient covers
+  the spread of a measured run; it does not stand in for a measurement.
+  Overallocate rather than cut it close: a job killed at its limit loses its
+  unfinished work, and schedulers such as Slurm charge the time a job used,
+  not the time it asked for, so a job that ends cleanly before its limit
+  costs nothing for the rest. A longer request can wait a little longer in
+  the queue.
 - Say so in the spend approval: the projected time, the coefficient, the
   padded request, and that unused time is not charged when the job ends
   cleanly.
