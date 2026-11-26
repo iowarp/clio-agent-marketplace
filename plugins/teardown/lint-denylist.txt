@@ -1,0 +1,6 @@
+# Literals from the teardown proofs (L3). They must never appear in this plugin's
+# skills or prompts. Read by scripts/check_skill_literals.py.
+Geneva
+pencil sharpener
+lawnmower
+lawn mower
