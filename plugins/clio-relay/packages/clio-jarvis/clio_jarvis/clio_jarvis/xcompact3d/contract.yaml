@@ -83,7 +83,7 @@ summary: >-
   from, set its ioutput to a few hundred steps so a snapshot still lands
   early. Run a separate pilot only when the grid needs more than one node.
   Fitting the person's budget: size production to the time and nodes the
-  person gave (say, results within an hour on up to 8 nodes), not to the
+  person gave (a deadline for results, a node cap or an allocation), not to the
   finest grid the cluster could hold. Measure first. A pilot is a short run
   of the production grid, or close to it, on the fewest nodes that hold it:
   one solver node whenever the grid fits there (a periodic section of a few
@@ -137,8 +137,10 @@ summary: >-
   prefer a periodic section unless the tips are the point, and shorten the
   simulated time before giving up the wake entirely.
   Requesting the time: ask the scheduler for the projected wall time times a
-  generous safety coefficient, 1.5 at least and 2 when the projection rests
-  on one short pilot or none, rounded up. Overallocate rather than cut it
+  generous safety coefficient, rounded up, sized from how far the
+  measurement can be trusted (larger on one short pilot or when steps
+  varied, smaller when several runs of the same setup agree), never in
+  place of a measurement. Overallocate rather than cut it
   close: a job killed at its limit loses every step after its last snapshot,
   and schedulers such as Slurm charge the time a job used, not the time it
   asked for, so a job that ends cleanly before its limit costs nothing for
@@ -279,7 +281,7 @@ sizing:
     or rank count, and on more nodes not assumed faster than measured. The
     throughput formula above only screens candidates; re-pilot or re-measure
     a candidate before its wall time becomes a request. Request that total times a generous safety
-    coefficient (1.5 at least, 2 when it rests on one short pilot or none) as
+    coefficient (sized as "Requesting the time" says, never in place of a measurement) as
     the job's walltime, since unused time is not charged when the run ends
     cleanly, and say so in the spend approval. With a pvserver watching the
     run in the same job, add twice pvserver's linger (the time it stays up

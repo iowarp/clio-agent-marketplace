@@ -48,6 +48,12 @@
 
 ### Changed
 
+- `clio-relay` (1.6.92): sizing names no fixed node count, rank count or scale. `use-relay`'s layout section derives
+  every count from the problem's parallel units, the partition and the queue's own per-job node limits, and the
+  person's budget; pilots are two candidate layouts chosen the same way, and the choices span that problem's sensible
+  range on that machine with projected time to result and node-hours. The time request's safety coefficient is sized
+  from how far the measurement can be trusted, not a fixed 1.5 or 2, here and in the bundled clio-jarvis c9a324a7
+  contracts, whose worked examples no longer read as default sizes. `host_slice` has no example ranges.
 - `clio-relay` (1.6.91): relay 2.0.0a33. `site clean` removes what `relay_files` wrote on the site. `describe` reads the
   partitions from sinfo before JARVIS is placed, takes the site's `JARVIS_RESOURCE_GRAPH` as its graph and offers collection
   only without one, and a run's card keeps its partition's current facts (`partition_facts`). `use-relay` sizes the

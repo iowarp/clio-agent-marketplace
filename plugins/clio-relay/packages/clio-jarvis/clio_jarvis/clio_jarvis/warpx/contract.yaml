@@ -89,8 +89,11 @@ sizing:
     steps. A particle-in-cell step costs about cells x particles per cell x
     a few microseconds per rank-core, so the rule only screens; measure
     before the request. Each plotfile holds 8 bytes per cell per field.
-    Request that total times 1.5 at least, 2 when it rests on one short run
-    or none: unused time is not charged when the run ends cleanly, so say so
+    Request that total times a generous safety coefficient sized from how
+    far the measurement can be trusted (larger on one short run or when
+    steps varied, smaller when several runs of the same setup agree), never
+    in place of a measurement: unused time is not charged when the run ends
+    cleanly, so say so
     in the spend approval. With a pvserver watching the run in the same job,
     add twice pvserver's linger.
 

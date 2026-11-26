@@ -100,10 +100,13 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
 - Write `sizing` so an agent can size a run against a partition: `ranks`
   names the problem's own parallel units (k-points, pools, images, domains,
   the process grid) and how the rank count and each decomposition control
-  should relate to them, and the largest count that still does useful work;
-  `nodes` follows from ranks and the partition's physical cores per node.
-  Say there how a pilot at two sizes shows where adding nodes stops paying.
-  Keep it general: the case's numbers live in its input, not the contract.
+  should relate to them, the fewest ranks whose share fits in memory and the
+  most that still do useful work, each as a rule over the problem's units,
+  not a number; `nodes` follows from ranks and the partition's physical cores
+  per node. Say there how a pilot at two sizes, chosen from those bounds and
+  the queue's limits, shows where adding nodes stops paying. Write no node or
+  rank count as a default or an example: the case's numbers live in its
+  input, and the machine's in `describe`.
 - `install` names a `method` and its `query`. `method: spack`, the method for
   every application, takes a Spack spec. Depend on the `mpi` virtual and never pin an MPI,
   so the site's MPI is reused. Use Spack's builtin recipe when it has one, as

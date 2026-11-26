@@ -81,7 +81,10 @@ sizing:
     runs about 1 to 2 microseconds per atom-step per core, an EAM metal 3 to
     5, and long-range Coulomb (kspace pppm) 10 or more. Each text frame
     holds about 80 bytes per atom and its .vtp about 40. Request that total
-    times 1.5 at least, 2 when it rests on one short run or none: unused
+    times a generous safety coefficient sized from how far the measurement
+    can be trusted (larger on one short run or when steps varied, smaller
+    when several runs of the same setup agree), never in place of a
+    measurement: unused
     time is not charged when the run ends cleanly, so say so in the spend
     approval. With a pvserver watching the run in the same job, add twice
     pvserver's linger.

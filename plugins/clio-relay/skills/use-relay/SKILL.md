@@ -148,8 +148,10 @@ guarded site. Anything else, answers included, goes through `exec` with
   result file, and no `sacct`. See "Long runs and failed runs".
   To serve one package beside a run, such as pvserver beside xcompact3d, give
   both in one `serve` pipeline, with each step's `host_slice` parameter placing
-  it on its nodes (pvserver `0:2`, xcompact3d `2:6`, say). JARVIS decides which
-  step serves from each package's deployment profile.
+  it on its own nodes of the job (a `start:end` range of node indices): give
+  the service the nodes it needs and the solver the nodes its layout was sized
+  for, without overlap. JARVIS decides which step serves from each package's
+  deployment profile.
 - The order of a pipeline's packages is the order JARVIS starts them in, not
   the way data moves: a service starts before the solver that feeds it. When
   you describe or draw a pipeline, take the direction from the job card's
@@ -206,25 +208,39 @@ person.
 
 ## Size the layout from the problem and the partition
 
-Choose how many nodes and ranks a run takes from the problem and the machine,
-not from a small default:
+Choose how many nodes and ranks a run takes from the problem and the machine.
+No node count, rank count or scale is a default: a right size on one machine
+is a handful of nodes and on another a thousand, so every count you consider
+or offer is derived from the facts below.
 
 - Start from the problem's own parallel units: k-points, pools, images,
   replicas, bands, domains or a process grid, whatever the application splits
-  its work by (its package exposes those controls). They bound how many ranks
-  do useful work and which counts divide evenly.
-- Set them against the partition from `describe`: its total and idle nodes,
-  physical cores and memory per node, and its time limit. A layout that fills
-  whole nodes, divides the units evenly and fits each rank's memory is a
-  candidate; idle nodes say how soon it can start.
-- Measure scaling, not just speed: pilot at two sizes (two node counts, each
-  with the decomposition production would use there) for a few steps each.
-  Two measured points show how far more nodes still pay off.
-- Then offer the person a choice of node counts, a small, a middle and a
-  large one that the partition can hold (2, 8 or 16 nodes, say), each with
-  its projected time to result and the node-hours it costs, and say which
-  ones rest on a measured size. Let the person pick; the time request for the
-  chosen one follows the next section.
+  its work by (its package's `sizing` and decomposition controls say which).
+  They bound the range: the fewest ranks whose share of the problem fits in
+  memory, up to the most that still each get useful work, and which counts
+  divide the units evenly.
+- Set that range against the queue: from `describe`, the partition's total
+  and idle nodes, physical cores and memory per node, and its time limit; and
+  the queue's own per-job node limits, the fewest and the most nodes a job may
+  take, which some queues set well above one. Where `describe` does not
+  report a limit, take it from the site's documentation of its queues, or ask
+  the person; never assume a queue takes any size. A layout that fills whole
+  nodes, divides the units evenly, fits each rank's memory and sits inside
+  the queue's limits is a candidate; idle nodes say how soon it can start.
+- When the person's budget or allocation is known (node-hours left, a
+  reservation, a cap they gave), it bounds the range too.
+- Measure scaling, not just speed: pilot at two sizes chosen the same way,
+  each a candidate layout inside the queue's limits with the decomposition
+  production would use there, far enough apart to show how the code scales
+  and toward the range you would offer, and each long enough that seconds per
+  step has settled past startup. Two measured points show how far more nodes
+  still pay off; where the range is wide, a third point keeps the projection
+  from resting on a long extrapolation.
+- Then offer the person a choice of node counts spanning the sensible range
+  for this problem on this machine, each with its projected time to result
+  and the node-hours it costs, and say which ones rest on a measured size and
+  which are projected from the measured scaling. Let the person pick; the
+  time request for the chosen one follows the next section.
 
 ## Ask for enough time
 
@@ -256,9 +272,13 @@ and every term in it comes from a measurement:
   earlier run of exactly that setup, before sizing the request. A scaled
   figure can screen candidates, labelled as unmeasured, but never becomes
   the time asked for.
-- Request the measured projection times a safety coefficient, 1.5 at least
-  and 2 when it rests on one short pilot, rounded up. The coefficient covers
-  the spread of a measured run; it does not stand in for a measurement.
+- Request the measured projection times a safety coefficient, rounded up.
+  Size the coefficient from how far the measurement can be trusted: larger
+  when it rests on one short pilot, when steps varied, or when production
+  runs longer than anything measured, and smaller when several runs of the
+  same setup agree; always generous, and say which coefficient you chose and
+  why. The coefficient covers the spread of a measured run; it does not stand
+  in for a measurement.
   Overallocate rather than cut it close: a job killed at its limit loses its
   unfinished work, and schedulers such as Slurm charge the time a job used,
   not the time it asked for, so a job that ends cleanly before its limit
@@ -267,7 +287,8 @@ and every term in it comes from a measurement:
 - An application's own time limit (a stop timer in its input, after which it
   writes a restart and exits cleanly) is sized from the time request, not
   apart from it: set it just under the request, leaving room for that last
-  write (the measured checkpoint time, or a few minutes when that is small).
+  write (the time a restart write took in the pilot or an earlier run, padded
+  like the rest of the request).
   Never set it below the projected run time. The time request is the
   person's budget, and a second, shorter limit stops a run that was on
   track. Leave the application's default when nothing needs the clean stop.

@@ -81,13 +81,17 @@ sizing:
     seconds_per_step at the same process count, else a short run), plus the
     first step (it reads the boundary data and is several times slower,
     first_step_seconds), one history write per history_interval and the
-    startup the run record measured. Request that times a safety coefficient
-    of 1.5 at least, 2 when it rests on one short run or none: unused time is
-    not charged when the run ends cleanly, so say so in the spend approval.
+    startup the run record measured. Request that times a generous safety
+    coefficient sized from how far the measurement can be trusted (larger
+    on one short run or when steps varied, smaller when several runs of the
+    same setup agree), never in place of a measurement: unused time is not
+    charged when the run ends cleanly, so say so in the spend approval.
     The first run that fetches its case through case_url also downloads the
     archive inside the job (3.2 GB for CONUS 12 km, a few minutes at site
     bandwidth); add that time once.
-    NCAR measured about 0.4 s per step for the CONUS 12 km case on 144 cores.
+    NCAR's published figure for the CONUS 12 km case, about 0.4 s per step
+    on 144 cores, is a reference for screening that case, not a size to run
+    at; the site's own pilot sets the request.
 
 outputs:
   - name: history
