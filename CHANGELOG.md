@@ -48,6 +48,8 @@
 
 ### Changed
 
+- `clio-relay` (1.6.90): `use-relay` sizes an application's own stop timer (a clean stop and restart written
+  before a time limit) from the job's time request, just under it, and never below the projected run.
 - `clio-relay` (1.6.89): relay 2.0.0a32, with the jarvis-cd 1.9.15 release. `describe` reports each partition's
   compute cores from JARVIS (`facts.compute_cores`, the graph's `facts.cpu`); the login host's count is
   `facts.login_cpus`. Cores per rank and exclusive node use reach JARVIS, and the plan's `cores` reaches the agent.

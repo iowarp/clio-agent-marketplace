@@ -234,6 +234,13 @@ and every term in it comes from a measurement:
   not the time it asked for, so a job that ends cleanly before its limit
   costs nothing for the rest. A longer request can wait a little longer in
   the queue.
+- An application's own time limit (a stop timer in its input, after which it
+  writes a restart and exits cleanly) is sized from the time request, not
+  apart from it: set it just under the request, leaving room for that last
+  write (the measured checkpoint time, or a few minutes when that is small).
+  Never set it below the projected run time. The time request is the
+  person's budget, and a second, shorter limit stops a run that was on
+  track. Leave the application's default when nothing needs the clean stop.
 - Say so in the spend approval: the projected time, the coefficient, the
   padded request, and that unused time is not charged when the job ends
   cleanly.
