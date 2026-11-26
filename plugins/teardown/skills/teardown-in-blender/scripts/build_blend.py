@@ -81,7 +81,9 @@ def make_material(name: str, preset: str, colour: str | None) -> Any:
     mat.use_nodes = True
     bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
     set_input(bsdf, ("Base Color",), linear(colour or base))
-    mat.diffuse_color = linear(colour or base)  # Solid viewport and Workbench film colour
+    # Solid viewport and Workbench film colour. Workbench adds no light lift, so the
+    # display (sRGB) value keeps parts as light as in the Cycles stills.
+    mat.diffuse_color = (*srgb(colour or base), 1.0)
     mat.metallic = min(metal, 0.6)
     mat.roughness = rough
     set_input(bsdf, ("Metallic",), metal)
