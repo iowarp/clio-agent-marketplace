@@ -13,13 +13,16 @@ directory as `load_skill` reports it.
 What it makes, in `teardown/<slug>/blender/`:
 
 - `teardown.blend`: one object per part, a collection per subsystem, real materials, a
-  studio, two cameras (assembled, exploded) and a **Teardown** empty whose `explode`
+  studio, cameras fitted to the parts (assembled, exploded, and with `--animation` a
+  film camera) and a **Teardown** empty whose `explode`
   property (0 to 1, in the object's custom properties) drives every part through its
   stages. The timeline plays the mechanism through its input. Each object keeps its
-  `part_id`, `subsystem` and `note`.
+  `part_id`, `subsystem` and `note`, and a **START HERE** text block explains the controls.
 - `assembled.png` and `exploded.png`: Cycles renders.
 - with `--animation`, `teardown.mp4`: the mechanism running, coming apart, and running
-  exploded (or a `frames/` folder of PNGs when this Blender has no FFmpeg).
+  exploded while the camera swings slowly around it and stays framed (or a `frames/`
+  folder of PNGs when this Blender has no FFmpeg). The film renders in Workbench, which
+  takes seconds; `--film-engine render` uses the stills engine instead, which takes far longer.
 - with `--glb`, `teardown.glb` for other 3D tools.
 
 ## 1. Find Blender
@@ -56,9 +59,12 @@ exits with code 2 and names the part and field: fix the spec and run it again.
 
 Options: `--view iso|front|side|top|back` (default: the spec's `camera`), `--samples`
 (96), `--width` and `--height` (1600 x 1000), `--engine eevee` for a faster, rougher
-look, `--glb`, and `--no-render` to save the `.blend` only. Stills take about a minute
-each on a laptop CPU; the film takes several minutes. Say so before starting it, and
-run the film only when the person wants one.
+look, `--film-engine workbench|render`, `--glb`, and `--no-render` to save the `.blend` only.
+The studio lights and cameras scale with the assembly, so the defaults suit any size. When a
+render still needs adjusting, change the spec or these options and build again rather than
+writing a separate presentation script.
+Stills take under a minute each on a laptop CPU, and the Workbench film well under a
+minute. Run the film only when the person wants one.
 
 **When the person does not want a Blender install** but still wants the renders, use
 Blender's Python module instead (it needs Python 3.11; uv fetches it):

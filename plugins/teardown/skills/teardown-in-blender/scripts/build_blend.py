@@ -81,6 +81,9 @@ def make_material(name: str, preset: str, colour: str | None) -> Any:
     mat.use_nodes = True
     bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
     set_input(bsdf, ("Base Color",), linear(colour or base))
+    mat.diffuse_color = linear(colour or base)  # Solid viewport and Workbench film colour
+    mat.metallic = min(metal, 0.6)
+    mat.roughness = rough
     set_input(bsdf, ("Metallic",), metal)
     set_input(bsdf, ("Roughness",), rough)
     set_input(bsdf, ("Coat Weight", "Clearcoat"), coat)
@@ -130,23 +133,95 @@ def look_at(obj: Any, target: Vector) -> None:
     obj.rotation_quaternion = (target - obj.location).to_track_quat("-Z", "Y")
 
 
-def fit_camera(scene: Any, assembly: geo.Assembly, explode: float, direction: tuple[float, float, float], name: str) -> Any:
-    lo, hi = assembly.bounds(explode)
-    centre = Vector([(lo[k] + hi[k]) / 2 * MM for k in range(3)])
-    radius = max(0.5 * math.dist(lo, hi) * MM, 1e-4)
+def world_points(scene: Any, control: Any, objects: dict[str, Any], explode: float, frame: int = 1) -> list[Vector]:
+    """Evaluated world-space vertices of every part at one explode amount (subsampled)."""
+    control["explode"] = float(explode)
+    control.update_tag()
+    scene.frame_set(frame)
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    points: list[Vector] = []
+    for obj in objects.values():
+        ev = obj.evaluated_get(dg)
+        verts = ev.data.vertices
+        step = max(1, len(verts) // 400)
+        mw = ev.matrix_world
+        points.extend(mw @ verts[i].co for i in range(0, len(verts), step))
+    return points
+
+
+def frame_points(scene: Any, points: list[Vector], direction: Vector, fill: float = 0.86) -> tuple[Vector, float]:
+    """Target and distance for a 50 mm camera on ``direction`` so ``points`` fill ``fill`` of the frame."""
+    forward = -direction.normalized()
+    rot = forward.to_track_quat("-Z", "Y")
+    inv = rot.inverted()
+    aspect = scene.render.resolution_x / scene.render.resolution_y
+    tan_h = 18 / 50 * fill if aspect >= 1 else 18 / 50 * aspect * fill
+    tan_v = tan_h / aspect
+    local = [inv @ p for p in points]
+    cx = (min(v.x for v in local) + max(v.x for v in local)) / 2
+    cy = (min(v.y for v in local) + max(v.y for v in local)) / 2
+    cz = (min(v.z for v in local) + max(v.z for v in local)) / 2
+    distance = max(max(v.z - cz + abs(v.x - cx) / tan_h, v.z - cz + abs(v.y - cy) / tan_v) for v in local)
+    return rot @ Vector((cx, cy, cz)), max(distance, 1e-3)
+
+
+def fit_camera(scene: Any, points: list[Vector], direction: tuple[float, float, float], name: str) -> Any:
+    target, distance = frame_points(scene, points, Vector(direction))
     cam_data = bpy.data.cameras.new(name)
     cam_data.lens = 50
     cam_data.sensor_width = 36
-    aspect = scene.render.resolution_x / scene.render.resolution_y
-    hfov = 2 * math.atan(18 / 50)
-    vfov = 2 * math.atan(math.tan(hfov / 2) / aspect)
-    distance = radius / math.sin(min(hfov, vfov) / 2) * 0.94
+    cam_data.sensor_fit = "AUTO"
     cam_data.clip_start = distance * 0.01
     cam_data.clip_end = distance * 20
     cam = bpy.data.objects.new(name, cam_data)
     scene.collection.objects.link(cam)
-    cam.location = centre + Vector(direction).normalized() * distance
-    look_at(cam, centre)
+    cam.location = target + Vector(direction).normalized() * distance
+    look_at(cam, target)
+    return cam
+
+
+def orbit_camera(
+    scene: Any,
+    states: list[list[Vector]],
+    direction: tuple[float, float, float],
+    start: int,
+    end: int,
+    ramp: tuple[int, int],
+    swing: float = 0.8,
+) -> Any:
+    """A film camera that swings ``swing`` radians around the vertical axis and keeps the parts
+    framed while they explode. ``states`` are the part points at evenly spaced explode amounts
+    (first assembled, last exploded); the explode runs linearly over the ``ramp`` frames."""
+    d = Vector(direction).normalized()
+    cam = fit_camera(scene, states[-1], tuple(d), "Camera film")
+    angles = [swing * k / 8 for k in range(9)]
+
+    def turned(a: float) -> Vector:
+        return Vector((d.x * math.cos(a) - d.y * math.sin(a), d.x * math.sin(a) + d.y * math.cos(a), d.z))
+
+    fits = [[frame_points(scene, pts, turned(a)) for a in angles] for pts in states]
+    distances = [max(f[1] for f in fit) for fit in fits]
+    targets = [fit[0][0] for fit in fits]
+    # never pull in again once pulled back
+    for k in range(1, len(distances)):
+        distances[k] = max(distances[k], distances[k - 1])
+    last = len(states) - 1
+    cam.rotation_mode = "QUATERNION"
+    for frame in range(start, end + 1, 2):
+        t = (frame - start) / max(1, end - start)
+        a = swing * (0.5 - 0.5 * math.cos(math.pi * t))
+        e = min(max((frame - ramp[0]) / max(1, ramp[1] - ramp[0]), 0.0), 1.0) * last
+        k = min(int(e), last - 1) if last else 0
+        u = e - k if last else 0.0
+        k1 = min(k + 1, last)
+        target = targets[k].lerp(targets[k1], u)
+        cam.location = target + turned(a) * (distances[k] + (distances[k1] - distances[k]) * u)
+        look_at(cam, target)
+        cam.keyframe_insert("location", frame=frame)
+        cam.keyframe_insert("rotation_quaternion", frame=frame)
+    cam.data.clip_start = distances[0] * 0.01
+    cam.data.clip_end = distances[-1] * 20
     return cam
 
 
@@ -165,9 +240,10 @@ def studio(scene: Any, assembly: geo.Assembly, engine: str) -> None:
         bg.inputs["Strength"].default_value = 0.55
     scene.world = world
     for name, offset, power, size in (
-        ("Key", (-1.2, -1.6, 3.0), 520.0, 1.6),
-        ("Fill", (2.2, -2.0, 0.8), 140.0, 2.2),
-        ("Rim", (2.0, 2.5, 1.2), 300.0, 1.0),
+        # W per m^2 of light-to-subject distance, so exposure is the same at any scale
+        ("Key", (-1.2, -1.6, 3.0), 14.0, 1.6),
+        ("Fill", (2.2, -2.0, 0.8), 4.0, 2.2),
+        ("Rim", (2.0, 2.5, 1.2), 8.0, 1.0),
     ):
         light = bpy.data.lights.new(name, "AREA")
         light.shape = "DISK"
@@ -285,8 +361,31 @@ def key_motion(assembly: geo.Assembly, objects: dict[str, Any], start: int, cycl
                 obj.keyframe_insert("location", frame=frame)
 
 
-def render_film(scene: Any, camera: Any, out: Path) -> str:
+def workbench_look(scene: Any, background: str) -> None:
+    """Fast, clean Workbench shading for the film: material colours, cavity, no ground."""
+    scene.render.engine = "BLENDER_WORKBENCH"
+    scene.view_settings.view_transform = "Standard"
+    shading = scene.display.shading
+    shading.light = "STUDIO"
+    shading.color_type = "MATERIAL"
+    shading.show_shadows = False
+    shading.show_cavity = True
+    shading.cavity_type = "BOTH"
+    shading.show_object_outline = False
+    shading.background_type = "WORLD"
+    if scene.world is not None:
+        scene.world.color = linear(background)[:3]
+    scene.display.render_aa = "8"
+    ground = bpy.data.objects.get("Ground")
+    if ground is not None:
+        ground.hide_render = True
+
+
+def render_film(scene: Any, camera: Any, out: Path, background: str, film_engine: str) -> str:
     scene.camera = camera
+    scene.render.film_transparent = False
+    if film_engine == "workbench":
+        workbench_look(scene, background)
     settings = scene.render.image_settings
     if hasattr(settings, "media_type"):
         settings.media_type = "VIDEO"  # Blender 5 splits still and video formats
@@ -318,7 +417,8 @@ def main() -> int:
     parser.add_argument("--width", type=int, default=1600)
     parser.add_argument("--height", type=int, default=1000)
     parser.add_argument("--view", default=None, help="iso, front, side, top or back (default: the spec's camera)")
-    parser.add_argument("--animation", action="store_true", help="also render a film: run, explode, run")
+    parser.add_argument("--animation", action="store_true", help="also render a film: run, explode, run, with a slow camera swing")
+    parser.add_argument("--film-engine", choices=("workbench", "render"), default="workbench", help="workbench (fast, default) or the stills engine")
     parser.add_argument("--glb", action="store_true", help="also export teardown.glb")
     parser.add_argument("--no-render", action="store_true", help="only build and save the .blend")
     args = parser.parse_args(argv)
@@ -374,8 +474,11 @@ def main() -> int:
     studio(scene, assembly, engine)
     view = args.view or (assembly.camera.get("view") if isinstance(assembly.camera.get("view"), str) else None)
     direction = tuple(assembly.camera["direction"]) if isinstance(assembly.camera.get("direction"), list) else VIEWS.get(view or "iso", VIEWS["iso"])
-    cam_assembled = fit_camera(scene, assembly, 0.0, direction, "Camera assembled")
-    cam_exploded = fit_camera(scene, assembly, 1.0, direction, "Camera exploded")
+    points_assembled = world_points(scene, control, objects, 0.0)
+    points_exploded = world_points(scene, control, objects, 1.0)
+    control["explode"] = 0.0
+    cam_assembled = fit_camera(scene, points_assembled, direction, "Camera assembled")
+    cam_exploded = fit_camera(scene, points_exploded, direction, "Camera exploded")
 
     seconds = float(assembly.input["seconds"]) if assembly.input else 4.0
     cycle_frames = max(24, round(seconds * FPS))
@@ -384,6 +487,14 @@ def main() -> int:
     scene.frame_start = 1
     scene.frame_end = 1 + cycle_frames * cycles
     scene.frame_set(1)
+    ramp = (1 + cycle_frames, 1 + 2 * cycle_frames)
+    cam_film = None
+    if args.animation:
+        states = [world_points(scene, control, objects, k / 8) for k in range(9)]
+        control["explode"] = 0.0
+        control.update_tag()
+        scene.frame_set(1)
+        cam_film = orbit_camera(scene, states, direction, scene.frame_start, scene.frame_end, ramp)
 
     result: dict[str, Any] = {"engine": engine, "blender": bpy.app.version_string, "parts": len(assembly.parts), "triangles": assembly.triangle_count()}
     transparent = engine == "CYCLES"
@@ -399,13 +510,25 @@ def main() -> int:
         control.keyframe_insert('["explode"]', frame=1 + cycle_frames)
         control["explode"] = 1.0
         control.keyframe_insert('["explode"]', frame=1 + 2 * cycle_frames)
-        if not args.no_render:
-            scene.render.film_transparent = False
-            result["film"] = render_film(scene, cam_exploded, out)
+        if not args.no_render and cam_film is not None:
+            result["film"] = render_film(scene, cam_film, out, assembly.background, args.film_engine)
+            result["film_engine"] = scene.render.engine
+            configure(scene, engine, args.samples, args.width, args.height)
+            ground = bpy.data.objects.get("Ground")
+            if ground is not None:
+                ground.hide_render = False
         control["explode"] = 0.0
     scene.render.film_transparent = False
     scene.camera = cam_exploded
     scene.frame_set(1)
+    notes = bpy.data.texts.new("START HERE")
+    notes.write(
+        f"{assembly.title}\n\n"
+        "Select the 'Teardown' empty in the Outliner, then Object Properties > Custom Properties:\n"
+        "set 'explode' to 0 (assembled) or 1 (fully exploded). Press Space to play the mechanism.\n"
+        "Parts are grouped into one collection per subsystem; each part carries its id and note.\n"
+        "Cameras: 'Camera assembled', 'Camera exploded'" + (", 'Camera film'" if cam_film is not None else "") + ".\n"
+    )
     if args.glb:
         bpy.ops.export_scene.gltf(filepath=str(out / "teardown.glb"), export_format="GLB", export_animations=True)
         result["glb"] = str(out / "teardown.glb")
