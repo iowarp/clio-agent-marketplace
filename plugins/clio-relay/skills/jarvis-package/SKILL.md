@@ -90,12 +90,20 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   leaving it unset runs as the program would, and say in `msg` what it
   splits and what it must divide. A package with only the input and the rank
   count leaves the person no way to tune a run, and a pilot can't compare
-  decompositions. A control that lives inside the application's input file
+  decompositions, or size a run to the partition's nodes (see `use-relay`'s
+  layout section). A control that lives inside the application's input file
   stays in that input. Leave threads per rank alone: JARVIS sets them from
   each rank's share of the allocation.
 - The contract needs every part: `install`, `parameters`, `resources`,
   `sizing`, `outputs`, `progress`, `provenance` and `selftest`, plus
   `service` for a service. A missing part refuses the package and names it.
+- Write `sizing` so an agent can size a run against a partition: `ranks`
+  names the problem's own parallel units (k-points, pools, images, domains,
+  the process grid) and how the rank count and each decomposition control
+  should relate to them, and the largest count that still does useful work;
+  `nodes` follows from ranks and the partition's physical cores per node.
+  Say there how a pilot at two sizes shows where adding nodes stops paying.
+  Keep it general: the case's numbers live in its input, not the contract.
 - `install` names a `method` and its `query`. `method: spack`, the method for
   every application, takes a Spack spec. Depend on the `mpi` virtual and never pin an MPI,
   so the site's MPI is reused. Use Spack's builtin recipe when it has one, as

@@ -48,6 +48,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.91): relay 2.0.0a33. `site clean` removes what `relay_files` wrote on the site. `describe` reads the
+  partitions from sinfo before JARVIS is placed, takes the site's `JARVIS_RESOURCE_GRAPH` as its graph and offers collection
+  only without one, and a run's card keeps its partition's current facts (`partition_facts`). `use-relay` sizes the
+  layout from the problem's parallel units and the partition, pilots at two sizes, and offers node counts with
+  projected time to result; `jarvis-package` writes `sizing` from those units.
 - `clio-relay` (1.6.90): `use-relay` sizes an application's own stop timer (a clean stop and restart written
   before a time limit) from the job's time request, just under it, and never below the projected run.
 - `clio-relay` (1.6.89): relay 2.0.0a32, with the jarvis-cd 1.9.15 release. `describe` reports each partition's

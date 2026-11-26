@@ -70,11 +70,19 @@ choose a queue, a node count, storage or an MPI for a run, read them from
 - `facts.sched` is JARVIS's scheduler report for the site: its provider,
   account and `site_skills`. The partitions it reports (nodes, idle nodes, CPUs
   and memory per node, time limits) are the result's `partitions`, and the MPI
-  JARVIS found is its `mpi`.
-- `facts.resource_graph` is the site's JARVIS resource graph: where it is, and
-  under `net` the data and control networks JARVIS launches MPI on. When `net`
-  is empty, `collect` gives the job that fills it in; offer it to the person
-  and run it once they agree.
+  JARVIS found is its `mpi`. Before relay has placed JARVIS on a site, the
+  same partitions come straight from the scheduler (`facts.sched.source` is
+  `sinfo`, read at `observed_at`); describe the site again once JARVIS is
+  placed, and again before you size a job from an answer that is old, since
+  idle nodes change by the minute. A run's card also keeps its partition's
+  facts as they were when the card was made, in `result.partition_facts`.
+- `facts.resource_graph` is the site's JARVIS resource graph: where it is, its
+  `source`, and under `net` the data and control networks JARVIS launches MPI
+  on. A graph the site publishes (`source` `site`, named by the site's
+  `$JARVIS_RESOURCE_GRAPH`, or `setting`) is the site's own: use it as it is,
+  and never collect into it or edit it. Only relay's own graph (`source`
+  `relay`) offers `collect`, the job that fills an empty `net`; offer it to
+  the person and run it once they agree.
 - A site skill is what the person or the site's admins wrote down about the
   machine. `facts.sched.site_skills` lists them; read one with the JARVIS
   command below (`rg skill show NAME +json`).
@@ -195,6 +203,28 @@ change it and call again. `service_after_batch` and `service_blocks_pipeline`
 mean the steps are in the wrong order or role for a serve. `package_unloadable`
 and `deployment_contract_invalid` are faults in the package itself: tell the
 person.
+
+## Size the layout from the problem and the partition
+
+Choose how many nodes and ranks a run takes from the problem and the machine,
+not from a small default:
+
+- Start from the problem's own parallel units: k-points, pools, images,
+  replicas, bands, domains or a process grid, whatever the application splits
+  its work by (its package exposes those controls). They bound how many ranks
+  do useful work and which counts divide evenly.
+- Set them against the partition from `describe`: its total and idle nodes,
+  physical cores and memory per node, and its time limit. A layout that fills
+  whole nodes, divides the units evenly and fits each rank's memory is a
+  candidate; idle nodes say how soon it can start.
+- Measure scaling, not just speed: pilot at two sizes (two node counts, each
+  with the decomposition production would use there) for a few steps each.
+  Two measured points show how far more nodes still pay off.
+- Then offer the person a choice of node counts, a small, a middle and a
+  large one that the partition can hold (2, 8 or 16 nodes, say), each with
+  its projected time to result and the node-hours it costs, and say which
+  ones rest on a measured size. Let the person pick; the time request for the
+  chosen one follows the next section.
 
 ## Ask for enough time
 
