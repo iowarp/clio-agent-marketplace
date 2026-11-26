@@ -48,6 +48,8 @@
 
 ### Changed
 
+- `clio-relay` (1.6.85): relay at commit a0fc1156. A site clean with `--remove-outputs` also removes the
+  outputs directory of each install relay ran there, and of a run that ended before recording any outputs.
 - `clio-relay` (1.6.84): relay at commit dad251ce, with the jarvis-cd 1.9.14 candidate 96ea53d7. JARVIS also sets
   each MPI rank's thread counts (OpenMP, OpenBLAS and MKL) from that rank's share of the allocation.
 - `clio-relay` (1.6.83): relay at commit 6d391fc3, ahead of 2.0.0a31, with the jarvis-cd 1.9.14 candidate (472b753b).

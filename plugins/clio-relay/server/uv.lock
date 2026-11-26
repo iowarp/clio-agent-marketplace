@@ -357,7 +357,7 @@ wheels = [
 [[package]]
 name = "clio-relay"
 version = "2.0.0a30"
-source = { git = "https://github.com/iowarp/clio-relay?rev=dad251cefcff5305e5c35eaf7d2a2a3abdd37eb5#dad251cefcff5305e5c35eaf7d2a2a3abdd37eb5" }
+source = { git = "https://github.com/iowarp/clio-relay?rev=a0fc1156523f9201aa64ed8af83e22f3065b1bb5#a0fc1156523f9201aa64ed8af83e22f3065b1bb5" }
 dependencies = [
     { name = "aioquic" },
     { name = "clio-schemas" },
@@ -394,7 +394,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "clio-relay", extras = ["tapis"], git = "https://github.com/iowarp/clio-relay?rev=dad251cefcff5305e5c35eaf7d2a2a3abdd37eb5" }]
+requires-dist = [{ name = "clio-relay", extras = ["tapis"], git = "https://github.com/iowarp/clio-relay?rev=a0fc1156523f9201aa64ed8af83e22f3065b1bb5" }]
 
 [[package]]
 name = "clio-schemas"
