@@ -48,6 +48,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.96): relay 2.0.0a39. Relay's frp visitor reaches the rendezvous host through the proxy its host
+  gives it (`transport.proxyURL`, `HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY`, honouring `NO_PROXY`), so a worker site's link
+  comes up from inside CLIO's fence on Windows; a link that fails says what the visitor said. A worker site now
+  describes its partitions, limits, scheduler facts and resource graph, as an ssh site does.
 - `clio-relay` (1.6.95): relay 2.0.0a38. Relay uses a SOCKS proxy its host gives it: CLIO on Windows runs the server
   inside a managed network proxy that sets a SOCKS `ALL_PROXY`, and a worker site's sign-in, which fetches relay's own
   wheel, failed there with `ImportError`. A sign-in that fails on an unexpected error now names the error.
