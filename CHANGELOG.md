@@ -48,6 +48,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.82): relay 2.0.0a30, at jarvis-cd 1.9.13. After JARVIS builds a package's software, its check
+  records that build as its own, so no site-copy question follows. The worker's sign-in fetches frpc on the cluster
+  itself, a pinned frp release checked by its sha256, the way it gets uv, so a desktop no longer has to hold or copy in
+  an frpc. A cluster with no internet access can point `frpc_url` and `frpc_sha256` at a mirror.
 - `clio-relay` (1.6.81): relay 2.0.0a28, at jarvis-cd 1.9.12. A JARVIS failure reaches the agent whole, in JARVIS's own
   words, with the full output's path to read; only JARVIS's real decisions are asked. An install asks each decision once,
   then the approval once and last, with the spec and time. Saving an endpoint that reaches a saved one offers to update it.
