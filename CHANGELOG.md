@@ -48,6 +48,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.97): relay 2.0.0a41, on jarvis-cd 1.9.19. JARVIS's Spack commands have no fixed time limit:
+  a slow first `spack compiler find` on a fresh site keeps going and writes a "still running" line to install.log
+  every minute, and an install refuses only after 10 minutes with no activity, with a typed refusal in its issues.
+  A failed install on a worker site keeps JARVIS's log and issues (2.0.0a40).
 - `clio-relay` (1.6.96): relay 2.0.0a39. Relay's frp visitor reaches the rendezvous host through the proxy its host
   gives it (`transport.proxyURL`, `HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY`, honouring `NO_PROXY`), so a worker site's link
   comes up from inside CLIO's fence on Windows; a link that fails says what the visitor said. A worker site now
