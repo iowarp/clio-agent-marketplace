@@ -357,7 +357,7 @@ wheels = [
 [[package]]
 name = "clio-relay"
 version = "2.0.0a30"
-source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a30/clio_relay-2.0.0a30-py3-none-any.whl" }
+source = { git = "https://github.com/iowarp/clio-relay?rev=6d391fc344d95a536004683e35a98018c8dbbdc7#6d391fc344d95a536004683e35a98018c8dbbdc7" }
 dependencies = [
     { name = "aioquic" },
     { name = "clio-schemas" },
@@ -379,44 +379,11 @@ dependencies = [
     { name = "uvicorn" },
     { name = "websockets" },
 ]
-wheels = [
-    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a30/clio_relay-2.0.0a30-py3-none-any.whl", hash = "sha256:c6d7fa66f38ccd3c58f768aa9be767923916265c374538324b0ac1748b8de09b" },
-]
 
 [package.optional-dependencies]
 tapis = [
     { name = "tapipy" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "aioquic", specifier = ">=1.9.1,<1.10" },
-    { name = "clio-schemas", specifier = "==0.2.1" },
-    { name = "cryptography", specifier = ">=50.0.0" },
-    { name = "fastapi", specifier = ">=0.115" },
-    { name = "fastmcp", specifier = "==4.2.1" },
-    { name = "fastmcp-slim", extras = ["client", "server"], specifier = "==4.2.1" },
-    { name = "fastmcp-tasks", specifier = "==4.2.1" },
-    { name = "filelock", specifier = ">=3.15" },
-    { name = "globus-compute-sdk", marker = "extra == 'globus'", specifier = ">=4.21,<4.22" },
-    { name = "globus-sdk", marker = "extra == 'globus'", specifier = ">=4.10,<5" },
-    { name = "httpx", specifier = ">=0.27,<1" },
-    { name = "jsonschema", specifier = ">=4.23" },
-    { name = "keyring", specifier = ">=25" },
-    { name = "keyrings-alt", marker = "extra == 'testing'", specifier = ">=5" },
-    { name = "mcp", specifier = "==2.3.0" },
-    { name = "packaging", specifier = ">=24.2" },
-    { name = "psij-python", specifier = "==0.9.11" },
-    { name = "pydantic", specifier = ">=2.8" },
-    { name = "pytest", marker = "extra == 'testing'", specifier = ">=8.3" },
-    { name = "pytest-asyncio", marker = "extra == 'testing'", specifier = ">=0.24" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "tapipy", marker = "extra == 'tapis'", specifier = "==25.4.0" },
-    { name = "typer", specifier = ">=0.12" },
-    { name = "uvicorn", specifier = ">=0.30" },
-    { name = "websockets", specifier = ">=16.0" },
-]
-provides-extras = ["globus", "iri", "tapis", "testing"]
 
 [[package]]
 name = "clio-relay-server"
@@ -427,7 +394,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a30/clio_relay-2.0.0a30-py3-none-any.whl" }]
+requires-dist = [{ name = "clio-relay", extras = ["tapis"], git = "https://github.com/iowarp/clio-relay?rev=6d391fc344d95a536004683e35a98018c8dbbdc7" }]
 
 [[package]]
 name = "clio-schemas"

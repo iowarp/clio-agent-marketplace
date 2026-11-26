@@ -48,6 +48,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.83): relay at commit 6d391fc3, ahead of 2.0.0a31, with the jarvis-cd 1.9.14 candidate (472b753b).
+  When JARVIS's install fails and offers a setting the person can change, such as where the build's temporary files
+  go, the agent sees it in JARVIS's own words and can give a value; the install approval names it, and JARVIS
+  records it for the cluster. Relay is pinned by its commit until the release.
 - `clio-relay` (1.6.82): relay 2.0.0a30, at jarvis-cd 1.9.13. After JARVIS builds a package's software, its check
   records that build as its own, so no site-copy question follows. The worker's sign-in fetches frpc on the cluster
   itself, a pinned frp release checked by its sha256, the way it gets uv, so a desktop no longer has to hold or copy in
