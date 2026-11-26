@@ -29,7 +29,9 @@ the next; do not retype coordinates.
 
 - `calculator`: `{type: 'xtb'}` (GFN2-xTB), `{type: 'mace'}` (MACE-OFF23 small),
   `{type: 'uma'}`, `{type: 'nwchem', method, basis}`, `{type: 'orca', method, basis}`;
-  `emt` only for tests. Choose with the `method-ladder` skill.
+  `emt` only for tests. Choose with the `method-ladder` skill. MACE also takes a
+  `model`: `mace-off-small|medium|large`, `mace-mp-small|medium|medium-mpa-0` (with an
+  optional `dispersion: true`), `mace-omol-extra-large` or a `.model` path.
 - `charge` and `multiplicity` go to the calculator and the thermochemistry; the result
   notes when a calculator ignores them.
 - `constraints` hold atoms, bonds, angles or dihedrals during an optimization (a value
@@ -55,5 +57,5 @@ what is missing:
 - `hf_token_missing`: UMA needs a Hugging Face token whose account accepted the UMA
   licence. Ask once with `offer_plugin` (plugin `ase`, your reason, `needs` with the
   token's need from the listing's `optional_needs`): the person types it into the card,
-  never into the chat or an environment variable. Do not look for another way.
+  never into the chat or an environment variable.
 - `dipole_unavailable`: IR needs xtb, nwchem or orca.
