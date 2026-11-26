@@ -57,5 +57,6 @@ what is missing:
 - `hf_token_missing`: UMA needs a Hugging Face token whose account accepted the UMA
   licence. Ask once with `offer_plugin` (plugin `ase`, your reason, `needs` with the
   token's need from the listing's `optional_needs`): the person types it into the card,
-  never into the chat or an environment variable.
+  never into the chat or an environment variable. When they have none, pick a calculator
+  that is ready and suits the system (see `method-ladder`) and say so.
 - `dipole_unavailable`: IR needs xtb, nwchem or orca.
