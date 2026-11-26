@@ -219,12 +219,19 @@ or offer is derived from the facts below.
   They bound the range: the fewest ranks whose share of the problem fits in
   memory, up to the most that still each get useful work, and which counts
   divide the units evenly.
-- Set that range against the queue: from `describe`, the partition's total
-  and idle nodes, physical cores and memory per node, and its time limit; and
-  the queue's own per-job node limits, the fewest and the most nodes a job may
-  take, which some queues set well above one. Where `describe` does not
-  report a limit, take it from the site's documentation of its queues, or ask
-  the person; never assume a queue takes any size. A layout that fills whole
+- Set that range against the queue: from `describe`, each partition entry's
+  `nodes` and `idle`, `physical_cores` and `memory_mb` per node, its time
+  limit (`max_time`, `max_time_s`), and the queue's own per-job node limits,
+  `min_nodes` and `max_nodes`, the fewest and the most nodes one job may take,
+  which some queues set well above one. The entry's `limits` holds every
+  limit the scheduler reported, exactly as it reported it, and
+  `limits_source` says which command and field each came from.
+- Unknown is not unlimited. `"UNLIMITED"` in `limits` is the scheduler saying
+  there is no limit; a key named in `limits_unknown` (or a whole entry with no
+  `limits`) is one relay could not read, so its null says nothing. For an
+  unknown limit that matters to the layout, check the site's documentation of
+  its queues or ask the person, and never assume a queue takes any size or any
+  time. A layout that fills whole
   nodes, divides the units evenly, fits each rank's memory and sits inside
   the queue's limits is a candidate; idle nodes say how soon it can start.
 - When the person's budget or allocation is known (node-hours left, a

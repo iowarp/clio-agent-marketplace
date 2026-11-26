@@ -48,6 +48,13 @@
 
 ### Changed
 
+- `clio-relay` (1.6.93): relay 2.0.0a35, on jarvis-cd 1.9.17. `describe` partition entries carry `min_nodes` and `max_nodes`, the
+  queue's per-job node limits, and the scheduler's queue `limits` as JARVIS reports them on Slurm, PBS, LSF and Flux, with
+  `limits_unknown`, `limits_source` and `state`; before JARVIS is placed, sinfo gives the same shape with what it cannot
+  show marked unknown. JARVIS reads a site's named resource graph read-only and keeps its own state in relay's home.
+  `use-relay` reads the node and time limits from `describe`, and says unknown is not unlimited: for an unknown limit that
+  matters, check the site's queue documentation or ask the person. Bundled clio-jarvis moves to 0ce5fd57 (iowarp/clio-jarvis#1,
+  the same `clio_jarvis` tree as c9a324a7).
 - `clio-relay` (1.6.92): sizing names no fixed node count, rank count or scale. `use-relay`'s layout section derives
   every count from the problem's parallel units, the partition and the queue's own per-job node limits, and the
   person's budget; pilots are two candidate layouts chosen the same way, and the choices span that problem's sensible
