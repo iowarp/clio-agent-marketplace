@@ -48,6 +48,8 @@
 
 ### Changed
 
+- `clio-relay` (1.6.87): relay 2.0.0a31, with the jarvis-cd 1.9.14 release. It carries JARVIS's install settings,
+  its threads per MPI rank, and a site clean that removes each install's outputs with `--remove-outputs`.
 - `clio-relay` (1.6.86): relay a0fc1156 as a built wheel (pre-release `build-a0fc1156`), so the plugin installs
   on a clean CLIO home again; 1.6.83 to 1.6.85 pinned relay by git, which the server's no-build setting refused.
 - `clio-relay` (1.6.85): relay at commit a0fc1156. A site clean with `--remove-outputs` also removes the
