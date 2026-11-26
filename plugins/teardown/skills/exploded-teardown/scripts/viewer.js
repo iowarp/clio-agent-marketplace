@@ -37,6 +37,10 @@ document.documentElement.style.setProperty('--td-accent', meta.accent);
 document.documentElement.style.setProperty('--td-bg', meta.background);
 const app = $('div', 'td-app', document.body);
 const stage = $('div', 'td-stage', app);
+const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+overlay.setAttribute('class', 'td-leaders');
+app.appendChild(overlay);
+const labelLayer = $('div', 'td-labels', app);
 const header = $('header', 'td-header', app);
 $('div', 'td-eyebrow', header, 'Teardown · exploded view');
 $('h1', 'td-title', header, meta.title);
@@ -48,10 +52,6 @@ const infoCard = $('section', 'td-card td-info', panel);
 const listCard = $('section', 'td-card td-list', panel);
 const bar = $('div', 'td-bar', app);
 const footer = $('footer', 'td-footer', app);
-const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-overlay.setAttribute('class', 'td-leaders');
-app.appendChild(overlay);
-const labelLayer = $('div', 'td-labels', app);
 const tooltip = $('div', 'td-tooltip', app);
 tooltip.hidden = true;
 
@@ -401,6 +401,14 @@ up.href = 'https://github.com/elvarofficial/teardown';
 up.target = '_blank';
 credit.append(' (MIT) · three.js (MIT)');
 
+// Stack the panel and bar above the footer, whatever height each wraps to.
+const dock = () => {
+  app.style.setProperty('--td-foot-h', `${footer.offsetHeight}px`);
+  app.style.setProperty('--td-bar-h', `${bar.offsetHeight}px`);
+};
+dock();
+if (window.ResizeObserver) { const ro = new ResizeObserver(dock); ro.observe(footer); ro.observe(bar); }
+
 // ---------- picking, hover, labels ----------
 const ray = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
@@ -517,10 +525,30 @@ function resize() {
   const w = stage.clientWidth || window.innerWidth;
   const h = stage.clientHeight || window.innerHeight;
   renderer.setSize(w, h, false);
-  camera.aspect = w / h;
+  // Fit and centre the model in the space the cards leave free: above the docked cards on narrow
+  // screens, left of the panel and above the bar on wide ones.
+  let wv = w;
+  let hv = h;
+  if (state.ui !== false) {
+    const s = stage.getBoundingClientRect();
+    const p = panel.getBoundingClientRect();
+    if (w <= 900) {
+      const top = p.top - s.top;
+      if (top > h * 0.35 && top < h) hv = top;
+    } else {
+      const left = p.left - s.left;
+      const barTop = bar.getBoundingClientRect().top - s.top;
+      if (p.width > 0 && left > w * 0.4 && left < w) wv = left;
+      if (barTop > h * 0.5 && barTop < h) hv = barTop;
+    }
+  }
+  camera.aspect = wv / hv;
+  if (wv < w || hv < h) camera.setViewOffset(wv, hv, 0, 0, w, h);
+  else camera.clearViewOffset();
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
+if (window.ResizeObserver) { const fitRo = new ResizeObserver(resize); fitRo.observe(panel); fitRo.observe(bar); }
 resize();
 applyState(new URLSearchParams(location.hash.slice(1)));
 
