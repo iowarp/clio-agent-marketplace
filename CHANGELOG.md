@@ -48,6 +48,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.95): relay 2.0.0a38. Relay uses a SOCKS proxy its host gives it: CLIO on Windows runs the server
+  inside a managed network proxy that sets a SOCKS `ALL_PROXY`, and a worker site's sign-in, which fetches relay's own
+  wheel, failed there with `ImportError`. A sign-in that fails on an unexpected error now names the error.
 - `clio-relay` (1.6.94): relay 2.0.0a36, on jarvis-cd 1.9.18. A worker site's sign-in installs the relay this computer
   runs: the plugin's own release wheel, checked file by file against the installed copy, so a clean sign-in no longer
   needs `relay_wheel` set by hand; an editable or local-path relay is refused with the reason. JARVIS reads the software in
