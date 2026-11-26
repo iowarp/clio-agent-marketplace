@@ -48,6 +48,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.89): relay 2.0.0a32, with the jarvis-cd 1.9.15 release. `describe` reports each partition's
+  compute cores from JARVIS (`facts.compute_cores`, the graph's `facts.cpu`); the login host's count is
+  `facts.login_cpus`. Cores per rank and exclusive node use reach JARVIS, and the plan's `cores` reaches the agent.
 - `clio-relay` (1.6.88): `use-relay` sizes a job's time as (startup + measured run) times a safety coefficient,
   with a short pilot first when nothing is measured, never from a padded guess. `jarvis-package` has a package
   expose the application's own parallel-decomposition controls as parameters.
