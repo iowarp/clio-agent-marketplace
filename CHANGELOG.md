@@ -48,6 +48,9 @@
 
 ### Changed
 
+- `clio-relay` (1.6.101): relay 2.0.0a50, on jarvis-cd 1.9.24. A Fortran package such as xcompact3d no longer builds on
+  a C-only compiler. `site clean` cleans a run cancelled at its card, and another relay home's job on the same account
+  no longer stops it.
 - `clio-relay` (1.6.100): relay 2.0.0a47. When the forward relay left on the desktop is gone and another program has
   taken its port, relay moves to a free port and keeps it, instead of treating that program as its forward.
 - `clio-relay` (1.6.99): relay 2.0.0a46, on jarvis-cd 1.9.23. ParaView's pvserver starts again (its start timeout
