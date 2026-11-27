@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "spack": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "${PLUGIN_ROOT}/server",
+        "--frozen",
+        "--no-dev",
+        "spack-mcp"
+      ],
+      "env": {
+        "SPACK_MCP_PROFILE": "user"
+      }
+    }
+  }
+}

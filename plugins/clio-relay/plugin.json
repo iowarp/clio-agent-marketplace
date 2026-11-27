@@ -1,0 +1,62 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "clio-relay",
+  "version": "1.6.103",
+  "description": "Relay: run jobs, commands, file transfers and services on your compute sites (clusters and supercomputers over SSH, Globus Compute, Tapis), install their software through JARVIS, and manage those sites on the Compute page.",
+  "author": {
+    "name": "IoWarp Team"
+  },
+  "license": "MIT",
+  "category": "HPC",
+  "keywords": [
+    "hpc",
+    "compute",
+    "sites",
+    "compute site",
+    "slurm",
+    "globus",
+    "ssh",
+    "cluster",
+    "supercomputer",
+    "remote compute",
+    "remote",
+    "mpi",
+    "jarvis",
+    "tapis",
+    "pbs"
+  ],
+  "extensions": {
+    "ai.iowarp.clio": {
+      "title": "Relay",
+      "requires": [
+        "spack"
+      ],
+      "navigation": {
+        "id": "compute",
+        "title": "Compute",
+        "icon": "cpu",
+        "resource": "a2ui://clio-relay/compute"
+      },
+      "accounts": [
+        {
+          "provider": "globus",
+          "scopes": [
+            "urn:globus:auth:scope:transfer.api.globus.org:all",
+            "https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"
+          ]
+        }
+      ],
+      "elicitation": {
+        "loopback": true,
+        "origins": [
+          "https://tacc.tapis.io"
+        ]
+      },
+      "setup": {
+        "files": [
+          "config/sites.yaml"
+        ]
+      }
+    }
+  }
+}

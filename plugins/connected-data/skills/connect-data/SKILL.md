@@ -47,8 +47,8 @@ An already-approved identical source is reused. Registration, authentication
 and a successfully linked file index are separate states: report the returned
 state honestly. After sign-in, retry connection to build the linked index.
 
-For ordinary GitHub inspection, releases, cloning and development, use `gh`
-through the normal shell and its configured account. The shared GitHub shell
+For ordinary GitHub inspection, releases, cloning and development, use `gh` or
+`git` through the normal shell and its configured account. The shared GitHub shell
 prompt explains release evidence and stable/prerelease distinctions. Do not
 connect a source solely because the user provided a repository URL or asked
 for a public release. Public API/browser reads are also sufficient for public

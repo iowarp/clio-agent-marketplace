@@ -1,0 +1,107 @@
+schema: clio.package-contract.v1
+package: gray_scott
+title: Gray-Scott
+version: 0.2.5
+kind: application
+summary: >-
+  ADIOS2 Gray-Scott reaction-diffusion on an L x L x L grid. It writes U and V
+  to a growing BP5 output that ParaView's ADIOS2VTXReader can follow while the
+  run goes, and with checkpoint_freq set, a checkpoint (ckpt.bp) it can
+  restart from. On every node with solver ranks a flusher syncs gs.bp each
+  second, so a viewer on another node sees each step as it lands.
+install:
+  method: spack
+  # MPI stays the mpi virtual, so the site's MPI is reused.
+  query: gray-scott@2.10.2 +clio ^adios2+mpi
+  repos: [spack]
+
+parameters:
+  required: [nprocs, L, steps, plotgap]
+  properties:
+    nprocs: {minimum: 1, maximum: 65536}
+    ppn: {minimum: 1, maximum: 256}
+    cores_per_node: {minimum: 1, maximum: 1024}
+    L: {minimum: 8, maximum: 2048}
+    steps: {minimum: 1}
+    plotgap: {minimum: 1}
+    dt: {exclusiveMinimum: 0}
+    noise: {minimum: 0}
+    checkpoint_freq: {minimum: 0}
+    walltime: {minimum: 1}
+  review: [nprocs, ppn, L, steps, plotgap, checkpoint_freq, walltime, queue]
+  fill:
+    run_dir: "{shared_dir}/run"
+
+resources:
+  process_count: {param: nprocs}
+  processes_per_node: {param: ppn}
+  duration: {param: walltime}
+  queue_name: {param: queue}
+
+sizing:
+  mesh: L x L x L cells.
+  decomposition: block3d
+  ranks: >-
+    MPI_Dims_create splits the cube into px x py x pz blocks with px x py x pz
+    = nprocs, as near cubic as nprocs allows; each rank holds about L^3 /
+    nprocs cells plus one ghost layer per face. Keep each block at 32^3 cells
+    or more, so the ghost exchange stays small beside the stencil work.
+  processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}
+  nodes: {ceil_div: [nprocs, ppn]}
+  cost: >-
+    walltime seconds = L^3 x steps / (throughput x nprocs), with the
+    throughput in cell-steps per second per rank, plus the startup and the
+    steps / plotgap output writes, each 2 x 8 x L^3 bytes (U and V in
+    double precision).
+
+outputs:
+  - name: fields
+    path: "{run_dir}/gs.bp"
+    path_kind: directory
+    format: adios2-bp5
+    reader: ADIOS2VTXReader
+    expected_steps: {div: [steps, plotgap]}
+    follow: {signal: reader-time-steps, poll_seconds: 2}
+    time: {unit: simulation time, step_interval: {mul: [dt, plotgap]}}
+    display:
+      array: V
+      association: CELLS
+      representation: Slice
+      slice_normal: [0, 0, 1]
+      color_map: Viridis (matplotlib)
+      range: [0.0, 0.6]
+    arrays: [U, V]
+  - name: checkpoint
+    role: restart
+    description: >-
+      U, V and the step, written every checkpoint_freq steps; only when
+      checkpoint_freq is set. settings.json restart: true reads it back.
+    path: "{run_dir}/ckpt.bp"
+    path_kind: directory
+    format: adios2-bp5
+
+progress:
+  unit: step
+  # "Simulation at step 300 writing output step     2" is printed before step 2 is written.
+  step_pattern: '^Simulation at step\s+(?P<sim_step>\d+)\s+writing output step\s+(?P<step>\d+)\s*$'
+  announces: before-write
+  output: fields
+  total: {div: [steps, plotgap]}
+  done_pattern: '^Rank 0 - ET \d+ - milliseconds'
+
+provenance:
+  inputs:
+    - "{run_dir}/settings.json"
+    - "{run_dir}/adios2.xml"
+  upstream:
+    - name: >-
+        ADIOS2 v2.10.2 examples/simulations/gray-scott, built by the Spack
+        recipe clio.gray-scott +clio in spack/, whose patch() method adds the
+        simulation time to vtk.xml
+      version: "2.10.2"
+      url: https://github.com/ornladios/ADIOS2/tree/v2.10.2/examples/simulations/gray-scott
+
+selftest:
+  params: {nprocs: 4, ppn: 4, L: 64, steps: 400, plotgap: 20, walltime: 600}
+  max_seconds: 600
+  script: selftest.py

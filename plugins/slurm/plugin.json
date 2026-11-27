@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "slurm",
-  "version": "0.6.0",
+  "version": "0.6.3",
   "description": "Slurm batch jobs: submit, record job ids, wait in bounded low-output steps with a bundled helper, and read a failed job's output before resubmitting.",
   "author": {
     "name": "IoWarp Team"

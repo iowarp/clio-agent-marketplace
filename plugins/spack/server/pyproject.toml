@@ -1,0 +1,12 @@
+[project]
+name = "spack-server"
+version = "1.0.0"
+description = "The spack plugin's MCP server, locked to a released spack-mcp wheel"
+requires-python = ">=3.12"
+dependencies = [
+    "spack-mcp @ https://github.com/iowarp/clio-kit/releases/download/spack-mcp-v1.0.0/spack_mcp-1.0.0-py3-none-any.whl",
+]
+
+[tool.uv]
+package = false
+no-build = true

@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clio-jarvis"
+version = "0.2.0"
+description = "JARVIS packages that meet the clio relay package contract: Gray-Scott, WRF, WarpX, LAMMPS, GROMACS and pvserver"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "BSD-3-Clause"}
+# Needs jarvis-cd 4007fd14 or newer (unreleased, after 1.8.1); see README.
+dependencies = ["jarvis-cd>=1.8.1", "pyyaml>=6", "jsonschema>=4.18"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+clio-jarvis = "clio_jarvis.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["clio_jarvis"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.xml", "*.i3d", "*.inputs", "*.lammps", "*.mdp", "*.top", "NOTICE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

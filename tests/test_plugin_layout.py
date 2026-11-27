@@ -44,6 +44,12 @@ EXTENSION_FIELDS = {
     "servers",
     "kernel_bindings",
     "follows",
+    "tabs",
+    "accounts",
+    "elicitation",
+    "title",
+    "navigation",
+    "setup",
 }
 SKILL_NAME = re.compile(r"^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")

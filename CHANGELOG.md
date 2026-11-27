@@ -2,6 +2,579 @@
 
 ## [Unreleased]
 
+### Added
+
+- `cad` (0.1.0): parametric CAD with the `cadquery` skill. The part is a script
+  run on CLIO's own uv and Python with `cadquery>=2.8`, whose cadquery-ocp has
+  wheels for Python 3.11 to 3.14, so the first run resolves on a 3.14 CLIO Python
+  where an older pin such as 2.6.1 does not. It exports STEP and an STL that is
+  read back and checked for watertightness and dimensions before a solver uses it.
+- `clio-relay` (1.6.16): relay's MCP server, run with `uvx` from a pinned commit of
+  iowarp/clio-relay, and its Compute page in CLIO's left bar, where a person sets
+  the protocol and security for new endpoints, then adds, probes, edits and removes
+  compute endpoints and changes each one's protocol and security in place. It
+  declares the page with `navigation`, its breadcrumb title "Relay" with `title`, a
+  Globus account, whose grant file it hands relay as `CLIO_RELAY_GRANT_FILE_GLOBUS`,
+  and sign-in pages on the loopback address and `https://tacc.tapis.io`. It ships
+  the `clio-relay-compute` A2UI catalog (the Basic components it uses plus
+  `clio.choice-table.v1` for the endpoint table) and the `use-relay` skill. The
+  layout check now accepts the `navigation`, `title`, `tabs`, `accounts` and
+  `elicitation` host fields.
+- `spack` (1.0.1): HPC software on clio-relay sites through clio-kit's spack
+  server (contract `clio-kit-spack-user-v3`), run with `uvx` from a pinned commit
+  of iowarp/clio-kit until clio-kit releases 3.0.0, with the `spack` skill. Research the
+  site with `spack_site_query` (find, info, spec, modules), prepare a CLIO Spack
+  that reuses the site's Spack as an upstream with `spack_prepare_site`, and
+  install through `jarvis ppl install +submit` jobs on compute nodes, never on the
+  login node. Choices the agent cannot resolve, such as several MPIs, go to the
+  person. On a guarded site, queries use relay's read-only Spack argv and
+  preparing goes through relay's plan ask (`needs_approval`, `declined`).
+
+
+### Removed
+
+- `ssh` (1.0.0): retired. Its only tool was the `ssh_execute` built-in, which CLIO no
+  longer has (relay's sites run remote commands and transfers), so the plugin could
+  not resolve. Remote work goes through `clio-relay`.
+
+### Changed
+
+- `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
+  views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
+  relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.103): relay 2.0.0a52, on jarvis-cd 1.9.25. Relay's held ssh connection dials through the proxy its
+  environment names (HTTPS_PROXY, ALL_PROXY or HTTP_PROXY, NO_PROXY honoured), so it works inside a sandbox that lets
+  programs out only through its proxy, and a failed open says how relay dialed. A site that takes the key and then asks
+  for a code reads as a sign-in. `execution get` shows a run's measured pace beside its time limit. The use-relay skill
+  treats a pilot as a sample of how the application uses compute, settles the physics the question needs before
+  sizing, and reads a run's pace while it is in flight; jarvis-package gives step totals and runs independent work as
+  separate runs. Bundled clio-jarvis moves to f31b4409: the hand-built xcompact3d package and its recipes are gone, and
+  the contracts no longer carry pilot and layout rules.
+- `clio-relay` (1.6.102): relay 2.0.0a51, on jarvis-cd 1.9.24. Relay holds the ssh connection itself on every OS, so a
+  site that asks for a code (`interactive_sign_in`) works from Windows too, and relay's processes on one machine share
+  one sign-in. A run approval shows when the same job is already live and lets the person use it. The site setting
+  `jarvis_graph: relay` keeps relay's own resource graph whatever the site exports. Bundled clio-jarvis moves to
+  1889697d: a view descriptor can carry `geometry` (xcompact3d reports its body as `run/body.stl`).
+- `clio-relay` (1.6.101): relay 2.0.0a50, on jarvis-cd 1.9.24. A Fortran package such as xcompact3d no longer builds on
+  a C-only compiler. `site clean` cleans a run cancelled at its card, and another relay home's job on the same account
+  no longer stops it.
+- `clio-relay` (1.6.100): relay 2.0.0a47. When the forward relay left on the desktop is gone and another program has
+  taken its port, relay moves to a free port and keeps it, instead of treating that program as its forward.
+- `clio-relay` (1.6.99): relay 2.0.0a46, on jarvis-cd 1.9.23. ParaView's pvserver starts again (its start timeout
+  was read as empty). A worker site's serve uses its own link's rendezvous and frpc with no `rendezvous set`. One
+  relay process runs each forward, and a desktop port relay had to move keeps its new number through a restart. The
+  comment a person adds to a run approval reaches the model, and `clio-relay asks answer` takes `--comment`.
+- `clio-relay` (1.6.98): relay 2.0.0a42, on jarvis-cd 1.9.22. JARVIS keeps its own Spack's install tree short
+  enough for Linux's 127-character shebang limit, so a fresh site's install no longer needs a short `spack_root`.
+  No JARVIS action has a fixed time limit, and a service's start timeout is a stall window. A worker site serves
+  a package's port, such as ParaView's pvserver, over ssh or frp.
+- `clio-relay` (1.6.97): relay 2.0.0a41, on jarvis-cd 1.9.19. JARVIS's Spack commands have no fixed time limit:
+  a slow first `spack compiler find` on a fresh site keeps going and writes a "still running" line to install.log
+  every minute, and an install refuses only after 10 minutes with no activity, with a typed refusal in its issues.
+  A failed install on a worker site keeps JARVIS's log and issues (2.0.0a40).
+- `clio-relay` (1.6.96): relay 2.0.0a39. Relay's frp visitor reaches the rendezvous host through the proxy its host
+  gives it (`transport.proxyURL`, `HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY`, honouring `NO_PROXY`), so a worker site's link
+  comes up from inside CLIO's fence on Windows; a link that fails says what the visitor said. A worker site now
+  describes its partitions, limits, scheduler facts and resource graph, as an ssh site does.
+- `clio-relay` (1.6.95): relay 2.0.0a38. Relay uses a SOCKS proxy its host gives it: CLIO on Windows runs the server
+  inside a managed network proxy that sets a SOCKS `ALL_PROXY`, and a worker site's sign-in, which fetches relay's own
+  wheel, failed there with `ImportError`. A sign-in that fails on an unexpected error now names the error.
+- `clio-relay` (1.6.94): relay 2.0.0a36, on jarvis-cd 1.9.18. A worker site's sign-in installs the relay this computer
+  runs: the plugin's own release wheel, checked file by file against the installed copy, so a clean sign-in no longer
+  needs `relay_wheel` set by hand; an editable or local-path relay is refused with the reason. JARVIS reads the software in
+  the effective resource graph, reports an older list-form `net` as `form: legacy_list` with the advisory
+  `resource_graph_net_legacy` instead of a missing net, and keeps all its state in relay's home. `use-relay` says a
+  legacy-form net needs no collecting, and offers the collect job for an `mpi_network` issue only on relay's own graph.
+- `clio-relay` (1.6.93): relay 2.0.0a35, on jarvis-cd 1.9.17. `describe` partition entries carry `min_nodes` and `max_nodes`, the
+  queue's per-job node limits, and the scheduler's queue `limits` as JARVIS reports them on Slurm, PBS, LSF and Flux, with
+  `limits_unknown`, `limits_source` and `state`; before JARVIS is placed, sinfo gives the same shape with what it cannot
+  show marked unknown. JARVIS reads a site's named resource graph read-only and keeps its own state in relay's home.
+  `use-relay` reads the node and time limits from `describe`, and says unknown is not unlimited: for an unknown limit that
+  matters, check the site's queue documentation or ask the person. Bundled clio-jarvis moves to 0ce5fd57 (iowarp/clio-jarvis#1,
+  the same `clio_jarvis` tree as c9a324a7).
+- `clio-relay` (1.6.92): sizing names no fixed node count, rank count or scale. `use-relay`'s layout section derives
+  every count from the problem's parallel units, the partition and the queue's own per-job node limits, and the
+  person's budget; pilots are two candidate layouts chosen the same way, and the choices span that problem's sensible
+  range on that machine with projected time to result and node-hours. The time request's safety coefficient is sized
+  from how far the measurement can be trusted, not a fixed 1.5 or 2, here and in the bundled clio-jarvis c9a324a7
+  contracts, whose worked examples no longer read as default sizes. `host_slice` has no example ranges.
+- `clio-relay` (1.6.91): relay 2.0.0a33. `site clean` removes what `relay_files` wrote on the site. `describe` reads the
+  partitions from sinfo before JARVIS is placed, takes the site's `JARVIS_RESOURCE_GRAPH` as its graph and offers collection
+  only without one, and a run's card keeps its partition's current facts (`partition_facts`). `use-relay` sizes the
+  layout from the problem's parallel units and the partition, pilots at two sizes, and offers node counts with
+  projected time to result; `jarvis-package` writes `sizing` from those units.
+- `clio-relay` (1.6.90): `use-relay` sizes an application's own stop timer (a clean stop and restart written
+  before a time limit) from the job's time request, just under it, and never below the projected run.
+- `clio-relay` (1.6.89): relay 2.0.0a32, with the jarvis-cd 1.9.15 release. `describe` reports each partition's
+  compute cores from JARVIS (`facts.compute_cores`, the graph's `facts.cpu`); the login host's count is
+  `facts.login_cpus`. Cores per rank and exclusive node use reach JARVIS, and the plan's `cores` reaches the agent.
+- `clio-relay` (1.6.88): `use-relay` sizes a job's time as (startup + measured run) times a safety coefficient,
+  with a short pilot first when nothing is measured, never from a padded guess. `jarvis-package` has a package
+  expose the application's own parallel-decomposition controls as parameters.
+- `clio-relay` (1.6.87): relay 2.0.0a31, with the jarvis-cd 1.9.14 release. It carries JARVIS's install settings,
+  its threads per MPI rank, and a site clean that removes each install's outputs with `--remove-outputs`.
+- `clio-relay` (1.6.86): relay a0fc1156 as a built wheel (pre-release `build-a0fc1156`), so the plugin installs
+  on a clean CLIO home again; 1.6.83 to 1.6.85 pinned relay by git, which the server's no-build setting refused.
+- `clio-relay` (1.6.85): relay at commit a0fc1156. A site clean with `--remove-outputs` also removes the
+  outputs directory of each install relay ran there, and of a run that ended before recording any outputs.
+- `clio-relay` (1.6.84): relay at commit dad251ce, with the jarvis-cd 1.9.14 candidate 96ea53d7. JARVIS also sets
+  each MPI rank's thread counts (OpenMP, OpenBLAS and MKL) from that rank's share of the allocation.
+- `clio-relay` (1.6.83): relay at commit 6d391fc3, ahead of 2.0.0a31, with the jarvis-cd 1.9.14 candidate (472b753b).
+  When JARVIS's install fails and offers a setting the person can change, such as where the build's temporary files
+  go, the agent sees it in JARVIS's own words and can give a value; the install approval names it, and JARVIS
+  records it for the cluster. Relay is pinned by its commit until the release.
+- `clio-relay` (1.6.82): relay 2.0.0a30, at jarvis-cd 1.9.13. After JARVIS builds a package's software, its check
+  records that build as its own, so no site-copy question follows. The worker's sign-in fetches frpc on the cluster
+  itself, a pinned frp release checked by its sha256, the way it gets uv, so a desktop no longer has to hold or copy in
+  an frpc. A cluster with no internet access can point `frpc_url` and `frpc_sha256` at a mirror.
+- `clio-relay` (1.6.81): relay 2.0.0a28, at jarvis-cd 1.9.12. A JARVIS failure reaches the agent whole, in JARVIS's own
+  words, with the full output's path to read; only JARVIS's real decisions are asked. An install asks each decision once,
+  then the approval once and last, with the spec and time. Saving an endpoint that reaches a saved one offers to update it.
+  A site with no scheduler no longer reads "None".
+- `clio-relay` (1.6.80): relay 2.0.0a27, at jarvis-cd 1.9.9. When a Spack at the site fails only because of some
+  repos in the person's user config, JARVIS's question first offers, and recommends, leaving out only those repos:
+  JARVIS uses its own copy of the scope without them, so the good repos and the site copies built from them stay
+  usable. Running without the user config stays as the fallback.
+- `clio-relay` (1.6.79): relay 2.0.0a26, at jarvis-cd 1.9.8. When a Spack at the site fails, for example on a broken
+  repo in the person's user config, JARVIS's question is asked as written: run its Spack commands without the user
+  config (with what that leaves out), skip that Spack, or fix it and check again. A site copy that does not load is
+  asked as written too: another of the site's copies, a Spack build, or forget the choice. The use-relay skill and
+  relay's instructions say relay owns the connection to every site, so the agent reads no ssh config and probes no
+  host itself.
+- `clio-relay` (1.6.78): relay 2.0.0a25, at jarvis-cd 1.9.7. When JARVIS finds the site's own copies of a package before a
+  Spack build, the person is asked "use the site's copy, or build with Spack?" as JARVIS wrote it: each copy and the
+  Spack build with JARVIS's meaning and its recommended mark, and the answer is recorded through JARVIS's decisions, so
+  a site copy installs nothing. When JARVIS finds none, the install approval says so. An install job's card is
+  labelled from the package or spec it installs, such as "Install lammps@20240829.1".
+- `clio-relay` (1.6.77): relay 2.0.0a24. Its MCP server instructions open with relay as the way to reach a compute
+  site (never `ssh`, `scp` or a scheduler command in a shell, even for a host in an ssh config; a site not listed is
+  added by the person on the Compute page), then name each configured site with its transport, such as "ares
+  (ssh)", so a search of recorded instructions finds relay by a site name. The install approval states what
+  JARVIS found (the spec, the Spack packages already on the site, the MPI it builds against, its estimate), and its
+  Approve and Decline say what each does. plugin.json gets `category` "HPC" and the keyword "compute site"; CLIO
+  warns about the top-level field and ignores it until it reads a native plugin's category.
+- `clio-relay` (1.6.76): found for a remote cluster. Its keywords add ssh, cluster, supercomputer, remote compute,
+  mpi, jarvis, tapis and pbs, so a search for any of them offers relay now that the ssh plugin is retired. The
+  use-relay skill says a site is reached only through relay, never with `ssh`, `scp` or `sbatch` in a shell or
+  with `apt` probes; JARVIS installs site software through `install`; and a site not yet set up is added by the
+  person on the Compute page.
+- `slurm` (0.6.3): the hpc-batch-jobs skill covers jobs on CLIO's own machine; a remote site goes through relay.
+- `clio-relay` (1.6.75): relay 2.0.0a23, with the jarvis-cd 1.9.6 pin. A person's Decline is its own outcome,
+  not a failure: the result is not an error and carries `declined` (the question, and what relay did not do), and
+  a job card's outcome reads "declined". The Compute page's Local label and "This computer" row show in the page's
+  language. It also carries a21 and a22:
+  - every ask is one short question, with its detail typed in `_meta`;
+  - an install's walltime is JARVIS's estimate unless the site sets one, and a time past the partition is the
+    person's choice;
+  - a failed JARVIS command shows JARVIS's own error;
+  - a site's named JARVIS that lacks a package's Python requirements is refused, naming them;
+  - the `jarvis_graph` site setting;
+  - the jarvis-cd 1.9.3 to 1.9.5 container fixes.
+
+  Proven live on Ares: a held install moved and cancelled, and an install declined at its approval with nothing
+  submitted.
+- `clio-relay` (1.6.74): relay 2.0.0a20. A job card's revision now rises with every change to the job (each
+  component state, progress step and output tail), not only when its state moves, and every change announces
+  `relay://jobs/{op}`, whoever observed it, so a card no longer sticks on Running after the job ends. The Compute
+  page draws again with no sites. Proven live on Ares: a 2-node LAMMPS run followed to its end over MCP tasks and
+  the job resource, get, move and cancel on a held install, and an install that reaches its Spack placement choice.
+- `clio-relay` (1.6.73): relay 2.0.0a19 with the jarvis-cd 1.9.2 pin, and bundles clio-jarvis `4f9ef07`. Every
+  choice relay asks is a titled select: each option has a label, one line saying where it runs, what it costs and
+  its limits, and JARVIS's recommendation with its reason, typed in `_meta` as well. The run approval names the
+  package by its contract title and the cost in words ("Run LAMMPS on ares? It may use up to 5 min on 2 nodes
+  (about 0.17 node-hours)."), and its job card names each component the same way. JARVIS passes on every install
+  method (Spack, pip, conda, container) as its own question; a service that crashes beside a finished application
+  is reported on its own; the Compute page reads faster. clio-jarvis `4f9ef07` adds contract titles (`LAMMPS`,
+  `ParaView server`). The use-relay skill draws each coupling's data flow and passes install-method questions on.
+  Proven live on Ares: a 2-node LAMMPS run from a clean site, and get, move and cancel on a held install.
+- `clio-relay` (1.6.72): bundles clio-jarvis `8c45bc6`, pvserver 0.3.11. A pvserver that crashes (a segfault in
+  a filter, a nonzero exit) starts again on the same port up to `crash_restarts` times (default 3), so the ParaView
+  view rejoins it and rebuilds its scenes; the ready record counts crashes and the stop record lists each one. The
+  relay server (2.0.0a18) and the jarvis-cd pin (1.9.1) are unchanged.
+- `paraview` (1.0.11): the paraview-scenes skill builds geometry from ParaView's filters and sources, never from
+  hand-built `vtkCellArray` cells in a ProgrammableFilter, which can crash pvserver.
+- `clio-relay` (1.6.71): relay 2.0.0a18. Two looks at one install operation, in one relay server or two of the same
+  version, no longer both move it on when its check job ends, so each question is asked once. A fault while relay
+  checks a task no longer ends the agent's hold on it, so later answers still reach relay. The jarvis-cd pin (1.9.1)
+  and the clio-jarvis bundle are unchanged.
+- `clio-relay` (1.6.70): bundles clio-jarvis `0d94ab4`, which adds generic `lammps` and `gromacs` packages. `lammps`
+  takes a native LAMMPS input script and `gromacs` takes GROMACS's own case files (structure, topology, .mdp files)
+  with the gmx stages before the watched run. Each writes one VTK PolyData particle frame per output interval while
+  the solver runs, so a view following the newest frame moves as the run goes. Package output lines now end in a
+  newline, so steps published after the solver's last line of output are counted (this also applies to `warpx`).
+  Both packages passed their self-tests on Ares. The relay server, the jarvis-cd pin (1.9.1) and the skills'
+  guidance are unchanged apart from the jarvis-package skill naming the two packages.
+- `clio-relay` (1.6.69): relay 2.0.0a17. An operation now has an owner: a relay server of another version only
+  reports another server's operation and never advances it, and an older one never takes over a newer one's. Site clean
+  removes only that site's own deployment (its `remote_dir` and the hop under it). On Windows a local job whose
+  supervisor died is settled instead of staying running. The jarvis-cd pin (1.9.1) and the clio-jarvis bundle are
+  unchanged.
+- `clio-relay` (1.6.68): relay 2.0.0a16. It fixes an a15 regression: on an ssh site every `jarvis execution get`,
+  `cancel`, `stop` and `move` printed JARVIS's help, so relay could not observe, cancel or move a JARVIS job there.
+  The jarvis-cd pin (1.9.1) and the clio-jarvis bundle are unchanged.
+- `clio-relay` (1.6.67): relay 2.0.0a15, with jarvis-cd 1.9.1. Relay now leaves jarvis-cd's `builtin` packages out with
+  jarvis-cd's own option: every JARVIS call relay makes sets `JARVIS_NO_BUILTIN=1`, and every JARVIS root it sets up
+  records `no_builtin: true`, so JARVIS never registers or resolves them. A site set up by an earlier relay is asked
+  again for the new jarvis-cd. The workarounds that deleted the packages and dropped the repository are gone.
+- `clio-relay` (1.6.66): bundles clio-jarvis `d054b96`, which adds a generic `warpx` package. It takes WarpX's native
+  inputs file and builds through a clio-jarvis Spack recipe that fixes Spack's own for builds without Python, and it
+  publishes one AMReX plotfile per interval for ParaView to follow. A glob view, such as WarpX's plotfiles or WRF's
+  history files, is now finalized rather than failed at a clean exit, and the pvserver self-test runs a step of its own
+  instead of jarvis-cd's `builtin.echo`. The jarvis-package skill names `warpx` and says to fix a faulty Spack recipe by
+  subclassing it in the repository's `spack/`.
+- `clio-relay` (1.6.65): relay 2.0.0a13. jarvis-cd's `builtin` packages are not installed or registered for relay at all,
+  at the person's direction: relay's site setup removes them from its jarvis-cd environment, every JARVIS root drops the
+  `builtin` repository `jarvis init` lists, and relay collects the site's networks with its own package. clio-jarvis and
+  the person's own packages are the only sources. The use-relay and jarvis-package skills say so, and point to jarvis-cd's
+  repository for reading a builtin package as a reference. The Spanish defaults row title is shorter.
+
+- `clio-relay` (1.6.64): relay 2.0.0a12. The `clio-relay-compute` catalog allows the wide Add endpoint dialog,
+  which 1.6.63's catalog refused, so CLIO showed no Compute page. Relay installs jarvis-cd 1.9.0 on a site from
+  its release wheel, checked by SHA-256, in place of a GitHub archive of a commit, and never stages or runs
+  jarvis-cd's `builtin` packages. jarvis-cd's `builtin` packages are no longer a relay package source, at the person's
+  direction: they hardcode a case or a site's setup, so they are a reference only. `packages/jarvis-cd/` and
+  `scripts/vendor_jarvis_builtin.py` are gone. The use-relay and jarvis-package skills say to use a clio-jarvis
+  package or write a generic one, taking every site fact from JARVIS and the resource graph.
+
+- `clio-relay` (1.6.63): relay 2.0.0a11. The Compute page shows the defaults for new endpoints as a row again,
+  with no gear, and the Add endpoint dialog is wider and taller.
+
+- `clio-relay` (1.6.62): relay 2.0.0a10. jarvis-cd's `builtin` packages are a relay package source. `packages/jarvis-cd/` is generated by
+  `scripts/vendor_jarvis_builtin.py` from relay's JARVIS_PIN and stamped with its commit and tree digest; CI checks it
+  against the locked pin. The use-relay skill reads a builtin package's README and pkg.py menu when it has no contract.
+
+- `clio-relay` (1.6.61): relay 2.0.0a9. The Compute page's dialogs show what is chosen: the
+  defaults dialog its saved Spending, and the Save step its name, Security and Spending once a
+  test passes. Saving the defaults is said in the person's language.
+- `clio-relay` (1.6.60): relay 2.0.0a8. A service whose own job waits long in its queue now
+  asks to move to a queue that would start it sooner, as a run's job already did.
+- `clio-relay` (1.6.59): relay 2.0.0a7 and its redesigned Compute page. The page lists only the
+  person's endpoints, under column headers, with the defaults for new endpoints behind a gear.
+  "Add endpoint" opens a tabbed dialog (Catalog, Saved, Your own): pick a site, then its
+  protocol, test it, then save it. Each catalog machine is one site with its protocols. Removing
+  an endpoint offers Undo. The page follows CLIO's language (en, es, ja, el). The
+  `clio-relay-compute` catalog adds `Icon`, `clio.dialog.v1` and `clio.picker.v1`. The server
+  environment is byte-compiled when it is built, and `CLIO_RELAY_SAVED_SSH_CONFIG` takes CLIO's
+  saved SSH hosts (`CLIO_SAVED_SSH_CONFIG`) for the dialog's Saved tab.
+- `clio-relay` (1.6.58):  `use-relay` and `jarvis-package` look for the application's package
+  before writing one, through `packages_read`'s `available` and `match`, which list every package
+  relay's sources hold. A package is generic and takes the application's own input, and the
+  person's case is that input. Before it, the agent wrote a package around one case (an obstacle
+  flow, one protein) while a generic one existed. It bundles clio-jarvis e463507: pvserver 0.3.9
+  lingers 180 s by default, not 600 s, and the skill frees the nodes sooner by cancelling the
+  serve once the live view has the last step, never by a linger of 0, which lost the last steps.
+- `clio-relay` (1.6.57) adds the `jarvis-package` skill, which `use-relay` names when a run
+  needs a package relay does not ship: it points at the bundled clio-jarvis through
+  `packages_read`'s sources, lays out a package repository beside its schemas, lists what a
+  contract holds, and checks it statically before staging. Before it, the agent looked for
+  the skill by name, offered the separate Jarvis connector and read clio-jarvis from GitHub.
+- `clio-relay` (1.6.56) bundles clio-jarvis 96a133f: a contract's arithmetic operand may be
+  arithmetic itself, so a frame count that includes the first frame,
+  `{add: [{div: [nsteps, nstout]}, 1]}`, passes the site's check instead of being refused.
+- `clio-relay` (1.6.55) and `paraview` (1.0.10): a run never waits for its viewer. The skills say
+  to write each step whole and go straight on, with no ready marker, gate or timeout on the view,
+  and to judge any wait in a package by progress rather than by a time limit.
+- `clio-relay` (1.6.54) bundles clio-jarvis 949cf25: wrf's history output names the reader
+  as paraview.simple does (NetCDFReader), so the live view opens its first step at once.
+- `clio-relay` (1.6.53) bundles clio-jarvis bb66ff8: wrf reads rank 0's log afresh on every
+  poll, so on a shared file system a run that ended with SUCCESS COMPLETE WRF on another
+  node is no longer judged failed on a cut log, and a case namelist's history_interval_m
+  (or _d, _h, _s) no longer overrides the history interval asked for.
+- `clio-relay` (1.6.52) bundles clio-jarvis edb8fc6: a package fetching its input over https
+  trusts the operating system's CA bundle as well as Python's own, so a site Python whose
+  frozen bundle is out of date (as Spack's is on Ares) still verifies the server.
+- `clio-relay` (1.6.51) bundles clio-jarvis a8e9669: every package checks its parameters
+  against its contract when JARVIS checks the pipeline, so a plan or submit refuses a value
+  configure would refuse in the job (such as an empty `case_dir`) before any job starts. The
+  `wrf` summary now says `case_dir` is always required, with `case_url` fetching into it.
+- `clio-relay` (1.6.50) bundles clio-jarvis c6edbfe: `wrf` 0.1.1 takes `case_url` and
+  `case_sha256`, so on a guarded site the reviewed package fetches a public case such as
+  NCAR's CONUS 12 km benchmark inside its job, extracting only the case's files, instead of
+  the agent downloading it through the person's computer.
+- `clio-relay` (1.6.49) bundles clio-jarvis 8e3e42d, which adds `wrf` 0.1.0: WRF ARW 4.6.1
+  on a real-data case (real.exe's output, such as NCAR's CONUS 12 km benchmark), installed
+  from Spack's builtin `wrf` recipe so a site that already built WRF is reused with nothing to
+  build. It writes the run's namelist, refuses a run past the boundary data or patches under
+  10 cells, counts each netCDF history file as a step and reports `clio-run-result.json`.
+- `clio-relay` (1.6.48) runs relay 2.0.0a6, a pre-release that pins JARVIS d6b02dc5: an
+  application's own failure is no longer classed as an MPI network fault, and the graph
+  advisory is fixed. It also bundles clio-jarvis 1052c95, whose xcompact3d 0.3.10 refuses a grid
+  the FFT cannot take (the transformed length, n periodic or n - 1 open, must be even with no
+  prime factor above 5) and names the nearest valid counts, beside the CFL and diffusion
+  checks; its own sizing now keeps that rule, where nx 376 with open ends diverged at step 1.
+  A diverged run's advice changes `dt` only when it was above `suggested_dt` and otherwise
+  names the grid, body or Reynolds number, instead of telling the agent to halve `dt`.
+  `init_noise` is a parameter, 0.005 by default, so the live slice shows the wake rather
+  than the start-up noise.
+- `paraview` (1.0.9) sets the connector's `version` as soon as a job's pvserver version is
+  known, before the job runs, so the ParaView client is fetched while the job queues and
+  installs instead of after its service is ready.
+- `slurm` (0.6.2): `wait_job.sh` works on sites without Slurm accounting. Where `sacct` has
+  no record it reads the job from `scontrol`, and a job it saw that the controller has since
+  forgotten ends the wait with exit 4 (ended, outcome unknown) instead of looping to the
+  limit and then reporting an unknown id.
+- `clio-relay` (1.6.47) runs relay 2.0.0a5 and bundles clio-jarvis d0aad10, whose
+  xcompact3d 0.3.9 declares `clio-run-result.json` as its `run-result` output, so the run's
+  verdict comes back with its outputs. The `use-relay` skill waits on a serve's compute steps
+  with `serve(service=<operation>, until="steps")` where relay has it, falls back to
+  `watch_steps` or relay's notices where it does not, and never waits by reading: no
+  `run_code`, `cat` or `sacct` loops. A service the person chose to release is stopped through
+  relay's cancel, whose confirm already is the person's ask, so CLIO does not ask again.
+- `paraview` (1.0.8) offers to end a service that still holds nodes through relay's cancel,
+  and once the person chose release it does not ask a second time.
+- `slurm` (0.6.1) says `hpc-batch-jobs` is for jobs the agent submits itself; a job started by
+  relay's `run` or `serve` is waited on through relay, never with `wait_job.sh` or `sacct`.
+- `clio-relay` (1.6.46) runs relay 2.0.0a5 (3294eb9c), a pre-release: `serve(service=<op>,
+  until="steps")` waits for a running service's compute steps to end, as a task that
+  completes with their result or, without tasks, a bounded wait, so an agent waits
+  rather than polls; the held-services question describes its field, and stopping a
+  running service asks to end its programs and release its nodes.
+
+- `clio-relay` (1.6.45) runs relay 2.0.0a4 (aa85f9cb), a pre-release: when JARVIS's plan
+  changed after the person's yes only in the input it seals (such as the environment a
+  software check filled in), relay submits under the new plan without asking again, and
+  when the directives, components or script changed, the second ask says what changed.
+
+- `clio-relay` (1.6.44) runs relay 2.0.0a3 (45187727), a pre-release: each job card
+  names its resource (`resource: relay://jobs/{operation_id}`), so a host reads the
+  URI it watches from the card or the task's `_meta`, and a Win32-OpenSSH ssh gets an
+  overlapped stdin, so a held stdin can no longer hang it at the session's end.
+
+- `clio-relay` (1.6.43) runs relay 2.0.0a2 (5c8ce8dd), a pre-release with the retake-1u
+  findings: steady quiet reports from exec, one job reconciler that feeds the job card,
+  the Compute list and the confirm text, a `relay://jobs/{operation_id}` resource, a
+  typed `connection_lost` refusal when the ssh transport dies, and JARVIS advisories
+  that keep the agent's guidance out of the person's line. Its README names all
+  thirteen tools and the Spending picker, and the catalog's instructions describe
+  Spending, as relay's own copy does.
+
+- `clio-relay` (1.6.42) runs relay 2.0.0a1, a pre-release cut at e35f5ce2 plus a lighter
+  CLI import, from its released wheel instead of a git pin. The server is a hash-locked
+  project in `server/` (its one dependency is the release wheel, `no-build`, with
+  atomicwrites held at 1.4.0, the last release with a wheel) started with
+  `uv run --project ${PLUGIN_ROOT}/server --frozen --no-dev`, so a first launch does no
+  git fetch, no source build and no resolve. It still bundles clio-jarvis ee210630.
+
+- `spack` (1.0.4) runs clio-kit's spack server from the `spack-mcp-v1.0.0` release
+  wheel, built at `ef42fcf3`, through the same hash-locked `server/` project and
+  `uv run --frozen --no-dev` form, so a first launch no longer fetches the clio-kit
+  monorepo.
+- `clio-relay` (1.6.41) runs relay e35f5ce2 with jarvis-cd a28999b1 and still bundles
+  clio-jarvis ee210630. A service's card is now bound like a run's: JARVIS plans the
+  full service job, with the connector and the service's parameters, and the card shows
+  its batch script. The start submits that same script, so the yes binds to it. Per-start
+  secrets stay out of the sealed job.
+
+- `clio-relay` (1.6.40) runs relay 0889629b with jarvis-cd a28999b1 and still bundles
+  clio-jarvis ee210630. A guarded `serve` no longer fails before submission with
+  "validation errors for JobSpec". Its card shows JARVIS's plan of the service's job,
+  with its components and advisories, but no batch script, because relay adds the
+  service's connector when it starts it.
+
+- `clio-relay` (1.6.39) runs relay bee13a84 with jarvis-cd a28999b1 and still bundles
+  clio-jarvis ee210630. The job card's `started_at` is the scheduler's start of the
+  job itself, not of an install before it; components carry the package's name
+  (gray_scott, not `pkg`); and JARVIS's advisories, such as a launch over TCP
+  because UCX could not be verified, show on the card and in the confirm. A site
+  that linked a retired skill (`ares`) no longer shows a broken skill link.
+
+- `cad` (0.1.1): the `cadquery` skill hands the part over. Once its checks pass,
+  the STL and the STEP are registered with `create_artifact` as deliverables, with
+  the script in `used`, so CLIO opens them in its 3D view; a solver-frame copy is
+  registered as intermediate. `geometry-to-glb` is only for meshes with fields.
+
+- `clio-relay` (1.6.38) runs relay 77a49109 with jarvis-cd 3b651c68 and still bundles
+  clio-jarvis ee210630. `run`, `serve` and `exec` declare that they confirm
+  themselves (`io.iowarp/confirm`), so a host that leaves the confirm to relay
+  shows the person one form per call. Each job travels as one typed snapshot
+  (`io.iowarp.clio-relay/job`) on the confirm, the task status, the tool results
+  and `describe`'s job list, for a host to draw as the job's card. For a package
+  run the card is JARVIS's own plan of the submit (directives, components with
+  their nodes, couplings and the script), the submit is bound to it, and a plan
+  that changed after the yes is shown again rather than submitted; each
+  component's state comes from JARVIS while the job runs.
+
+- `clio-relay` (1.6.37) runs relay 5fe5e6a9 with jarvis-cd acbf4308 and still bundles
+  clio-jarvis ee210630. Runs write under the site's outputs directory
+  (`~/clio-relay-runs` unless set), outside relay's own, so `site clean` keeps
+  them unless the person asks, and relay names a run's outputs where they live; a job naming a path inside relay's directory is
+  refused. A confirm that names relay's or JARVIS's facts is a typed choice, so a
+  host still asks it; a plain yes/no only confirms the call's own arguments. A
+  new job on a site where another of relay's services still runs asks whether to
+  end it when the job is submitted. JARVIS asks where installs check and build
+  once per site, for every package. The use-relay skill puts run outputs under
+  `describe`'s `outputs_dir` and says a start from nothing forgets JARVIS's
+  answers.
+- `clio-relay` (1.6.36) runs relay 49cf7e02 with jarvis-cd 58cd5b1a and still bundles
+  clio-jarvis ee210630. Where JARVIS builds is now offered like where it checks:
+  relay sets no build default, so a new site shows JARVIS's recommendation, and
+  a build the person places on the login node runs JARVIS's own install there
+  under JARVIS's limits, as a background task with no time limit that only the
+  person cancels. Listing the staged packages is its own read-only tool,
+  `packages_read`, so it works in plan mode; `packages` only stages and removes.
+  The use-relay skill covers both.
+- `clio-relay` (1.6.35) runs relay adbf2ff0 with jarvis-cd 58cd5b1a and still bundles
+  clio-jarvis ee210630. JARVIS now asks once per site where its software checks
+  and builds run (the login node under its limits, a compute job, or each
+  time), with its recommendation and evidence, and relay passes the question on
+  as it is. A served view reaches CLIO within seconds of being ready, a compute
+  node's host key is read reliably, and a forward whose key or job is gone
+  stops and says why. A site clean names the outputs its runs wrote and keeps
+  them unless the person asks. The use-relay skill covers all of it and leaves
+  pvserver's linger at its default.
+- `clio-relay` (1.6.34) runs relay 9a748fc5 with jarvis-cd 0fa2b312 and bundles
+  clio-jarvis ee210630 (pvserver stays up for a while after its last client
+  leaves). No Spack runs on a site's login node any more: JARVIS checks a
+  site's software in a short job on the compute nodes and keeps a record that
+  later installs and runs read, so the login node only reads that record. Files
+  move by path, and an install of a plan's packages takes one call with one
+  review. The use-relay skill covers all of it.
+- `clio-relay` (1.6.33) runs relay 9791465e with jarvis-cd 5a58ab82 and bundles
+  clio-jarvis b37fb115 (xcompact3d and pvserver 0.3.7, gray_scott 0.2.3: a new
+  output shows on the JARVIS node while the solver runs). A serve call now hands
+  back the endpoint as soon as the service is ready, while its job keeps running.
+  An install asks for approval only when JARVIS finds software missing; a site
+  that has it all answers just JARVIS's questions. Installs on one site share one
+  answer to a site question such as which MPI, and `site_clean` keeps JARVIS's
+  answers unless asked to forget them. `site_clean` refuses while relay's jobs
+  still run on the site, naming them, and a new `clio-relay cancel` command
+  cancels an operation. JARVIS now locks its decision store and probes the build
+  host's compilers before the first build. The use-relay skill covers all of it.
+- `clio-relay` (1.6.32) runs relay 13e19b1b. Installs started at the same time on
+  one site no longer race: they share one jarvis-cd ask, the second jarvis-cd
+  install waits for the first and reuses it, and an answer or a decline applies to
+  every install waiting on it. Package builds share JARVIS's and Spack's locks.
+- `clio-relay` (1.6.31) runs relay f1749784. A new `install` tool installs a
+  package's software on a site ahead of any run: JARVIS checks the site, the person
+  gets the same asks as a run's install, and JARVIS builds it in a job on the
+  compute nodes with nothing launched after it. A site without JARVIS gets relay's
+  jarvis-cd first, after a yes. The use-relay skill says when to use it.
+- `clio-relay` (1.6.30) runs relay b85d756b. A port forward to a running service
+  now outlives a restart of the relay MCP server: the forward is its own process,
+  and a relay that starts adopts it, or opens it again at once if it died, without
+  waiting for a tool call. A command on an ssh site now returns when it exits on
+  the site, even when a leftover process keeps the ssh session open.
+- `clio-relay` (1.6.29) runs relay 2de1b1b6 with jarvis-cd 2d26101c and bundles
+  clio-jarvis 1be94889: xcompact3d 0.3.5 (archive sha256 c59b4cbf), pvserver
+  0.3.6 (f7a30fc9) and gray_scott 0.2.2 (dd9ec4c9). A background service stops
+  when the pipeline's last step returns unless the person keeps it (`after_steps`,
+  default auto), and JARVIS reuses its Spack load capture in check mode too.
+  Relay already keeps that capture per set of packages under the site home
+  (`JARVIS_SPACK_ENV_DIR`), shared by every check, submit, install and run of
+  them. pvserver's `pvserver-launch.json` is now JARVIS's own `launch_record()`,
+  so a launch's site-fact advisories and their `reason_codes` reach CLIO as
+  JARVIS wrote them, in the log and in a start failure.
+- `clio-relay` (1.6.28) bundles clio-jarvis 05d0d1a2: xcompact3d 0.3.5 (archive
+  sha256 549f4905), pvserver 0.3.5 (f601c4fb) and gray_scott 0.2.2 (6bd9faea).
+  xcompact3d's sizing text never rescales seconds per step to another grid. The
+  `use-relay` skill's "Ask for enough time" takes seconds per step only from a
+  run at production's own grid and decomposition. It never rescales a pilot's
+  figure to another grid or rank count, and it re-pilots or re-measures when
+  production's grid or decomposition differs from the pilot or changes after
+  it, before applying the coefficient.
+- `clio-relay` (1.6.27) runs relay 06a14cd4 with jarvis-cd d9cb80b6 and bundles
+  clio-jarvis 161c2a89: xcompact3d 0.3.5 (archive sha256 96f2a2cb), pvserver
+  0.3.5 (b18118f8) and gray_scott 0.2.2 (f1a2a9ef). JARVIS places ranks by the
+  allocation's geometry and reports `phase_timings`, and the packages' time
+  budgets add that startup overhead. Stopping a service is now its own tool,
+  `cancel`, titled "Cancel a job or stop a service", so a host no longer asks
+  under serve's "Start a service on a site". `site_clean` removes relay's
+  deployment from a site over MCP: destructive, it asks the person on every call
+  and keeps the Spack store, as `clio-relay site clean` does. The `use-relay`
+  skill teaches the read tools (`exec_read`, `files_read`, `describe` with
+  `packages=true` or `job=`), which never ask, and how to stop a service and
+  clean a site without the command line.
+- `clio-relay` (1.6.26) runs relay 2fac2a09 and bundles clio-jarvis 8104f13a:
+  xcompact3d 0.3.4 (archive sha256 a8eb4452?) and pvserver 0.3.4 (18443926?).
+  xcompact3d now fails with "xcompact3d diverged: ?" and points at its
+  `clio-run-result.json`; pvserver fails with "pvserver did not start: <code>:
+  <message>". Both reach CLIO as the failed operation's message, not a bare exit
+  code; a failed package service keeps that cause after the connector's reason.
+- `clio-relay` (1.6.25) runs relay ff5d63fc with jarvis-cd 7bd046ab. A multi-node
+  MPI launch whose graph has no net section, misses launch hosts, or predates UCX
+  verification now collects the net facts inside the allocation, saves them, and
+  then applies btl, oob and UCX. Relay passes the new shapes through untouched: the
+  advisory `net_not_collected` with `site_facts.net_plan`, the launch refusals
+  `resource_graph_collect_failed`, `_partial` and `resource_graph_net_invalid`
+  as typed issues on the failed operation, and a `launch_collected` question that
+  the next check asks before submit.
+- `clio-relay` (1.6.24) runs relay 31b5db33 with jarvis-cd ad924e1f. JARVIS sets
+  `UCX_NET_DEVICES` only when the node's own `ucx_info -d` lists the device as
+  usable; otherwise it raises the advisory `ucx_device_unusable` with per-host
+  evidence, and on older graphs it withholds the device (`device_unverified`,
+  cause `unverified_graph`). Relay passes both through untouched.
+- `clio-relay` (1.6.23) bundles clio-jarvis 53cec00e. pvserver 0.3.3 launches
+  its multi-node ranks through the jarvis-cd MPI executor (MpiExecInfo and Exec);
+  its archive SHA-256 is 29c0672587fbb5c400c3b66646eee09db535c215524d271dcea6afefdda3f4d0.
+  The xcompact3d 0.3.3 files are unchanged.
+- `clio-relay` (1.6.22) runs relay da1dbe95 with jarvis-cd 742d7a4a. On a guarded
+  site, `exec` runs `facts.jarvis.read` followed by `sched info +json`, `rg facts
+  show +json`, `rg skill list +json` or `rg skill show NAME +json` with no shell and
+  no plan; answers, installs and submits still ask. The pipelines relay writes name
+  no scheduler, so JARVIS detects it. JARVIS's `device_unverified` advisory (UCX
+  devices withheld on hosts the graph never saw) reaches `result.site_facts`
+  untouched. The `use-relay` skill says how to read site facts.
+- `clio-relay` (1.6.21) runs relay 0e52f6a0 with jarvis-cd f6cb7587. Relay turns
+  JARVIS's typed Spack failures (exit 6: `compiler_unavailable`, `fetch_failed`,
+  `build_failed`, `concretize_failed`, `install_failed`) into typed errors with
+  JARVIS's kind and issues, or into the install question when the issue has
+  candidates. A blocking `site_fact_uncertain` comes back as `input_missing` with
+  JARVIS's issues untouched; an advisory one lets the run go ahead and reaches
+  `result.site_facts`. Install asks come only from the current check, so a resumed
+  run no longer repeats answered ones. The `scheduler_block` wording names no
+  scheduler.
+- `clio-relay` (1.6.20): the `use-relay` skill handles JARVIS's `site_fact_uncertain`
+  issues (jarvis-cd 16435cda, `docs/site-facts.md`). JARVIS picks deterministically
+  and asks only when unsure. CLIO investigates with the issue's own read-only
+  probes through `exec` (light ones on the login node, a JARVIS smoke job for
+  anything heavier), proposes a value with its evidence and `consequence_if_wrong`,
+  and records it with `rg facts answer --set_by <person> --proposed_by <agent>`
+  once the person confirms. Then it runs again. Advisory issues are mentioned
+  but do not hold the run.
+- `spack` (1.0.3): pins clio-kit's spack server to `ef42fcf3`, which removes
+  `spack_prepare_site` (five user tools, contract `clio-kit-spack-user-v3`, server
+  3.0.0) and points a missing clone (exit 127) to `jarvis spack prepare` through relay.
+- `spack` (1.0.2): JARVIS owns deployment, so the `spack` skill prepares a site's
+  Spack with `jarvis spack prepare` (jarvis-cd 97c78adb), run through relay `exec`
+  as `facts.jarvis.exec` plus `spack prepare --root <facts.jarvis.spack_root>
+  --site_spack <root> +json`, with a `plan` on a guarded site. It reads the
+  `jarvis.spack-site-prep.v1` record, takes `ambiguous_compiler` (exit 3) to the
+  person and reports refusals (exit 5). It no longer calls clio-kit's
+  `spack_prepare_site`, and `JARVIS_SPACK_CONFIG` is gone: relay exports
+  `JARVIS_SPACK_ROOT`. `spack_site_query` still does the read-only research.
+- `paraview` (1.0.1): when a job's live view could not attach while it ran, the
+  `paraview-scenes` skill has the agent offer once, when the job ends, to open its
+  finished output in ParaView, and open it at the last step once the person accepts.
+- `paraview` (1.0.2): the `paraview-scenes` skill says how to join a `pvserver`
+  a job serves: one `set_connector_value` with `pvserver` (the forwarded
+  endpoint the job's result names) and `version`, with no `address`, then
+  `open_view` the job's output by its cluster path. It names the first-attach
+  waits and typed failures (`client_fetching`, `paraview_version_mismatch`,
+  `node_folder_unwritable`) so the agent stops retrying a failure that repeats.
+- `paraview` (1.0.3): the `paraview-scenes` skill names `measure_over_time`, the
+  exact statistics of one field at every time step, for a quantity across all of
+  a run's snapshots. On a source still being written it measures the steps
+  written so far, so the agent can follow a quantity live while the run goes.
+  It also names `watch_steps`, which reports each new step of a source still
+  being written as task status (or progress when called directly), so the agent
+  can follow a run step by step: started as a background task when the run
+  begins, it ends by itself with the run (`complete`, `finished`, `not_growing`,
+  `stalled` or `cancelled`), and `max_seconds` is given only when the person
+  asks for a time limit. Setting up a machine reports each step as progress, so
+  the agent waits for it, and `setup_stalled` (a step that fell silent) is told
+  to the person.
+- `paraview` (1.0.4): the `paraview-scenes` skill says the view's default colour
+  range is the 2nd to 98th percentile of the shown values (clio-kit 95d50d06), and
+  how to set the range from `measure_field` with `RescaleTransferFunction` when a
+  feature still reads faint, symmetric for a signed field on a diverging map.
+- `clio-relay` (next release): the `use-relay` skill's "Ask for enough time"
+  sizes a job's request as the measured startup overhead plus steps x seconds
+  per step plus writes, times a safety coefficient of 1.5 at least (2 on one
+  short pilot or none). It overallocates because unused time is not charged
+  when a job ends cleanly, says so in the spend approval, and offers another
+  partition, a shorter run or more nodes when the padded request exceeds the
+  partition's time limit.
+
 ## [0.9.0] - 2026-11-19
 
 ### Added
@@ -94,6 +667,103 @@ The stable release of 0.8.0-beta.1, for CLIO 0.9.7, with these changes since the
 
 ### Changed
 
+- `clio-relay` (1.6.19) runs relay integration cbd3cecf with jarvis-cd 97c78adb.
+  Install decisions keep their answers across MPI rebuilds and on older sites,
+  each install round has its own JARVIS execution, and the site's network comes
+  from the resource graph that JARVIS collects in a job and applies to every MPI
+  launch.
+- `clio-relay` (1.6.18) runs relay integration caee019f with jarvis-cd bfeff98b and
+  bundles clio-jarvis dc5270e2 (xcompact3d 0.3.3, pvserver 0.3.2). Relay is the
+  middle man: JARVIS owns the site's network, queue moves, install decisions,
+  pipeline checks and Spack preparation, and relay turns JARVIS's questions into
+  asks for the person. A serve forwards the port the service bound, as JARVIS
+  reports it, and its task completes when the service is ready. A package
+  parameter that wraps an input's name in a placeholder is refused. The use-relay
+  skill sends the agent to the site's resource graph, JARVIS's scheduler report
+  and site skills, and to JARVIS's typed issues, and names no cluster, scheduler
+  or MPI of its own.
+- `clio-relay` (1.6.17) runs relay integration 21fffaa5 and bundles clio-jarvis
+  82debc68 (xcompact3d 0.3.2, with case-scoped parameter checks and sizing
+  guidance). When a job waits far off in a busy partition and another has idle
+  nodes that fit, relay asks the person to keep waiting or move it, and moves the
+  pending job in place. The agent leaves the queue unset unless the person names
+  one, so the site's default applies. A coupled pipeline marks only its serving
+  step as the service. `site clean` ends operations whose jobs were cancelled
+  outside relay and cancels those still waiting on the person. The use-relay skill
+  shows the coupled pipeline and says to pass relay's queue question on as it is.
+- `clio-relay` (1.6.16) runs relay integration b5c98e2c. A site's MPI choice
+  carries to the next install on that site until the person declines it. A serve
+  with `path: auto` takes ssh when frp has no client or token. A queued job shows
+  Slurm's start estimate and the partitions with free nodes. Multi-node runs name
+  the network Open MPI's TCP channels use, found from Slurm's node addresses and
+  kept per site, and a run that fails on the wrong interface carries
+  `mpi_network_hint` naming that record. The use-relay skill says how to act on
+  each: offer another partition, keep the carried MPI, and write the nodes'
+  fabric to the record before running again.
+- `clio-relay` (1.6.15) runs relay integration d87eeb55, and `spack` (1.0.1) runs
+  clio-kit edf67da2. A package's install job takes one whole node and Spack builds
+  with all its CPUs. `spack_prepare_site` prefers compilers with Fortran, the site
+  MPI's first, so Spack 0.23 concretizes the stack to the compiler the site's
+  upstream was built with and reuses it. jarvis-cd af290aef offers the site MPI's
+  real install, not its external alias. Relay's tools declare a closed world, so a
+  plan approved for auto-execute runs them without a permission prompt while
+  relay's own asks still reach the person. A failed install carries its log and
+  job, and the use-relay skill says to yield on a long task, read that log, and
+  prepare Spack again with `compiler=` when a compiler check fails.
+- `clio-relay` (1.6.14) runs relay integration bdd1541b: a package archive's
+  SHA-256 no longer depends on the Python relay runs under. CPython 3.14 on Windows
+  links zlib-ng, so the same files had given xcompact3d 9763fc95 there and
+  0089efeb elsewhere. Archives are now stored-block gzip: xcompact3d 6f30a7a0 and
+  pvserver 6736500f everywhere, and a guarded site asks the new review once.
+- `clio-relay` (1.6.13) runs relay integration 43ff03ed and requires the `spack`
+  plugin. When a site has no Spack for JARVIS, relay's `missing: spack` refusal
+  carries a `remedy` (`prepare_spack`: the CLIO Spack root and config, and the
+  site's own Spack with why relay does not build into it). The use-relay skill maps
+  it to `spack_prepare_site` and the same `run` again. Package archives no longer
+  depend on the checkout (line endings, exec bits), so the bundled clio-jarvis
+  stages xcompact3d 0089efeb and pvserver dcb18420 on every host; a guarded site
+  asks the new review once.
+- `clio-relay` (1.6.12) runs relay integration cb4c790b: after a plugin update, a
+  package name follows the bundled clio-jarvis. A run, stage, list or describe by
+  name stages the archive the current copy builds, marks the older one
+  `superseded_by`, and a guarded site asks the new archive's review. Pinning an
+  older `sha256` still runs it.
+- `clio-relay` (1.6.11) runs relay integration 3f25846a, which pins jarvis-cd
+  c95fa922: cancelling a running job works on a Slurm without accounting. A site
+  with relay's older jarvis-cd gets the reinstall ask on its next package run.
+- `clio-relay` (1.6.10) runs relay integration 40f4f634: a clean site runs end to
+  end. Relay finds a Python 3.11 or newer for jarvis-cd itself (`python3`, then
+  `python3.N`, then the site's python modules), or uses the site's `jarvis_python`
+  setting, and package jobs use that same Python. The install job gets its own
+  walltime (`install_walltime_s`, 4 hours by default) instead of the run's. The
+  plugin's clio-jarvis copy adds `pyproject.toml` and `spack/` from aa8b3d56, so the
+  package archive carries its Python requirements and Spack repository; its SHA-256
+  changes, so the first stage asks for a new review. `site clean` really removes
+  relay's deployment, and a cancel withdraws the run's pending asks.
+- `clio-relay` (1.6.9) runs relay integration 84c2bb77: the plugin ships clio-jarvis at
+  aa8b3d56 in `packages/` and hands it to relay as `CLIO_RELAY_PACKAGE_SOURCES`, so
+  staging a clio-jarvis package runs no git and needs no account. A person's own packages
+  reach a site through relay's file transfer. The `github` account and its grant file
+  are gone. Relay on Windows also loads psij without `SIGCHLD`, takes a job duration in
+  seconds, holds an ssh forward to a compute node through the login node under CLIO's
+  fence, and names an antivirus block of `frpc`.
+- `clio-relay` runs relay integration 0144fb2e: package staging works under a sandbox
+  that denies renames in its temp folder (git checkouts live under relay's state), and a
+  private GitHub source is fetched with the person's GitHub account: the plugin declares a
+  `github` account and hands relay its grant file.
+- `clio-relay` runs relay integration 93f3fe92: relay's scratch dirs inherit their parent's ACL
+  on Windows, so a relay in an AppContainer can use them (Python 3.13+ `mkdtemp` cannot).
+- `clio-relay` runs relay integration 66451813: relay finds `ssh`, `scp`, `frpc`, `ssh-keygen`
+  and `git` on the PATH with PATHEXT, so a host's `ssh.cmd` shim wins on Windows.
+- `clio-relay` runs relay integration bbda1d29: each serve endpoint port has an `address`,
+  `host:port`, so a host that rewrites addresses can publish tcp ports too.
+- `clio-relay` runs relay integration 93a11e4f: a `packages` tool stages JARVIS packages
+  (git at a commit, by default relay's pinned clio-jarvis, or a directory on the relay host),
+  lists and removes them; the use-relay skill says when to stage.
+- `clio-relay` runs relay integration d3a1a360: catalog endpoints take the Security default (Secure), and the sign-in copy reads "Needs an ssh sign-in".
+- `clio-relay` runs relay integration d1f3f5c2: `site clean`, `shutdown` (it reports
+  processes it can't confirm) with an authenticated HTTP stop, the worker's `link_mode` (`brokered_tcp` or
+  `udp_rendezvous`), relay's pinned jarvis and the `ambiguous_provider` choice.
 - `web` (2.0.0) uses CLIO's built-in `web_search` and `web_fetch` instead of clio-kit's
   Web Search MCP server (its `mcp.json` is removed), with a new `web-research` skill
   (#133).

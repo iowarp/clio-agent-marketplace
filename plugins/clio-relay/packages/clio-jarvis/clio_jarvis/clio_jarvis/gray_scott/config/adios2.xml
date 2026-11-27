@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!-- clio-jarvis gray_scott: BP5 files a reader can follow while the run writes them. -->
+<adios-config>
+    <io name="SimulationOutput">
+        <engine type="BP5">
+            <parameter key="NumAggregators" value="1"/>
+            <parameter key="AsyncWrite" value="false"/>
+        </engine>
+    </io>
+    <io name="SimulationCheckpoint">
+        <engine type="BP5">
+        </engine>
+    </io>
+    <io name="PDFAnalysisOutput">
+        <engine type="BP5">
+        </engine>
+    </io>
+    <io name="IsosurfaceOutput">
+        <engine type="BP5">
+        </engine>
+    </io>
+</adios-config>

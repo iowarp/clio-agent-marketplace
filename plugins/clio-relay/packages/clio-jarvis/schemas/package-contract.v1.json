@@ -1,0 +1,361 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/iowarp/clio-jarvis/schemas/package-contract.v1.json",
+  "title": "clio-jarvis package contract, version 1",
+  "description": "The contract.yaml beside each clio-jarvis package's pkg.py (RL40). A package that misses a part does not ship.",
+  "type": "object",
+  "required": ["schema", "package", "version", "kind", "summary", "install", "parameters", "resources", "sizing", "outputs", "progress", "provenance", "selftest"],
+  "additionalProperties": false,
+  "$defs": {
+    "install_method": { "enum": ["spack", "pip", "conda", "container"] },
+    "install_query": {
+      "type": "string", "minLength": 1,
+      "description": "spack: a Spack spec, where MPI stays the mpi virtual (the spec never names an MPI, so the site's MPI is reused). pip: pip requirements. conda: conda specs. container: the image to pull. pip and conda never name an MPI."
+    },
+    "install_repos": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "spack only: Spack repositories holding recipes the query needs beyond Spack's builtin, relative to the clio-jarvis repository root."
+    },
+    "install_channels": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "conda only: the channels the specs come from, in order (conda-forge when empty)."
+    },
+    "install_option": {
+      "if": { "properties": { "method": { "const": "spack" } } },
+      "then": { "required": ["repos"], "not": { "required": ["channels"] } },
+      "else": {
+        "if": { "properties": { "method": { "const": "conda" } } },
+        "then": { "not": { "required": ["repos"] } },
+        "else": { "not": { "anyOf": [{ "required": ["repos"] }, { "required": ["channels"] }] } }
+      }
+    },
+    "param_name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$" },
+    "value": {
+      "description": "A literal, a parameter reference {param: name}, or integer arithmetic over them. An operand may itself be arithmetic, so frames = steps / interval + 1 is {add: [{div: [nsteps, nstout]}, 1]}.",
+      "oneOf": [
+        { "type": ["integer", "number", "string", "boolean"] },
+        {
+          "type": "object", "additionalProperties": false, "required": ["param"],
+          "properties": { "param": { "$ref": "#/$defs/param_name" } }
+        },
+        { "$ref": "#/$defs/arithmetic" }
+      ]
+    },
+    "operands": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": { "anyOf": [ { "type": "number" }, { "$ref": "#/$defs/param_name" }, { "$ref": "#/$defs/arithmetic" } ] }
+    },
+    "arithmetic": {
+      "type": "object", "additionalProperties": false, "minProperties": 1, "maxProperties": 1,
+      "properties": {
+        "div": { "$ref": "#/$defs/operands" },
+        "mul": { "$ref": "#/$defs/operands" },
+        "add": { "$ref": "#/$defs/operands" },
+        "ceil_div": { "$ref": "#/$defs/operands" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["name", "path", "path_kind", "format"],
+      "additionalProperties": false,
+      "if": { "required": ["role"], "properties": { "role": { "not": { "const": "snapshots" } } } },
+      "else": { "required": ["reader"] },
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$" },
+        "role": {
+          "enum": ["snapshots", "statistics", "restart", "result"],
+          "default": "snapshots",
+          "description": "snapshots: the growing series a viewer follows (needs reader). statistics, restart and result: files reported as artifacts when the run ends, if the run wrote them; result is the package's verdict on the run."
+        },
+        "description": { "type": "string", "description": "What the output holds and when the run writes it." },
+        "path": { "type": "string", "minLength": 1, "description": "Template over the configured parameters and {shared_dir}, for example '{outdir}/gs.bp'." },
+        "path_kind": { "enum": ["file", "directory", "glob"] },
+        "format": { "type": "string" },
+        "reader": { "type": "string" },
+        "reader_properties": { "type": "object" },
+        "expected_steps": { "$ref": "#/$defs/value" },
+        "follow": { "type": "object" },
+        "time": { "type": "object" },
+        "display": { "type": "object" },
+        "geometry": {
+          "type": "array",
+          "description": "Surface files the view descriptor names for a viewer to open beside the data, in the data's coordinates. An entry with when is reported only when every parameter it names matches its schema, as in parameters cases.",
+          "items": {
+            "type": "object",
+            "required": ["path"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string", "minLength": 1, "description": "Template over the configured parameters, for example '{run_dir}/body.stl'." },
+              "label": { "type": "string", "minLength": 1, "maxLength": 64 },
+              "visible": { "type": "boolean" },
+              "when": { "type": "object", "additionalProperties": { "type": "object" } }
+            }
+          }
+        },
+        "arrays": { "type": "array", "items": { "type": "string" }, "description": "Arrays the self-test expects the reader to expose." }
+      }
+    }
+  },
+  "properties": {
+    "schema": { "const": "clio.package-contract.v1" },
+    "package": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 40, "description": "The software's name as a person knows it (LAMMPS, GROMACS), for questions and cards. Without one, hosts show the package name." },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([.+-][0-9A-Za-z.-]+)?$" },
+    "kind": { "enum": ["application", "service"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "install": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "query"],
+      "description": "How JARVIS installs the software. It becomes the install_method, install_query, install_repos and install_channels menu defaults, and install_methods when there are alternatives. jarvis-cd's installer for the method finds what the site has and installs the rest; with alternatives JARVIS uses the method this site fits and asks the person when several fit. MPI and compiled HPC codes use spack only, so the site's Spack and MPI are reused.",
+      "allOf": [{ "$ref": "#/$defs/install_option" }],
+      "properties": {
+        "method": { "$ref": "#/$defs/install_method" },
+        "query": { "$ref": "#/$defs/install_query" },
+        "repos": { "$ref": "#/$defs/install_repos" },
+        "channels": { "$ref": "#/$defs/install_channels" },
+        "alternatives": {
+          "type": "array", "minItems": 1,
+          "description": "Other ways to install the same software, each with a different method. The first entry is method, query, repos and channels above.",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["method", "query"],
+            "allOf": [{ "$ref": "#/$defs/install_option" }],
+            "properties": {
+              "method": { "$ref": "#/$defs/install_method" },
+              "query": { "$ref": "#/$defs/install_query" },
+              "repos": { "$ref": "#/$defs/install_repos" },
+              "channels": { "$ref": "#/$defs/install_channels" }
+            }
+          }
+        }
+      }
+    },
+    "sizing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mesh", "decomposition", "ranks", "processes_per_node", "nodes"],
+      "description": "How a run is sized: mesh, then MPI ranks, then nodes.",
+      "properties": {
+        "mesh": { "type": "string", "description": "How the mesh (the work in one step) follows from the parameters." },
+        "decomposition": { "enum": ["pencil2d", "block3d", "data-parallel", "none"] },
+        "ranks": { "type": "string", "description": "How to choose the process count from the mesh, and the limits the decomposition puts on it." },
+        "processes_per_node": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["param", "default", "cores"],
+          "properties": {
+            "param": { "$ref": "#/$defs/param_name" },
+            "default": { "const": "physical_cores", "description": "An empty parameter takes the target partition's physical cores per node: the cores parameter (relay's describe reports it per partition), else, inside the job, the physical cores of the job's node. The configuring host, often a login node, is never asked." },
+            "cores": { "$ref": "#/$defs/param_name", "description": "Parameter holding the target partition's physical cores per node." }
+          }
+        },
+        "nodes": { "$ref": "#/$defs/value" },
+        "cost": { "type": "string", "description": "How the walltime follows from the case: what scales and what output costs. The site's throughput is not fixed in the contract." }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Refines the JSON Schema derived from the package's _configure_menu.",
+      "properties": {
+        "required": { "type": "array", "items": { "$ref": "#/$defs/param_name" } },
+        "properties": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/param_name" },
+          "additionalProperties": { "type": "object" }
+        },
+        "cases": {
+          "type": "array",
+          "description": "Rules that hold only in one case of the package, such as a parameter that one case uses and another ignores. A configuration is in the case when every parameter named in when matches its schema; a parameter left out of the configuration matches. Only that case's required and properties are checked.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "when"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "when": {
+                "type": "object",
+                "minProperties": 1,
+                "propertyNames": { "$ref": "#/$defs/param_name" },
+                "additionalProperties": { "type": "object" }
+              },
+              "required": { "type": "array", "items": { "$ref": "#/$defs/param_name" } },
+              "properties": {
+                "type": "object",
+                "propertyNames": { "$ref": "#/$defs/param_name" },
+                "additionalProperties": { "type": "object" }
+              }
+            }
+          }
+        },
+        "review": { "type": "array", "items": { "$ref": "#/$defs/param_name" }, "description": "Parameters a reviewer must see on a guarded site." },
+        "fill": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/param_name" },
+          "additionalProperties": { "type": "string" },
+          "description": "Template for a parameter left empty, resolved at configure time. Only these templates may use {shared_dir}, {private_dir} or {pkg_dir}."
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "description": "PSI/J 0.9.11 resource and attribute names (RL15). duration is in seconds.",
+      "required": ["process_count", "duration"],
+      "additionalProperties": false,
+      "properties": {
+        "node_count": { "$ref": "#/$defs/value" },
+        "process_count": { "$ref": "#/$defs/value" },
+        "processes_per_node": { "$ref": "#/$defs/value" },
+        "cpu_cores_per_process": { "$ref": "#/$defs/value" },
+        "gpu_cores_per_process": { "$ref": "#/$defs/value" },
+        "exclusive_node_use": { "$ref": "#/$defs/value" },
+        "memory": { "$ref": "#/$defs/value" },
+        "duration": { "$ref": "#/$defs/value" },
+        "queue_name": { "$ref": "#/$defs/value" }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/output" },
+      "description": "Every output with its view descriptor template. A service with no outputs lists none."
+    },
+    "progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit"],
+      "properties": {
+        "unit": { "type": "string" },
+        "step_pattern": { "type": "string", "description": "Regex over one stdout line with a named group 'step'." },
+        "announces": {
+          "enum": ["before-write", "after-write"],
+          "default": "after-write",
+          "description": "Whether the step line is printed before or after the step reaches the output. With 'before-write', step k means k-1 steps are readable."
+        },
+        "output":  { "type": "string", "description": "The output each step record points at." },
+        "total": { "$ref": "#/$defs/value" },
+        "done_pattern": { "type": "string" },
+        "ready_pattern": { "type": "string", "description": "For a service: regex for the line that says the port is open." }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ports", "stop"],
+      "properties": {
+        "ports": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "protocol", "port", "health", "protection"],
+            "properties": {
+              "name": { "type": "string" },
+              "protocol": { "enum": ["tcp", "http", "ws", "mcp"] },
+              "port": { "$ref": "#/$defs/value" },
+              "bind": { "$ref": "#/$defs/value" },
+              "health": {
+                "type": "object", "additionalProperties": false, "required": ["kind"],
+                "properties": {
+                  "kind": { "enum": ["tcp-listen", "http-get"] },
+                  "path": { "type": "string" },
+                  "note": { "type": "string" }
+                }
+              },
+              "protection": {
+                "type": "object", "additionalProperties": false, "required": ["bind"],
+                "properties": {
+                  "bind": { "enum": ["loopback", "any"] },
+                  "connect_id": { "$ref": "#/$defs/value" },
+                  "note": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "stop": {
+          "type": "object", "additionalProperties": false, "required": ["signal", "writes", "record"],
+          "properties": {
+            "signal": { "enum": ["SIGTERM", "SIGINT"] },
+            "writes": { "type": "string" },
+            "record": { "const": "clio.service-stop.v1" },
+            "grace_seconds": { "type": "integer", "minimum": 1, "description": "Bounded by jarvis-cd's stop grace (20 s) so the stop record is written before KILL." }
+          }
+        },
+        "runtime": {
+          "type": "object", "additionalProperties": false, "required": ["record", "lifecycle", "endpoint"],
+          "description": "The jarvis-cd service runtime the package reports through ServiceRuntimeReporter; jarvis starts the next package once it says ready.",
+          "properties": {
+            "record": { "const": "jarvis.service-runtime.v2" },
+            "lifecycle": { "type": "array", "items": { "enum": ["starting", "ready", "degraded", "stopping", "stopped", "failed"] } },
+            "endpoint": {
+              "type": "object", "additionalProperties": false, "required": ["host", "port"],
+              "properties": {
+                "host": { "type": "string", "description": "Which node the reported host names." },
+                "port": { "$ref": "#/$defs/value" },
+                "note": { "type": "string" }
+              }
+            }
+          }
+        },
+        "data_flow": {
+          "type": "object", "additionalProperties": false, "required": ["direction", "kind"],
+          "description": "Which way data moves between this service and the pipeline's other steps, whatever order JARVIS starts them in (it starts a service first). in: the steps that declare outputs write what this service reads; out: this service feeds every other step. Relay declares the matching couplings to JARVIS, so the plan and the job card draw producer to consumer.",
+          "properties": {
+            "direction": { "enum": ["in", "out"] },
+            "kind": { "enum": ["stream", "file", "service", "interceptor", "control", "other"] },
+            "label": { "type": "string" }
+          }
+        },
+        "max_lifetime": { "$ref": "#/$defs/value" },
+        "linger": {
+          "$ref": "#/$defs/value",
+          "description": "Seconds the service stays up after the pipeline's steps finish, so clients can still attach; the job's walltime must allow for it."
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputs"],
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Templates of the files the run reads; each is digested with SHA-256 at configure time."
+        },
+        "upstream": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["name", "version"],
+            "properties": { "name": { "type": "string" }, "version": { "type": "string" }, "url": { "type": "string" }, "sha256": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "selftest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["params", "max_seconds"],
+      "properties": {
+        "params": { "type": "object" },
+        "max_seconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+        "script": { "type": "string", "description": "Optional selftest.py with check(context) for package-specific checks." }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "service" } } },
+      "then": { "required": ["service"], "properties": { "progress": { "required": ["ready_pattern"] } } },
+      "else": {
+        "not": { "required": ["service"] },
+        "properties": {
+          "outputs": { "minItems": 1 },
+          "progress": { "required": ["step_pattern", "output", "total"] }
+        }
+      }
+    }
+  ]
+}

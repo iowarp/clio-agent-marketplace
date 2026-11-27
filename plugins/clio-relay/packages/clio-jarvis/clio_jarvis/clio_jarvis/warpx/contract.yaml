@@ -1,0 +1,162 @@
+schema: clio.package-contract.v1
+package: warpx
+title: WarpX
+version: 0.1.1
+kind: application
+summary: >-
+  WarpX 24.10, the electromagnetic particle-in-cell code of the BLAST suite
+  (laser-plasma acceleration, plasma waves, beams in plasma), in 3D. inputs
+  names a WarpX inputs file in the solver's own format (key = value lines,
+  https://warpx.readthedocs.io/en/24.10/usage/parameters.html) that holds the
+  whole case: geometry.dims = 3, amr.n_cell, geometry.prob_lo and prob_hi,
+  boundary.field_lo/hi and particle_lo/hi, warpx.cfl or warpx.const_dt,
+  particles.species_names with each species' charge, mass, injection,
+  density profile and momentum, lasers.names with each laser's profile, and
+  any diagnostics of its own. Author it for the person's case; nothing here
+  fixes a scenario. The package copies it into run_dir as inputs and runs
+  it as written, with the command line setting max_step (it replaces the
+  inputs' max_step and stop_time) and adding one diagnostic of its own,
+  clio, beside the inputs' diagnostics: an AMReX plotfile of the fields every
+  plot_interval steps. Each plotfile appears in run_dir/plotfiles only once
+  WarpX has written it whole, so ParaView's AMReX reader follows the series
+  live; progress counts them. The inputs must not name a diagnostic clio.
+  The software is any Spack warpx 24.10 built 3D with MPI and without OpenMP
+  or QED; a site that already has one is reused as it is. The PSATD solver
+  (algo.maxwell_solver = psatd), openPMD diagnostics and embedded boundaries
+  are optional variants (+fft, +openpmd, +eb) a site's build may lack, so the
+  Yee solver, plotfile diagnostics and no embedded boundary run on any build.
+  MPI, the launcher, the nodes and the ranks per node come from the site
+  through JARVIS, never from the inputs.
+install:
+  method: spack
+  # MPI stays the mpi virtual, so the site's MPI is reused. ~qed: its PICSAR
+  # source would be downloaded inside the build, which compute nodes may not
+  # allow. +app is the warpx.3d executable the package runs. spack/'s
+  # clio.warpx is the builtin recipe with its ~python build targets fixed.
+  query: warpx@24.10 +app +mpi dims=3 compute=noacc ~qed
+  repos: [spack]
+
+parameters:
+  required: [nprocs, inputs, max_step, plot_interval]
+  properties:
+    nprocs: {minimum: 1, maximum: 65536}
+    ppn: {minimum: 1, maximum: 256}
+    cores_per_node: {minimum: 1, maximum: 1024}
+    inputs: {minLength: 1}
+    max_step: {minimum: 1}
+    plot_interval: {minimum: 1}
+    fields: {pattern: "^\\s*\\S+(\\s+\\S+)*\\s*$"}
+    walltime: {minimum: 1}
+  review: [inputs, nprocs, ppn, max_step, plot_interval, fields, plot_particles, walltime, queue]
+  fill:
+    run_dir: "{shared_dir}/run"
+
+resources:
+  process_count: {param: nprocs}
+  processes_per_node: {param: ppn}
+  duration: {param: walltime}
+  queue_name: {param: queue}
+
+sizing:
+  mesh: >-
+    amr.n_cell = nx ny nz cells of the inputs, over geometry.prob_lo to
+    prob_hi; the cell size along each axis is (prob_hi - prob_lo) / n. Resolve
+    the shortest length the case has, the laser wavelength or the plasma
+    skin depth c / omega_p, with about 16 to 30 cells along the axis it
+    varies on. The step follows from the cell size through warpx.cfl (about
+    1 for Yee in 3D): dt = cfl / (c sqrt(1/dx^2 + 1/dy^2 + 1/dz^2)), so
+    max_step x dt is the simulated time. The particles carry most of the
+    cost: cells x particles per cell of each species.
+  decomposition: block3d
+  ranks: >-
+    WarpX cuts the grid into boxes of at most amr.max_grid_size cells a side
+    (AMReX's default is 32 in 3D) and spreads them over the ranks, so the
+    level-0 box count, ceil(nx / max_grid_size) x ceil(ny / max_grid_size)
+    x ceil(nz / max_grid_size), bounds the useful nprocs. With fewer boxes
+    than ranks AMReX chops them further, down to amr.blocking_factor (8 by
+    default), so that each rank has one. Keep each rank's share in the tens
+    of thousands of cells or more (32^3 = 32768 a box is a good start),
+    and a box count that is a multiple of nprocs balances evenly.
+    clio-case.json records the box count the inputs give.
+  processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}
+  nodes: {ceil_div: [nprocs, ppn]}
+  cost: >-
+    walltime seconds = max_step x seconds per step plus one plotfile write
+    per plot_interval and the startup; a run's clio-run-result.json reports
+    its seconds_per_step. A particle-in-cell step costs roughly cells x
+    particles per cell x a few microseconds per rank-core. Each plotfile
+    holds 8 bytes per cell per field.
+
+outputs:
+  - name: plotfiles
+    description: >-
+      One AMReX plotfile of the fields per plot_interval steps, from step 0
+      to max_step, named plotfiles/plt<step, six digits or more>. Each is a
+      folder (Header, Level_0/Cell_H and Cell_D_*) of cell-centred fields;
+      ParaView's AMReXBoxLibGridReader reads the series, with each
+      plotfile's simulated time from its Header.
+    path: "{run_dir}/plotfiles/plt*"
+    path_kind: glob
+    format: amrex-plotfile
+    reader: AMReXBoxLibGridReader
+    # The AMReX reader loads no arrays until they are selected.
+    reader_properties:
+      CellArrayStatus: [Ex, Ey, Ez, Bx, By, Bz, jx, jy, jz, rho]
+    expected_steps: {add: [{div: [max_step, plot_interval]}, 1]}
+    follow: {signal: file-count, poll_seconds: 5}
+    time: {unit: simulated seconds}
+    display:
+      array: Ez
+      association: CELLS
+      representation: Slice
+      slice_normal: [0, 1, 0]
+      color_map: Cool to Warm
+    arrays: [Ex, Ey, Ez, Bx, By, Bz, jx, jy, jz, rho]
+  - name: run-result
+    role: result
+    description: >-
+      clio-run-result.json, the run's verdict (schema clio.warpx-run.v1):
+      status, cause, the step and simulated time reached, plotfiles written of
+      expected, seconds per step, wall seconds and the ranks. Every run
+      writes it.
+    path: "{run_dir}/clio-run-result.json"
+    path_kind: file
+    format: json
+  - name: used-inputs
+    role: statistics
+    description: >-
+      warpx_used_inputs, every parameter WarpX ran with, the inputs and the
+      command line merged, defaults included.
+    path: "{run_dir}/warpx_used_inputs"
+    path_kind: file
+    format: text
+
+progress:
+  unit: step
+  # The package prints "clio-warpx plotfile I of M" once plotfile I is whole in plotfiles/.
+  step_pattern: '^clio-warpx plotfile (?P<step>\d+) of \d+'
+  announces: after-write
+  output: plotfiles
+  total: {div: [max_step, plot_interval]}
+  done_pattern: '^clio-warpx result \{"status": "ok"'
+
+provenance:
+  inputs:
+    - "{run_dir}/inputs"
+    - "{run_dir}/clio-case.json"
+  upstream:
+    - name: WarpX 24.10 (3D, MPI, noacc, ~qed), as Spack's builtin warpx recipe builds it
+      version: "24.10"
+      url: https://github.com/BLAST-WarpX/warpx/tree/24.10
+
+selftest:
+  # A cold electron plasma displaced along z: Ez rings at the plasma frequency.
+  params:
+    nprocs: 8
+    ppn: 8
+    inputs: "{pkg_dir}/config/plasma_oscillation.inputs"
+    max_step: 40
+    plot_interval: 4
+    walltime: 900
+  max_seconds: 900
+  script: selftest.py

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "paraview",
-  "version": "1.0.0",
+  "version": "1.0.12",
   "description": "Interactive 3D views of scientific data in ParaView: rotate, slice, contour and measure volumes, meshes and 3D fields from simulation or model output, in a live view the person can turn, on this machine or a cluster. It belongs to the ParaView connector: add it to a conversation while that connector is enabled.",
   "author": {
     "name": "IoWarp Team"
