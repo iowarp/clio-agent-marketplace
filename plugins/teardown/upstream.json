@@ -1,0 +1,12 @@
+{
+  "repository": "elvarofficial/teardown",
+  "commit": "a91262ac1109051e014662d42ecb0b7bc1f113b1",
+  "license": "MIT",
+  "note": "Adapted, not copied: the craft and review rules in skills/exploded-teardown/references/craft.md come from SKILL.md at this commit. LICENSE.upstream is the upstream LICENSE, verbatim. See NOTICE.md.",
+  "files": {
+    "LICENSE": "489451d9c7bd0c07b21c7f094f24d290d52c757bf71fc988ec880aa673fb3820",
+    "SKILL.md": "9395e463e8ff733c4cadafe8dafeceb72fd462a2a1fc89a58c17d3b756b5929b",
+    "paths.mjs": "36f6c0b2bfde23bb66215b5b3ff86933b121b83dd8e3f04c87aea9f1320aec68"
+  },
+  "settings_used_by_find_chromium": ["CHROMIUM", "TEARDOWN_DEPS"]
+}
