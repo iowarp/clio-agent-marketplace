@@ -25,9 +25,9 @@ Use this skill once placement is settled. Route in this order; check after each 
    do not start it on your own. Ask once with `ask_user`, giving the reason and the steps
    from the result: install it and route again, or route by hand.
 4. **Review what the autorouter did, and correct it.** An autorouter connects every net but
-   does not judge: look at the board (`export_3d_render` top and bottom, the board view's
-   `capture` or `describe_region` on a dense area) and read the tracks (`pcb_get_tracks`,
-   `pcb_get_vias`). Look for power tracks narrower than their current needs, decoupling loops
+   does not judge: look at the routes in the board view (`set_layers` to the copper layers,
+   `focus` on the power nets, decoupling, the pairs and dense areas, then its `capture` or
+   `describe_region`) and read the tracks (`pcb_get_tracks`, `pcb_get_vias`). Look for power tracks narrower than their current needs, decoupling loops
    that wander away from their pins, a differential pair split or routed apart, copper or vias
    inside an antenna keepout, long detours and needless vias, acute angles and stubs. Delete
    what is wrong (`pcb_delete_items`) and route it by hand, then look again.

@@ -10,30 +10,45 @@ any part has none).
 
 Coordinates are the STEP's, in millimetres: the board's bottom face at z = board bottom, its
 top at z = board top, x and y as KiCad exported them (KiCad's y axis is flipped). Needs
-CadQuery (2.6 or later).
+CadQuery (2.6 or later). KiCad Library Tools' Python has it: the first line of the KiCad connector's
+lib_list_footprint_families names that Python, so run this script with it rather than installing
+CadQuery again (an install is about 1.7 GB in each conversation's own cache).
 """
 
 from __future__ import annotations
 
-import argparse
-import hashlib
-import json
-import math
-import os
-import re
-import statistics
-import sys
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any
+#: This script's version. A project keeps its own copy, which does not get later fixes; when the
+#: skill's copy has a higher version, replace the project's copy (keep its parameter values).
+SCRIPT_VERSION = 3
 
-import cadquery as cq
-from OCP.STEPCAFControl import STEPCAFControl_Reader
-from OCP.TCollection import TCollection_ExtendedString
-from OCP.TDataStd import TDataStd_Name
-from OCP.TDF import TDF_Label, TDF_LabelSequence
-from OCP.TDocStd import TDocStd_Document
-from OCP.XCAFDoc import XCAFDoc_DocumentTool
+import argparse  # noqa: E402
+import hashlib  # noqa: E402
+import json  # noqa: E402
+import math  # noqa: E402
+import os  # noqa: E402
+import re  # noqa: E402
+import statistics  # noqa: E402
+import sys  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any  # noqa: E402
+
+_NO_CADQUERY = (
+    "CadQuery is not installed in this Python ({python}). KiCad Library Tools' Python has it: "
+    "the first line of the KiCad connector's lib_list_footprint_families names that Python. "
+    "Run this script with it."
+)
+
+try:
+    import cadquery as cq
+    from OCP.STEPCAFControl import STEPCAFControl_Reader
+    from OCP.TCollection import TCollection_ExtendedString
+    from OCP.TDataStd import TDataStd_Name
+    from OCP.TDF import TDF_Label, TDF_LabelSequence
+    from OCP.TDocStd import TDocStd_Document
+    from OCP.XCAFDoc import XCAFDoc_DocumentTool
+except ImportError as missing:  # the agent picked a Python without it
+    raise SystemExit(_NO_CADQUERY.format(python=sys.executable)) from missing
 
 CONNECTOR_PREFIXES = ("J", "P", "CN", "USB", "X")
 EDGE_REACH_MM = 1.5  # a connector body within this of the outline faces that edge
@@ -302,7 +317,24 @@ def _mating_face(box: cq.BoundBox, bounds: list[float]) -> dict[str, Any] | None
     }
 
 
+def missing_bodies(by_ref: dict[str, Footprint], named: dict[str, Any]) -> list[str]:
+    """Parts with no body in the STEP, or none in the board file (an older STEP may still
+    hold a body the board no longer has): the case cannot be sized around them."""
+    return sorted(
+        ref
+        for ref, footprint in by_ref.items()
+        if ref and not ref.startswith("#") and (ref not in named or not footprint.model)
+    )
+
+
 def measure(step: Path, pcb: Path | None, revision: str) -> dict[str, Any]:
+    if pcb is not None and pcb.exists() and pcb.stat().st_mtime > step.stat().st_mtime + 1:
+        # The STEP shows the board as it was when exported; a later edit (a part moved, a
+        # body removed) is not in it, so measuring it would describe another board.
+        raise SystemExit(
+            f"{step.name} is older than {pcb.name}: the board changed after the STEP was "
+            "exported. Export the STEP again, then measure."
+        )
     bodies = read_step(step)
     board = _board_body(bodies)
     named = {b.name: b for b in bodies if b is not board and b.name and not b.name.startswith("=>")}
@@ -349,13 +381,15 @@ def measure(step: Path, pcb: Path | None, revision: str) -> dict[str, Any]:
     for poly in board_keepouts:
         keepouts.append({"source": "board", "polygon": [to_step(x, y) for x, y in poly]})
 
-    missing = sorted(ref for ref in by_ref if ref and ref not in named and not ref.startswith("#"))
+    missing = missing_bodies(by_ref, named)
     return {
         "source": {
             "step": str(step),
             "sha256": hashlib.sha256(step.read_bytes()).hexdigest(),
             "revision": revision,
             "pcb": str(pcb) if pcb else "",
+            "pcb_sha256": hashlib.sha256(pcb.read_bytes()).hexdigest() if pcb else "",
+            "script_version": SCRIPT_VERSION,
         },
         "units": "mm",
         "frame": "STEP coordinates as exported by KiCad (y flipped from the board file)",

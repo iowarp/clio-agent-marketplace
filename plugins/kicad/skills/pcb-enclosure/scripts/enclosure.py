@@ -10,9 +10,16 @@ It reads board-envelope.json (from board_envelope.py) and refuses one that was m
 another STEP than BOARD_STEP, or that lists parts with no body. It writes base/lid STEP and STL,
 enclosure.3mf, enclosure.glb (nodes: board, each reference, base, lid, standoff_N, pillar_N,
 cutout_<ref>) and fit-report.json, and exits 1 when a fit check fails. Needs CadQuery 2.6+.
+KiCad Library Tools' Python has it: the first line of the KiCad connector's
+lib_list_footprint_families names that Python, so run this script with it rather than installing
+CadQuery again (an install is about 1.7 GB in each conversation's own cache).
 """
 
 from __future__ import annotations
+
+#: This script's version. A project keeps its own copy, which does not get later fixes; when the
+#: skill's copy has a higher version, replace the project's copy (keep its parameter values).
+SCRIPT_VERSION = 3
 
 # --- parameters (millimetres and degrees) -----------------------------------------------
 ENVELOPE = "../board-envelope.json"
@@ -29,6 +36,9 @@ MIN_STANDOFF_HEIGHT = 3.0
 FILLET = 1.0  # outer edges of the lid top (a 45° chamfer when they print on the bed); 0: none
 PRINT_ORIENTATION = {"base": "floor-down", "lid": "top-down"}
 NOZZLE = 0.4
+#: The least gap a printed case needs to go together with the board and its parts (FDM
+#: tolerance); every gap the checks measure must reach the larger of this and CLEARANCE.
+FIT_GAP = 0.3
 OVERHANG_LIMIT = 45.0
 #: Plug bodies that must pass through a connector's opening, as (width, height) across the
 #: entry direction; a connector not listed uses its mating face.
@@ -45,7 +55,15 @@ import sys  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
-import cadquery as cq  # noqa: E402
+_NO_CADQUERY = (
+    "CadQuery is not installed in this Python ({python}). KiCad Library Tools' Python has it: "
+    "the first line of the KiCad connector's lib_list_footprint_families names that Python. "
+    "Run this script with it."
+)
+try:
+    import cadquery as cq  # noqa: E402
+except ImportError as missing:  # the agent picked a Python without it
+    raise SystemExit(_NO_CADQUERY.format(python=sys.executable)) from missing
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))  # board_envelope.py sits beside this file
@@ -66,6 +84,28 @@ def _load_envelope() -> dict[str, Any]:
         raise SystemExit(
             f"{path.name} was measured from another export of the board than {step.name}: "
             "measure again with board_envelope.py before building the case."
+        )
+    pcb_digest = envelope["source"].get("pcb_sha256", "")
+    pcb_name = envelope["source"].get("pcb", "")
+    if pcb_name and not pcb_digest:
+        raise SystemExit(
+            f"{path.name} does not record which version of the board it measured, so it may "
+            "fit an older board: measure again with board_envelope.py."
+        )
+    if pcb_digest and pcb_name:
+        pcb = (path.parent / pcb_name).resolve()
+        if not pcb.exists() or hashlib.sha256(pcb.read_bytes()).hexdigest() != pcb_digest:
+            raise SystemExit(
+                f"The board ({pcb.name}) changed after {path.name} was measured, so the case "
+                "would fit the old board: export the STEP again and measure again with "
+                "board_envelope.py."
+            )
+    measured_by = envelope["source"].get("script_version", 1)
+    if measured_by != SCRIPT_VERSION:
+        raise SystemExit(
+            f"{path.name} was measured by board_envelope.py version {measured_by}, and this is "
+            f"enclosure.py version {SCRIPT_VERSION}: use both scripts from the same version of "
+            "the skill and measure again."
         )
     if envelope.get("missing_bodies"):
         raise SystemExit(
@@ -338,16 +378,21 @@ def fit_checks(case: Case, made: dict[str, Any], bodies: dict[str, cq.Shape]) ->
     elements.update({f"standoff_{i}": p for i, p in enumerate(made["standoffs"], start=1)})
     elements.update({f"pillar_{i}": p for i, p in enumerate(made["pillars"], start=1)})
     connectors = set(made["openings"])
+    required = max(CLEARANCE, FIT_GAP)
+    # The board's edge sits CLEARANCE from the cavity wall by construction.
+    if CLEARANCE < FIT_GAP - 1e-6:
+        check("clearance", False, part="pcb", element="base", gap=round(CLEARANCE, 2),
+              required=required, measured_by="the cavity is the board outline offset by CLEARANCE")
     for ref, body in sorted(bodies.items()):
         if ref == "pcb" or ref in connectors:
             continue  # a connector reaches into its opening; checked below
         for element, shape in elements.items():
             gap, method = _gap(body, shape)
-            if gap < CLEARANCE - 0.05:
+            if gap < required - 0.05:
                 check("clearance", False, part=ref, element=element, gap=round(gap, 2),
-                      required=CLEARANCE, measured_by=method)
+                      required=required, measured_by=method)
     if not any(c["check"] == "clearance" for c in checks):
-        check("clearance", True, required=CLEARANCE)
+        check("clearance", True, required=required)
 
     for index, (hole, post) in enumerate(zip(case.holes, made["standoffs"], strict=True), start=1):
         center = post.Center()
@@ -385,11 +430,11 @@ def fit_checks(case: Case, made: dict[str, Any], bodies: dict[str, cq.Shape]) ->
               recess=round(recess, 2) if recess is not None else None)
 
     top_gap = case.ceiling - (case.board_top + case.env["top"]["max_height"])
-    check("lid_clears_top", top_gap >= CLEARANCE - 1e-6, part=case.env["top"]["part"],
-          gap=round(top_gap, 2))
+    check("lid_clears_top", top_gap >= required - 1e-6, part=case.env["top"]["part"],
+          gap=round(top_gap, 2), required=required)
     bottom_gap = (case.board_bottom - case.env["bottom"]["max_depth"]) - case.floor
-    check("base_clears_bottom", bottom_gap >= CLEARANCE - 1e-6 or not case.env["bottom"]["part"],
-          part=case.env["bottom"]["part"], gap=round(bottom_gap, 2))
+    check("base_clears_bottom", bottom_gap >= required - 1e-6 or not case.env["bottom"]["part"],
+          part=case.env["bottom"]["part"], gap=round(bottom_gap, 2), required=required)
 
     check("wall_printable", WALL >= 2 * NOZZLE, wall=WALL, minimum=2 * NOZZLE)
     for name in ("base", "lid"):
@@ -399,10 +444,11 @@ def fit_checks(case: Case, made: dict[str, Any], bodies: dict[str, cq.Shape]) ->
 
     return {
         "passed": all(c["passed"] for c in checks),
+        "script_version": SCRIPT_VERSION,
         "parameters": {
             "wall": WALL, "clearance": CLEARANCE, "cutout_clearance": CUTOUT_CLEARANCE,
             "lid_style": LID_STYLE, "screw": SCREW_DIAMETER, "nozzle": NOZZLE,
-            "overhang_limit": OVERHANG_LIMIT, "plugs": PLUGS, "windows": WINDOWS,
+            "overhang_limit": OVERHANG_LIMIT, "fit_gap": FIT_GAP, "plugs": PLUGS, "windows": WINDOWS,
         },
         "envelope": case.env["source"],
         "checks": checks,

@@ -4,6 +4,13 @@
 
 ### Added
 
+- `kicad` (1.1.0): reminders after ERC, DRC, autoroute, board sync and case build
+  (`ai.iowarp.clio/injections`) to review the result in the board, schematic and case
+  views and record the pass. The enclosure scripts carry a version, so a project's old
+  copy is replaced; a case is never built for a board that changed after it was
+  measured; fit checks require the gap a print needs; CadQuery comes from Library
+  Tools' Python first; the case view aims from the part centres it reports. The
+  footprint skills lead with checking a footprint against its land pattern.
 - `cad` (0.1.0): parametric CAD with the `cadquery` skill. The part is a script
   run on CLIO's own uv and Python with `cadquery>=2.8`, whose cadquery-ocp has
   wheels for Python 3.11 to 3.14, so the first run resolves on a 3.14 CLIO Python
