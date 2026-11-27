@@ -131,6 +131,16 @@ def physical_cores() -> int:
 def is_view(output: Mapping[str, Any]) -> bool:
     return output.get("role", VIEW_ROLE) == VIEW_ROLE
 
+
+def _in_case(when: Mapping[str, Any] | None, config: Mapping[str, Any]) -> bool:
+    """Whether every parameter ``when`` names matches its schema; an absent one matches."""
+    if not when:
+        return True
+    import jsonschema
+
+    present = {name: value for name, value in config.items() if name in when and value is not None}
+    return jsonschema.Draft202012Validator({"properties": dict(when)}).is_valid(present)
+
 _MENU_TYPES = {
     "int": "integer",
     "float": "number",
@@ -562,6 +572,16 @@ class Contract:
             descriptor["time"] = time_spec
         if output.get("display"):
             descriptor["display"] = dict(output["display"])
+        geometry = [
+            {
+                "path": render(entry["path"], config),
+                **{key: entry[key] for key in ("label", "visible") if key in entry},
+            }
+            for entry in output.get("geometry") or []
+            if _in_case(entry.get("when"), config)
+        ]
+        if geometry:
+            descriptor["geometry"] = geometry
         descriptor["producer"] = {"package": self.pkg_type, "version": self.version}
         if self.sha256:
             descriptor["producer"]["sha256"] = self.sha256
@@ -837,6 +857,10 @@ def _check_semantics(contract: Contract) -> None:
             view_names.add(output["name"])
         need("outputs", template_fields(output["path"]), f"output {output['name']!r} path")
         need("outputs", value_params(output.get("expected_steps")), f"output {output['name']!r} expected_steps")
+        for entry in output.get("geometry") or []:
+            where = f"output {output['name']!r} geometry {entry['path']!r}"
+            need("outputs", template_fields(entry["path"]), where)
+            need("outputs", (entry.get("when") or {}).keys(), f"{where} when")
 
     progress = data["progress"]
     for key in ("step_pattern", "done_pattern", "ready_pattern"):

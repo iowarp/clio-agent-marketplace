@@ -82,6 +82,19 @@ wheels = [
 ]
 
 [[package]]
+name = "asyncssh"
+version = "2.24.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0f/c5/41a0d5477865c48cee65050586092dc3ba3fc1c52e29b47fba08d3a44581/asyncssh-2.24.1.tar.gz", hash = "sha256:efcd36e9b35f79873535b06444a7c9b0a3c61d97081b208c7fdd3fd8a40f1eca", size = 558085, upload-time = "2026-10-04T02:48:24.913Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/e5/8bc721f04ff545c5a84c9c23fbf788fbb56960bb57a86c6366bc35be0f66/asyncssh-2.24.1-py3-none-any.whl", hash = "sha256:fc560b4f43be0f0c602d184783e5e3876f5d24d933a25359d86e5a50a5f46fe5", size = 382514, upload-time = "2026-10-04T02:48:23.676Z" },
+]
+
+[[package]]
 name = "atomicwrites"
 version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -356,10 +369,11 @@ wheels = [
 
 [[package]]
 name = "clio-relay"
-version = "2.0.0a50"
-source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a50/clio_relay-2.0.0a50-py3-none-any.whl" }
+version = "2.0.0a51"
+source = { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a51/clio_relay-2.0.0a51-py3-none-any.whl" }
 dependencies = [
     { name = "aioquic" },
+    { name = "asyncssh" },
     { name = "clio-schemas" },
     { name = "cryptography" },
     { name = "fastapi" },
@@ -380,7 +394,7 @@ dependencies = [
     { name = "websockets" },
 ]
 wheels = [
-    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a50/clio_relay-2.0.0a50-py3-none-any.whl", hash = "sha256:e19a94caf0b4de0d77fe9c583ddafcb83ee0c82b695dd70958fe1ed7608015ba" },
+    { url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a51/clio_relay-2.0.0a51-py3-none-any.whl", hash = "sha256:5d904a4cea097aebfc8d1fed4ed3365480cc258876e3e14e7c6a61984993cc34" },
 ]
 
 [package.optional-dependencies]
@@ -392,6 +406,7 @@ tapis = [
 [package.metadata]
 requires-dist = [
     { name = "aioquic", specifier = ">=1.9.1,<1.10" },
+    { name = "asyncssh", specifier = ">=2.24,<3" },
     { name = "clio-schemas", specifier = "==0.2.1" },
     { name = "cryptography", specifier = ">=50.0.0" },
     { name = "fastapi", specifier = ">=0.115" },
@@ -430,7 +445,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a50/clio_relay-2.0.0a50-py3-none-any.whl" }]
+requires-dist = [{ name = "clio-relay", extras = ["tapis"], url = "https://github.com/iowarp/clio-relay/releases/download/v2.0.0a51/clio_relay-2.0.0a51-py3-none-any.whl" }]
 
 [[package]]
 name = "clio-schemas"

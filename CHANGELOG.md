@@ -48,6 +48,11 @@
 
 ### Changed
 
+- `clio-relay` (1.6.102): relay 2.0.0a51, on jarvis-cd 1.9.24. Relay holds the ssh connection itself on every OS, so a
+  site that asks for a code (`interactive_sign_in`) works from Windows too, and relay's processes on one machine share
+  one sign-in. A run approval shows when the same job is already live and lets the person use it. The site setting
+  `jarvis_graph: relay` keeps relay's own resource graph whatever the site exports. Bundled clio-jarvis moves to
+  da4a68a5: a view descriptor can carry `geometry` (xcompact3d reports its body as `run/body.stl`).
 - `clio-relay` (1.6.101): relay 2.0.0a50, on jarvis-cd 1.9.24. A Fortran package such as xcompact3d no longer builds on
   a C-only compiler. `site clean` cleans a run cancelled at its card, and another relay home's job on the same account
   no longer stops it.

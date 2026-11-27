@@ -1,7 +1,7 @@
 schema: clio.package-contract.v1
 package: xcompact3d
 title: Xcompact3d
-version: 0.3.11
+version: 0.3.12
 kind: application
 summary: >-
   Xcompact3d (Incompact3d v5.0) incompressible flow simulation. Give it an STL
@@ -159,9 +159,19 @@ summary: >-
   Outputs: snapshots of ux, uy, uz, pp, vort, critq and (body case) ep, the
   body indicator, go to a growing BP5 output that ParaView's ADIOS2VTXReader
   follows while the run goes; a slice at mid-span coloured by vort shows the
-  wake, and a contour of ep at 0.5 shows the body. clio-case.json in the run
-  directory gives the grid, the body placement and the stability numbers,
-  body.stl is the body in solver coordinates, and forces.dat holds drag and
+  wake. body.stl in the run directory is the body in solver coordinates, and
+  the snapshots view descriptor names it under geometry (label body), so a
+  viewer opens it beside the data with no transform. body.stl draws the body
+  as made; the ep 0.5 contour shows the solver's stair-stepped mask, useful
+  only to check the mask against the body. What changes over a run, and so
+  shows the flow developing: an isosurface of critq (the Q criterion, at a
+  positive value; start near a tenth of the step's largest critq and lower
+  it to see weaker vortices) shows the vortices
+  shedding off the body, and a plane across the wake downstream of the body
+  (normal along x, about one to three body lengths behind it) coloured by
+  vort or ux shows the wake growing and oscillating. clio-case.json in the
+  run directory gives the grid, the body placement and the stability
+  numbers, and forces.dat holds drag and
   lift by time. With icheckpoint set, the run also writes restart files
   (checkpoint.bp5 and restart.info) and, with initstat set too, averaged
   statistics (statistics.bp5) every icheckpoint steps; both are off by
@@ -308,6 +318,11 @@ outputs:
       color_map: Viridis (matplotlib)
     # Both cases; the body case adds ep.
     arrays: [ux, uy, uz, pp, vort, critq]
+    # The body as made, in solver coordinates; the Taylor-Green case has none.
+    geometry:
+      - path: "{run_dir}/body.stl"
+        label: body
+        when: {geometry: {type: string, minLength: 1}}
   - name: statistics
     role: statistics
     description: >-

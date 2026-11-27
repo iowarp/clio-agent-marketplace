@@ -79,6 +79,21 @@
         "follow": { "type": "object" },
         "time": { "type": "object" },
         "display": { "type": "object" },
+        "geometry": {
+          "type": "array",
+          "description": "Surface files the view descriptor names for a viewer to open beside the data, in the data's coordinates. An entry with when is reported only when every parameter it names matches its schema, as in parameters cases.",
+          "items": {
+            "type": "object",
+            "required": ["path"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string", "minLength": 1, "description": "Template over the configured parameters, for example '{run_dir}/body.stl'." },
+              "label": { "type": "string", "minLength": 1, "maxLength": 64 },
+              "visible": { "type": "boolean" },
+              "when": { "type": "object", "additionalProperties": { "type": "object" } }
+            }
+          }
+        },
         "arrays": { "type": "array", "items": { "type": "string" }, "description": "Arrays the self-test expects the reader to expose." }
       }
     }

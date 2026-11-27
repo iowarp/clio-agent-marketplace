@@ -124,6 +124,35 @@
         }
       }
     },
+    "geometry": {
+      "type": "array",
+      "default": [],
+      "description": "Surface files a viewer opens beside the data, in the data's own coordinates (Origin and Spacing of the output), so they line up with no transform: a body the flow goes round, say. Each is a file ParaView opens by its extension, such as an STL.",
+      "items": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 2,
+            "pattern": "^/",
+            "description": "Absolute path of the file on the site's filesystem."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Name to show for it, for example 'body'."
+          },
+          "visible": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the first view shows it."
+          }
+        }
+      }
+    },
     "producer": {
       "type": "object",
       "additionalProperties": false,
@@ -155,6 +184,19 @@
       "time": { "unit": "step", "step_interval": 100 },
       "display": { "array": "V", "association": "POINTS", "representation": "Slice", "slice_normal": [0, 0, 1], "color_map": "Viridis (matplotlib)", "range": [0.0, 0.5] },
       "producer": { "package": "clio_jarvis.gray_scott", "version": "0.1.0" }
+    },
+    {
+      "schema": "clio.view-descriptor.v1",
+      "name": "snapshots",
+      "path": "/mnt/common/user/runs/wing/data.bp5",
+      "path_kind": "directory",
+      "format": "adios2-bp5",
+      "reader": "ADIOS2VTXReader",
+      "growing": true,
+      "follow": { "signal": "reader-time-steps", "poll_seconds": 2, "expected_steps": 40 },
+      "display": { "array": "vort", "association": "POINTS", "representation": "Slice", "slice_normal": [0, 0, 1] },
+      "geometry": [{ "path": "/mnt/common/user/runs/wing/body.stl", "label": "body" }],
+      "producer": { "package": "clio_jarvis.xcompact3d", "version": "0.3.12" }
     }
   ]
 }
