@@ -48,6 +48,14 @@
 
 ### Changed
 
+- `clio-relay` (1.6.103): relay 2.0.0a52, on jarvis-cd 1.9.25. Relay's held ssh connection dials through the proxy its
+  environment names (HTTPS_PROXY, ALL_PROXY or HTTP_PROXY, NO_PROXY honoured), so it works inside a sandbox that lets
+  programs out only through its proxy, and a failed open says how relay dialed. A site that takes the key and then asks
+  for a code reads as a sign-in. `execution get` shows a run's measured pace beside its time limit. The use-relay skill
+  treats a pilot as a sample of how the application uses compute, settles the physics the question needs before
+  sizing, and reads a run's pace while it is in flight; jarvis-package gives step totals and runs independent work as
+  separate runs. Bundled clio-jarvis moves to f31b4409: the hand-built xcompact3d package and its recipes are gone, and
+  the contracts no longer carry pilot and layout rules.
 - `clio-relay` (1.6.102): relay 2.0.0a51, on jarvis-cd 1.9.24. Relay holds the ssh connection itself on every OS, so a
   site that asks for a code (`interactive_sign_in`) works from Windows too, and relay's processes on one machine share
   one sign-in. A run approval shows when the same job is already live and lets the person use it. The site setting

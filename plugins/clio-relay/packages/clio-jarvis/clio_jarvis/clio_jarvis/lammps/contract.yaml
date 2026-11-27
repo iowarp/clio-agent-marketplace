@@ -1,7 +1,7 @@
 schema: clio.package-contract.v1
 package: lammps
 title: LAMMPS
-version: 0.1.0
+version: 0.1.1
 kind: application
 summary: >-
   LAMMPS 29Aug2024 (update 1), Sandia's classical molecular dynamics code
@@ -69,25 +69,17 @@ sizing:
     grid), so keep a few thousand atoms or more per rank: under about 1000
     the ghost-atom communication dominates. A dense uniform liquid or solid
     balances well; a system with vacuum or clusters needs the balance
-    command or fewer ranks. Prefer an nprocs that fills whole nodes.
+    command or fewer ranks.
   processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}
   nodes: {ceil_div: [nprocs, ppn]}
   cost: >-
     walltime seconds = steps x seconds per step plus one dump per
-    dump_interval and the startup. A previous run's clio-run-result.json
-    reports LAMMPS's own Performance lines (timesteps per second) and the
-    loop time of its last run; else measure a short run of a few hundred
-    steps at the same atoms and ranks. As a screen, a Lennard-Jones liquid
-    runs about 1 to 2 microseconds per atom-step per core, an EAM metal 3 to
-    5, and long-range Coulomb (kspace pppm) 10 or more. Each text frame
-    holds about 80 bytes per atom and its .vtp about 40. Request that total
-    times a generous safety coefficient sized from how far the measurement
-    can be trusted (larger on one short run or when steps varied, smaller
-    when several runs of the same setup agree), never in place of a
-    measurement: unused
-    time is not charged when the run ends cleanly, so say so in the spend
-    approval. With a pvserver watching the run in the same job, add twice
-    pvserver's linger.
+    dump_interval and the startup. A run's clio-run-result.json reports
+    LAMMPS's own Performance lines (timesteps per second) and the loop time
+    of its last run. A Lennard-Jones liquid runs roughly 1 to 2 microseconds
+    per atom-step per core, an EAM metal 3 to 5, and long-range Coulomb
+    (kspace pppm) 10 or more. Each text frame holds about 80 bytes per atom
+    and its .vtp about 40.
 
 outputs:
   - name: frames

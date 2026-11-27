@@ -152,7 +152,7 @@
           }
         },
         "nodes": { "$ref": "#/$defs/value" },
-        "cost": { "type": "string", "description": "How to estimate walltime. Throughput is calibrated on the site from a short run, not fixed in the contract." }
+        "cost": { "type": "string", "description": "How the walltime follows from the case: what scales and what output costs. The site's throughput is not fixed in the contract." }
       }
     },
     "parameters": {

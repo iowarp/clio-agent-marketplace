@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "clio-jarvis"
 version = "0.2.0"
-description = "JARVIS packages that meet the clio relay package contract: Gray-Scott, Xcompact3d, WRF, WarpX, LAMMPS, GROMACS and pvserver"
+description = "JARVIS packages that meet the clio relay package contract: Gray-Scott, WRF, WarpX, LAMMPS, GROMACS and pvserver"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "BSD-3-Clause"}

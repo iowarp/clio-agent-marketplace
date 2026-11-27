@@ -216,12 +216,23 @@ No node count, rank count or scale is a default: a right size on one machine
 is a handful of nodes and on another a thousand, so every count you consider
 or offer is derived from the facts below.
 
+- Settle what the question needs physically before sizing: the resolution,
+  the simulated time or steps, the accuracy that makes the result answer it.
+  Sizing finds the compute that delivers them. When time or budget is short,
+  scale the compute first; a coarser grid or a shorter simulated time changes
+  the answer, so bring it to the person as a different question, not as a way
+  to make the job fit.
 - Start from the problem's own parallel units: k-points, pools, images,
   replicas, bands, domains or a process grid, whatever the application splits
   its work by (its package's `sizing` and decomposition controls say which).
   They bound the range: the fewest ranks whose share of the problem fits in
   memory, up to the most that still each get useful work, and which counts
-  divide the units evenly.
+  divide the units evenly. Work that needs nothing another part produces
+  (independent stages, cases, ensemble members) is a parallel unit at the
+  level of jobs: in series in one job the parts take the sum of their times,
+  as separate jobs side by side the time of the longest. Size such jobs
+  together, their combined nodes against the queue's limits and idle nodes
+  and their node-hours against the budget.
 - Set that range against the queue: from `describe`, each partition entry's
   `nodes` and `idle`, `physical_cores` and `memory_mb` per node, its time
   limit (`max_time`, `max_time_s`), and the queue's own per-job node limits,
@@ -239,17 +250,28 @@ or offer is derived from the facts below.
   the queue's limits is a candidate; idle nodes say how soon it can start.
 - When the person's budget or allocation is known (node-hours left, a
   reservation, a cap they gave), it bounds the range too.
-- Measure scaling, not just speed: pilot at two sizes chosen the same way,
-  each a candidate layout inside the queue's limits with the decomposition
-  production would use there, far enough apart to show how the code scales
-  and toward the range you would offer, and each long enough that seconds per
-  step has settled past startup. Two measured points show how far more nodes
-  still pay off; where the range is wide, a third point keeps the projection
-  from resting on a long extrapolation.
+- A pilot is a sample of the application, not a rehearsal of the production
+  run: it measures how the code uses compute, so what it finds carries to
+  layouts it did not run. Measure the cost of a unit of work (a step over
+  each rank's share of the problem, or whatever the work grows with), how
+  that cost changes across ranks and nodes, the startup and the output
+  writes. The code or its documentation can say how its work should scale; a
+  real run gives the constants and shows what that reading missed. Pilot at
+  two or more sizes inside the queue's limits, far enough apart to show the
+  scaling and toward the range you would offer, each long enough that the
+  cost per step has settled past startup.
+- A timing measures the code only when nothing else shares its resources:
+  schedulers such as Slurm give a job's free cores and memory bandwidth to
+  other jobs unless it keeps its nodes. Run a pilot, and any run you will
+  size from, with `resources.exclusive_node_use: true`. Before relying on a
+  pilot's timings, check they are believable: settled rather than drifting,
+  ordered across sizes the way the code should scale, in line with earlier
+  runs of the same setup. A timing that fails this is not a measurement:
+  find why and measure again.
 - Then offer the person a choice of node counts spanning the sensible range
   for this problem on this machine, each with its projected time to result
-  and the node-hours it costs, and say which ones rest on a measured size and
-  which are projected from the measured scaling. Let the person pick; the
+  and the node-hours it costs, and say how far you trust each projection.
+  Let the person pick; the
   time request for the chosen one follows the next section.
 
 ## Ask for enough time
@@ -258,8 +280,8 @@ Size a job's time request from what was measured, then pad it generously.
 The request is (startup overhead + measured run time) x a safety coefficient,
 and every term in it comes from a measurement:
 
-- When nothing has been measured at the setup you mean to run, run a short
-  pilot of it first (a few steps or iterations, in a short job), and size
+- When nothing has measured this application on this build and site, run a
+  short pilot first (a few steps or iterations, in a short job), and size
   production from what the pilot measured. An estimate of the run time (from
   the application's documentation, a similar case, or your own reckoning)
   never becomes the time asked for, however much it is padded: a guess times
@@ -272,20 +294,22 @@ and every term in it comes from a measurement:
   `before_first_step_seconds` plus each service package's `ready_seconds`.
   Only a record without phase timings falls back to the gap from the job's
   start to its first step; never guess the overhead.
-- Seconds per step holds only for the grid and decomposition it was
-  measured at (resolution, rank count, process grid, nodes). Never rescale
-  it to another grid or rank count: fixed per-step work and communication
-  keep a coarser or smaller run from getting proportionally faster, and a
-  finer or larger one from staying on the line. If production runs at a
-  different grid or decomposition from the pilot, or changes after it,
-  re-pilot at production's grid and decomposition, or re-measure from an
-  earlier run of exactly that setup, before sizing the request. A scaled
-  figure can screen candidates, labelled as unmeasured, but never becomes
-  the time asked for.
+- Project any candidate layout from those measurements: production's work
+  shared over that layout's ranks, at the measured cost per unit and the
+  measured scaling, plus startup and output. A plain ratio of one pilot's
+  seconds per step is not a projection: fixed per-step work and communication
+  keep a smaller run from getting proportionally faster and a larger one from
+  staying on the line, which the measured scaling captures. Trust a
+  projection closely inside the range the pilots covered, less the further it
+  extrapolates, and less again for a change no pilot exercised (another
+  decomposition shape, a share per rank that no longer fits memory as it
+  did); when the chosen layout rests on a long extrapolation and the run is
+  costly, a pilot point nearer it is worth its short job.
 - Request the measured projection times a safety coefficient, rounded up.
   Size the coefficient from how far the measurement can be trusted: larger
-  when it rests on one short pilot, when steps varied, or when production
-  runs longer than anything measured, and smaller when several runs of the
+  when it rests on one short pilot, when steps varied, when production
+  runs longer than anything measured, or when its layout is projected far
+  from the measured ones, and smaller when several runs of the
   same setup agree; always generous, and say which coefficient you chose and
   why. The coefficient covers the spread of a measured run; it does not stand
   in for a measurement.
@@ -306,11 +330,12 @@ and every term in it comes from a measurement:
   padded request, and that unused time is not charged when the job ends
   cleanly.
 - If the padded request exceeds the partition's time limit (in
-  `partitions`), say so and propose options for the person to pick: another
-  partition with a longer limit, a shorter run (fewer steps, or a coarser
-  grid once a pilot at that grid has measured it), or more nodes when a
-  measured run shows they shorten it. Do not trim the coefficient to fit the
-  limit.
+  `partitions`), say so and propose options for the person to pick: more
+  nodes, projected from the measured scaling, as far as the site and the
+  budget allow; another partition with a longer limit; a run that writes a
+  restart and continues in a following job, when the code can. A shorter or
+  coarser run changes what the run answers; offer it only said that way. Do
+  not trim the coefficient to fit the limit.
 
 A package's contract can say how to project its own run; the padding and the
 approval above still apply.
@@ -554,6 +579,22 @@ operation state is the job's state there. When you are woken, carry on with
 the next step of the plan the person approved. A job waiting in the queue says
 so in the operation's `result.queue` and message: pass the estimated start on
 to the person.
+
+Whenever you are woken or look at a run still going, check its pace against
+what the person needs. A package that reports its steps gives it in
+`result.progress.data.pace`: `seconds_per_step` (startup left out),
+`latest_seconds_per_step`, and with a total `projected_end_at`,
+`time_limit_ends_at` and `limit_margin_s` (negative when the time limit ends
+the job first); the task's status says the same in words. Without a pace,
+take the rate once from the times the run printed for its steps. For work of
+uncertain length (a relaxation that converges), estimate the steps the
+problem plausibly needs. When the projection lands past the time limit, or
+costs far more than the person meant to spend, bring them the decision early,
+while the remaining time can still change the outcome: a layout across more
+of the site's nodes from the work's parallel units, restarting from its
+latest restart point when it writes one; a partition with a longer limit; or
+stopping. Say the measured rate and the projection. Waiting on is one of
+those options for the person to choose, not one taken for them by silence.
 
 When a run fails, read `result.issues`, JARVIS's typed issues, before the
 logs. Each names its `kind` and the field it is about. An `mpi_network` issue

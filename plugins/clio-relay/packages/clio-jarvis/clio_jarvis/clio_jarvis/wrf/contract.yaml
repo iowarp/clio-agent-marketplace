@@ -1,7 +1,7 @@
 schema: clio.package-contract.v1
 package: wrf
 title: WRF
-version: 0.1.1
+version: 0.1.2
 kind: application
 summary: >-
   WRF ARW 4.6 on a real-data case (em_real, dmpar). case_dir holds what
@@ -76,22 +76,15 @@ sizing:
   processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}
   nodes: {ceil_div: [nprocs, ppn]}
   cost: >-
-    walltime seconds = steps x seconds per step, with the seconds per step
-    measured on the site (a previous run's clio-run-result.json
-    seconds_per_step at the same process count, else a short run), plus the
-    first step (it reads the boundary data and is several times slower,
-    first_step_seconds), one history write per history_interval and the
-    startup the run record measured. Request that times a generous safety
-    coefficient sized from how far the measurement can be trusted (larger
-    on one short run or when steps varied, smaller when several runs of the
-    same setup agree), never in place of a measurement: unused time is not
-    charged when the run ends cleanly, so say so in the spend approval.
+    walltime seconds = steps x seconds per step, plus the first step (it
+    reads the boundary data and is several times slower), one history write
+    per history_interval and the startup; a run's clio-run-result.json
+    reports seconds_per_step and first_step_seconds.
     The first run that fetches its case through case_url also downloads the
     archive inside the job (3.2 GB for CONUS 12 km, a few minutes at site
     bandwidth); add that time once.
-    NCAR's published figure for the CONUS 12 km case, about 0.4 s per step
-    on 144 cores, is a reference for screening that case, not a size to run
-    at; the site's own pilot sets the request.
+    NCAR's published figure for the CONUS 12 km case is about 0.4 s per
+    step on 144 cores.
 
 outputs:
   - name: history

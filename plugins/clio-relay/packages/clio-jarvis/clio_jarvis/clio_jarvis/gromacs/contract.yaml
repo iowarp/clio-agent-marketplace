@@ -1,7 +1,7 @@
 schema: clio.package-contract.v1
 package: gromacs
 title: GROMACS
-version: 0.1.0
+version: 0.1.1
 kind: application
 summary: >-
   GROMACS 2024.3, the biomolecular molecular dynamics code (proteins,
@@ -74,26 +74,18 @@ sizing:
     so a box of side L nm takes at most about (L / 1.2)^3 domains; above 18
     ranks mdrun also gives about a quarter of them to PME. Keep about 500
     atoms or more per core (ranks x ntomp), so the most cores that still
-    pay is about the atom count / 500. Prefer an nprocs that fills whole
-    nodes; mdrun stops
+    pay is about the atom count / 500. mdrun stops
     with an error naming the decomposition when the box is too small for
     the ranks.
   processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}
   nodes: {ceil_div: [nprocs, ppn]}
   cost: >-
     walltime seconds = the prepare stages plus nsteps x dt / (ns per day /
-    86400) for the watched run, with ns per day measured on the site at the
-    same atoms and cores: a previous run's clio-run-result.json ns_per_day,
-    else a short mdrun of a few thousand steps. As a screen, a single
-    precision CPU run does about 1e-6 core-seconds per atom-step, so about
-    1e6 x cores / atoms steps per second; that only screens candidates.
-    Each frame holds 12 bytes per atom in md.trr (24 with velocities) and
-    about 40 in its .vtp. Request that total times a generous safety
-    coefficient sized from how far the measurement can be trusted (larger
-    on one short run or when steps varied, smaller when several runs of
-    the same setup agree), never in place of a measurement: unused time is
-    not charged when the run ends cleanly, so say so in the spend approval. With a pvserver watching the run in the
-    same job, add twice pvserver's linger.
+    86400) for the watched run; a run's clio-run-result.json reports its
+    ns_per_day. A single precision CPU run does roughly 1e-6 core-seconds
+    per atom-step, so about 1e6 x cores / atoms steps per second. Each frame
+    holds 12 bytes per atom in md.trr (24 with velocities) and about 40 in
+    its .vtp.
 
 outputs:
   - name: frames

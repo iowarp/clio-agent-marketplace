@@ -1,17 +1,14 @@
 schema: clio.package-contract.v1
 package: pvserver
 title: ParaView server
-version: 0.3.12
+version: 0.3.13
 kind: service
 summary: >-
   ParaView 5.13.1 pvserver bound to 127.0.0.1 with offscreen OSMesa rendering,
   built by Spack with MPI and ADIOS2. A ParaView client reaches it through an
   SSH tunnel to the reported port and opens clio outputs with the reader their
   view descriptor names. Its install does not depend on the application it
-  will view: when a run needs both, submit this install through the normal
-  install path at the same time as the application's, not after it. Install
-  what the candidates offer; a site's own ParaView is used only when it is
-  offered as a candidate and the person picks it. A server whose ranks never
+  will view. A server whose ranks never
   listen fails typed rather than holding its allocation: a known launcher
   failure (MPI wire-up, unreachable network, MPI_Init, a missing library)
   stops it a minute after it shows, anything else at start_timeout, and
@@ -28,9 +25,7 @@ summary: >-
   time (the scheduler's time left, else walltime), and at once on jarvis
   ppl stop, a cancel or a signal; after a failed step there is none.
   pvserver-ready.json says lingering with linger_until, and the stop record
-  carries a linger block. Request the job's walltime as the solver's
-  walltime plus twice the linger (6 minutes more at the default), since a
-  job ends, and is charged, when its pipeline does.
+  carries a linger block.
   A pvserver that crashes (a segfault in a filter, a nonzero exit) starts
   again on the same port up to crash_restarts times (default 3), so a
   client can rejoin and rebuild its scene; the ready record counts crashes
@@ -73,9 +68,8 @@ sizing:
   mesh: The datasets clients open; pvserver holds no mesh of its own.
   decomposition: data-parallel
   ranks: >-
-    nprocs pvserver ranks; readers split a dataset across them. One rank renders
-    a small case; add ranks when a dataset no longer fits one node's memory or
-    renders too slowly. The ranks run on the package's hosts (its hostfile,
+    nprocs pvserver ranks; readers split a dataset across them, so each rank
+    holds and renders its share. The ranks run on the package's hosts (its hostfile,
     narrowed by host_slice) with rank 0, the one clients reach, on the node
     that runs JARVIS; without a hostfile they share that node.
   processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}

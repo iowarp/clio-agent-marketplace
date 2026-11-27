@@ -1,7 +1,7 @@
 schema: clio.package-contract.v1
 package: warpx
 title: WarpX
-version: 0.1.0
+version: 0.1.1
 kind: application
 summary: >-
   WarpX 24.10, the electromagnetic particle-in-cell code of the BLAST suite
@@ -76,26 +76,16 @@ sizing:
     than ranks AMReX chops them further, down to amr.blocking_factor (8 by
     default), so that each rank has one. Keep each rank's share in the tens
     of thousands of cells or more (32^3 = 32768 a box is a good start),
-    choose max_grid_size so the box count is a multiple of nprocs, and
-    prefer an nprocs that fills whole nodes. clio-case.json records the box
-    count the inputs give.
+    and a box count that is a multiple of nprocs balances evenly.
+    clio-case.json records the box count the inputs give.
   processes_per_node: {param: ppn, default: physical_cores, cores: cores_per_node}
   nodes: {ceil_div: [nprocs, ppn]}
   cost: >-
     walltime seconds = max_step x seconds per step plus one plotfile write
-    per plot_interval and the startup, with the seconds per step measured on
-    the site at the same grid, particles and rank count: a previous run's
-    clio-run-result.json seconds_per_step, else a short run of a few tens of
-    steps. A particle-in-cell step costs about cells x particles per cell x
-    a few microseconds per rank-core, so the rule only screens; measure
-    before the request. Each plotfile holds 8 bytes per cell per field.
-    Request that total times a generous safety coefficient sized from how
-    far the measurement can be trusted (larger on one short run or when
-    steps varied, smaller when several runs of the same setup agree), never
-    in place of a measurement: unused time is not charged when the run ends
-    cleanly, so say so
-    in the spend approval. With a pvserver watching the run in the same job,
-    add twice pvserver's linger.
+    per plot_interval and the startup; a run's clio-run-result.json reports
+    its seconds_per_step. A particle-in-cell step costs roughly cells x
+    particles per cell x a few microseconds per rank-core. Each plotfile
+    holds 8 bytes per cell per field.
 
 outputs:
   - name: plotfiles

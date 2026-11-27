@@ -80,6 +80,13 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   or `input` for a bundle unpacked into the run directory). A run sets it to
   the name of a job input, and relay puts that file in place (see `use-relay`).
   Keep every case-specific value in that input, not in `pkg.py` or the contract.
+- One run is one piece of work. When the person's work has parts that do not
+  depend on each other (independent stages, cases or ensemble members), each
+  is its own run of the package with its own input, not a loop inside one:
+  run in series in one job they take the sum of their times on the same
+  nodes, and as separate runs they can go side by side (see `use-relay`'s
+  layout section). A part that needs another's output is a later run that
+  takes it as its input.
 - Expose the application's own parallel-decomposition controls as
   parameters. Many MPI codes split the work further than the rank count,
   through options of their own: groups of ranks that each take part of the
@@ -139,7 +146,14 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   `expected_steps`, `follow` and `display`, and write each step whole, then go
   straight on. The run never waits for a viewer (see `use-relay`).
 - `progress.step_pattern` matches the program's own step line and has a
-  named group `step`; `done_pattern` matches its last line.
+  named group `step`; `done_pattern` matches its last line. Give `total`, the
+  steps a run takes, as a value over its parameters; for work that stops on
+  its own (a relaxation that converges, an adaptive solver), the most it
+  allows. JARVIS records when each step was seen, and relay turns that into
+  the run's pace and its projected end beside the time limit, which is how
+  anyone watching learns early that a run will not finish in time. Pick the
+  line the program prints for each unit of its work, so the pace measures
+  that work.
 - Give the package a `version` and raise it with every change: the archive's
   SHA-256 changes, and the person reviews the new one.
 
