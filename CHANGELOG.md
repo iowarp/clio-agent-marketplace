@@ -582,6 +582,14 @@
   partition, a shorter run or more nodes when the padded request exceeds the
   partition's time limit.
 
+### Fixed
+
+- `abaqus` (0.6.1): the `abaqus-topology` catalog's TopologyViewport carries the mesh
+  viewport's `nodeOpacity`, matching clio.mesh-viewport.v1 as clio-schemas df33395
+  defines it.
+- `kicad`: `fork-skills.json` no longer pins a git-ignored `__pycache__` file that
+  was never committed, so the fork-skill pin check can pass.
+
 ## [0.9.0] - 2026-11-19
 
 ### Added
