@@ -1,6 +1,6 @@
 ---
 name: install-simulator
-description: When the SPICE connector finds no simulator, get one onto the machine with the person's consent (ngspice, or LTspice on Windows and macOS), point the connector at it, or skip simulation when the person declines; on Linux, macOS and Windows.
+description: When the SPICE connector finds no simulator, look for one elsewhere on the machine and point the connector at it, or get one with the person's consent (ngspice, or LTspice on Windows and macOS), or skip simulation when the person declines; on Linux, macOS and Windows.
 ---
 
 # Get a simulator, or skip simulation
@@ -8,6 +8,20 @@ description: When the SPICE connector finds no simulator, get one onto the machi
 The SPICE connector runs a simulator that is already on the machine: ngspice, or LTspice.
 When a simulation tool says no simulator was found, its message names the install route for
 this system and the setting that points the connector at one (`LTSPICE_MCP_SIMULATOR_EXE`).
+
+## Look first
+
+"No simulator was found" means only that the connector found none where it looks: its
+**Where the simulator is** value, PATH and the simulators' standard install folders. A
+simulator may be elsewhere: ngspice in a conda environment (`conda env list`) or a Homebrew
+prefix outside PATH, LTspice copied or installed in another folder or drive, or under Wine.
+Before offering an install, look for `ngspice` and LTspice's program (`LTspice.exe`) yourself,
+and ask the person when you cannot tell. When you find one, ask with `ask_user` whether to
+use it (name its path). Once the person agrees, set **Where the
+simulator is** (`simulator`) to the full path of `ngspice` (`ngspice.exe` on Windows) or of
+LTspice's program with `set_connector_value`, then run the simulation again; the value
+belongs to this conversation, so tell them they can save it as their default in the SPICE
+connector's settings.
 
 ## Ask first
 
@@ -40,9 +54,7 @@ Windows, `pkexec`'s dialog on a Linux desktop, `osascript ... with administrator
 macOS). CLIO never takes a password: never ask for one in the conversation. If they decline, give them the command to
 run in their own terminal, or skip simulation as above.
 
-## Point the connector at it
+## After installing
 
 A simulator on `PATH` is found by itself after the connector restarts. One installed elsewhere
-(a conda environment, a user folder) is set in the connector's **Where the simulator is**
-value: the full path of `ngspice` (`ngspice.exe` on Windows) or of LTspice's program. Then run
-the simulation again.
+(a conda environment, a user folder) is set as in "Look first". Then run the simulation again.

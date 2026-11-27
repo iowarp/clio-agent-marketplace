@@ -11,9 +11,14 @@ or `nwchem` on PATH.
 
 ## Look first
 
-NWChem may already be installed, from this conversation or another: `calculators` reports
-it when `nwchem` is on PATH; also check `command -v nwchem` and `ls ~/.local/opt/nwchem`.
-If it is there, use it and do not ask to install it again.
+`binary_missing` means only that the connector found no NWChem where it looks: its **NWChem
+program** value and `nwchem` on PATH. NWChem may be elsewhere: in a conda environment
+(`conda env list`), a Spack install (`spack find -p nwchem`), a cluster module (`module avail
+nwchem`), or `~/.local/opt/nwchem`. Before offering an install, look there yourself, and ask
+the person when you cannot tell. When you find one, ask with `ask_user` whether to use it
+(name its path). Once the person agrees, set **NWChem program** (`nwchem`) to it with
+`set_connector_value`, a module's program by its full path; the value belongs to this
+conversation, so tell them they can save it as their default in the ASE connector's settings.
 
 ## Ask first
 
@@ -31,8 +36,6 @@ each one) and put a launcher in `~/.local/bin`, which is on CLIO's PATH:
   `conda create -y -p "$HOME/.local/opt/nwchem" -c conda-forge nwchem`.
 - **Spack:** with the environment from the fdmnes plugin's `install-fdmnes` skill,
   `$SPACK install nwchem` (Spack's own recipe), then `$SPACK location -i nwchem`.
-- **A cluster module:** `module avail nwchem`; set the connector's **NWChem program** to
-  its path instead of a launcher.
 
 The conda build carries its build machine's basis-library path, so the launcher sets it:
 
@@ -55,7 +58,5 @@ Running as root in a container, Open MPI also needs `OMPI_ALLOW_RUN_AS_ROOT=1` a
 
 Call `calculators`: NWChem is ready with no setting. A run of H2 at a small basis checks
 the basis library before the real calculation (an `exit 255` with a basis error in its
-output means the library path is wrong). Set the connector's **NWChem program** only for
-an NWChem somewhere else; that value belongs to this conversation, so tell the person they
-can save it as their default in the ASE connector's settings. For parallel runs the
-calculator setting `nprocs` adds `mpirun -np`.
+output means the library path is wrong). For parallel runs the calculator setting `nprocs`
+adds `mpirun -np`.

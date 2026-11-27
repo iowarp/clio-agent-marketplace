@@ -10,6 +10,12 @@ ORCA is free for academic use under its own licence, after registration on the O
 forum. **Only the person can register, accept the licence and download it**; never
 download ORCA for them or from another source.
 
+0. Look first: `binary_missing` means only that the connector found no ORCA where it looks
+   (its **ORCA program** value and `orca` on PATH). The person may have unpacked ORCA
+   already: look for an `orca` program beside `orca_scf` (`find ~ /opt -maxdepth 4 -name
+   orca_scf`; `orca.exe` on Windows), a module (`module avail orca`) or a Spack install
+   (`spack find -p orca`), and ask them when you cannot tell. When you find one, ask with
+   `ask_user` whether to use it (name its path); once they agree, go to step 3.
 1. Tell them: register at the ORCA forum (orcaforum.kofo.mpg.de), accept the licence,
    download the build for their system, and unpack it in a folder they choose.
 2. Ask with `ask_user` whether they will unpack it themselves (then ask for the path of
