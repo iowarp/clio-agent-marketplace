@@ -48,6 +48,10 @@
 
 ### Changed
 
+- `clio-relay` (1.6.99): relay 2.0.0a46, on jarvis-cd 1.9.23. ParaView's pvserver starts again (its start timeout
+  was read as empty). A worker site's serve uses its own link's rendezvous and frpc with no `rendezvous set`. One
+  relay process runs each forward, and a desktop port relay had to move keeps its new number through a restart. The
+  comment a person adds to a run approval reaches the model, and `clio-relay asks answer` takes `--comment`.
 - `clio-relay` (1.6.98): relay 2.0.0a42, on jarvis-cd 1.9.22. JARVIS keeps its own Spack's install tree short
   enough for Linux's 127-character shebang limit, so a fresh site's install no longer needs a short `spack_root`.
   No JARVIS action has a fixed time limit, and a service's start timeout is a stall window. A worker site serves
