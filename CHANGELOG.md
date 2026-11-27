@@ -48,6 +48,8 @@
 
 ### Changed
 
+- `clio-relay` (1.6.100): relay 2.0.0a47. When the forward relay left on the desktop is gone and another program has
+  taken its port, relay moves to a free port and keeps it, instead of treating that program as its forward.
 - `clio-relay` (1.6.99): relay 2.0.0a46, on jarvis-cd 1.9.23. ParaView's pvserver starts again (its start timeout
   was read as empty). A worker site's serve uses its own link's rendezvous and frpc with no `rendezvous set`. One
   relay process runs each forward, and a desktop port relay had to move keeps its new number through a restart. The
