@@ -4,148 +4,153 @@ title: Review figures and layouts
 description: Use during visual investigation or for substantial dashboards, to inspect, capture and refine complex data views at the user's viewing size before presenting them.
 ---
 
-Use visual interaction to investigate a question and to improve what a person
-will see. The loop is: inspect the evidence and current view, change a declared
-control or component, inspect the resulting image, reason, and refine.
-Choose changes that resolve a concrete uncertainty or presentation problem.
-This applies to maps, charts, tables, images, models and interconnected reports.
+Visual interaction helps both to investigate a question and to improve what a
+person will see: the evidence and the current view, a change to a declared
+control or component, and the resulting image each inform the next change.
+Changes that resolve a concrete uncertainty or presentation problem are the
+useful ones. This applies to maps, charts, tables, images, models and
+interconnected reports.
 
-For a substantial authored dashboard or diagram, close this concrete loop:
+## What a capture shows
 
-1. Open the actual published viewer, inspect its current capture target, and
-   capture the overview at the width the person will use.
-2. Look at the returned image, not just its URI, source JSON or tool success.
-   Check whether the main idea is apparent, text is readable, the whole diagram
-   fits, and empty space or narrow columns obscure relationships. Ask whether
-   a full-width view, equal panels or a simpler arrangement would explain it better.
-   Include the surrounding frame/component headings, not only the plotted marks:
-   a title cut off with an ellipsis is a defect even when the graph fits. Check
-   whether labels can actually be read at this size, rather than merely seen.
-3. Identify a concrete defect and change the source or a declared view control.
-   Changing column counts is useful only when it fixes the observed problem.
-4. Capture the revised view and inspect its image to confirm the correction.
-   Check an expanded view as well when the docked and expanded arrangements differ.
-5. Exercise important declared controls or linked selections. For a workflow
-   folder link, verify the target with filesystem tools. If interaction tools are
-   available, check that clicking selects that folder in Files. Claim a navigation
-   check only when it was observed; a highlighted box alone does not prove it.
+For a substantial authored dashboard or diagram, the published viewer's
+capture at the width the person will use is the closest view of what they
+will see:
 
-Repeat while a material defect remains. State the actual visual checks and any
-unresolved limitation. Schema validation, a capture receipt and an uninspected
-image do not establish visual quality. A small inline diagram does not require
-building a dashboard or following an elaborate layout recipe.
-Keep docked and expanded findings separate: readability in an expanded image
-does not establish readability in a narrow pane. When text remains too small,
-revise the view or state that limitation instead of declaring the review clear.
+- The returned image shows the result; its URI, source JSON or tool success
+  does not. In it you can see whether the main idea is apparent, text is
+  readable, the whole diagram fits, and empty space or narrow columns obscure
+  relationships, and whether a full-width view, equal panels or a simpler
+  arrangement would explain it better.
+- The surrounding frame and component headings belong to the view as much as
+  the plotted marks: a title cut off with an ellipsis is a defect even when the
+  graph fits. A label that is visible may still be too small to read.
+- A column-count change helps only when it fixes an observed problem.
+- Docked and expanded arrangements can differ; readability in an expanded image
+  does not establish readability in a narrow pane.
+- Declared controls and linked selections can be exercised in the viewer. A
+  workflow folder link's target is checkable with filesystem tools, and with
+  interaction tools, clicking it selects that folder in Files. A highlighted
+  box alone does not show that navigation happened.
+
+Schema validation, a capture receipt and an uninspected image do not establish
+visual quality. A small inline diagram does not call for a dashboard or an
+elaborate layout recipe.
 
 ## Acting on a figure comment
 
 A comment on a figure arrives as a "Review of ..." block: an overview with each
 mark labelled, a crop of each mark at twice its size, and a "Produced by" line
-naming the call and script that made the image. Look at the crops first; they show
-what the person means. Change the producing script or `run_code` cell, not the
-image, and run it again so the figure is written to the same path. Then look at the
-new output with `view_image` and check each comment against it before replying by
-label (S1, S2, ...). When the producer is unknown, say so and ask which script makes
-the figure rather than editing pixels.
+naming the call and script that made the image. The crops show what the person
+means. The producing script or `run_code` cell is the source of the figure;
+running it again writes the figure to the same path, where `view_image` shows
+the new output. Each comment carries a label (S1, S2, ...). When the producer is
+unknown, the script that makes the figure is the thing to ask about; edited
+pixels do not change the source.
 
-Read the current surface with `inspect_a2ui_surface` and load the relevant
-active catalog schemas. `update_a2ui_components` replaces complete definitions
-for the named components; preserve the other properties, references and links.
-`update_a2ui_data_model` changes a declared binding. Reuse shared filter and
-selection semantics rather than inventing another interaction model. For definition
-changes to saved dashboards, edit the source document and publish a new immutable version.
+## Surface state and capture
 
-Distinguish server state from a rendered view. A producer's `rendered=true`
-means the definition was accepted, not that you inspected its pixels.
-`inspect_a2ui_surface` reports fresh mounted viewers, declared bindings,
-current values, cameras, active tabs, data references and readiness. Choose
-the viewer you mean when several are open. `capture_targets` supplies the exact
-capture arguments for each visible matching viewer; use the chosen target
-without adding a guessed view epoch. Pass the inspected revision to
-updates, then capture the new revision with `capture_a2ui_surface`. Its result
-attaches real pixels to your next model step and retains a hashed image artifact
-with the viewer state. For a saved dashboard, pass its immutable `artifact_id`
-to inspection and capture. Review a temporary live surface when you need to
-change a saved definition; publish the reviewed document as a new version.
-To navigate or change declared controls in an open saved dashboard, use
-`update_a2ui_data_model` with its `artifact_id`, surface/revision, selected
-`viewer_id` and inspected `expected_view_revision`. This changes only that
-view's local binding. Inspect its acknowledgement and capture the new epoch;
-it does not edit the immutable artifact or submit a question answer.
-Bind `Tabs.activeTab` to review each tab; its value is a tab child id.
-Bind `clio.map.v1.camera` to pan, zoom or rotate a map, sharing the path when
-views should move together. Keep reference-backed queries and selections
+`inspect_a2ui_surface` reads the current surface; the active catalog schemas
+describe its components. `update_a2ui_components` replaces complete
+definitions for the named components, so properties, references and links
+left out of the new definition are dropped. `update_a2ui_data_model` changes a
+declared binding. Shared filter and selection semantics already exist. A saved
+dashboard is immutable: a definition change goes into its source document and
+is published as a new version.
+
+A producer's `rendered=true` means the definition was accepted, not that
+anyone inspected its pixels. `inspect_a2ui_surface` reports fresh mounted
+viewers, declared bindings, current values, cameras, active tabs, data
+references and readiness, for each viewer when several are open.
+`capture_targets` supplies the exact capture arguments for each visible
+matching viewer; a guessed view epoch does not match. Updates take the
+inspected revision, and `capture_a2ui_surface` captures the new revision. Its
+result attaches real pixels to the next model step and retains a hashed image
+artifact with the viewer state. For a saved dashboard, inspection and capture
+take its immutable `artifact_id`. A temporary live surface is where a saved
+definition's changes can be reviewed before the document is published as a
+new version.
+In an open saved dashboard, `update_a2ui_data_model` with its `artifact_id`,
+surface/revision, selected `viewer_id` and inspected `expected_view_revision`
+navigates or changes declared controls. This changes only that view's local
+binding; its acknowledgement gives the new epoch to capture. It does not edit
+the immutable artifact or submit a question answer.
+`Tabs.activeTab` binds the visible tab; its value is a tab child id.
+`clio.map.v1.camera` binds a map's pan, zoom and rotation, and a shared path
+moves several views together. Reference-backed queries and selections stay
 authoritative. An image URI, export link or unrelated earlier screenshot is
-not visual inspection. Verify the capture's revision and state before reasoning.
-Use the inspected component's exact binding path; map and mesh cameras can
-have different paths and shapes in the same dashboard. Change that binding
-instead of replacing the root data model with a guessed set of properties.
-Compare the actual captured camera, frame and filters with the requested
-values. If a declared control did not move, inspect its binding and correct
-the update, then capture again before claiming the change worked.
-For multiple tabs or camera positions, compare each returned capture's control
-values and view revision with the requested view. Keep the image hash with that
-state. Repeated tool arguments or an earlier screenshot are not evidence of a
-new view; confirm the returned pixels and state before counting it as reviewed.
-If a viewer is still loading, pass `expected_view_revision=null` (or omit it)
-to let capture wait for readiness within its deadline. Pin a view epoch
-when an already-ready human view must match exactly; a loading epoch
-intentionally becomes stale as tiles or layout finish.
+not visual inspection; the capture's revision and state show which view it is.
+Map and mesh cameras can have different binding paths and shapes in the same
+dashboard, so the inspected component's exact path is the one that moves it;
+replacing the root data model with a guessed set of properties loses the rest.
+The captured camera, frame and filters show whether a requested change took
+effect. A declared control that did not move usually points to the binding or
+the update.
+For multiple tabs or camera positions, each returned capture's control values,
+view revision and image hash identify which view it shows. Repeated tool
+arguments or an earlier screenshot are not evidence of a new view.
+For a viewer that is still loading, `expected_view_revision=null` (or omitting
+it) lets capture wait for readiness within its deadline. A pinned view epoch
+matches an already-ready human view exactly; a loading epoch becomes stale as
+tiles or layout finish.
 After publication, the newly opened viewer can still be mounting. A single
-`a2ui_view_stale` or `a2ui_render_not_ready` result is not the end of the review:
-inspect the same immutable artifact again and retry capture with its current
-viewer. If `ready` is false, pass `expected_view_revision=null` rather than guessing
-zero. Retry at most twice for each requested view; stop and report the actual limitation if the viewer
-is absent or still cannot supply pixels. After each successful declared tab or
-camera change, use the acknowledged epoch or inspect afresh before capture.
-If capture or a requested control is unavailable, make supported structural
-corrections and state the remaining verification limit; do not fabricate a
-capture or describe a map camera as controllable because the person can zoom it.
+`a2ui_view_stale` or `a2ui_render_not_ready` result usually clears once the
+same immutable artifact is inspected again and capture uses its current viewer;
+with `ready` false, `expected_view_revision=null` waits rather than pinning
+zero. A viewer that is absent or still cannot supply pixels is a real
+limitation. After a declared tab or camera change, the acknowledged epoch, or a
+fresh inspection, identifies the view to capture.
+Without capture or a requested control, supported structural corrections are
+still possible and the verification gap remains. A map the person can zoom is
+not a camera the agent controls.
 
-Inspect at the size the person will use. Check the overview, relevant tabs,
-labels, legends, units, contrast, clipping, framing and controls. Ask whether
-the view answers the question and is valuable to a human: can the reader find
-the important comparison without deciphering a dense wall of marks?
-Also review the explanation: what conclusion can a person see in this image,
-which marks support it, and what uncertainty remains? Compare related panels'
-category meanings, ranges, dates and selected records. Use direct labels or
-reference marks where they reduce the effort of finding the evidence. Remove
-redundant panels and give the central comparison more space. Load the dashboard
-skill's `references/report-design.md` when composing a substantial report.
-Check composition as a whole: can related charts, images, viewports and text
-be interpreted together without tab switching? Review a whole-report image,
-not only individual views. Preserve unequal row proportions when expanded
-and readable stacking when docked. Optional tabs must not hide essential
-evidence from the initial view or PNG.
-Perform this review yourself before presenting a complex visual; the person
-should not need to request a screenshot check separately.
-When a view is crowded, show the meaningful subset or aggregate first. Retain
-the complete source data and explain the initial slice. Make additional series,
-layers or views available through catalog-supported selectors, filters, tabs
+## What a useful view shows
+
+The size the person will use is the size that matters: the overview, relevant
+tabs, labels, legends, units, contrast, clipping, framing and controls. A
+useful view answers the question and lets the reader find the important
+comparison without deciphering a dense wall of marks.
+The explanation is part of the view: what conclusion a person can see in the
+image, which marks support it, and what uncertainty remains. Related panels
+are comparable when their category meanings, ranges, dates and selected records
+agree. Direct labels or reference marks reduce the effort of finding the
+evidence; redundant panels take space from the central comparison. The
+dashboard skill's `references/report-design.md` covers report composition.
+Composition works as a whole when related charts, images, viewports and text
+can be interpreted together without tab switching, which a whole-report image
+shows better than individual views. Unequal row proportions help when expanded
+and readable stacking when docked. Essential evidence behind an optional tab
+is missing from the initial view and PNG.
+A person usually expects a complex visual to have been checked already, without
+asking for a screenshot review.
+A crowded view reads better as a meaningful subset or aggregate first, with the
+complete source data retained and the initial slice explained. Additional
+series, layers or views fit behind catalog-supported selectors, filters, tabs
 or optional-view controls, with readable labels and visible inclusion state.
-Do not invent a visibility property or hide contrary evidence to improve the
-story. Check the revealed detail as well as the quiet default.
+The catalog has no generic visibility property, and hidden contrary evidence
+misleads. The revealed detail needs to read as well as the quiet default.
 
-Use annotations to point to evidence during explanations and questions.
-Update a chart with supported layered marks for a labelled point, red outline,
-range or trend; keep the original rows and quantitative encodings intact.
-Use real data coordinates or stable entity IDs when a mark should follow
-zoom/filter changes. A pixel-positioned mark belongs to one captured viewport;
-do not reuse it on a different view as if it still identifies the same data.
-Annotations clarify evidence; they do not change measurements or submit an
-answer. `ask_user` continues to own question submission independently.
+Annotations point to evidence during explanations and questions. A chart can
+take supported layered marks for a labelled point, red outline, range or trend
+while its original rows and quantitative encodings stay intact. A mark in real
+data coordinates or stable entity IDs follows zoom/filter changes; a
+pixel-positioned mark belongs to one captured viewport and identifies nothing
+on a different view. Annotations clarify evidence; they do not change
+measurements or submit an answer. `ask_user` owns question submission
+independently.
 
-For worked decision patterns, load `references/investigation-patterns.md`
-from this skill. Stop once the question is resolved and the relevant views
-are readable; further captures should answer a remaining concern. Keep visual
-observations, calculations and unresolved uncertainty distinct in the answer.
+`references/investigation-patterns.md` in this skill has worked decision
+patterns. Once the question is resolved and the relevant views are readable,
+further captures add nothing unless they answer a remaining concern. Visual
+observations, calculations and unresolved uncertainty are different kinds of
+evidence.
 
-Keep the final response focused on the requested deliverables and findings.
-`capture_a2ui_surface` retains its screenshots as verification evidence; do not
-register or list each capture as another output. For other review images/PDFs,
-use `create_artifact(..., purpose="verification")`; working files use
+## Where captures and review images live
+
+`capture_a2ui_surface` retains its screenshots as verification evidence, so
+they are not separate outputs. Other review images/PDFs fit
+`create_artifact(..., purpose="verification")`; working files fit
 `purpose="intermediate"`. Both remain accessible in Observability and lineage.
-Requested images/PDFs use `purpose="deliverable"`. When revising an output,
-keep its artifact family/name; the response presents its latest deliverable
-version while Versions and Observability retain earlier attempts.
+Requested images/PDFs use `purpose="deliverable"`. A revised output in the same
+artifact family/name presents its latest deliverable version while Versions and
+Observability retain earlier attempts.

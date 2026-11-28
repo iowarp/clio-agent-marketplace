@@ -3,28 +3,27 @@
 ## Purpose
 
 Most HDF5 files follow a community convention layered on top of HDF5. The
-convention says where the primary data is and how to read it, so identify it
-before exploring or advising. Use this when a user asks what a file is, which
-dataset matters, or what to plot, and before reading data from an unfamiliar
-file.
+convention says where the primary data is and how to read it, which matters
+before exploring or advising. This covers what a file is, which dataset matters,
+or what to plot, and reading data from an unfamiliar file.
 
 **Related:** `references/cf_compliance.md` for CF metadata questions,
 `references/dimension_scales.md` for netCDF-4 coordinates.
 
-## How to detect
+## Detection
 
-Detection uses attributes and object names only; never read dataset values
-to decide. Start with the root group's attributes, then the names of its
-members (with h5py: `dict(f.attrs)` and `list(f)`). A few conventions need
-one more step, noted below.
+Detection needs only attributes and object names; dataset values do not decide
+it. The root group's attributes and then the names of its members usually settle
+it (with h5py: `dict(f.attrs)` and `list(f)`). A few conventions need one more
+step, noted below.
 
-Report the evidence: name the attribute or group you matched ("root
-attribute `Conventions = CF-1.8`"). Never name a convention from the file
-extension alone.
+The evidence is the attribute or group matched ("root attribute
+`Conventions = CF-1.8`"). A file extension alone does not establish a
+convention.
 
 A file can match several conventions: CF sits on netCDF-4, pandas sits on
-PyTables, and HDF-EOS5 files often carry CF attributes as well. Report each
-one you find.
+PyTables, and HDF-EOS5 files often carry CF attributes as well; each one
+found applies.
 
 | Convention | Signature | Primary data |
 |---|---|---|
@@ -42,16 +41,16 @@ one you find.
 | Keras (legacy `.h5`) | Root attributes `keras_version` and `model_config` | Weights under `model_weights/<layer>/` |
 
 XDMF keeps its structure in a separate `.xmf` XML file, so an HDF5 file
-written for XDMF looks like plain HDF5. If the user mentions XDMF, ask for
-the `.xmf` file.
+written for XDMF looks like plain HDF5; its structure is only in the
+`.xmf` file.
 
-## After detecting
+## What a detected convention gives
 
-- Lead with the primary data the convention points to, not with a full
+- The primary data the convention points to, which says more than a full
   walk of the file.
-- Use the convention's own metadata for units and coordinates: NeXus
+- The convention's own metadata for units and coordinates: NeXus
   `axes` and `units`, CF `units` and `standard_name`, NWB `unit`.
-- For a tabular primary object (AnnData `obs`/`var`, a pandas group), say it
-  is a table and give its columns; don't treat it as one array.
-- When nothing matches, say the file follows no recognized convention and
-  explore it as plain HDF5.
+- For a tabular primary object (AnnData `obs`/`var`, a pandas group), a table
+  with columns, not one array.
+- When nothing matches, the file follows no recognized convention and is plain
+  HDF5.

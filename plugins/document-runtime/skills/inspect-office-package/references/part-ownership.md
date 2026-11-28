@@ -2,7 +2,7 @@
 
 OOXML and ODF are ZIP packages containing XML plus binary assets. A high-level library generally owns only a subset.
 
-Always inventory:
+An inventory covers:
 
 - part name, uncompressed size, CRC32, and SHA-256;
 - relationship files and content-type declarations;
@@ -18,4 +18,4 @@ Examples of expected edit scopes:
 - Presentation shape text: the exact slide part; related notes/layout/theme parts should not drift.
 - ODF content edit: `content.xml`; style or manifest parts only when deliberately affected.
 
-If a high-level save changes unrelated parts, do not bless the drift. Use a narrower package patch or block the edit.
+A high-level save that changes unrelated parts has drifted the package; a narrower package patch avoids the drift, and an edit that cannot avoid it is blocked by that incompatibility.

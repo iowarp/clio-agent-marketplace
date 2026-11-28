@@ -1,22 +1,23 @@
 # JavaScript slides with PptxGenJS
 
-Use the command and package version from `prepare_document_runtime`. The managed
-stack currently locks `pptxgenjs` 4.0.1. Save the builder in its returned
-JavaScript workspace and execute it with `javascript.script_argv`. PptxGenJS
-creates new decks; it does not import an existing presentation for editing.
+`prepare_document_runtime` returns the command and package version. The managed
+stack currently locks `pptxgenjs` 4.0.1. A builder saved in its returned
+JavaScript workspace resolves the package and runs with `javascript.script_argv`.
+PptxGenJS creates new decks; it does not import an existing presentation for
+editing.
 
-Read `examples/create-reference-deck.mjs` for a complete runnable reference:
-six themed slides with an editable native chart, tables, source captions and
-speaker notes. Copy the builder into the prepared JavaScript workspace and run
-it with an absolute output-directory argument. It writes a PPTX and explicitly
-fictional source data without changing user files. Render and inspect it before
-using it as a visual reference. Its slide count and fictional content are not a
-template for every task.
+`examples/create-reference-deck.mjs` is a complete runnable reference: six
+themed slides with an editable native chart, tables, source captions and
+speaker notes. Run from the prepared JavaScript workspace with an absolute
+output-directory argument, it writes a PPTX and explicitly fictional source data
+without changing user files. Its rendered slides show what it looks like as a
+visual reference. Its slide count and fictional content are not a template for
+every task.
 
 Slide coordinates and dimensions use inches; font sizes use points. `LAYOUT_WIDE`
-is approximately 13.33 × 7.5 inches. Set the layout and font theme explicitly,
-then use shared colours and margins. A master is useful for common footer or
-background objects, but should not force every slide into the same composition.
+is approximately 13.33 × 7.5 inches. An explicit layout and font theme, with
+shared colours and margins, keep slides consistent. A master suits common footer
+or background objects; it also pushes every slide toward the same composition.
 
 This runnable library example shows a theme, editable text and table, and notes.
 Its one-slide content is a capability check, not a finished presentation.
@@ -56,16 +57,16 @@ slide.addNotes('Explain the finding, source, uncertainty and presenter context h
 await deck.writeFile({ fileName: process.argv[2] ?? 'evidence-review.pptx' });
 ```
 
-For a source figure, use `deck.imageSizingContain(path, x, y, w, h)` and pass
-its result to `slide.addImage({ path, ...sizing })`. This preserves aspect ratio
-inside the allotted box. Use `imageSizingCrop` only for an intentional crop;
-do not crop chart axes, legends or evidence to decorate the layout.
+For a source figure, `deck.imageSizingContain(path, x, y, w, h)` passed to
+`slide.addImage({ path, ...sizing })` preserves aspect ratio inside the allotted
+box. `imageSizingCrop` crops; a crop through chart axes, legends or evidence
+removes part of the evidence.
 
-For bullets, use native text objects and their `bullet` options rather than a
-literal bullet glyph. Text bounds do not guarantee rendered fit. Avoid automatic
-shrink-to-fit as the first response to overflow: shorten or split the content
-before sacrificing legibility. Use notes for references and supporting context,
-and keep essential limitations visible on the slide.
+Native text objects with their `bullet` options make real bullets; a literal
+bullet glyph is plain text. Text bounds do not guarantee rendered fit. Automatic
+shrink-to-fit resolves overflow by giving up legibility; shortening or splitting
+the content keeps it. Notes suit references and supporting context; an essential
+limitation is seen only when it is on the slide.
 
 Official references:
 - https://gitbrent.github.io/PptxGenJS/docs/usage-pres-options.html

@@ -12,17 +12,16 @@ same circuit on a device, and the results of the jobs that ran it. The circuit a
 layout views share the selected gate: a gate the person selects in the circuit is
 highlighted on the physical qubits that run it, and the other way round.
 
-1. Load `references/quantum-workbench.json`. It is the surface's components.
-2. Fill every `<…>`: the circuit as OpenQASM 3 (the same text in both views), its
-   blocks (`{name, start, end}` in gate order, end excluded), the device the layout
-   is for (the backend of the noisy or hardware job), and the job ids with a label
-   each (the reference first). Keep the `state` channels as they are.
-3. Publish it with `create_a2ui_surface` (`components` from the file), then check it
-   with `capture_a2ui_surface` and say what each view shows.
-4. Use `/quantum/selected_gate` to point the person at a gate: update the data model
-   at that path with `{"index": <gate index>}` and both views highlight it.
+- `references/quantum-workbench.json` holds the surface's components. Its `<…>`
+  placeholders take the circuit as OpenQASM 3 (the same text in both views), its
+  blocks (`{name, start, end}` in gate order, end excluded), the device the layout is
+  for (the backend of the noisy or hardware job), and the job ids with a label each
+  (the reference first). Its `state` channels are what link the views.
+- `create_a2ui_surface` (`components` from the file) publishes it, and
+  `capture_a2ui_surface` shows what each view rendered.
+- `/quantum/selected_gate` in the data model points at a gate: `{"index": <gate
+  index>}` at that path highlights it in both views.
 
-A live view runs only while the connector does. For a dashboard that should still
-show something after the connector stops, add a `clio.chart.v1` beside the results
-view, bound to the compared values (a table artifact you write from
-`compare_jobs`), so the comparison stays readable as a still chart.
+A live view runs only while the connector does. A `clio.chart.v1` beside the results
+view, bound to the compared values (a table artifact written from `compare_jobs`),
+keeps the comparison readable as a still chart after the connector stops.

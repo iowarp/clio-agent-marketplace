@@ -11,47 +11,48 @@ keywords:
 
 # Phenotyping onboarding checks
 
-Start from the files and the user's question. Wide tables, nested values,
-partial modalities, conflicting metadata and unfamiliar identifiers are ordinary
-inputs. They do not need to fit a predetermined schema before useful analysis.
+The files and the user's question are the starting point. Wide tables, nested
+values, partial modalities, conflicting metadata and unfamiliar identifiers are
+ordinary inputs. They do not need to fit a predetermined schema before useful
+analysis.
 
-Adapt queries, code and derived outputs to the export rather than repairing the
-export to satisfy a validator. Write derived files to the workspace so the export
-stays as delivered, by default under `<workspace_state>/datasets/<key>/` (see
+Queries, code and derived outputs adapt to the export; repairing the export to
+satisfy a validator changes the evidence. Derived files in the workspace leave the
+export as delivered, by default under `<workspace_state>/datasets/<key>/` (see
 `onboard-dataset`).
 
-## Establish the meaning needed for the question
+## The meaning the question depends on
 
-- **Observation identity.** Determine what a row represents and how plants, pots,
-  plots, scans, sessions and repeated measurements are identified. Test candidate
-  joins and report unmatched or multiplied rows. Do not invent `unit_id` just to
-  satisfy an example schema.
-- **Design.** Inspect factor labels, replication, blocks and position effects.
-  Count actual groups, including missing or unequal cells. Digits in a treatment
-  label do not establish a numeric dose.
+- **Observation identity.** What a row represents, and how plants, pots, plots,
+  scans, sessions and repeated measurements are identified, decides every join.
+  A candidate join can leave rows unmatched or multiply them. An invented
+  `unit_id` that only satisfies an example schema identifies nothing.
+- **Design.** Factor labels, replication, blocks and position effects define it,
+  and the actual group count includes missing or unequal cells. Digits in a
+  treatment label do not establish a numeric dose.
 - **Trait, method and scale.** MIAPPE's distinction is useful vocabulary: what
-  was measured, how, and its unit or scale. Map those concepts to the available
-  evidence; they need not be three named columns. Keep different methods
-  distinguishable and leave unknown units unknown.
-- **Coverage and time.** Establish which units, sensors and periods are present.
-  Account for partial rounds, gaps, repeats and uncertain time zones. Preserve
-  recorded times when converting them would require a guess.
-- **Quality and uncertainty.** Check the values and flags relevant to the answer.
-  An empty issues table does not prove clean data. A suspicious value is a finding
-  to investigate, not automatic permission to exclude or replace it.
+  was measured, how, and its unit or scale. These are concepts in the available
+  evidence, not necessarily three named columns. Different methods are different
+  measurements, and an unknown unit stays unknown.
+- **Coverage and time.** Units, sensors and periods present, with partial rounds,
+  gaps, repeats and uncertain time zones. A conversion of recorded times that
+  requires a guess loses the recorded value.
+- **Quality and uncertainty.** An empty issues table does not prove clean data. A
+  suspicious value is a finding to investigate, not automatic permission to
+  exclude or replace it.
 
-Record mappings, source references, limitations and transformations. Ask about
-meaning that materially changes the answer while continuing independent work.
-When a comparison cannot be identified, explain the limit and provide the
-supported descriptive result.
+Mappings, source references, limitations and transformations are part of the
+result. Meaning that materially changes the answer is the data owner's to give,
+and independent work does not wait on it. A comparison that cannot be identified
+has a limit and still a supported descriptive result.
 
-## Choose a useful representation
+## Representation
 
 Direct queries, a task-specific table, notebook or small script can all be
-appropriate. Materialize derived views when they help the requested analysis,
-performance or reproducibility. Select columns, keys, types and layout from the
-observed data and the consumer's needs. Preserve original values or source
-references alongside material normalization.
+appropriate. Derived views earn their place through the requested analysis,
+performance or reproducibility. Columns, keys, types and layout follow from the
+observed data and the consumer's needs. Original values or source references
+alongside material normalization keep it traceable.
 
 The five schemas in `schemas/` are **optional examples**, not an export contract:
 
@@ -63,21 +64,16 @@ The five schemas in `schemas/` are **optional examples**, not an export contract
 | `assets` | Actual images, masks or scans and their associated units. |
 | `events` | Recorded imaging, treatment or watering events. |
 
-Use only examples that fit. Do not create empty placeholder tables, force all
-spectra into long form, or stop a valid analysis because an example field is
-absent. When deliberately choosing an example, this optional helper checks that
-chosen output:
+An example helps only where it fits. Empty placeholder tables, spectra forced into
+long form, or an analysis stopped because an example field is absent add nothing.
+For a chosen example, this optional helper checks the output:
 
 ```text
 uv run --no-project --with "pyarrow>=15" --with "jsonschema>=4.18" python "SKILL_ROOT/scripts/validate_views.py" DERIVED_TABLE --kind CHOSEN_EXAMPLE
 ```
 
-For another representation, check the invariants that matter: identities, join
+For another representation, the invariants that matter are identities, join
 cardinality, counts, units, missingness, selected values and the calculation.
 Validator success establishes only the checks it actually performs.
 
-## Report
-
-Explain what the available design and measurements support, what is uncertain,
-which evidence was inspected and where any outputs were saved. Messy input is
-part of the analysis, not a request to fix the export.
+Messy input is part of the analysis, not a request to fix the export.

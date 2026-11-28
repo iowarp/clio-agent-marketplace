@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "mechanical-testing",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Mechanical testing method: test and fatigue-campaign design against named standards, tensile testing, load frame and instrumentation capability, and data acquisition, with the mechanical_testing_expert subagent.",
   "author": {
     "name": "IoWarp Team"

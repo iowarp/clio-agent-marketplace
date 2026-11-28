@@ -19,46 +19,44 @@ molecule:
   CO2 and O2). A wrong one shifts the entropy by R ln(ratio).
 - **Spin state:** the electronic multiplicity enters the entropy as R ln(2S+1), and the
   energy depends on it. Know each species' ground state: O2 is a triplet, as are many
-  carbenes and some metal complexes; radicals are doublets. Say which multiplicity was
-  used for every open-shell species.
+  carbenes and some metal complexes; radicals are doublets. An open-shell species' result
+  holds for the multiplicity it was computed with.
 
-Report H, S and G (and the zero-point energy) at a stated temperature and pressure.
+H, S and G (and the zero-point energy) hold at one temperature and pressure.
 
 ## Reactions
 
 ΔG = Σ ν G(products) − Σ ν G(reactants), with the stoichiometric coefficients ν, and the
-same for ΔH and ΔE. Rules:
+same for ΔH and ΔE.
 
-- Every species at **one level of theory, one temperature and one pressure**.
-- Compute the sum **in code** from the per-species results, never by mental arithmetic,
-  and keep the per-species table with the answer.
-- Check the reaction balances (atoms and charge) before computing it.
-- Changing only the temperature reuses the optimized structures and frequencies: recompute
-  the thermochemistry, not the optimizations.
+- The species combine only at **one level of theory, one temperature and one pressure**.
+- A sum computed in code from the per-species results, with its per-species table, is
+  checkable; mental arithmetic is not.
+- A reaction that does not balance (atoms and charge) gives a meaningless difference.
+- Changing only the temperature reuses the optimized structures and frequencies: only the
+  thermochemistry changes, not the optimizations.
 
 
 ## Conformers and rotational barriers
 
-1. Build each conformer, or one and generate others by setting the dihedral.
-2. Optimize each to a minimum and confirm no imaginary modes.
-3. For a rotational barrier: hold the dihedral at the eclipsed (or chosen) value with a
-   constraint, optimize everything else, then compute frequencies on that structure. One
-   imaginary mode along the rotation means it is the saddle point. Displace along that mode
-   both ways and re-optimize without constraints: both should reach minima.
-4. A relaxed scan (the dihedral held at a series of values, each optimized) shows the
-   whole profile; plot energy against angle.
+Conformers come from building each one, or from one structure with the dihedral set to
+other values; each is a conformer once optimized to a minimum with no imaginary modes.
 
-Barrier = E(saddle point) − E(minimum), both at the same level. Report electronic
+A rotational barrier's saddle point comes from holding the dihedral at the eclipsed (or
+chosen) value with a constraint and optimizing everything else; frequencies on that
+structure then show one imaginary mode along the rotation if it is the saddle point.
+Displacing along that mode both ways and re-optimizing without constraints should reach
+minima on both sides. A relaxed scan (the dihedral held at a series of values, each
+optimized) shows the whole profile as energy against angle.
+
+Barrier = E(saddle point) − E(minimum), both at the same level. Electronic
 energies and, when frequencies are available, zero-point-corrected or free-energy
-barriers, saying which.
+barriers are different numbers.
 
 ## Binding energies
 
-Say whether basis-set superposition error was corrected.
+Basis-set superposition error inflates binding energies unless corrected.
 
-## Report
-
-The difference with units (kJ/mol and eV), the level of theory, whether it is
-electronic, ZPE-corrected or free energy, and what was left out (other conformers,
-solvent, a higher level). Compare with an experimental or literature value when one is
-known, and give its source.
+An energy difference depends on whether it is electronic, ZPE-corrected or free energy,
+and on what was left out (other conformers, solvent, a higher level). An experimental or
+literature value, with its source, is the external check.

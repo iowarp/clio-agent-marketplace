@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "geodesy",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "GNSS geodesy methods for any network: position time series (frames, trajectory models with rate, offsets and seasonal terms, noise and rate uncertainty) with a bundled fit, station catalogs read without guessing columns and filtered by radius, and station-coverage comparison over any discovered catalog. Uses the geo tools when available; the bundled scripts work without them.",
   "author": {
     "name": "IoWarp Team"

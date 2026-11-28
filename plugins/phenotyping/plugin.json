@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "phenotyping",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Plant-phenotyping methods for any source: design and identity checks with MIAPPE-style example schemas and a validator, size and growth traits, treatment and genotype response, fluorescence and spectral signals, and phenotyping reports.",
   "author": {
     "name": "IoWarp Team"

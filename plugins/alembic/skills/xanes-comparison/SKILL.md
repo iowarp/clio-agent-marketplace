@@ -6,18 +6,18 @@ keywords: [alembic, xanes, fdmnes, absorbing site, experiment]
 
 # Comparing XANES spectra
 
-1. **Structure:** a CIF from the person or `fetch_materials_project` (say which material
-   when several match). Show it with its unit cell in Burette.
-2. **Sites:** find the inequivalent sites of the absorbing element from the structure
-   (symmetry, coordination number and geometry computed in code: tetrahedral,
-   octahedral, ...). Name each by its coordination and give one atom index of each.
-3. **One calculation per site** (`run_xanes` with `absorber` as that site's index), same
-   settings for all; check radius convergence on one site first (`xanes`).
-4. **Overlay** the normalized spectra (`chemistry-views`). A selection of an energy range
-   on the overlay comes back as rows: answer from those rows and the sites' geometry
-   (pre-edge intensity and site symmetry).
-5. **The person's measurement:** `compare_spectra` with `align: true`; report the shift and
-   the agreement measures, and what agreement does and does not prove.
+- **Structure:** a CIF from the person or `fetch_materials_project` (several materials can
+  match). Burette shows it with its unit cell.
+- **Sites:** the inequivalent sites of the absorbing element come from the structure
+  (symmetry, coordination number and geometry computed in code: tetrahedral,
+  octahedral, ...). A site is identified by its coordination and one atom index.
+- **Calculations:** one per site (`run_xanes` with `absorber` as that site's index), with
+  the same settings for all so the spectra compare; `xanes` covers radius convergence.
+- **Overlay** of the normalized spectra (`chemistry-views`). A selection of an energy range
+  on the overlay comes back as rows; those rows and the sites' geometry (pre-edge
+  intensity and site symmetry) answer a question about it.
+- **The person's measurement:** `compare_spectra` with `align: true` gives the shift and
+  the agreement measures, and agreement has limits on what it proves.
 
-When the person selects an atom in Burette, name its site from the structure (its
-coordination computed in code), not by guessing from the picture.
+An atom the person selects in Burette belongs to a site the structure identifies (its
+coordination computed in code); the picture alone does not tell sites apart.

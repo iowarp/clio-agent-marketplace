@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "teardown",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Exploded teardowns of any machine, device or mechanism, built from real dimensions: an interactive offline 3D page in the Browser tab (explode, run the mechanism, steps, x-ray, section), or a real Blender scene with renders and a film. It asks which you want, installs Blender for you only with your approval, and lets the community teardown skill reuse CLIO's browser.",
   "author": {
     "name": "IoWarp Team"

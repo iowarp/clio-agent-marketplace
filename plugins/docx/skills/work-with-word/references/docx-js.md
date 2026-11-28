@@ -1,28 +1,26 @@
 # JavaScript Word creation with `docx`
 
-Use the version and command returned by `prepare_document_runtime`. The managed
-stack currently locks `docx` 9.8.1. Store the `.mjs` builder in its returned
-JavaScript workspace; a script outside that directory may not resolve packages.
-This library creates DOCX packages. Use a preservation-aware edit path for an
-existing file rather than reconstructing it from extracted text.
+`prepare_document_runtime` returns the version and command. The managed
+stack currently locks `docx` 9.8.1. A `.mjs` builder resolves packages from its
+returned JavaScript workspace; a script outside that directory may not. This
+library creates DOCX packages; an existing file reconstructed from extracted
+text loses what extraction dropped, where a preservation-aware edit path keeps it.
 
-Read `examples/create-reference-report.mjs` for a complete runnable reference:
+`examples/create-reference-report.mjs` is a complete runnable reference:
 natural pagination, native headings and tables, page-number fields, captions
-and a source-derived figure. Copy the builder into the prepared JavaScript
-workspace and run it with an absolute output-directory argument. It writes a
-DOCX, a PNG and explicitly fictional source data; it does not change user files.
-Render the DOCX to review the example's design. Adapt its structure to the task
-rather than treating its sample content or page count as a requirement.
+and a source-derived figure. Run from the prepared JavaScript workspace with an
+absolute output-directory argument, it writes a DOCX, a PNG and explicitly
+fictional source data; it does not change user files. Its render shows the
+example's design. Its sample content and page count are not requirements.
 
 Page dimensions and margins use twentieths of a point (twips): 1 inch = 1440.
 Run font sizes use half-points: 11 pt = 22. Paragraph spacing is in twips.
-Set page and style defaults once; express headings and captions through styles.
-The native page field belongs in a `TextRun`, rather than literal text saying
-"page 1". Table widths must fit the page's text area.
+Page and style defaults are set once; headings and captions are expressed through
+styles. The native page field belongs in a `TextRun`, rather than literal text
+saying "page 1". Table widths must fit the page's text area.
 
 This runnable example demonstrates structure, fields and a native table. Its
-short sample content is a library check, not a completed report. Replace the
-content with developed, source-supported material and add the required figures.
+short sample content is a library check, not a completed report.
 
 ```javascript
 import { writeFile } from 'node:fs/promises';
@@ -88,11 +86,10 @@ const document = new Document({
 await writeFile(process.argv[2] ?? 'evidence-review.docx', await Packer.toBuffer(document));
 ```
 
-For images, use `ImageRun` with an explicit image `type`, source bytes and
-proportional `transformation` dimensions in pixels. Put the image in a paragraph
-with `keepNext: true` and follow it with a native caption paragraph. Use the
-source's aspect ratio; a successful save does not establish that labels are
-readable. Render and review the complete document through the main skill's
-workflow.
+Images use `ImageRun` with an explicit image `type`, source bytes and
+proportional `transformation` dimensions in pixels. An image paragraph with
+`keepNext: true` stays with the native caption paragraph that follows it. The
+source's aspect ratio keeps the figure undistorted; a successful save does not
+establish that labels are readable, which only the rendered document shows.
 
 Primary library reference: https://github.com/dolanmiu/docx/tree/master/demo

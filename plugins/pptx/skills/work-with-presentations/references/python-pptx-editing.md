@@ -1,17 +1,18 @@
 # Edit an existing PowerPoint with python-pptx
 
-Use the prepared Python runtime. Read the source deck and render it before
-editing so its text hierarchy and object types are known. Keep the source file
-unchanged and save the revision to a new path.
+This uses the prepared Python runtime. Reading and rendering the source deck
+shows its text hierarchy and object types. A revision saved to a new path leaves
+the source file unchanged.
 
 ## Preserve text formatting
 
 `shape.text = ...` and `paragraph.text = ...` replace the text frame's runs.
 They can lose explicit font sizes, colours, emphasis and hyperlinks even when
-the same text fits inside the original shape. Change `run.text` when the target
-text belongs to that run; its formatting remains attached to the existing run.
+the same text fits inside the original shape. Changing `run.text`, when the
+target text belongs to that run, keeps its formatting attached to the existing
+run.
 
-Inspect paragraph and run boundaries first:
+This prints paragraph and run boundaries:
 
 ```python
 from pptx import Presentation
@@ -25,8 +26,8 @@ for shape in deck.slides[-1].shapes:
 ```
 
 For a template whose exact target occupies one run, this bounded edit preserves
-the existing run. Require exactly one match rather than silently editing the
-wrong shape or assuming the replacement happened:
+the existing run. It raises unless exactly one run matches, so the wrong shape
+is not edited silently and a missed replacement is visible:
 
 ```python
 from pptx.slide import Slide
@@ -46,21 +47,20 @@ deck.save(output_path)
 ```
 
 Text spanning several differently formatted runs needs an explicit replacement
-mapping that preserves those boundaries. Do not concatenate it into a new
-plain paragraph. If rebuilding is required, copy paragraph and run properties
-deliberately and retain links, bullets, alignment and spacing. A font property
-of `None` means inherited formatting; it is not permission to choose a new size.
+mapping that preserves those boundaries; concatenated into a new plain paragraph,
+it loses them. A rebuilt paragraph keeps its look only when its paragraph and run
+properties, links, bullets, alignment and spacing are copied. A font property
+of `None` means inherited formatting, not an unset size.
 
 ## Keep objects and notes intact
 
-Keep charts as native charts and tables as editable cells. Do not recreate an
-unchanged slide as a picture. Edit table-cell text through its existing runs
-when preserving its formatting matters. Inspect notes first: an update must
-retain supporting references and caveats outside the requested change.
+Charts stay native and tables editable when edited in place; an unchanged slide
+recreated as a picture loses both. Table-cell text edited through its existing
+runs keeps its formatting. Notes can hold supporting references and caveats
+outside the requested change.
 
-Reopen the saved deck and compare slide count, object types, changed text and
-notes against the source. Render the revision to PDF and inspect every overview
-sheet. Check the changed slide's hierarchy, line wrapping, contrast and margins;
-inspect individual slides when the overview leaves a question unresolved.
-Structural preservation does not prove the new text fits. Correct the native
-file and render again before publishing its PDF preview.
+Reopening the saved deck shows slide count, object types, changed text and
+notes to compare against the source. The rendered overview sheets show the
+changed slide's hierarchy, line wrapping, contrast and margins; individual slides
+resolve what the overview leaves open. Structural preservation does not prove
+the new text fits. A correction in the native file shows only in a new render.

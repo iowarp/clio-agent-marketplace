@@ -14,21 +14,21 @@ Inspect relevant earlier views with `inspect_a2ui_surface` and read their
 referenced data. Decide what tells the story: retain meaningful comparisons,
 remove repetition, add explanations, and generate new evidence-based figures
 when useful. For example, show an original shape once with two chosen evolutions.
-Keep units, source identity, and limitations clear. Do not invent measurements
-or imply that a derived visual was part of the original recording.
+Units, source identity and limitations carry the evidence's meaning. A made-up
+measurement, or a derived visual presented as part of the original recording,
+misstates the evidence.
 
-Before authoring, identify the reader's question and supported finding. Decide
-the role of each panel, shared colour meanings, useful annotations and the
-initial level of detail. Load `references/report-design.md` for worked layouts
-using this catalog. Prefer a few complementary views over repeated views of
-the same data. Choose a custom guarded chart when it explains the finding
-better than a preset; a technically fitting preset is not a design requirement.
-For a complete small example, load `references/bike-station-report.json` and
-`references/bike-stations.csv`. They connect one clearly synthetic dataset to
-an annotated time chart, station balance, map and exact source table. Adapt the
-composition to the person's evidence; never reuse the fictional measurements
-as real findings. Preserve the same category labels across related maps and
-nominal chart encodings so the shared automatic colours keep their meaning.
+The reader's question and the supported finding shape the rest: the role of
+each panel, shared colour meanings, useful annotations and the initial level of
+detail. `references/report-design.md` has worked layouts using this catalog. A
+few complementary views say more than repeated views of the same data. A custom
+guarded chart can explain a finding better than a preset; a technically fitting
+preset is not a design requirement. `references/bike-station-report.json` and
+`references/bike-stations.csv` are a complete small example. They connect one
+clearly synthetic dataset to an annotated time chart, station balance, map and
+exact source table; their measurements are fictional, not findings. Shared
+automatic colours keep their meaning when related maps and nominal chart
+encodings use the same category labels.
 
 Load the active catalog index and exact component schemas with `load_skill`.
 The catalog remains the authority for shapes and actions. Reuse its rows,
@@ -37,26 +37,25 @@ A connector's live view (an MCP App, such as a 3D scene) is a component too:
 `clio.mcp-app.v1` mounts the view itself, and its state channels link it to the
 other views on a shared path such as the selected time; an exported image of it
 is a still picture that links to nothing.
-Default to one composed report: keep related evidence visible together so a
-person can compare it without switching tabs, and a PNG tells the same story.
-Use tabs for genuinely separate workflows or optional depth, not to separate
-a chart from the map, image or comparison needed to interpret it. Keep the
-main finding and its supporting views in the initial space. Do not ask
-the person to supply component payloads.
+One composed report keeps related evidence visible together, so a person can
+compare it without switching tabs and a PNG tells the same story. Tabs suit
+genuinely separate workflows or optional depth; a tab that separates a chart
+from the map, image or comparison needed to interpret it hides that context.
+The main finding and its supporting views read best in the initial space.
+Component payloads are authored here; the person works with the rendered view.
 
-Use the declared `review-visual-presentation` skill to close the loop on
-substantial reports. Bind `Tabs.activeTab` when agent review needs to select tabs.
-Use `inspect_a2ui_surface` and `capture_a2ui_surface` for the overview and each
-relevant tab, revise what is unclear, and capture the correction. Capture a
-published version with its exact `artifact_id`; keep revisions immutable.
-Check the docked view as well as an expanded one. Surface acceptance alone
-does not establish readable pixels; state when rendered inspection is unavailable.
-Review the explanation as well as geometry: is the finding apparent, does every
-panel earn its space, and do labels, colour meanings, units and filters agree?
-Choose a useful default rather than showing every graph or series at once.
-Retain the source data and let people reveal useful detail through supported
-tabs, filters, selectors or optional-view controls. Do not invent visibility
-properties or make hidden content the only place the answer can be found.
+The `review-visual-presentation` skill covers rendered review. A bound
+`Tabs.activeTab` lets a review select tabs. `inspect_a2ui_surface` and
+`capture_a2ui_surface` read the overview and each tab; a published version is
+captured by its exact `artifact_id`, and revisions are immutable. The docked
+view and an expanded one can differ. Surface acceptance alone does not
+establish readable pixels. A clear report also explains: the finding is
+apparent, every panel earns its space, and labels, colour meanings, units and
+filters agree. A useful default view reads better than every graph or series
+at once; the source data stays available, and supported tabs, filters,
+selectors or optional-view controls reveal more detail. Visibility properties
+come from the catalog, and an answer found only in hidden content is easy to
+miss.
 Annotations and linked selections can connect an explanation or question to
 specific evidence; they do not replace the question's explicit answer action.
 
@@ -66,10 +65,9 @@ workflows and dense diagrams enough width to keep their labels readable. Use
 unequal `Row` child `weight` values when one view needs more space, and `Grid`
 for equal comparisons. These are options, not a template to reproduce. Weights
 are relative shares, not grid spans. Put related evidence and its controls
-together. Review the actual docked and expanded layouts before deciding whether
-to stack panels, change proportions or use separate views. Dividers, lists, images, icons, and modals
-remain available when they serve the presentation; do not add them solely to
-exercise the catalog.
+together. The actual docked and expanded layouts show whether stacking panels,
+changing proportions or separate views would help. Dividers, lists, images,
+icons, and modals remain available when they serve the presentation.
 
 Write an editable JSON document inside the workspace:
 
@@ -88,19 +86,19 @@ Write an editable JSON document inside the workspace:
 }
 ```
 
-There must be one `root` component. The whole dashboard shares one ordinary
-A2UI data model, so related controls and views can bind to the same paths.
-Use the catalog's existing selection and query/filter contracts. Linked datasets
-need a real shared entity field; matching row numbers in unrelated datasets
-does not establish a relationship. Mesh views with a deliberately shared
+A document has exactly one `root` component. The whole dashboard shares one
+ordinary A2UI data model, so related controls and views can bind to the same
+paths through the catalog's existing selection and query/filter contracts.
+Linked datasets need a real shared entity field; matching row numbers in
+unrelated datasets does not establish a relationship. Mesh views with a shared
 `syncGroup` rotate and zoom together, including views authored from results
-produced hours apart. Choose these links based on what the comparison means.
+produced hours apart.
 
-Reference full registered source data rather than sampling it to fit the report.
-Small inline tables remain allowed by the catalog. Generate additional images
-or charts through real analysis and normal artifact registration. Keep a
-derivation distinct from observed evidence. Do not repeat the dashboard's views
-inline in chat.
+A report can reference full registered source data; nothing needs sampling to
+fit it. Small inline tables remain allowed by the catalog. Additional images or
+charts come from real analysis and normal artifact registration, and a
+derivation is distinct from observed evidence. The dashboard's views already
+show in the side panel; repeated inline in chat they appear twice.
 
 A dashboard can follow data that keeps changing. A chart or table whose `dataUri` is
 `study://<study>/measurements`, `/entries` or `/records/<name>` reads a science-log
@@ -112,36 +110,34 @@ the result as `study_sources_unchecked`: its columns are checked once rows exist
 A source can also be a file or a stream. `artifact://artifact_<id>` shows one fixed
 version. `artifact://<workspace>/<name>@latest` follows the newest version of that
 file, and a `dataUri` path written as `data/status.csv@latest` binds it that way.
-Writing the file does not make a version: register it with `create_artifact(path=...)`
-after each rewrite (a script that rewrites it often gets one version per interval). A
+Writing the file does not make a version: `create_artifact(path=...)` registers one
+per rewrite (a script that rewrites it often gets one version per interval). A
 stream's `view_uri` (from `open_stream`) is such a reference: its chart or table
 updates from the stream's newest record entries while the dashboard is open. A stream
-is read as it is stored, with no `dataQuery`: reshape its records in the chart spec
+is read as it is stored, with no `dataQuery`; the chart spec reshapes its records
 (for example a fold or a time axis). The result's `data_bindings` says which views
 are `live` and which are `pinned`.
 
-Call `publish_dashboard_report(definition_path="reports/design.dashboard.document.json")`
-to validate and publish an immutable artifact version. Return its artifact
-reference so the person can open the dashboard in the side panel. Keep the
-returned report id and source path. For follow-ups, inspect the referenced
-artifact version, edit the source through additional tool calls, and publish
-again with `report_id`. Earlier artifact versions remain available. Add, remove,
-rearrange, annotate, or interconnect content as the person's goals require.
-Use the returned `report_id` for revisions; an owned dashboard artifact reference
-also resolves the report family. Saved inspection returns these identities under
-`artifact`. A newly published report opens in the currently viewed conversation
-for review. Inspect its fresh viewer before capturing; a disconnected client or
-different conversation still cannot supply pixels.
+`publish_dashboard_report(definition_path="reports/design.dashboard.document.json")`
+validates and publishes an immutable artifact version; its artifact reference
+opens the dashboard in the side panel. It returns a report id and the source
+path. Publishing an edited source again with that `report_id` adds a version
+to the same report, and earlier artifact versions remain available; an owned
+dashboard artifact reference also resolves the report family. Saved inspection
+returns these identities under `artifact`. A newly published report opens in
+the currently viewed conversation. A capture reads the fresh viewer that an
+inspection finds; a disconnected client or different conversation cannot
+supply pixels.
 
-Review the published artifact's own viewer, including each tab. Inspect with
-`artifact_id`, then navigate declared local bindings using
-`update_a2ui_data_model` with that artifact id, the inspected surface revision,
-viewer id and `expected_view_revision`. Capture the changed view and inspect
-its pixels. Each update targets one exact path listed in the inspection's
-`controls`; replacing their parent object is not a supported control update.
-Reinspect after a change to obtain the new viewer epoch before changing another
-control. Local navigation preserves the saved artifact version; changing
-its authored contents requires editing the source and publishing a new version.
+A published artifact's own viewer, tabs included, is inspected with
+`artifact_id`. `update_a2ui_data_model` with that artifact id, the inspected
+surface revision, viewer id and `expected_view_revision` navigates its
+declared local bindings, and a capture then shows the changed view. Each
+update targets one exact path listed in the inspection's `controls`; replacing
+their parent object is not a supported control update. Each change makes a new
+viewer epoch, which a fresh inspection returns for the next control change.
+Local navigation preserves the saved artifact version; changing its authored
+contents means editing the source and publishing a new version.
 
 The viewer supplies standard Reference this and labelled image capture actions
 for the dashboard and its individual views. References identify the artifact
@@ -151,14 +147,11 @@ PNG downloads capture the displayed dashboard; self-contained HTML includes the
 entire dashboard, its tabs and interactions, and referenced data. Missing
 dependencies are reported rather than silently omitted from an export.
 
-Present the completed dashboard once in the final response. Keep corrected
-versions in the same report family; earlier versions remain in Versions and
-Observability. Review captures are retained verification evidence.
+Corrected versions stay in the same report family; earlier versions remain in
+Versions and Observability. Review captures are retained verification evidence.
 
-Register the editable source as an intermediate only if a separate artifact is useful;
-the published report already retains its source path. Do not add a second
-deliverable card for that document unless the person requests the source file.
-Register other review files with `create_artifact(..., purpose="verification")` and
-working files with `purpose="intermediate"`; omit them from the final answer
-unless requested. A requested image/PDF/HTML export is a deliverable and uses
-`purpose="deliverable"`.
+The published report already retains its source path, so the editable source
+needs no artifact of its own; registered as a deliverable it shows as a second
+card. `create_artifact(..., purpose=...)` marks review files as
+`"verification"` and working files as `"intermediate"`; a requested
+image/PDF/HTML export is a deliverable and uses `purpose="deliverable"`.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "fea-methods",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Finite-element and topology-optimization method, independent of any program: formulating a study, meshing and convergence, boundary conditions, structural response, reading stress and strain, and stating and interpreting an optimization problem.",
   "author": {
     "name": "IoWarp Team"

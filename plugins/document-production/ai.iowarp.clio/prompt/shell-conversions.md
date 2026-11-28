@@ -3,8 +3,8 @@ id: document-production.shell-conversions
 section: domain
 when: {"tools": ["shell_bash"]}
 ---
-For a slow conversion, run `shell_bash` with `background=true` to get a Shell
-task handle and continue independent work; inspect it with `observe_tasks`,
-collect it with `wait_tasks`, or cancel it with `cancel_tasks`. Acceptance is
-not a finished artifact: validate the format and review the rendering after the
-conversion actually succeeds.
+`shell_bash` with `background=true` runs a slow conversion as a Shell task
+handle while other work continues; `observe_tasks` inspects it, `wait_tasks`
+collects it and `cancel_tasks` cancels it. Acceptance is not a finished
+artifact: the format and rendering are only checkable after the conversion
+actually succeeds.

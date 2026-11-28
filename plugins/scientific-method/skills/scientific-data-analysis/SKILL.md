@@ -7,21 +7,17 @@ keywords:
 - scientific-method
 ---
 
-State the data's structure before choosing an analysis: sample size, whether
-observations are independent or grouped/repeated (e.g., multiple
-measurements per specimen or subject), and the presence of censored data
-(observations stopped before the event of interest) — a method that assumes independence applied to grouped data
-understates uncertainty.
+The data's structure constrains the analysis: sample size, whether
+observations are independent or grouped/repeated (e.g., multiple measurements
+per specimen or subject), and the presence of censored data (observations
+stopped before the event of interest). A method that assumes independence
+applied to grouped data understates uncertainty.
 
-Record every processing step applied between raw data and reported result:
-outlier removal (with the criterion used), smoothing or filtering,
-normalization, and unit conversion. A result should be reproducible from the
-raw data plus this stated processing chain.
+A result is reproducible from the raw data plus its processing chain: outlier
+removal (with the criterion used), smoothing or filtering, normalization, and
+unit conversion.
 
-Match the specific statistical method to the question (`statistics`) and
-report uncertainty (`uncertainty-quantification`) as part of the result, not
-as an afterthought — a data analysis that reports only a point estimate or a
-best-fit line without its uncertainty is incomplete for a scientific claim.
-
-Return the data structure and processing chain applied, the analysis method
-and result, and the uncertainty and assumptions behind it.
+The statistical method matches the question (`statistics`), and uncertainty
+(`uncertainty-quantification`) is part of the result, not an afterthought: a
+data analysis that reports only a point estimate or a best-fit line without its
+uncertainty is incomplete for a scientific claim.

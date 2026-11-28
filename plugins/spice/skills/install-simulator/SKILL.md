@@ -9,31 +9,29 @@ The SPICE connector runs a simulator that is already on the machine: ngspice, or
 When a simulation tool says no simulator was found, its message names the install route for
 this system and the setting that points the connector at one (`LTSPICE_MCP_SIMULATOR_EXE`).
 
-## Look first
+## Where a simulator may already be
 
 "No simulator was found" means only that the connector found none where it looks: its
 **Where the simulator is** value, PATH and the simulators' standard install folders. A
 simulator may be elsewhere: ngspice in a conda environment (`conda env list`) or a Homebrew
 prefix outside PATH, LTspice copied or installed in another folder or drive, or under Wine.
-Before offering an install, look for `ngspice` and LTspice's program (`LTspice.exe`) yourself,
-and ask the person when you cannot tell. When you find one, ask with `ask_user` whether to
-use it (name its path). Once the person agrees, set **Where the
-simulator is** (`simulator`) to the full path of `ngspice` (`ngspice.exe` on Windows) or of
-LTspice's program with `set_connector_value`, then run the simulation again; the value
-belongs to this conversation, so tell them they can save it as their default in the SPICE
-connector's settings.
+The person may also know where `ngspice` or LTspice's program (`LTspice.exe`) is. Using one
+that is found is the person's decision (`ask_user`, naming its path). **Where the simulator
+is** (`simulator`) holds the full path of `ngspice` (`ngspice.exe` on Windows) or of LTspice's
+program, set with `set_connector_value`; the value belongs to this conversation, and the
+person can save it as their default in the SPICE connector's settings.
 
-## Ask first
+## The person's choice
 
-Installing software is the person's decision. Ask once with `ask_user` (a choice), naming
-the command you would run and where it installs:
+Installing software is the person's decision (`ask_user`, a choice naming the command and
+where it installs):
 
-- **install it now**: you run the command below for this system;
-- **I'll install it myself**: give them the command and wait;
-- **skip simulation**: carry on without it, and say in your summary what stays unverified
-  (for example a regulator's stability or a filter's corner) so they can simulate later.
+- **install it now**: the agent runs the command below for this system;
+- **I'll install it myself**: the person runs the command;
+- **skip simulation**: the work goes on without it, and what stays unverified (for example a
+  regulator's stability or a filter's corner) is something the person can simulate later.
 
-If they decline or skip, do not ask again in this conversation.
+A person who declined or skipped has answered for this conversation.
 
 ## Commands, no administrator rights first
 
@@ -45,16 +43,16 @@ If they decline or skip, do not ask again in this conversation.
 | Ubuntu, Debian | `pkexec apt-get install -y ngspice` (desktop) or `apt-get install -y ngspice` (root, as in a container) | Administrator rights: see below. On Ubuntu with KiCad's PPA, `ngspice` conflicts with `libngspice-kicad`: use conda instead |
 | Fedora | `pkexec dnf install -y ngspice` | Administrator rights: see below |
 
-A folder outside what CLIO may write to: retry with `access_paths` (the folder card). A command
-that needs administrator rights, or that the sandbox blocks even with the folders granted (the
-result's `boundary` says `elevation_required` or `privilege_denied`): call `shell_bash` again
-with `outside_sandbox: true` and an `access_reason`. CLIO shows the person the exact command and
+A folder outside what CLIO may write to is reachable with `access_paths` (the folder card). A
+command that needs administrator rights, or that the sandbox blocks even with the folders
+granted (the result's `boundary` says `elevation_required` or `privilege_denied`), runs through
+`shell_bash` with `outside_sandbox: true` and an `access_reason`. CLIO shows the person the exact command and
 runs it outside the sandbox only if they allow; the system then asks them itself (UAC on
 Windows, `pkexec`'s dialog on a Linux desktop, `osascript ... with administrator privileges` on
-macOS). CLIO never takes a password: never ask for one in the conversation. If they decline, give them the command to
-run in their own terminal, or skip simulation as above.
+macOS). CLIO never takes a password, and a password never passes through the conversation. A
+person who declines can run the command in their own terminal, or skip simulation as above.
 
 ## After installing
 
 A simulator on `PATH` is found by itself after the connector restarts. One installed elsewhere
-(a conda environment, a user folder) is set as in "Look first". Then run the simulation again.
+(a conda environment, a user folder) is set as in "Where a simulator may already be".

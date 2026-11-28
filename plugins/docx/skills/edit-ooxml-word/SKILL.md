@@ -5,12 +5,12 @@ description: Use to create or revise .docx files, including anchored Word commen
 
 # Edit OOXML Word Documents
 
-1. Run `$inspect-office-package` before editing an existing DOCX. New documents may use `python-docx`; existing complex files require package-aware preservation.
-2. Locate anchored text in `word/document.xml` with surrounding run/paragraph context. Do not collapse run boundaries blindly: they carry styles, fields, links, bookmarks, proofing, and tracked changes.
-3. Prefer a targeted OOXML edit for a local review change. Use `python-docx` only when its round-trip surface covers the file’s inventoried features.
-4. Preserve comments and people/authors. Native comments beginning `@clio` are instructions; other comments stay intact as human notes.
-5. Emit `<w:ins>`/`<w:del>` only when the user requests tracked changes or the workflow explicitly requires review markup. Ordinary edits become clean document content.
-6. Run the package guard again with the narrow expected parts, then open/render through LibreOffice when available. Inspect the changed page, headers/footers, tables, images, numbering, and first/last page.
-7. Save a real `.docx` as the canonical artifact. A PDF is an optional derived rendition, never a substitute.
+- `$inspect-office-package` inventories an existing DOCX and compares the package after an edit. New documents can use `python-docx`; existing complex files need package-aware preservation.
+- Anchored text in `word/document.xml` sits in run/paragraph context. Run boundaries carry styles, fields, links, bookmarks, proofing, and tracked changes; collapsing them loses those.
+- A targeted OOXML edit suits a local review change. `python-docx` round-trips only the features its surface covers, which the inventory shows.
+- Comments and people/authors are part of the document. Native comments beginning `@clio` are instructions; other comments are human notes.
+- `<w:ins>`/`<w:del>` are review markup: tracked changes the person asked for. Ordinary edits are clean document content.
+- A package comparison that allows only the narrow expected parts shows any other drift. A LibreOffice render, when available, shows the changed page, headers/footers, tables, images, numbering, and first/last page.
+- The real `.docx` is the canonical artifact. A PDF is an optional derived rendition, not a substitute.
 
-Read [word-ooxml.md](references/word-ooxml.md) before direct package mutation.
+[word-ooxml.md](references/word-ooxml.md) covers WordprocessingML for direct package mutation.

@@ -7,24 +7,18 @@ keywords:
 - fea-methods
 ---
 
-State which stress or strain quantity is being reported — von Mises,
-maximum principal, a specific tensor component, or an invariant appropriate
-to the failure mode being assessed (maximum shear for ductile yielding,
-maximum principal for brittle fracture, a critical-plane quantity for
-multiaxial fatigue). Reporting "the stress"
-without naming the quantity is ambiguous and often the wrong one for the
-question.
+"The stress" is ambiguous: von Mises, maximum principal, a specific tensor
+component, or an invariant appropriate to the failure mode (maximum shear for
+ductile yielding, maximum principal for brittle fracture, a critical-plane
+quantity for multiaxial fatigue) are different quantities, and the wrong one
+for the question is common.
 
-Report the location precisely: element/node, distance from a free surface or
-stress concentration, and whether the value is a peak (single element) or an
-averaged/extrapolated value — peak stress at a singular geometric feature
-(sharp corner) is mesh-dependent and should be flagged as such rather than
-reported as converged.
+A value's location matters: element/node, distance from a free surface or
+stress concentration, and whether it is a peak (single element) or an
+averaged/extrapolated value. Peak stress at a singular geometric feature
+(sharp corner) is mesh-dependent, not converged.
 
-State the material model the stress-strain result assumes (linear elastic,
-elastic-plastic with a specific hardening law) — a reported "stress" beyond
-the material's yield point from a linear-elastic model is not a physically
+A stress-strain result holds under its material model (linear elastic,
+elastic-plastic with a specific hardening law): a "stress" beyond the
+material's yield point from a linear-elastic model is not a physically
 meaningful stress value.
-
-Return the stress/strain quantity, its location and mesh-convergence status,
-and the material model it was computed under.

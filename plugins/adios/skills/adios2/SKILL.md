@@ -14,8 +14,8 @@ keywords:
 
 This skill covers files written by the **BP4 and BP5** engines of ADIOS2. BP3
 output (a single `.bp` file, often with a `.bp.dir` folder) and the streaming
-engines (SST, SSC, DataMan) are outside it: say so instead of guessing at
-their layout.
+engines (SST, SSC, DataMan) are outside it: their layout differs, and this
+skill does not describe it.
 
 ## Layout
 
@@ -28,15 +28,15 @@ A BP4 or BP5 "file" is a directory, `name.bp/`:
 | `mmd.0` | BP5 | the metadata-metadata BP5 adds |
 | `profiling.json` | both, optional | writer timing |
 
-`mmd.0` tells BP5 from BP4. Never copy or move only some of these files; the
-directory is the unit.
+`mmd.0` tells BP5 from BP4. The directory is the unit; a copy of only some of
+these files is not a readable BP file.
 
 ## The data model
 
 - **Steps** are the output cycles (often time steps). `AvailableStepsCount`
   says in how many steps a variable was written; a variable can be missing
-  from some steps, and its shape can change between steps. Check per step
-  before assuming a regular series.
+  from some steps, and its shape can change between steps, so a regular series
+  is not guaranteed.
 - **Variables** have a name (often path-like, `group/field`), a type and a
   `Shape`:
   - **global array**: `Shape` is the global dimensions; writers each wrote
@@ -49,18 +49,19 @@ directory is the unit.
     array with one element per writer.
 - **Blocks** keep their own `Min`/`Max` and the `WriterID`;
   `all_blocks_info(name)` lists them per step. Gaps or overlaps between blocks
-  are possible; check them before treating the global array as dense.
+  are possible, so a global array is not necessarily dense.
 - **Attributes** are global or belong to a variable (`var/attr`, separator
-  `/`). They usually hold units, descriptions and run parameters: read them
-  before interpreting values.
+  `/`). They usually hold units, descriptions and run parameters, without which
+  values are hard to interpret.
 - Dimension order is as written (row-major from C/C++/Python writers). The
   block metadata's `IsReverseDims` marks blocks recorded in reversed
-  (column-major) order, as Fortran writers produce; check it before
-  transposing anything.
+  (column-major) order, as Fortran writers produce; whether to transpose
+  depends on it.
 
 ## Reading with Python
 
-Check `adios2.__version__` first; the high-level API changed.
+The high-level API changed between releases; `adios2.__version__` says which
+is installed.
 
 **2.10 and later** (`adios2.FileReader` for random access, `adios2.Stream`
 for step-by-step):
@@ -82,23 +83,23 @@ with adios2.Stream(path, "r") as s:
 Without `step_selection`, `FileReader.read` returns the first step. With
 `step_selection=[first, n]`, the steps are stacked along the first axis (two
 steps of a `(rows, cols)` selection come back as `(2*rows, cols)`), not as a
-new axis; reshape deliberately. `Stream.minmax(name)` exists from 2.12.
+new axis; a reshape recovers the step axis. `Stream.minmax(name)` exists from 2.12.
 
-**2.9** has no `FileReader` or `Stream` in Python: use `adios2.open(path, "r")`
+**2.9** has no `FileReader` or `Stream` in Python; it has `adios2.open(path, "r")`
 and `for fstep in fh: fstep.read(name, start, count)`, or random access with
 `fh.read(name, start, count, step_start, step_count)`.
 
-Read bounded selections, not whole variables, until you know the sizes. Run
-reads as scripts through `shell_bash`, for example
+Bounded selections are safe before the sizes are known; a whole variable can be
+large. Reads run as scripts through `shell_bash`, for example
 `uv run --no-project --with adios2 --with numpy python script.py`.
 
 **The PyPI wheel** (`pip install adios2`) is built without MPI and without the
 compression operators (Blosc, BZip2, ZFP, SZ, MGARD, PNG). A variable written
 with an operator then fails to read, with an error naming it; that needs an
-ADIOS2 build that includes the operator (conda-forge, Spack or source). Report
-it rather than skipping the variable silently. Lossy operators (ZFP, SZ,
-MGARD) also mean the stored values are approximations: say so when you
-compare or convert them.
+ADIOS2 build that includes the operator (conda-forge, Spack or source); a
+variable skipped silently hides that gap. Lossy operators (ZFP, SZ, MGARD) also
+mean the stored values are approximations, which matters when comparing or
+converting them.
 
 ## bpls
 
@@ -120,7 +121,7 @@ The clio-kit `adios` server reads BP4 and BP5 with `FileReader`/`Stream`:
   attributes with their values.
 - `read_variable_at_step(filename, variable_name, target_step)`: the **whole**
   variable at that step as a flattened list plus its shape. There is no
-  start/count, so use it only for small variables; select with Python
-  otherwise.
+  start/count, so it suits small variables; Python selects bounded parts of
+  larger ones.
 
 `filename` is the `.bp` directory path.

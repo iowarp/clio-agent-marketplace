@@ -7,24 +7,19 @@ keywords:
 - fatigue
 ---
 
-Confirm the Fatemi-Socie method is the right choice: it is a shear-strain-
-based critical-plane parameter suited to materials and loadings where shear
-dominates crack initiation and where non-proportional hardening matters — see
-`multiaxial-fatigue` to confirm the loading is non-proportional before
-defaulting to this method over a simpler equivalent-stress approach.
+The Fatemi-Socie method is a shear-strain-based critical-plane parameter
+suited to materials and loadings where shear dominates crack initiation and
+where non-proportional hardening matters. For proportional loading a simpler
+equivalent-stress approach may suffice; `multiaxial-fatigue` covers telling
+them apart.
 
-State the damage parameter's form explicitly (shear strain amplitude on the
-critical plane, scaled by a material constant k times the ratio of normal
-stress to yield strength on that plane) and the material constant k used and
-its source (fit to the material's own multiaxial data, not borrowed from an
-unrelated material without justification).
+The damage parameter is the shear strain amplitude on the critical plane,
+scaled by a material constant k times the ratio of normal stress to yield
+strength on that plane. k comes from the material's own multiaxial data; one
+borrowed from an unrelated material needs justification.
 
-Report the critical-plane search procedure: the parameter must be evaluated
-over all candidate plane orientations at the point of interest and the
-maximizing plane identified — a value computed on an assumed plane
-(e.g., the plane of maximum principal stress) rather than the true maximizing
-plane is not the Fatemi-Socie parameter.
-
-Return the damage parameter value, the identified critical plane and its
-orientation, the material constant used and its source, and the life
-estimate the parameter maps to via the calibrated life curve.
+The parameter is evaluated over all candidate plane orientations at the point
+of interest, and the maximizing plane is the critical plane. A value computed
+on an assumed plane (e.g., the plane of maximum principal stress) rather than
+the true maximizing plane is not the Fatemi-Socie parameter. The parameter
+maps to life through the calibrated life curve.

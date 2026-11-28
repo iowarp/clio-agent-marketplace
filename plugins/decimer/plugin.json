@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "decimer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Read a drawn chemical structure from an image (a paper figure, a photo of a whiteboard) as SMILES through clio-kit's decimer server, and have the person confirm it before it is used.",
   "author": {
     "name": "IoWarp Team"

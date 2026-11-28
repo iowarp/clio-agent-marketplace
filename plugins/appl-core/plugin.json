@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "appl-core",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "OPAL's APPL-CORE source plugin: the mission of the appl-core agent and the APPL-CORE export contract (export_version 6, other versions refused) for plant-phenotyping data from ORNL's phenotyping facility, read from each export's own files. General onboarding and phenotyping methods come from the data-onboarding and phenotyping plugins.",
   "author": {
     "name": "IoWarp Team"

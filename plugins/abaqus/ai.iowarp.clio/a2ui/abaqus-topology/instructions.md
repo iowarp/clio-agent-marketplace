@@ -9,18 +9,18 @@ same generic parts. `TopologyViewport` aliases the renderer's
 `heatmap`, `spectra`, `boxplot`, and `scatter` presets over inline `data`
 or a `dataUri` artifact; `Text`, `Column`, `Row`, `Button`, and `CheckBox`
 are the unmodified Basic components. Property shapes live in
-`catalog.json`; this page is the recipe. Load the `abaqus-visualization`
-and `visualize-topology-optimization` skills for how the meshes are made.
+`catalog.json`; this page is the recipe. The `abaqus-visualization` and
+`visualize-topology-optimization` skills cover how the meshes are made.
 
-Every `meshUri` is an artifact registered in this session from the
-exporter's output. Never an inline mesh, never a filesystem path. Every
-number on a surface comes from the exporter's printed metadata or Tosca's
-report files, never estimated.
+A `meshUri` is the `artifact://` id of the exporter's output registered in
+this session; an inline mesh or a filesystem path is not one. The numbers a
+surface can show come from the exporter's printed metadata and Tosca's
+report files; an estimate there reads as a measured value.
 
 The examples below show shapes only. Their ids, run id, metric values,
-slider limits, convergence rows and camera are placeholders: fill every one
-from the run in front of you (the exporter's output, `optimization_report.csv`
-and the number of exported frames).
+slider limits, convergence rows and camera are placeholders; the real values
+come from the run in front of you (the exporter's output,
+`optimization_report.csv` and the number of exported frames).
 
 ## View 1: before and after, with a stress toggle
 
@@ -259,24 +259,20 @@ Render it with the same numbers through `abaqus-visualization`'s
 --threshold DENSITY:ISO:1 --camera 'CAMERA_JSON'`), register the PNG, and
 cite it.
 
-## After creating a surface
+## Surfaces and questions
 
-Choose the presentation by whether you need an answer now:
-
-- **Completed result:** publish the surface as transcript content and explain
-  the result. Do not call `ask_user` or attach it to a pending response. Orbiting
-  a mesh, changing stress/density/cycle controls, or optionally exporting a
-  figure are inspection actions, not questions. Omit accept/revise buttons
-  when no design decision is being requested. End the turn once the requested
-  result is ready; do not invent a confirmation just because a surface exists.
-- **Real question:** when a scientist-owned decision is needed to continue,
-  state that question and call `ask_user(..., surface_id=...)` with the relevant
-  surface and answer choices. For example, ask whether to accept a proposed
-  design or revise its constraints, with the comparison as context. This
-  enriched question belongs in the interactive response area; wait for its
-  answer and resume the same work through the normal response flow.
+- **Completed result:** a surface published as transcript content shows the
+  result; it is not a question. Orbiting a mesh, changing the
+  stress/density/cycle controls, or exporting a figure are inspection
+  actions. The accept/revise buttons mean something only while a design
+  decision is open.
+- **Real question:** `ask_user(..., surface_id=...)` attaches a surface to a
+  scientist-owned decision, with answer choices, in the interactive response
+  area, for example whether to accept a proposed design or revise its
+  constraints, with the comparison as context. Its answer resumes the same
+  work through the normal response flow.
 
 Optional surface events still arrive with their meaning attached (`narration`
-in `catalog.clio.json`). A future event is not a reason to keep a completed
-result waiting for an answer. Reuse the same surface id after a rerun so the
-view updates in place.
+in `catalog.clio.json`); a possible future event leaves a completed result
+complete. Reusing the same surface id after a rerun updates the view in
+place.

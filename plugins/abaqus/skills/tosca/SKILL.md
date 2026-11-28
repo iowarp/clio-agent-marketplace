@@ -18,30 +18,31 @@ Tosca.
 
 ## What this skill does not supply
 
-The `.par` command syntax is not reproduced here. Read it from the Tosca
-documentation of the installed release, never from memory: how the design
+The `.par` command syntax is not reproduced here. It lives in the Tosca
+documentation of the installed release; syntax recalled from memory can be
+another release's: how the design
 area, design variables, objective, constraints, manufacturing restrictions,
-stop criteria and smoothing are declared, and how a run is launched. Convert
-the manual to text once and search it for each keyword you need. When the
-scientist supplies a working `.par` file from an earlier study, start from it
-and change only what the new formulation requires.
+stop criteria and smoothing are declared, and how a run is launched. A text
+conversion of the manual can be searched per keyword. A working `.par` file
+the scientist supplies from an earlier study is a tested starting point; the
+new formulation decides what differs.
 
-## Before a run
+## What a run takes
 
-- Choose the task type: topology, sizing, shape or bead.
-- Confirm the referenced Abaqus input deck runs on its own and converges
-  before treating any optimization failure as a Tosca problem.
-- Declare the design area, frozen regions, symmetry and every manufacturing
-  restriction the study needs inside the `.par` file. A restriction stated in
-  prose does not constrain the optimizer.
-- Record the `.par` file's smoothing level (`ISO_VALUE`): every later view and
+- A task type: topology, sizing, shape or bead.
+- A referenced Abaqus input deck. An optimization failure is a Tosca problem
+  only once that deck runs and converges on its own.
+- The design area, frozen regions, symmetry and every manufacturing
+  restriction the study needs, declared inside the `.par` file. A restriction
+  stated in prose does not constrain the optimizer.
+- The `.par` file's smoothing level (`ISO_VALUE`): every later view and
   extracted surface depends on it.
 
 ## What a run writes
 
 These outputs are used by `visualize-topology-optimization` and
-`abaqus-visualization`; confirm the names in the run directory, since they
-can differ between releases and setups:
+`abaqus-visualization`; their names can differ between releases and setups,
+so the run directory is the reference:
 
 - `optimization_report.csv`: objective and constraints per design cycle, with
   a `Norm-Values` row Tosca uses to normalize them;
@@ -54,13 +55,10 @@ can differ between releases and setups:
 
 ## After a run
 
-Track the convergence history from `optimization_report.csv` separately from
-the manufacturability check and the structural re-verification of the
-extracted geometry (`topology-optimization`, section 4). Tosca evaluates its
+The convergence history from `optimization_report.csv` is a separate question
+from the manufacturability check and the structural re-verification of the
+extracted geometry (`topology-optimization`, "The result is a proposal"). Tosca evaluates its
 own stress responses on the density-penalized model, so peak stresses read
 from the smoothed surface are not proof that a stress constraint held.
 
-Return the `.par` file and the Abaqus deck it references, the declared
-regions and restrictions, the run's stop reason and convergence history, and
-traceability to the approved formulation. Without executed solver evidence
-the package is `GENERATED_NOT_EXECUTED`.
+Without executed solver evidence the package is `GENERATED_NOT_EXECUTED`.

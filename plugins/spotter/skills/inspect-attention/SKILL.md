@@ -13,20 +13,19 @@ keywords:
 Attention capture is optional: it needs a model served with capture, Flowcept
 among the provenance providers and a local capture directory
 (`provenance.attention.files_dir`). When it is unavailable, the tools say so
-with a typed reason. Say so and continue with the other evidence.
+with a typed reason, and the other evidence still stands.
 
-## Ask about a passage
+## Asking about a passage
 
-When an answer or an action looks off, call `attention_sources`:
+`attention_sources` explains an answer or action:
 
 - the simplest call passes only `message_id` from
   `review_activity.assistant_answers` and omits `text`: it explains that whole
   answer (bounded); omit both to explain the latest answer;
 - to check one claim, add `text`: the passage quoted exactly as it appears in
   the assistant's answer or in the reasoning behind a tool call (one
-  contiguous sentence or claim). Never quote the user's message or a tool
-  result: they have no attention, and the call returns
-  `selection_not_located`.
+  contiguous sentence or claim). The user's message or a tool result has no
+  attention: quoting one returns `selection_not_located`.
 
 `selection.basis` says what was explained (`answer`, `reasoning`, a `_tail`
 when bounded, or `quoted`).
@@ -41,27 +40,24 @@ It returns:
 - `flags`, such as `tool_result_dominant`;
 - `evidence`: the exact capture receipt it was computed from.
 
-An error carries a `hint` with the next step: re-quote the passage exactly
-from the answer, quote a longer unique passage, or omit `text` and pass only
-`message_id`.
+An error carries a `hint` naming what would work: the passage re-quoted exactly
+from the answer, a longer unique passage, or only `message_id` without `text`.
 
 ## Reading the result
 
-- Read the hottest excerpts: are they the person's request and the evidence
-  the answer should rest on, or something else?
+- The hottest excerpts are either the person's request and the evidence the
+  answer should rest on, or something else.
 - Pasted data or a replayed tool output inside a user message is labelled
-  `user` because it sits in the user's turn; look at the excerpt itself to
-  tell the person's words from the data they supplied.
+  `user` because it sits in the user's turn; only the excerpt itself tells the
+  person's words from the data they supplied.
 - Attention strength alone is neither evidence of poisoning nor a reason to
   raise an alert. It supports a finding only next to recorded evidence that the
   steered action or answer departed from the request.
 - Sparse capture: an absent position is unretained, not zero attention. Shares
   are the uniform mean attention mass over the selected steps.
-- Separate observed evidence, hypotheses and uncertainty.
+- Observed evidence, hypotheses and uncertainty are different things.
 
-## Presenting a finding
-
-When attention informed a finding, describe it in the alert's body: which
-sources and excerpts the answer weighted most, and what that does and does not
-show. The person can explore attention themselves by selecting the passage in
-the answer.
+When attention informed a finding, the alert's body is where the person learns
+which sources and excerpts the answer weighted most, and what that does and
+does not show. The person can explore attention themselves by selecting the
+passage in the answer.

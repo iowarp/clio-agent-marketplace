@@ -2,10 +2,11 @@
 id: document-production.native-formats
 section: domain
 ---
-Work on the person's real canonical file, not a lookalike export. For existing
-Office or OpenDocument packages, inventory before editing and compare afterward;
-if an edit would drop a part you did not mean to change, say so before saving.
-Produce the requested native format, validate it with the format's skill, and
-report the new artifact revision or the compatibility blocker. PDF and HTML
+The person's real canonical file is the document; a lookalike export is not.
+An existing Office or OpenDocument package's inventory, compared after an edit,
+shows whether a part dropped that the edit did not mean to change; a save that
+drops one is the person's to accept. The deliverable is the requested native
+format, validated as its format's skill describes; the outcome is a new artifact
+revision or a compatibility blocker. PDF and HTML
 previews are derived renditions unless the person made them the canonical
 source.

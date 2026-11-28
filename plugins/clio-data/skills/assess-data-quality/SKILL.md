@@ -13,8 +13,8 @@ keywords:
 
 ## What a variable states about itself
 
-Collect this before judging values, and keep stated facts apart from checked
-ones:
+These are stated facts, distinct from checked ones, and values mean little
+without them:
 
 - name or path, dtype, shape and dimension names, and its coordinate
   variables (HDF5 dimension scales, netCDF coordinates, ADIOS2 steps);
@@ -23,13 +23,13 @@ ones:
   `valid_max`, `valid_range`; packing: `scale_factor`, `add_offset`; flags:
   `flag_values`, `flag_masks`, `flag_meanings`;
 - stored summaries: ADIOS2 per-block `Min`/`Max`, Parquet row-group statistics.
-  They are hints: confirm them from the data before reporting them as results.
+  They are hints until the data confirms them.
 
 ## Checks
 
-Start with bounded reads (a slice, a step, a row group), then read fully when
-the answer depends on it. Give every count with its denominator and the scope
-you read.
+Bounded reads (a slice, a step, a row group) are cheap; a full read matters
+when the answer depends on it. A count means something with its denominator and
+the scope read.
 
 - **Missing data**: NaN, nulls, fill and missing values, counted separately.
   A fill value that also occurs as a real measurement is a finding.
@@ -48,20 +48,20 @@ you read.
 
 ## Comparing variables
 
-1. Establish that they measure the same thing: `standard_name` or
-   documentation, units, and processing level.
-2. Align them on shared coordinates before differencing: same grid, times and
-   reference; interpolation or resampling is a stated analytical choice.
-3. Convert units only between stated units; an unknown unit is a question.
-4. State incompatibilities (units, resolution, time range, coordinate system)
-   before any numbers.
-5. Over the overlapping valid elements, report the count compared, mean and
-   maximum absolute difference, RMS difference and correlation, and where the
-   largest differences are.
+- Two variables are comparable when they measure the same thing: `standard_name`
+  or documentation, units, and processing level.
+- Differences are meaningful only on shared coordinates: same grid, times and
+  reference; interpolation or resampling is an analytical choice.
+- Unit conversion works only between stated units; an unknown unit is a question.
+- Incompatibilities (units, resolution, time range, coordinate system) qualify
+  every number that follows.
+- Over the overlapping valid elements, the usual summary is the count compared,
+  mean and maximum absolute difference, RMS difference and correlation, and where
+  the largest differences are.
 
 ## Visual checks
 
-Choose the plot the data and the question support, from values you read:
+Plots that suit each kind of data, drawn from values actually read:
 
 | Data | Check |
 |---|---|
@@ -72,13 +72,13 @@ Choose the plot the data and the question support, from values you read:
 | two paired variables | scatter with the 1:1 line |
 | missing values in a grid | the missing-value mask as an image |
 
-Say which slice, step or sample a plot shows. Load
-`present-interactive-analysis` for an interactive view, or plot with a script
-through `shell_bash` for a file.
+A plot is readable only with the slice, step or sample it shows.
+`present-interactive-analysis` gives an interactive view; a script through
+`shell_bash` produces a file.
 
 ## Reporting
 
-Report what was stated, what you checked and what you infer, with the scope of
-each check. Unknown units, flag meanings or fill conventions are questions for
-the data owner, asked while independent checks continue. Write derived files
-to the workspace so the source stays as delivered.
+What was stated, what was checked and what is inferred are different kinds of
+result, each with the scope of its check. Unknown units, flag meanings or fill
+conventions are questions for the data owner; independent checks do not depend
+on them. Derived files live in the workspace so the source stays as delivered.

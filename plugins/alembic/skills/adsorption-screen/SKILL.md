@@ -6,18 +6,20 @@ keywords: [alembic, adsorption, mof, screening, graspa]
 
 # An adsorption screen
 
-Untested end to end: gRASPA has not run where this was written (no GPU). Say so when
-results come from this path for the first time.
+Untested end to end: gRASPA has not run where this was written (no GPU), so results from
+this path are its first.
 
-1. **Frameworks:** CIFs from the person, a database they name, or the Materials Project.
-   Check each opens (unit cell shown in Burette) and note whether it carries charges.
-2. **Conditions:** adsorbate, temperature, pressure(s); for working capacity both
-   conditions (`adsorption`).
-3. **Where it runs:** `graspa_status`. gRASPA here: `run_graspa`. Otherwise
-   `prepare_graspa` per framework and condition and run them on a GPU node
-   (`install-graspa`), then `read_graspa`. Without any GPU, say plainly that uptakes
-   cannot be computed here, and hand over the prepared folders.
-4. **Rank** with `rank_frameworks`; show a scatter and a table with shared selection
-   (`chemistry-views`); report excluded frameworks and why.
-5. **The person selects** frameworks to examine: open their structures, compare pore and
-   metal sites, and rerun with changed settings (charges, cycles) where results are close.
+- **Frameworks:** CIFs from the person, a database they name, or the Materials Project.
+  A unit cell shown in Burette tells whether each opens; whether it carries charges
+  changes the result.
+- **Conditions:** adsorbate, temperature, pressure(s); working capacity takes both
+  conditions (`adsorption`).
+- **Where it runs:** `graspa_status` tells whether gRASPA runs here (`run_graspa`).
+  Otherwise `prepare_graspa` writes one folder per framework and condition for a GPU node
+  (`install-graspa`), and `read_graspa` reads the results back. Without any GPU, uptakes
+  cannot be computed here; the prepared folders are what there is to hand over.
+- **Ranking:** `rank_frameworks`; a scatter and a table with shared selection
+  (`chemistry-views`) show it, with excluded frameworks and the reason for each.
+- **The person's selection:** frameworks the person selects can be opened, compared on
+  pore and metal sites, and rerun with changed settings (charges, cycles) where results
+  are close.

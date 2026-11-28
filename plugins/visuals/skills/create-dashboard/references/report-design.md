@@ -1,10 +1,10 @@
 # Compose an explained report
 
-Start with a question and evidence, not a list of available components. Write
-one sentence describing the supported finding and what remains uncertain.
-Compose related evidence in one initial space. Keep computations and source
-references available. A static export should contain the main explanation
-without requiring hidden tabs to make sense of it.
+A report starts from a question and evidence, not a list of available
+components; one sentence can state the supported finding and what remains
+uncertain. Related evidence reads best in one initial space, with computations
+and source references available. A static export should contain the main
+explanation without requiring hidden tabs to make sense of it.
 
 ## Give the reader a path
 
@@ -12,7 +12,7 @@ without requiring hidden tabs to make sense of it.
   components for quantities that support the finding; retain units and bases.
 - Allocate space according to the content. A full-width workflow, equal
   comparisons, a vertical report or unequal panels can each be the clearest
-  choice. Use relative `weight` values only when a view benefits from more room.
+  choice. Relative `weight` values give a view that benefits from it more room.
   A diagram should not be squeezed into a narrow cell to imitate an example.
 - Use Grid for equal KPI cards. Frame gives each analysis its own title and
   context. Use space for readable evidence, not repetitive borders and prose.
@@ -20,12 +20,13 @@ without requiring hidden tabs to make sense of it.
   together. For a research report, place material images and parameters beside
   linked 3D views and their measured result distributions. Keep a shared object
   identifier and put relevant selectors next to the views they affect.
-- Prefer one overview with complementary views visible together. Tabs are for
-  independent questions or optional depth, not a default way to split related
-  comparisons. Important contrary evidence stays visible with the finding.
-- At a narrow dock, stack analytical rows rather than squeezing plots. At wide
-  size, retain authored proportions. Inspect both; do not make the expanded
-  report a single long column merely because the dock is narrow.
+- One overview with complementary views visible together usually reads best.
+  Tabs are for independent questions or optional depth, not a default way to
+  split related comparisons. Important contrary evidence stays visible with
+  the finding.
+- At a narrow dock, stacked analytical rows read better than squeezed plots. At
+  wide size, authored proportions are retained. The two sizes differ, and a
+  narrow dock is no reason for the expanded report to be a single long column.
 
 One possible structure, not a required arrangement (replace child Text with
 actual catalog views). Omit a row or use one full-width view when that fits better:
@@ -68,8 +69,9 @@ categories; colour alone is insufficient. Automatic nominal chart/map colours
 use the same category identity across tabs and when a subset changes. Keep
 category labels identical across related data. The finite palette can repeat;
 retain labels, filter dense groups and review the actual marks. If authoring
-an explicit chart scale, use a complete domain/range consistently in every
-related authored chart; do not imply that an unrelated map adopts that scale.
+an explicit chart scale, a complete domain/range used consistently in every
+related authored chart keeps it coherent; an unrelated map does not adopt that
+scale.
 
 Make interaction extend the explanation: selecting an object should reveal its
 matching measurements and location; put its identifying image and context next
@@ -83,9 +85,10 @@ Reserve selection highlights for the viewer's selection.
 Use meaningful titles, short subtitles, direct series labels and units. Label
 an important threshold, reference value, peak or exception when supported by
 the data. A chart spec may layer a rule, text or outline over the named source;
-do not add fabricated measurements to make an annotation. Keep comparison
-axes and time intervals compatible. Do not truncate a bar baseline to make a
-small difference appear large. State exclusions and aggregation intervals.
+an annotation adds no measurements of its own. Comparison axes and time
+intervals need to be compatible. A truncated bar baseline makes a small
+difference appear large. Exclusions and aggregation intervals belong in the
+report.
 
 A preset is useful when it already explains the question. A guarded authored
 Vega-Lite spec is appropriate when direct labels, reference bands, layers,
@@ -101,7 +104,7 @@ the morning interval in the main chart, with the empty time labelled. Compare
 net arrivals by station in a second chart using the same station identifiers.
 Keep the occupancy chart, station balance and useful map visible together,
 with a compact linked table alongside. Retain all snapshots below or in optional
-depth. Do not infer individual trips from dock counts alone. A rider filter should affect the related
+depth. Dock counts alone do not show individual trips. A rider filter should affect the related
 views together, rather than changing only a headline. An animation is useful
 only if the temporal progression is part of the explanation.
 
@@ -119,25 +122,27 @@ residuals beside the fit and keep exact rows available below. Use a group
 selector instead of drawing every series by default. Visual alignment alone
 does not establish causality or validate the fit.
 
-## Close the loop on the authored result
+## Reading the authored result
 
-Use inspect_a2ui_surface and capture_a2ui_surface on the actual viewer. Read
-the returned image at docked width and inspect each relevant tab. Ask:
+inspect_a2ui_surface and capture_a2ui_surface read the actual viewer; the
+returned image at docked width and each relevant tab show what the reader
+sees. What a capture answers:
 
-1. Can the reader identify the finding and its supporting comparison?
-2. Are labels, legends, units and relevant marks legible without zooming?
-3. Do linked views agree on categories, filters, dates and record identity?
-4. Would fewer visible series, a different layout or a direct annotation help?
+- whether the reader can identify the finding and its supporting comparison;
+- whether labels, legends, units and relevant marks are legible without
+  zooming;
+- whether linked views agree on categories, filters, dates and record
+  identity;
+- whether fewer visible series, a different layout or a direct annotation
+  would help.
 
-Correct a concrete defect, recapture and inspect the correction. Verify the
-data behind claims separately. Stop when the report answers the question and
-the useful detail is accessible. If capture is unavailable, state that limit.
-Keep screenshots and intermediate versions as verification evidence; present
-the latest requested deliverable once.
+A fresh capture after a fix shows whether the fix worked. The data behind
+claims is a separate check from the pixels. Screenshots and intermediate
+versions are verification evidence.
 
-For a runnable composition using real catalog components, read
-`references/bike-station-report.json`. Its clearly labelled synthetic example
-connects morning occupancy, station balance, location and exact records to one
-question. Use it as a composition pattern, never as evidence about a real bike
-system. Replace its inline demonstration rows with the person's registered
-dataset, retain stable station/category fields, and capture the actual result.
+`references/bike-station-report.json` is a runnable composition using real
+catalog components. Its clearly labelled synthetic example connects morning
+occupancy, station balance, location and exact records to one question. It is
+a composition pattern, not evidence about a real bike system; its inline
+demonstration rows stand in for a registered dataset with stable
+station/category fields.

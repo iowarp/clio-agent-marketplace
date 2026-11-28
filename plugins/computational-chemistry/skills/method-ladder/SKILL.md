@@ -6,10 +6,10 @@ keywords: [chemistry, level of theory, dft, xtb, machine-learned potential, leve
 
 # Choose a method for the question
 
-A calculation answers one question at one level of theory. Choose the level from the
-question, the elements and the size of the system, then say in the answer what that level
-can and cannot show. Programs are separate (each has its own plugin); this skill is about
-the method.
+A calculation answers one question at one level of theory. The question, the elements and
+the size of the system decide which level fits, and each level has things it can and
+cannot show. Programs are separate (each has its own plugin); this skill is about the
+method.
 
 ## The ladder
 
@@ -21,13 +21,12 @@ the method.
 | DFT (B3LYP, PBE0, ωB97X-D with a basis such as 6-31G* or def2-SVP/TZVP) | reaction and binding energies, barriers, spectra, open shells | dispersion without a correction; multireference cases | minutes to hours |
 | Wavefunction (MP2, CCSD(T)) | benchmarks on small systems | anything large | hours |
 
-Rules of thumb:
+Where each level fits:
 
-- **Organic molecules, conformations, vibrations:** xTB or MACE-OFF first. Move to DFT
-  when the answer depends on a few kJ/mol.
-- **Charged or open-shell systems:** use a method that models charge and spin (xTB,
-  DFT, UMA with its task). A potential that models neither gives a number that ignores
-  them; say so if it is used anyway.
+- **Organic molecules, conformations, vibrations:** xTB or MACE-OFF are usually enough;
+  DFT matters when the answer depends on a few kJ/mol.
+- **Charged or open-shell systems:** xTB, DFT and UMA with its task model charge and
+  spin. A potential that models neither gives a number that ignores them.
 - **Metals and crystals:** periodic methods or potentials trained on crystals; EMT only
   for testing.
 - **Spectra:** IR needs a dipole (xTB or DFT). X-ray absorption needs its own program
@@ -35,15 +34,16 @@ Rules of thumb:
 - **Adsorption in porous solids:** classical Monte Carlo with a force field (see
   `adsorption`), not electronic structure.
 
-## When the person did not say
+## Cost and choice
 
-Pick the cheapest level that can answer the question, say which and why in one line, and
-offer the next level up if the result is close to a decision. When the choice changes the
-answer (a small energy difference, an open-shell state), ask with `ask_user` before a long
-calculation.
+The cheapest level that can answer the question is often enough; a result close to a
+decision is where the next level up changes things. When the level changes the answer (a
+small energy difference, an open-shell state) and the calculation is long, the choice is
+one the person may want to make (`ask_user`).
 
 ## Compare like with like
 
 Energies are only comparable at the same level of theory, basis, charge, spin and
-settings. Never subtract energies from two methods. Record the method, model or
-functional, basis, charge, multiplicity and every non-default setting with each number.
+settings; a difference of energies from two methods is meaningless. A number is
+reproducible with its method, model or functional, basis, charge, multiplicity and every
+non-default setting.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "computational-chemistry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Computational chemistry method for any molecule or crystal, independent of program: the method ladder, geometry and frequencies (convergence, minima and saddle points), thermochemistry and reaction energies computed from per-species results, X-ray absorption (XANES), gas adsorption, and which view suits which result.",
   "author": {
     "name": "IoWarp Team"

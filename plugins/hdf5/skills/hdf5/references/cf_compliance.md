@@ -21,7 +21,7 @@ CF (Climate and Forecast) Conventions are a metadata standard that makes scienti
 
 The audience most affected: **THREDDS, ERDDAP, OPeNDAP, Panoply, xarray + cf_xarray, and any analysis code that relies on automatic unit/coordinate detection**. Non-compliance doesn't necessarily mean the data is wrong; it means tools can't interpret it automatically.
 
-CF compliance is versioned (`CF-1.6` through `CF-1.12`). Files should declare their version in the root `Conventions` attribute. When a file declares no version, check against the latest released CF version (1.12) but note that many older files were written against 1.6 or 1.7.
+CF compliance is versioned (`CF-1.6` through `CF-1.12`). Files should declare their version in the root `Conventions` attribute. A file that declares no version can be checked against the latest released CF version (1.12), though many older files were written against 1.6 or 1.7.
 
 Complex-valued variables: CF/netCDF files still use the nc-complex compound convention; files using the native `H5T_COMPLEX` class (HDF5 2.0+) need HDF5 >= 2.0 readers. h5py 3.16 can write C99 complex but still defaults to compound.
 
@@ -40,7 +40,7 @@ Complex-valued variables: CF/netCDF files still use the nc-complex compound conv
 - Informal unit names (`deg C` vs. `degrees_Celsius`, `m/s` vs. `m s-1`)
 - Missing entirely on a variable the author considered "obvious"
 
-**Can it be inferred?** Often yes — if `standard_name` is present, the canonical units are implied by the CF standard name table (e.g., `sea_surface_height_above_geoid` → `m`). But an agent should not silently substitute inferred units; always flag the discrepancy.
+**Can it be inferred?** Often yes — if `standard_name` is present, the canonical units are implied by the CF standard name table (e.g., `sea_surface_height_above_geoid` → `m`). But inferred units are an inference, not the file's statement; substituting them silently hides the discrepancy.
 
 ---
 
@@ -50,7 +50,7 @@ Complex-valued variables: CF/netCDF files still use the nc-complex compound conv
 
 **Scientific impact**: Without `standard_name`, tools cannot automatically identify what a variable represents. ERDDAP variable matching, cross-dataset aggregation, and semantic search all depend on it. A file with `zeta` as a variable name is opaque; a file with `standard_name = sea_surface_height_above_geoid` is unambiguous.
 
-**Can it be inferred?** Sometimes from `long_name` or variable name, but it requires domain knowledge. Do not guess — a wrong `standard_name` is worse than a missing one because it silently mislabels data. Flag as "needs data producer input."
+**Can it be inferred?** Sometimes from `long_name` or variable name, but it requires domain knowledge. A guess is risky — a wrong `standard_name` is worse than a missing one because it silently mislabels data. It needs data producer input.
 
 **Canonical units**: Each standard name has a defined canonical unit. If `standard_name` is present but `units` is missing, the canonical units are the correct default.
 
@@ -64,7 +64,7 @@ Complex-valued variables: CF/netCDF files still use the nc-complex compound conv
 
 **Calendar (§4.4.1)**: If missing, CF specifies the default is `standard` (mixed Julian/Gregorian, switching in October 1582); `proleptic_gregorian` is a different, separate value. The two agree for dates after 1582, so the default is almost always safe for modern observational data. For climate model output, calendars like `360_day`, `noleap`, or `all_leap` are common and **must** be declared — otherwise model time coordinates will be decoded incorrectly.
 
-**Can calendar be inferred?** For observational/reanalysis data, `standard` is a safe assumption. For model output, do not assume — ask the data producer or check the model documentation.
+**Can calendar be inferred?** For observational/reanalysis data, `standard` is a safe assumption. For model output, the calendar is not safe to assume; the data producer or the model documentation knows it.
 
 ---
 
@@ -144,7 +144,7 @@ Group gaps that share a root cause. For example, a malformed time units string s
 
 **Can often be inferred by an agent (with appropriate caveats):**
 - `calendar = standard` for observational files if no evidence of a model calendar
-- Canonical `units` from a present `standard_name` (always flag the inference)
+- Canonical `units` from a present `standard_name` (an inference, distinct from a stated unit)
 - Whether `_FillValue` is a sentinel (look for values far outside physical range)
 - Whether a file is UGRID-extended CF vs. plain CF (check `Conventions` attribute for UGRID token)
 

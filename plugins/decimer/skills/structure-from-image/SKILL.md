@@ -10,15 +10,14 @@ keywords: [decimer, ocsr, image, smiles, structure recognition, level:L2]
 `image_to_smiles` reads one drawn structure with the DECIMER model and checks the SMILES
 with RDKit. Its result is **the model's reading**, not a fact.
 
-1. If the image holds several structures or text, crop to one first (`crop_image`, in
-   pixels or fractions). Look at the image yourself (`view_image`) to choose the box.
-2. Run `image_to_smiles`. Read its confidence and any RDKit problem.
-3. Show the person the reading before using it: the SMILES, formula and, when the Burette
-   connector is enabled, open it in Ketcher (`open_ketcher` seeded with the SMILES) so they
-   can compare it with the picture and correct it. Use the corrected structure
-   (`get_ketcher_structure`) if they change it.
-4. Low confidence, an invalid SMILES, stereochemistry the drawing does not show clearly,
-   abbreviations (Ph, Boc, R groups) or a Markush structure: say what is uncertain and ask.
+- The model reads one structure at a time. An image with several structures or text reads
+  after cropping to one (`crop_image`, in pixels or fractions); `view_image` shows the
+  image to choose the box.
+- `image_to_smiles` returns a confidence and any RDKit problem alongside the SMILES.
+- The person can compare the reading with the picture: the SMILES and formula, and, when
+  the Burette connector is enabled, Ketcher (`open_ketcher` seeded with the SMILES), where
+  they can correct it; `get_ketcher_structure` returns their corrected structure.
+- Low confidence, an invalid SMILES, stereochemistry the drawing does not show clearly,
+  abbreviations (Ph, Boc, R groups) and Markush structures are where readings go wrong.
 
-The first call downloads the model (about 285 MiB, a couple of minutes); say so before it
-starts.
+The first call downloads the model (about 285 MiB, a couple of minutes).

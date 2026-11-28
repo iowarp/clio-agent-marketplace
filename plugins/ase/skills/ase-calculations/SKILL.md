@@ -10,8 +10,8 @@ keywords: [ase, xtb, mace, uma, nwchem, orca, optimization, frequencies, level:L
 Structures travel as files. Every tool takes a structure file (XYZ, SDF/MOL, PDB, CIF,
 ASE .traj, POSCAR) and returns a `structure` record (path, formula, atom count, hash) for
 each file it writes; calculations also return `results_file` (result.json). Outputs land in
-the workspace under `chemistry/ase/`; nothing is overwritten. Pass paths from one tool to
-the next; do not retype coordinates.
+the workspace under `chemistry/ase/`; nothing is overwritten. Paths pass from one tool to
+the next; coordinates need no retyping.
 
 ## Tools and when
 
@@ -29,7 +29,7 @@ the next; do not retype coordinates.
 
 - `calculator`: `{type: 'xtb'}` (GFN2-xTB), `{type: 'mace'}` (MACE-OFF23 small),
   `{type: 'uma'}`, `{type: 'nwchem', method, basis}`, `{type: 'orca', method, basis}`;
-  `emt` only for tests. Choose with the `method-ladder` skill. MACE also takes a
+  `emt` is for tests. `method-ladder` compares them. MACE also takes a
   `model`: `mace-off-small|medium|large`, `mace-mp-small|medium|medium-mpa-0` (with an
   optional `dispersion: true`), `mace-omol-extra-large` or a `.model` path.
 - `charge` and `multiplicity` go to the calculator and the thermochemistry; the result
@@ -42,8 +42,8 @@ the next; do not retype coordinates.
   of energy and force per step, linked to the trajectory frames), `frequencies.csv`,
   `modes/mode_NNN.xyz` (one animation per mode), IR CSVs, `result.json`.
 
-Then check the result with `geometry-and-frequencies`. Show structures, trajectories and
-modes in the Burette viewer when it is enabled (`open_structure`, `play_mode`).
+`geometry-and-frequencies` covers checking a result. The Burette viewer, when enabled,
+shows structures, trajectories and modes (`open_structure`, `play_mode`).
 
 ## First use and missing programs
 
@@ -51,12 +51,13 @@ xTB, MACE and UMA build their environment the first time they are used (seconds 
 minutes; progress is reported). `calculators` says what is ready. A typed error names
 what is missing:
 
-- `binary_missing` for NWChem or ORCA: use the nwchem or orca plugin's skill, or pick a
-  calculator that is ready and say so. When the person has the program, ask for its path
-  and set the connector's program value yourself (`set_connector_value`).
+- `binary_missing` for NWChem or ORCA: the nwchem and orca plugins' skills cover the
+  program, and a calculator that is ready is the alternative. A program the person
+  already has is reached through the connector's program value (`set_connector_value`)
+  set to its path.
 - `hf_token_missing`: UMA needs a Hugging Face token whose account accepted the UMA
-  licence. Ask once with `offer_plugin` (plugin `ase`, your reason, `needs` with the
-  token's need from the listing's `optional_needs`): the person types it into the card,
-  never into the chat or an environment variable. When they have none, pick a calculator
-  that is ready and suits the system (see `method-ladder`) and say so.
+  licence. `offer_plugin` (plugin `ase`, a reason, `needs` with the token's need from the
+  listing's `optional_needs`) raises a card the person types it into; a token never goes
+  into the chat or an environment variable. Without one, a ready calculator that suits
+  the system (see `method-ladder`) is the alternative.
 - `dipole_unavailable`: IR needs xtb, nwchem or orca.

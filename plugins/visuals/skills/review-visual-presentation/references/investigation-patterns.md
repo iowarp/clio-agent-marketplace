@@ -2,43 +2,43 @@
 
 ## Map: which storm passed near Chicago?
 
-Inspect the archive's time, position and storm-identity columns and the
-question's meaning of "near". Show a useful period and complete tracks from
-the registered data. Narrow the region and time through the declared query
-bindings; center or zoom the map only if its schema exposes that control.
-Inspect the resulting view, select a candidate and inspect its real records.
-Check distance and time numerically before naming the storm. A cropped track
-or nearest-looking line alone cannot establish the answer. An annotated
-location or track can make the explanation easy to inspect.
+The archive's time, position and storm-identity columns, and what the question
+means by "near", decide what can answer it. A useful period with complete
+tracks from the registered data gives the comparison. The declared query
+bindings narrow region and time; the map can be centered or zoomed only if its
+schema exposes that control. A candidate's real records, selected from the
+view, carry its distance and time, and the numbers settle which storm it was.
+A cropped track or nearest-looking line alone cannot establish the answer. An
+annotated location or track makes the explanation easy to inspect.
 
 ## Chart: is this relationship correlated or linear?
 
-Inspect units, paired observations, missingness and grouping before choosing
-encodings. Start with a scatter plot and a readable subset or aggregation
-when overplotting obscures it. Change filters, groups or scales deliberately
-and inspect each resulting view; retain counts and identify the shown slice.
-Calculate the relevant correlation and fitted relationship from the data.
-Compare a trend and residual view when the linear form matters. Distinguish
-an apparent pattern from a numerical result and from any causal claim.
-Mark an outlier or range to explain what the evidence changes.
+Units, paired observations, missingness and grouping shape which encodings
+work. A scatter plot is the usual starting view, with a readable subset or
+aggregation when overplotting obscures it. Each change of filter, group or
+scale produces a different view, and its counts and slice identify what it
+shows. The correlation and fitted relationship come from the data; a trend and
+residual view show whether the linear form holds. An apparent pattern, a
+numerical result and a causal claim are three different things. A marked
+outlier or range shows what the evidence changes.
 
 ## Pointing at a chart
 
 The existing chart component can use a guarded Vega-Lite layered spec.
 `examples/annotated-scatter.json` shows an unfilled red circle and label
 around an existing observation using its stable ID, with all base rows kept.
-Its names and rows are synthetic examples. Adapt fields and labels to the
-actual data, preserve the named `source` data input, and run the catalog's
-chart guard. The mark's size is a screen area; its center follows data scales.
-This is not a generic canvas-overlay API.
+Its names and rows are synthetic examples; the fields and labels come from the
+actual data, the named `source` data input stays, and the catalog's chart
+guard checks the result. The mark's size is a screen area; its center follows
+data scales. This is not a generic canvas-overlay API.
 
 ## Dashboard: make a dense report useful
 
-Review the overview at docked width, then each relevant tab and expanded
-view. Look for repeated graphs, unreadable legends, clipped labels and views
-that do not help a reader make the intended comparison. Reduce redundant
-content, add concise interpretation, and put useful detail behind supported
-navigation or optional-view controls. The agent chooses the presentation;
-the person can reveal the detail. Inspect linked selections and shared
-controls so a change remains meaningful across views. For a saved report,
-retain source lineage and publish the corrected definition as a new version.
+The overview at docked width, each relevant tab and the expanded view can each
+show different problems: repeated graphs, unreadable legends, clipped labels
+and views that do not help a reader make the intended comparison. Less
+redundant content, concise interpretation, and useful detail behind supported
+navigation or optional-view controls make it readable. The agent chooses the
+presentation; the person can reveal the detail. Linked selections and shared
+controls keep a change meaningful across views. A saved report keeps its
+source lineage, and a corrected definition is published as a new version.

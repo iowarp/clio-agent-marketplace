@@ -9,23 +9,22 @@ keywords: [fdmnes, spack, install, level:L2]
 The FDMNES connector runs an FDMNES program already on the machine and never downloads
 one. Reading, normalizing and comparing spectra work without it; only `run_xanes` needs it.
 
-## Look first
+## Where FDMNES may already be
 
 `binary_missing` means only that the connector found no FDMNES where it looks: its **FDMNES
 program** value and `fdmnes` or `fdmnes_linux` on PATH. FDMNES may be elsewhere: a Spack
 install (`spack find -p fdmnes`, or this skill's own `~/.local/opt/clio-spack`), a cluster
-module (`module avail fdmnes`), or an unpacked download in another folder. Before offering a
-build, look there yourself, and ask the person when you cannot tell. When you find one, ask
-with `ask_user` whether to use it (name its path). Once the person agrees, set **FDMNES
-program** (`fdmnes`) to it with `set_connector_value`; the value belongs to this conversation,
-so tell them they can save it as their default in the FDMNES connector's settings.
+module (`module avail fdmnes`), or an unpacked download in another folder. Using one found
+there is the person's choice (`ask_user`, naming its path). **FDMNES program** (`fdmnes`)
+set with `set_connector_value` belongs to this conversation; the FDMNES connector's
+settings hold a saved default.
 
-## Ask first
+## The person's choice
 
-Ask once with `ask_user` (a choice), naming what you would do: **build it now** (about a
+Installing is the person's decision (`ask_user`, a choice): **build it now** (about a
 minute to compile, a few more the first time Spack builds its maths libraries, under 1 GB
-in one folder), **I'll install it myself** (give the steps and wait), or **skip computing
-spectra** (say what stays unverified). If they decline, do not ask again in this
+in one folder), **I'll install it myself** (with the steps), or **skip computing
+spectra** (spectra then stay uncomputed). A declined build stays declined for the
 conversation.
 
 ## Build it with Spack, in one folder
@@ -53,16 +52,16 @@ $SPACK install fdmnes
 mkdir -p "$HOME/.local/bin" && ln -sf "$($SPACK location -i fdmnes)/bin/fdmnes" "$HOME/.local/bin/fdmnes"
 ```
 
-It needs a C and Fortran compiler (gcc and gfortran). If `compiler find` finds no Fortran
-compiler, say so: installing one needs the system's package manager (for example
+It needs a C and Fortran compiler (gcc and gfortran). When `compiler find` finds no
+Fortran compiler, one comes from the system's package manager (for example
 `apt-get install gfortran`, which needs administrator rights; CLIO asks the person before
 running a command outside the sandbox) or conda (`conda install -c conda-forge
-gfortran`). Run long builds with progress visible; a failed build keeps its log in the
-stage folder: read it and report the error.
+gfortran`). Long builds can run with progress visible; a failed build keeps its log in the
+stage folder, with the error.
 
 FDMNES's source link always holds its newest revision, so the recipe's checksum fails
-after FDMNES releases a new one. Report that error as it is; do not bypass the checksum.
+after FDMNES releases a new one. That error is what it says; do not bypass the checksum.
 
 ## Check
 
-Call `fdmnes_status`: it finds the program with no setting. Then run the calculation again.
+`fdmnes_status` finds the program with no setting.

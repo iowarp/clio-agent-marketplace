@@ -7,23 +7,19 @@ keywords:
 - scientific-method
 ---
 
-Use this skill once relevant sources have been gathered and the question is
+This skill applies once relevant sources have been gathered and the question is
 whether the collected literature actually settles a claim. It synthesizes what
-is known; it does not perform new discovery. Route missing sources back to
-`paper-search`.
+is known; it does not perform new discovery, which is `paper-search`.
 
-Organize the sources around the decision, not around authors. For each
-consequential claim, record which fetched sources support it, under what
-material, condition, and population bounds, and where sources disagree.
-Distinguish primary measurement from review restatement, and full-text
-evidence from abstract-only evidence.
+Sources organized around the decision, not around authors, show for each
+consequential claim which fetched sources support it, under what material,
+condition, and population bounds, and where sources disagree. Primary
+measurement differs from review restatement, and full-text evidence from
+abstract-only evidence.
 
-State what the literature establishes, what remains contested, and what is
-simply absent. Treat novelty as an evidence question: a claim is novel only
-when a bounded search failed to find prior work, never because none was
-recalled. Preserve every contradiction and open question explicitly rather
-than resolving it by picking the most confident source.
-
-Return the synthesis, the claim-to-source map, unresolved disagreements,
-evidence gaps that block the decision, and the exact next questions for
-`paper-search` or `research-gap-analysis`.
+The literature establishes some things, leaves others contested, and is simply
+silent on others. Novelty is an evidence question: a claim is novel only when a
+bounded search failed to find prior work, never because none was recalled. A
+contradiction resolved by picking the most confident source is lost; it and
+every open question remain part of the synthesis, and the gaps that block the
+decision are questions for `paper-search` or `research-gap-analysis`.

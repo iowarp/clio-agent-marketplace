@@ -4,16 +4,16 @@ description: Use after any structure optimization, frequency, thermochemistry or
 keywords: [chemistry, convergence, imaginary frequency, transition state, units, level:L1]
 ---
 
-# Check a calculation before you report it
+# What a calculation's output shows
 
-A finished calculation is not a result yet. Read its output and check each point below;
-report what you checked and what you could not.
+A finished calculation is not a result yet: its output shows whether it means what it
+claims, and some points cannot be checked from one calculation.
 
 ## Did it converge?
 
 - **Optimization:** converged flag, the final largest force against the threshold, and
-  the number of steps against the limit. Not converged: say so, restart from the last
-  frame, never report its geometry as optimized.
+  the number of steps against the limit. An unconverged optimization's geometry is not
+  optimized; its last frame is a starting point for a restart.
 - **SCF or electronic structure:** the program's own convergence message. An unconverged
   SCF makes every later number suspect.
 
@@ -21,16 +21,16 @@ report what you checked and what you could not.
 
 Count the imaginary frequencies (reported as negative or with an `i`).
 
-| Imaginary modes | Meaning | Next step |
+| Imaginary modes | Meaning | What resolves it |
 | --- | --- | --- |
-| 0 | a minimum | report it |
-| 1, wanted a minimum | a saddle point | look at the mode (play it); displace along it both ways, re-optimize, and compare |
-| 1, wanted a transition state | a candidate transition state | check the mode connects the intended minima |
-| more than 1 | a higher-order saddle point or a poor optimization | re-optimize tighter, or displace along each mode |
+| 0 | a minimum | |
+| 1, wanted a minimum | a saddle point | the mode (played) shows the motion; displacing along it both ways and re-optimizing finds the minima |
+| 1, wanted a transition state | a candidate transition state | whether the mode connects the intended minima |
+| more than 1 | a higher-order saddle point or a poor optimization | a tighter re-optimization, or displacement along each mode |
 
 Very small imaginary modes (under about 50 cm⁻¹) often come from a loose optimization or
-numerical noise; tighten and recompute before interpreting them. Thermochemistry from a
-structure with imaginary modes leaves them out; say so.
+numerical noise, and tighter settings remove them. Thermochemistry from a structure with
+imaginary modes leaves them out.
 
 ## Charge, spin, composition
 
@@ -42,12 +42,11 @@ structure with imaginary modes leaves them out; say so.
 
 ## Units and conditions
 
-State units with every number: eV or kJ/mol (1 eV = 96.485 kJ/mol), cm⁻¹, Å, degrees, K,
-Pa. Thermochemistry depends on temperature and pressure; state both. Free energies need
-the standard state stated.
+A number means something with its unit: eV or kJ/mol (1 eV = 96.485 kJ/mol), cm⁻¹, Å, degrees, K,
+Pa. Thermochemistry depends on temperature and pressure, and free energies on the
+standard state.
 
-## What to say
+## What one calculation cannot settle
 
-One line per check: what was checked and its outcome, and a list of what was not checked
-(a conformer search, a basis-set check, a larger method). Never present a single
-calculation as the answer to a question it cannot settle.
+A single calculation does not check its conformer, its basis set or a larger method;
+those are separate calculations.

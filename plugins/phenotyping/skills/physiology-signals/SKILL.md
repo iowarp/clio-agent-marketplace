@@ -15,21 +15,21 @@ keywords:
 
 - **Dark-adapted** measurements give the maximum quantum yield of PSII,
   Fv/Fm = (Fm - Fo) / Fm. Healthy leaves of most species sit in a narrow
-  high band; lower values indicate stress or damage. Check the protocol: was
-  the plant dark-adapted, and for how long? A value labelled Fv/Fm from a
+  high band; lower values indicate stress or damage. The protocol says whether
+  the plant was dark-adapted, and for how long; a value labelled Fv/Fm from a
   light-adapted step is not Fv/Fm.
 - **Light-adapted** protocols (light curves, quenching analysis) give
   operating efficiency and quenching parameters (PhiPSII / QY at a step, NPQ,
-  qP, qN, qL, Y(NPQ), Y(NO)). Values depend on the light step; compare the
-  same step across plants. Step names usually encode the light level or the
-  recovery phase -- read the protocol docs; describe your reading as uncertain if
-  the export does not define them.
+  qP, qN, qL, Y(NPQ), Y(NO)). Values depend on the light step, so only the
+  same step compares across plants. Step names usually encode the light level or
+  the recovery phase, as the protocol docs define; when the export does not
+  define them, any reading of them is uncertain.
 - **Raw fluorescence levels** (Fo, Fm, Ft) are in arbitrary units that depend
-  on camera gain and leaf area; use ratios for comparisons.
+  on camera gain and leaf area; ratios are what compare.
 - **Plausibility**: yields are fractions in [0, 1]; values outside are
-  artefacts (division by near-zero on dim pixels, empty masks). Check vendor
-  whole-plant values against mask-median values when both exist.
-- **Timing**: fluorescence changes over the day; compare same-session values.
+  artefacts (division by near-zero on dim pixels, empty masks). Vendor
+  whole-plant values and mask-median values cross-check each other when both exist.
+- **Timing**: fluorescence changes over the day; same-session values compare.
 
 ## Reflectance spectra and indices
 
@@ -40,11 +40,11 @@ keywords:
   plateau, and **water absorption** dips in the shortwave infrared (near 1450
   and 1940 nm). A spectrum without these is not vegetation or not reflectance.
 - **Indices** (NDVI, PRI, PSRI, SIPI, MCARI, OSAVI and variants) differ
-  between implementations: check the formula and the exact bands in the docs
-  before comparing to literature values. Record the formula and source references
-  with the analysis; a card is optional.
-- **Wavelength labels**: parse wavelengths from metadata or column names; look
-  for near-duplicate band columns (see `onboard-dataset`).
+  between implementations: the formula and the exact bands in the docs decide
+  whether a literature value is comparable, and they belong with the analysis
+  (a card is optional).
+- **Wavelength labels**: wavelengths come from metadata or column names, which
+  can contain near-duplicate band columns (see `onboard-dataset`).
 - **Water signals** from a few bands (ratios of reflectance near 950-970 nm
   vs near 1450 nm, or similar) are relative indicators, not percent water
   content, unless the docs give a calibration.
@@ -52,8 +52,8 @@ keywords:
 ## Units
 
 - `a.u.` (arbitrary units), vendor ratios, and indices are relative: compare
-  within one instrument, protocol, and session; do not compare magnitudes
+  within one instrument, protocol, and session; magnitudes do not compare
   across instruments or facilities.
-- Report the method (sensor, protocol step, mask, aggregation) with every
-  result using the available metadata or analysis notes. An `observations`
-  table or a column named `method` is not required.
+- A result without its method (sensor, protocol step, mask, aggregation), from
+  the available metadata or analysis notes, is not interpretable. An
+  `observations` table or a column named `method` is not required.

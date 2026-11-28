@@ -16,26 +16,25 @@ relay's long-lived processes when the host closes.
 ## Relay is the way to a site
 
 Relay owns the connection to every site the person has set up, whatever its
-transport. Reach a configured site only through relay's tools, never from a
-shell tool: run no `ssh`, `scp`, `rsync` or scheduler command (`sbatch`,
-`squeue`, `qsub`) for it, do not check its connection, host name or
-credentials yourself, and do not probe the site's system packages (`apt`,
-`dnf`, `yum`, `brew`): relay keeps the person's guard, their asks and the
-record of what ran. `describe(site=...)` reaches the site and, when relay
-cannot, says why with a typed refusal or the sign-in it needs. A site's
-transport and config are how relay reaches it, not something to open or test.
-Software on a site is installed by JARVIS through relay's `install` (or a
-`run`'s install step), from the site's Spack, modules and MPI; never by hand.
+transport, and it keeps the person's guard, their asks and the record of what
+ran. An `ssh`, `scp`, `rsync` or scheduler command (`sbatch`, `squeue`,
+`qsub`) from a shell tool reaches the site without any of those. A site's
+transport and config are how relay reaches it: `describe(site=...)` reaches
+the site and, when relay cannot, says why with a typed refusal or the sign-in
+it needs. Software on a site is installed by JARVIS through relay's `install`
+(or a `run`'s install step), from the site's Spack, modules and MPI, which is
+what JARVIS tracks; the site's system packages (`apt`, `dnf`, `yum`, `brew`)
+are its admins'.
 
-When the site the person names is not in `describe`'s list, or no site is set
-up yet, ask the person to add it on the Compute page, then call `describe`
-again. Do not set it up yourself.
+A site the person names that is not in `describe`'s list, or the first site
+of all, is one the person adds on the Compute page; `describe` lists it from
+then on.
 
 ## Reads never ask
 
 Four tools only read: `describe`, `exec_read`, `files_read` and
-`packages_read`. They change nothing and never ask the person, so use them
-freely, in planning too, and keep `exec`, `files` and `packages` for changes.
+`packages_read`. They change nothing and never ask the person, so they suit
+planning too; `exec`, `files` and `packages` are for changes.
 
 - `describe` lists sites, describes one (`site`: its routes, whether its
   JARVIS root is set up, and the packages the root holds) and observes a job
@@ -56,16 +55,15 @@ freely, in planning too, and keep `exec`, `files` and `packages` for changes.
 - `files_read` lists, stats, reads and checks files (`op` list, stat, read,
   has).
 
-## Start with describe
+## describe
 
-Call `describe` before anything else. Without arguments it lists the sites;
-with `site` it describes one site and its routes. Pick a site from that list;
-do not guess site names.
+Without arguments `describe` lists the sites, by the names the other tools
+take; with `site` it describes one site and its routes.
 
 ## Read what the site knows about itself
 
-A site's facts are the site's own, not relay's or this skill's. Before you
-choose a queue, a node count, storage or an MPI for a run, read them from
+A site's facts are the site's own, not relay's or this skill's. The ones that
+bear on a queue, a node count, storage or an MPI for a run are in
 `describe(site=...)`:
 
 - `facts.sched` is JARVIS's scheduler report for the site: its provider,
@@ -73,38 +71,36 @@ choose a queue, a node count, storage or an MPI for a run, read them from
   and memory per node, time limits) are the result's `partitions`, and the MPI
   JARVIS found is its `mpi`. Before relay has placed JARVIS on a site, the
   same partitions come straight from the scheduler (`facts.sched.source` is
-  `sinfo`, read at `observed_at`); describe the site again once JARVIS is
-  placed, and again before you size a job from an answer that is old, since
-  idle nodes change by the minute. A run's card also keeps its partition's
-  facts as they were when the card was made, in `result.partition_facts`.
+  `sinfo`, read at `observed_at`); once JARVIS is placed, `describe` gives
+  JARVIS's report. Idle nodes change by the minute, so an old answer's idle
+  counts are stale. A run's card also keeps its partition's facts as they were
+  when the card was made, in `result.partition_facts`.
 - `facts.resource_graph` is the site's JARVIS resource graph: where it is, its
   `source`, and under `net` the data and control networks JARVIS launches MPI
   on. A graph the site publishes (`source` `site`, named by the site's
-  `$JARVIS_RESOURCE_GRAPH`, or `setting`) is the site's own: use it as it is,
-  and never collect into it or edit it. Only relay's own graph (`source`
-  `relay`) offers `collect`, the job that fills an empty `net`; offer it to
-  the person and run it once they agree. A `net` in JARVIS's older list form
+  `$JARVIS_RESOURCE_GRAPH`, or `setting`) is the site's own and offers no
+  `collect`. Relay's own graph (`source` `relay`) offers `collect`, a job on
+  the site that fills an empty `net`. A `net` in JARVIS's older list form
   reads `form: legacy_list` with the advisory `resource_graph_net_legacy`: the
-  net is there, nothing needs collecting first, and the first multi-node
-  launch collects it again into relay's own home, never into the site's file.
+  net is there, and the first multi-node launch collects it again into relay's
+  own home, not into the site's file.
 - A site skill is what the person or the site's admins wrote down about the
-  machine. `facts.sched.site_skills` lists them; read one with the JARVIS
-  command below (`rg skill show NAME +json`).
+  machine. `facts.sched.site_skills` lists them; the JARVIS command below
+  reads one (`rg skill show NAME +json`).
 - The site can also carry the person's own guide in relay. The result then
-  has a second text block holding it, and `skill.text` reads `(below)`. When
-  the `skill` field says relay cannot find the guide, tell the person. Relay
-  also serves guides as MCP resources (`relay://sites/<site>/skill`,
-  `relay://skills/<name>`); `files` refuses `relay://` URIs, so use
-  `describe`.
+  has a second text block holding it, and `skill.text` reads `(below)`; when
+  relay cannot find the guide, the `skill` field says so. Relay also serves
+  guides as MCP resources (`relay://sites/<site>/skill`,
+  `relay://skills/<name>`); `files` refuses `relay://` URIs, and `describe`
+  reads them.
 
-To change a site fact, run JARVIS on the site with `exec`, giving
+A site fact changes through JARVIS on the site with `exec`, giving
 `facts.jarvis.exec` followed by JARVIS's own arguments, such as `rg net set
 --data <network> --reason "..." +json` or `rg skill set NAME --text "..."
-+json`. Do it only after the person confirms the fact, and say who
-confirmed it with `--set_by`. On a guarded site, give `exec` a `plan` that
-says what the command changes; relay asks the person before it runs. Do not invent facts about a site, and do not
-work them out by hand with `ls`, `module` or interface listings when
-JARVIS already reports them.
++json`. A recorded fact is one the person confirmed, and `--set_by` says who.
+On a guarded site, `exec` takes a `plan` that says what the command changes,
+and relay asks the person before it runs. What `ls`, `module` or interface
+listings would show by hand, JARVIS already reports.
 
 To read site facts, give `exec_read` `facts.jarvis.read` followed by exactly
 one of `sched info +json`, `rg facts show +json`, `rg skill list +json` or `rg
@@ -118,97 +114,88 @@ guarded site. Anything else, answers included, goes through `exec` with
   a task; otherwise it waits up to `wait_s` and returns the operation, which
   `describe(job=...)` observes.
 - `exec` runs one short command on the site's login side and returns bounded
-  output. Use `exec_read` when the command only reads.
-- `files` writes, stages and removes small files; read them with
-  `files_read`. To move a file that is on this machine, such as a person's STL
-  or a result to open locally, use `files(op="upload", local_path=...,
-  path=...)` or `files(op="download", path=..., local_path=...)`, at any size.
-  Relay streams the bytes itself, checks the SHA-256 on the site and returns
-  only metadata. Never move a file as `content_base64` chunks, from a script or
-  otherwise, and never read it back to check it: the result's `sha256` and
-  `verified` already say it arrived. `local_path` is absolute on the machine
-  relay runs on; when relay cannot open it, the refusal says so, and the person
-  has to make the path reachable for relay. `stage` returns the
-  SHA-256 a JobSpec input names. To hand a staged file to a package, set the
-  package parameter to the input's name (such as `body.stl`); relay puts in its
-  path on the site. Never write a directory placeholder around it.
+  output. `exec_read` covers commands that only read.
+- `files` writes, stages and removes small files; `files_read` reads them. A
+  file on this machine, such as a person's STL or a result to open locally,
+  moves with `files(op="upload", local_path=..., path=...)` or
+  `files(op="download", path=..., local_path=...)`, at any size. Relay streams
+  the bytes itself, checks the SHA-256 on the site and returns only metadata:
+  the result's `sha256` and `verified` say it arrived. `content_base64` chunks
+  carry every byte through the conversation instead. `local_path` is absolute
+  on the machine relay runs on; when relay cannot open it, the refusal says
+  so, and the person has to make the path reachable for relay. `stage`
+  returns the SHA-256 a JobSpec input names. A package parameter set to the
+  input's name (such as `body.stl`) gets the staged file: relay puts in its
+  path on the site.
 - `serve` starts a job that serves ports. Its task completes when the service
   is ready, with the endpoint in the result, while the service keeps running
-  until it is stopped. Each port in the endpoint has an `address` (`host:port`):
-  hand that to the client. The port is the one the service bound, as JARVIS
-  reports it; never choose one yourself. The task completes within seconds of
-  the service coming up, while its job still runs: connect to the endpoint or
-  open the view right away, in the same turn, since a short job may end soon.
-  The task ending at ready says the service is up, not that the run is done.
-  To wait for the run, call `serve(service=<operation>, until="steps")` once
-  the service is ready and the view is open. With tasks it returns the task
-  `<operation>.steps`, which completes when every compute step has ended, or
-  the job has, and carries `until` and the operation's outputs: say what you
-  are waiting for and end the turn. Without tasks it waits up to `wait_s`
-  (at most 300 s); call it again while `until.ended` is false. Where `serve`
-  has no `until`, wait on a live view's `watch_steps` (it returns when the run
-  is `complete` or `finished`) or relay's notice when the operation changes.
-  Never wait by reading: no `run_code` scripts, `cat` or `exec` reads of a
-  result file, and no `sacct`. See "Long runs and failed runs".
-  To serve one package beside a run, such as pvserver beside gray_scott, give
-  both in one `serve` pipeline, with each step's `host_slice` parameter placing
-  it on its own nodes of the job (a `start:end` range of node indices): give
-  the service the nodes it needs and the solver the nodes its layout was sized
-  for, without overlap. JARVIS decides which step serves from each package's
+  until it is stopped. Each port in the endpoint has an `address` (`host:port`)
+  for the client. The port is the one the service bound, as JARVIS reports it.
+  The task completes within seconds of the service coming up, while its job
+  still runs, and a short job may end soon after. The task ending at ready says
+  the service is up, not that the run is done.
+  `serve(service=<operation>, until="steps")` waits for the run. With tasks it
+  returns the task `<operation>.steps`, which completes when every compute
+  step has ended, or the job has, and carries `until` and the operation's
+  outputs; CLIO wakes the conversation when it completes. Without tasks it
+  waits up to `wait_s` (at most 300 s), and `until.ended` says whether the run
+  is over. Where `serve` has no `until`, a live view's `watch_steps` returns
+  when the run is `complete` or `finished`, and relay sends a notice when the
+  operation changes. See "Long runs and failed runs".
+  One package can serve beside a run, such as pvserver beside gray_scott, in
+  one `serve` pipeline, with each step's `host_slice` parameter placing it on
+  its own nodes of the job (a `start:end` range of node indices), the service
+  on the nodes it needs and the solver on the nodes its layout was sized for,
+  without overlap. JARVIS decides which step serves from each package's
   deployment profile.
 - The order of a pipeline's packages is the order JARVIS starts them in, not
-  the way data moves: a service starts before the solver that feeds it. When
-  you describe or draw a pipeline, take the direction from the job card's
-  `couplings` (each `from` feeds its `to`) and the components' order there,
-  which is producer first, never from the packages' order: gray_scott feeds
-  pvserver, so draw gray_scott --> pvserver. Relay fills the couplings from
-  the packages' contracts; give a job's `couplings` yourself only when a
-  contract cannot say, such as two solvers where one reads the other's output.
-- Leave a service package's `linger` at the package's default (pvserver keeps
-  serving 180 s after the run ends) unless the person asks for a longer one.
-  The linger lets a following view draw the run's last steps and the person
-  look at the final output. Never set it to 0, even when the person wants the
-  nodes back at once: the view then loses the steps it had not drawn. To free
-  the nodes as soon as the view has the last step, wait for that (the live
-  view's `watch_steps` returns `complete` or `finished`), then call
-  `cancel(operation=<the serve operation>)`: the linger ends at once, the
-  view keeps its last picture, and relay's own confirm asks the person. Do
-  this when the person asked for the nodes back; otherwise the linger ends by
-  itself.
-- A run never waits for its viewer. When you write or change a package whose
-  output a live view follows, have it write each step whole as it comes (to a
-  temporary name, then renamed) and go straight on: the view reads whatever is
-  on disk when it attaches, so early steps are not lost. Never add a ready
-  marker, a gate or a pause that holds the run until a view attaches, and never
-  a timeout that fails it when none does. Anything a package does wait on is
-  judged by progress, not by a time limit: it says what it waits on and fails
-  only when that stops changing.
+  the way data moves: a service starts before the solver that feeds it. The
+  direction is in the job card's `couplings` (each `from` feeds its `to`) and
+  the components' order there, which is producer first: gray_scott feeds
+  pvserver, so gray_scott --> pvserver. Relay fills the couplings from the
+  packages' contracts; a job's own `couplings` cover what a contract cannot
+  say, such as two solvers where one reads the other's output.
+- A service package's `linger` keeps it serving after the run ends (pvserver:
+  180 s by default), so a following view can draw the run's last steps and the
+  person can look at the final output. At 0 the view loses the steps it had
+  not drawn. `cancel(operation=<the serve operation>)` once the view has the
+  last step (the live view's `watch_steps` returns `complete` or `finished`)
+  ends the linger at once and frees the nodes; the view keeps its last
+  picture, and relay's own confirm asks the person. Otherwise the linger ends
+  by itself.
+- A run does not wait for its viewer. A package whose output a live view
+  follows writes each step whole as it comes (to a temporary name, then
+  renamed) and goes straight on: the view reads whatever is on disk when it
+  attaches, so early steps are not lost. A ready marker, a gate or a pause
+  that holds the run until a view attaches stalls it when none does, and a
+  timeout that fails it then fails a good run. Anything a package does wait
+  on is best judged by progress, not by a time limit: it says what it waits
+  on and fails only when that stops changing.
 - Runs write under the site's outputs directory, `describe`'s
-  `info.facts.outputs_dir`, which `site_clean` keeps. Leave a package's
-  `run_dir` at its default, which lands there. When you set a path for a run's
-  results yourself, put it under that directory, never under relay's own
-  directory (`~/.clio-relay`): relay refuses a job that names one.
+  `info.facts.outputs_dir`, which `site_clean` keeps, and a package's
+  `run_dir` defaults to it. Relay refuses a job that names a path under its
+  own directory (`~/.clio-relay`).
 - When another of relay's services still runs on the site, such as a viewer
   kept up for review, the new `run` or `serve` asks the person whether to end
-  it when the new job is submitted. Relay asks; never answer for them.
+  it when the new job is submitted. The ask is relay's own.
 - When relay cannot bring a running service to this machine, the result is an
   error with `result.service_error`, whose `reason` says why, while the job
   runs on. `host_key_unverified` means ssh could not check the compute node's
-  host key: tell the person what the message says, and do not retry or work
-  around the key check. Stop the job with `cancel` if the person wants that.
+  host key, a check the person's ssh setup owns; a retry meets the same check,
+  and the message says what the person would need to look at. `cancel` stops
+  the job.
 
-A refusal carries a typed reason in `structuredContent.refusal`. Read it and
-act on it: a site that needs sign-in, a missing account or an unreachable host
-are things to tell the person, not to retry.
+A refusal carries a typed reason in `structuredContent.refusal`. A site that
+needs sign-in, a missing account or an unreachable host is the person's to
+fix; a retry meets the same refusal.
 
 When JARVIS refuses a pipeline, `refusal.data.issues` lists its typed issues,
 each with `kind`, `field` and `message`, and `refusal.data.kinds` names them.
 `configuration_rule_violated`, `host_slice_invalid`, `host_slice_overlap`,
-`start_mode_invalid` and `service_port_conflict` name a parameter to change:
-change it and call again. `service_after_batch` and `service_blocks_pipeline`
-mean the steps are in the wrong order or role for a serve. `package_unloadable`
-and `deployment_contract_invalid` are faults in the package itself: tell the
-person.
+`start_mode_invalid` and `service_port_conflict` name a parameter to change.
+`service_after_batch` and `service_blocks_pipeline` mean the steps are in the
+wrong order or role for a serve. `package_unloadable` and
+`deployment_contract_invalid` are faults in the package itself.
 
 ## Size the layout from the problem and the partition
 
@@ -341,28 +328,25 @@ and every term in it comes from a measurement:
 A package's contract can say how to project its own run; the padding and the
 approval above still apply.
 
-## Find the application's package first
+## Packages are applications, cases are inputs
 
 A package is one application, written generically, and takes that
 application's own input: a LAMMPS script, a namelist, a settings file, an
 input bundle. The case the person asks for (an obstacle in a channel, a
-protein in water, a wing at an angle) is that input, which you write for them
-now; it is not a package. Before writing anything, call
-`packages_read(site=..., match="<application>")`. When the site's root holds
-a package for the application, read its `contract.yaml` (its parameters say
-which input it takes; `files_read` reads it under the package's `repo_dir`),
-then run it with the case as its input. Write a package with the
-`jarvis-package` skill only when the root holds none for the application, and
-then a generic one that takes the application's input, never one built
-around this case. A site relay set up has no jarvis-cd `builtin.*` packages:
-they are written for a person to drive and hardcode a case or a site's setup,
-so relay removes that repository. Its packages come from clio-jarvis and the
-person's own repositories. Read a builtin package in jarvis-cd's repository
-(`builtin/` in grc-iit/jarvis-cd) only as a reference for how an application
-installs and launches, and take every site fact (MPI, launcher, nodes, paths)
-from the resource graph and JARVIS, as the `jarvis-package` skill says. When
-the person wants the case again later, offer to save how you wrote it as a
-skill of their own.
+protein in water, a wing at an angle) is that input; it is not a package.
+`packages_read(site=..., match="<application>")` shows whether the site's
+root already holds a package for the application, and its `contract.yaml`
+(its parameters say which input it takes; `files_read` reads it under the
+package's `repo_dir`) says how the case goes in. The `jarvis-package` skill
+covers writing one; a package built around one case serves that case only. A
+site relay set up has no jarvis-cd `builtin.*` packages: they are written for
+a person to drive and hardcode a case or a site's setup, so relay removes that
+repository. Its packages come from clio-jarvis and the person's own
+repositories. A builtin package in jarvis-cd's repository (`builtin/` in
+grc-iit/jarvis-cd) still shows how an application installs and launches,
+while every site fact (MPI, launcher, nodes, paths) comes from the resource
+graph and JARVIS, as the `jarvis-package` skill says. How a case was written
+can become a skill of the person's own, for when they want it again.
 
 ## A site's packages
 
@@ -372,16 +356,18 @@ holds. Relay sets that root up once per site, with jarvis-cd and clio-jarvis
 at the commits its release pins. Setting up is `install`'s first step: a
 `run`, `serve` or `install` on a site that is not set up refuses and names
 that step, and `describe(site=...)` says beforehand whether the site is set
-up. A root at other pins is not set up either; the refusal and the ask say
-which pins it holds and which relay brings it to (`Update JARVIS on <site>?`). Do not place JARVIS or clio-jarvis on a site any other way.
+up. A root at other pins, including JARVIS placed any other way, is not set up
+either; the refusal and the ask say which pins it holds and which relay brings
+it to (`Update JARVIS on <site>?`).
 
-A package the person wrote reaches the site with `files`: copy its
-repository, laid out `<name>/<name>/<package>/pkg.py`, into the person's
-space on the site, then register it with
+A package the person wrote reaches the site with `files`: its repository,
+laid out `<name>/<name>/<package>/pkg.py`, copied into the person's space on
+the site, then registered with
 `packages(op="add", site=..., path="<that directory on the site>")`. It runs
 `jarvis repo add` in the site's root (`force: true` replaces a repository of
-that name) and lists the site's packages again. Never push a person's package
-to a git repository to get it onto a site, and never build an archive by hand.
+that name) and lists the site's packages again. A git push would publish the
+person's package somewhere else; `files` keeps it between this machine and
+the site.
 
 Adding runs nothing. Each package's review identity is its digest, computed
 on the site from the package as it sits in the root; on a guarded site the
@@ -392,13 +378,12 @@ as one review, so one yes covers a pipeline.
 ## Install ahead of a run
 
 When the person wants a package's software on a site before running it ("install
-gray_scott on ares, don't run anything yet"), call
-`install(site=..., package={name, parameters})`, the same `package` a run
-takes. It is
-`run`'s install step on its own, and nothing launches:
+gray_scott on ares, don't run anything yet"),
+`install(site=..., package={name, parameters})` takes the same `package` a
+run takes. It is `run`'s install step on its own, and nothing launches:
 
 - A site that is not set up gets its JARVIS root first, after the person says
-  yes. `install` does this itself; do not look for another way to place JARVIS.
+  yes; `install` does this itself.
 - JARVIS checks what the site has where the site chose (below): on the login
   node under JARVIS's limits, or inside a short job on the compute nodes, and
   the task waits while that job queues and runs. Later installs and runs of
@@ -413,54 +398,52 @@ takes. It is
   including where it builds. JARVIS then builds it where the site chose and
   checks again, and the operation completes. The approval names the
   provider Spack picked for each virtual dependency, such as fftw 2.1.5 for
-  fftw-api; pass it on as written. In a compute job, the approval names the
-  job's wall time: the build times JARVIS measured at the site, or the
-  partition's limit when part of the build was never timed there. A build
-  longer than one job needs another `install`, which builds only the rest,
-  and the approval says so. On the login node, JARVIS's own install runs
-  there under the limits JARVIS sets, as a background task with progress and
-  no time limit: a long build is expected, so keep following it and do not
-  cancel it yourself. Only the person stops it, with `install(cancel=...)`.
+  fftw-api. In a compute job, the approval names the job's wall time: the
+  build times JARVIS measured at the site, or the partition's limit when part
+  of the build was never timed there. A build longer than one job needs
+  another `install`, which builds only the rest, and the approval says so. On
+  the login node, JARVIS's own install runs there under the limits JARVIS
+  sets, as a background task with progress and no time limit: a long build is
+  expected, and it runs until it is done or `install(cancel=...)` stops it.
 
-Like `run` it is a task: follow it with the task, or with `describe(job=...)`,
-and cancel it with `install(cancel=...)`. To install several packages, such
-as everything a plan runs, make one `install` call that lists them all
-in `packages`, the same steps the later `run` or `serve` takes. The person
-then gets one review of the packages, one set of JARVIS questions and one
-build, instead of one of each per package. A later `run` of the same
-packages finds the software installed and goes straight to its job.
+Like `run` it is a task, followed with the task or with `describe(job=...)`
+and cancelled with `install(cancel=...)`. One `install` call can list several
+packages in `packages`, such as everything a plan runs, the same steps the
+later `run` or `serve` takes. The person then gets one review of the
+packages, one set of JARVIS questions and one build, instead of one of each
+per package. A later `run` of the same packages finds the software installed
+and goes straight to its job.
 
 ## Questions JARVIS asks
 
 JARVIS asks what it cannot decide alone, and relay turns each question into an
 ask for the person: the task turns `input_required` with the question and its
-choices. Relay the question as it is and do not answer it yourself. JARVIS
-keeps the person's answers for the site, so a later install does not ask again
-unless the person wants to change one.
+choices, and the person's answer moves it on. JARVIS keeps the person's
+answers for the site, so a later install does not ask again unless the person
+wants to change one.
 
 - **Which MPI.** An install with several MPI candidates asks once for the
-  site. Installs started together on one site share that question: answer it
-  once and every install that asked moves on.
+  site. Installs started together on one site share that question: one answer
+  moves on every install that asked.
 - **Where checks and builds run.** JARVIS asks, once per site, whether its
   software checks (or builds) run on the login node under JARVIS's limits, in
   a compute job, or are asked each time. The question carries JARVIS's
   recommendation and its evidence (the login node's load, the queue wait, the
   cost of each package), and may offer a choice for one package only, such as
-  a long build in a compute job while the rest check on the login node. Pass
-  it on with that evidence and let the person pick; do not recommend a place
-  of your own or set any limit. Builds are offered the same way as checks:
-  relay has no default of its own, so a site that has not answered shows
-  JARVIS's recommendation. An answer marked for this run only is asked
-  again next time.
+  a long build in a compute job while the rest check on the login node. The
+  limits are JARVIS's. Builds are offered the same way as checks: relay has
+  no default of its own, so a site that has not answered shows JARVIS's
+  recommendation. An answer marked for this run only is asked again next
+  time.
 - **Which Spack.** When JARVIS has no Spack on the site, the install asks which
   of the site's own Spack checkouts to use. Each candidate also has a
   `prepare` command that makes a JARVIS Spack chained to it as an upstream,
-  which is better when the person cannot write to the site's own. To prepare,
-  run `facts.jarvis.exec` followed by `spack prepare --root
-  <facts.jarvis.spack_root> --site_spack <root> +json` with `exec` once the
-  person agrees, then call the same `run` again. Exit 3 with
-  `ambiguous_compiler` lists the compilers to choose from: ask the person, run
-  it again with `--compiler`, and do not pick one yourself.
+  which suits a person who cannot write to the site's own. It is
+  `facts.jarvis.exec` followed by `spack prepare --root
+  <facts.jarvis.spack_root> --site_spack <root> +json`, run with `exec`; the
+  same `run` then finds it. Exit 3 with `ambiguous_compiler` lists the
+  compilers to choose from, and `--compiler` gives the choice (the `spack`
+  skill has the details).
 - **How a package installs.** JARVIS owns the install method: Spack, pip
   (into a venv JARVIS keeps for the pipeline), conda (into an env from a conda
   JARVIS finds, or the Miniforge it offers to install in the site home), or a
@@ -469,37 +452,35 @@ unless the person wants to change one.
   through the same `install` ask, and the ask says which method each package
   uses. When a package offers several methods that fit the site, or JARVIS
   cannot tell which python, conda or engine to use, it asks (`install_method`,
-  `python_missing`, `conda_missing`, `conda_select`, `container_engine`). Pass
-  the question on with its candidates and let the person pick; never pick a
-  method, an env or an engine yourself. MPI and compiled HPC codes always come
-  from the site's Spack and modules: JARVIS refuses a pip or conda MPI
-  (`mpi_from_package_manager`), so do not try to work around it with `exec`.
-  A failed install says its method and kind (`pip_install_failed`,
-  `conda_install_failed`, `container_pull_failed` and the like) with
-  JARVIS's remedy; relay it as it is.
+  `python_missing`, `conda_missing`, `conda_select`, `container_engine`) with
+  its candidates. MPI and compiled HPC codes come from the site's Spack and
+  modules: JARVIS refuses a pip or conda MPI (`mpi_from_package_manager`),
+  since such an MPI does not span nodes on the site's fabric, and one put in
+  place with `exec` is one JARVIS does not track. A failed install says its
+  method and kind (`pip_install_failed`, `conda_install_failed`,
+  `container_pull_failed` and the like) with JARVIS's remedy.
 - **Moving a queued job.** When a job's start is far off and another
   partition would take it now, relay asks the person whether to keep waiting
-  or move it, and JARVIS moves the same job on their answer. Do not cancel and
-  rerun to switch partitions yourself. When JARVIS refuses the move, the
-  message says why.
+  or move it, and JARVIS moves the same job on their answer; a cancel and a
+  new run would be a new job at the back of the queue. When JARVIS refuses
+  the move, the message says why.
 
-Leave a job's queue unset (`attributes.queue_name`, or a package's `queue`
-parameter) unless the person names one: the site's default applies.
+With a job's queue unset (`attributes.queue_name`, or a package's `queue`
+parameter), the site's default applies.
 
 ## Site facts JARVIS is unsure of
 
 JARVIS decides deployment details, such as the network MPI launches on, with
 fixed rules over the facts it collected, and says nothing when its pick is
 sure. When a pick rests on something it cannot settle alone, it raises a
-`site_fact_uncertain` issue instead of guessing. Your part is the adaptive
-one: find out what this cluster really does, propose a value, and let the
-person decide. JARVIS checks and records the answer; you add no network or
-site logic of your own.
+`site_fact_uncertain` issue instead of guessing. The adaptive part is finding
+out what this cluster really does and proposing a value; the person decides,
+and JARVIS checks and records the answer. The network and site logic stays
+JARVIS's.
 
 The issue can reach you in a run's `refusal.data.issues` or `result.issues`,
 in `ppl check` output, in a task's question, or in `rg facts show +json`, which
-is read-only and lists every open question and recorded answer. Read these
-fields:
+is read-only and lists every open question and recorded answer. Its fields:
 
 - `severity`: `block` stops the submit; `advisory` lets the run go ahead
   with JARVIS's pick.
@@ -513,63 +494,49 @@ fields:
 - `details.previous_answer`: when the evidence changed since the person last
   answered, their old answer.
 
-For a blocking issue, work through these steps:
+What helps settle one:
 
-1. **Investigate.** Run the issue's own `details.probes`, read the site's
-   skills (`rg skill show NAME +json`), and compare what you find with
-   `details.evidence`.
-   - Run every probe through `exec_read`; use `exec` only for a probe it
-     refuses.
-   - Only light, short probes run on the login node. Anything that must see
-     compute nodes, or takes longer, runs in a JARVIS job, such as the
-     two-node smoke run the probes name (`jarvis ppl submit`).
-   - Do not run commands the issue does not offer, and do not reach compute
-     nodes any other way.
-   - On a guarded site, a probe that needs `exec` takes a `plan` that says
-     the command is a read-only probe; relay asks the person before it runs.
-2. **Propose.** Tell the person:
-   - which value you propose (`accept` for JARVIS's pick, or a value of the
-     form `details.answer` lists);
-   - the evidence for it;
-   - what `consequence_if_wrong` says would happen if the choice is wrong.
+- The issue's own `details.probes` and the site's skills
+  (`rg skill show NAME +json`), set against `details.evidence`. The probes run
+  through `exec_read`, or `exec` for one it refuses; on a guarded site, `exec`
+  takes a `plan` that says the command is a read-only probe, and relay asks
+  the person before it runs. The login node is for light, short probes;
+  anything that must see compute nodes, or takes longer, runs in a JARVIS
+  job, such as the two-node smoke run the probes name (`jarvis ppl submit`).
+- A proposal the person can judge: the value (`accept` for JARVIS's pick, or
+  a value of the form `details.answer` lists), the evidence for it, what
+  `consequence_if_wrong` says would happen if it is wrong, and any
+  `previous_answer` with what changed.
+- The answer, once the person confirms it, is recorded with
+  `facts.jarvis.exec` followed by `rg facts answer <issue_id> --value <value>
+  --reason "<evidence>" --set_by <person> --proposed_by <agent> +json`, with
+  the `issue_id` from the issue and a `plan` on a guarded site.
+  - `site_fact_answer_stale` means the evidence changed: the issue named by
+    `details.current_issue_id` is the current one.
+  - `site_fact_answer_invalid` means JARVIS refused the value, and says why.
+- After that, the check or the same `run` uses the confirmed value, and
+  JARVIS stays silent until the evidence changes.
 
-   If there is a `previous_answer`, name it and what changed. Then wait for
-   the person to confirm. Never answer for them.
-3. **Record.** Once they confirm, run `facts.jarvis.exec` followed by `rg facts
-   answer <issue_id> --value <value> --reason "<evidence>" --set_by <person>
-   --proposed_by <agent> +json`. Use the `issue_id` from the issue. Give
-   `exec` a `plan` on a guarded site.
-   - `site_fact_answer_stale` means the evidence changed: read the issue
-     named by `details.current_issue_id` and propose again.
-   - `site_fact_answer_invalid` means JARVIS refused the value: tell the
-     person why, and do not work around it.
-4. **Continue.** Re-run the check or call the same `run` again. JARVIS now
-   uses the confirmed value and stays silent until the evidence changes.
-
-An advisory issue does not hold the run. Mention it to the person with its
-consequence. Investigate and propose an answer the same way only when it
-matters: when the person asks, or when the run is slow or failing in the way
-the issue describes. If the person wants JARVIS to ask again,
-`rg facts forget <fact> +json` drops the recorded answer.
+An advisory issue does not hold the run. Its consequence matters when the
+person asks, or when the run is slow or failing in the way the issue
+describes. `rg facts forget <fact> +json` drops a recorded answer, so JARVIS
+asks again.
 
 ## Long runs and failed runs
 
 An install, the queue and the run itself can take hours. When `run` or
-`serve` returns a task, say what you are waiting for and end your turn: CLIO
-wakes you when the task ends or needs the person. Waiting is event driven, so
-polling of any form only adds noise and cost: `describe` in a loop, repeated
-`exec` or `cat` reads of a result file or log, scheduler queries such as
-`sacct` or `squeue`, or a `run_code` script that loops over any of these with
-sleeps. A file that is not there yet reads as a failed command, so such a loop
-fills the conversation with failures. This holds for a `serve` too, whose task
-ended at ready while its run goes on: wait with `serve(service=<operation>,
-until="steps")`, whose result carries the operation's outputs, so the run's
-result file needs no separate read.
+`serve` returns a task, CLIO wakes the conversation when the task ends or
+needs the person, so a turn can end there. Waiting is event driven, so polling
+of any form only adds noise and cost: `describe` in a loop, repeated `exec` or
+`cat` reads of a result file or log, scheduler queries such as `sacct` or
+`squeue`, or a `run_code` script that loops over any of these with sleeps. A
+file that is not there yet reads as a failed command, so such a loop fills
+the conversation with failures. A `serve` task ends at ready while its run
+goes on; `serve(service=<operation>, until="steps")` carries the operation's
+outputs when the run ends, so the run's result file needs no separate read.
 Some sites run Slurm without accounting, where `sacct` always fails; relay's
-operation state is the job's state there. When you are woken, carry on with
-the next step of the plan the person approved. A job waiting in the queue says
-so in the operation's `result.queue` and message: pass the estimated start on
-to the person.
+operation state is the job's state there. A job waiting in the queue says so
+in the operation's `result.queue` and message, with its estimated start.
 
 Whenever you are woken or look at a run still going, check its pace against
 what the person needs. A package that reports its steps gives it in
@@ -587,58 +554,52 @@ latest restart point when it writes one; a partition with a longer limit; or
 stopping. Say the measured rate and the projection. Waiting on is one of
 those options for the person to choose, not one taken for them by silence.
 
-When a run fails, read `result.issues`, JARVIS's typed issues, before the
-logs. Each names its `kind` and the field it is about. An `mpi_network` issue
-means the ranks could not reach each other on the network JARVIS launched
-them on: it names the resource graph field and the networks the nodes share.
-Do not stop at the diagnosis. Propose the fix to the person (the network the
-issue points to, or, on relay's own graph, the resource graph job to collect
-them again), record it
-with `rg net set` once they confirm, and call the same `run` again. Every
-later job on the site uses it.
+When a run fails, `result.issues`, JARVIS's typed issues, usually says more
+than the logs. Each names its `kind` and the field it is about. An
+`mpi_network` issue means the ranks could not reach each other on the network
+JARVIS launched them on: it names the resource graph field and the networks
+the nodes share. The fix is the network the issue points to (or, on relay's
+own graph, the resource graph job that collects them again), recorded with
+`rg net set` once the person confirms it; every later job on the site uses
+it.
 
 When an install job fails, the operation ends `failed` as a failed run job
 does, with the job's `exit_code`. Its message is JARVIS's line for each failure,
 naming the package Spack was building, and `result` holds JARVIS's records in
 `failures` and `issues`, the job id in `install_job`, and in `install_log` the
-whole log on the site:
-read it with `files_read(op="read")`. Find the cause, fix it in the place that owns
-it (a package parameter, the person's answer to a JARVIS question, the site's
-JARVIS Spack through `spack prepare`), and call the same `run` again. Ask the
-person only for a real decision, such as a choice between two compilers or a
-larger allocation.
+whole log on the site, which `files_read(op="read")` reads. A fix belongs in
+the place that owns the cause (a package parameter, the person's answer to a
+JARVIS question, the site's JARVIS Spack through `spack prepare`), and the
+same `run` then picks it up. The real decisions in it, such as a choice
+between two compilers or a larger allocation, are the person's.
 
-When a fact JARVIS holds about the site turns out wrong, propose the change to
-the person and record it with JARVIS once they confirm: the network with `rg
-net set`, anything else as a site skill with `rg skill set`.
+A fact JARVIS holds about the site that turns out wrong is corrected in
+JARVIS once the person confirms it: the network with `rg net set`, anything
+else as a site skill with `rg skill set`.
 
 ## Stop a service, clean a site
 
-Stop a service or cancel a job with `cancel(operation=...)`. Relay confirms a
+`cancel(operation=...)` stops a service or cancels a job. Relay confirms a
 stop with the person itself, naming the service and the nodes it releases, so
-that confirm is the question: to offer a stop, call `cancel` and let its
-confirm ask, rather than asking first in your own words, which asks the person
-twice.
-When the person
-wants relay's deployment gone from a site, so the next use deploys it again,
-call `site_clean(site=...)`: it asks the person first and keeps the site's
-Spack store and JARVIS's recorded answers (which MPI, which compiler). It
-removes nothing while relay's jobs still run there, as the site's scheduler
-reports them, and its refusal names each job and its operation: tell the
-person, and cancel them with `cancel(operation=...)` only if they want that,
-then clean again. `cancel` also ends a job the scheduler still lists under an
-operation that already ended. Pass `forget_decisions=true` only when the
-person asks to forget those answers, so the next install asks them again; to
-forget one answer, run JARVIS's `ppl install --forget <selector>` with `exec`
-instead. When the person wants to start from nothing, so the next install asks
-which MPI and where installs run again, that is a request to forget those
-answers. What relay's runs wrote, under the outputs directory or elsewhere
-under the person's home, is the person's: the clean names those
+a question of your own before `cancel` asks the person twice.
+
+`site_clean(site=...)` removes relay's deployment from a site, so the next use
+deploys it again. It asks the person first and keeps the site's Spack store
+and JARVIS's recorded answers (which MPI, which compiler). It removes nothing
+while relay's jobs still run there, as the site's scheduler reports them, and
+its refusal names each job and its operation, which `cancel(operation=...)`
+ends. `cancel` also ends a job the scheduler still lists under an operation
+that already ended. `forget_decisions=true` also forgets those answers, so the
+next install asks them again; JARVIS's `ppl install --forget <selector>`, run
+with `exec`, forgets one. A person who wants to start from nothing, so the
+next install asks which MPI and where installs run again, is asking to forget
+those answers. What relay's runs wrote, under the outputs directory or
+elsewhere under the person's home, is the person's: the clean names those
 outputs in its question and keeps them, and the result lists them as
-`outputs_kept`. Pass `remove_outputs=true` only when the person asks to delete
-them too. Do not look for the `clio-relay` command line to do any of this.
+`outputs_kept`; `remove_outputs=true` deletes them too. Relay's tools cover
+all of this without the `clio-relay` command line.
 
 ## Sites are the person's
 
-Do not add, edit or remove sites. The person manages them on the Compute page
-or with `clio-relay site` on the command line.
+The person manages sites on the Compute page or with `clio-relay site` on the
+command line; relay's tools do not add, edit or remove them.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "opendocument",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create and edit OpenDocument text, spreadsheets and presentations.",
   "author": {
     "name": "IoWarp Team"

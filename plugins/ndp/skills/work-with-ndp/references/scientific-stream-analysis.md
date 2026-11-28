@@ -1,99 +1,98 @@
 # Analyze streams and available history
 
-The agent owns discovery, acquisition, continuation and analysis. For a scientific
-question, execute the approved workflow and return the evidence and interpretation.
-Describe interface controls only when the user asks how to operate them. A required
-approval or private login is a handoff; reading a public sample or using a returned
-continuation value is normally the agent's work.
+Discovery, acquisition, continuation and analysis are the agent's work with these
+tools; a scientific question is answered by evidence and interpretation, not by
+a description of interface controls. A required approval or private login is a
+handoff to the person; reading a public sample or using a returned continuation
+value is not.
 
 ## Establish what is being delivered
 
-For cataloged Kafka sources, use the configured `streaming_v2` SDK operations
-returned by `connected_data_ndp_endpoint_operations`. Select the exact catalog
-resource ID with `SDK streaming_v2.open`, capture with `SDK streaming_v2.read`,
-and analyze the retained resource. CLIO preserves the records returned during
+Cataloged Kafka sources have configured `streaming_v2` SDK operations, returned
+by `connected_data_ndp_endpoint_operations`. `SDK streaming_v2.open` takes the
+exact catalog resource ID, `SDK streaming_v2.read` captures, and the retained
+resource holds the capture. CLIO preserves the records returned during
 SDK initialization and owns durable partition positions between finite captures.
-Use `SDK streaming_v2.stop`/`resume` for the reader. These controls do not stop
-the independent source producer. Do not substitute custom Endpoint `/streams`
-HTTP routes or ask the user to copy cursors. An SDK runtime that is not configured
-is a CLIO setup requirement, not evidence that NDP refused access or lacks data.
-The separately installed SDK and private broker profile run on the connected
-computer or its approved SSH target; broker credentials remain private there.
+`SDK streaming_v2.stop`/`resume` control the reader. These controls do not stop
+the independent source producer. Custom Endpoint `/streams` HTTP routes are a
+different path, and cursors are not for the person to copy. An SDK runtime that
+is not configured is a CLIO setup requirement, not evidence that NDP refused
+access or lacks data. The separately installed SDK and private broker profile run
+on the connected computer or its approved SSH target; broker credentials remain
+private there.
 
-Inspect the selected catalog/resource metadata, provider documentation and actual
-payload. Establish the producing instrument or model, variable meanings and units,
-time encoding, reference frame and documented processing. Distinguish:
+The selected catalog/resource metadata, provider documentation and actual payload
+establish the producing instrument or model, variable meanings and units, time
+encoding, reference frame and documented processing. They separate:
 
 - Measured observations with a traceable acquisition source.
 - Derived or preprocessed observations with documented transformations.
 - Simulation, synthetic/example data, and values whose origin is unverified.
 
-Preprocessing can be appropriate for a research question; identify what changed
-and whether the resulting variables support it. Do not call a catalog export
-raw measurements based on its filename, or infer physical displacement from
-columns named east/north/up without the required provenance, units and frame.
+Preprocessing can be appropriate for a research question when what changed
+supports the resulting variables. A filename does not make a catalog export raw
+measurements, and columns named east/north/up are not physical displacement
+without the required provenance, units and frame.
 
 For a question about a physical phenomenon, unresolved observational provenance
-is a limit on the scientific answer. Audit timestamps or bytes as needed to
-diagnose the source, and seek documented observations through the available
-catalog/services. Do not fill the answer with trends, percentile comparisons or
-plots of provenance-unverified values as a substitute for the requested science.
-Call them records or values, not observations/measurements. A numerical data audit
-is a separate deliverable only when the user requests it or it is necessary to
-explain the missing evidence; it does not complete the physical investigation.
+is a limit on the scientific answer. Timestamps or bytes can diagnose the source,
+and documented observations may exist elsewhere in the catalog/services. Trends,
+percentile comparisons or plots of provenance-unverified values do not substitute
+for the requested science; they are records or values, not
+observations/measurements. A numerical data audit is a separate deliverable; it
+can explain missing evidence but does not complete the physical investigation.
 
 SSE, Kafka and a CSV file describe delivery or storage. None proves authenticity,
 live acquisition or historical retention. A CSV replay emits file rows; changing
-its delivery interval does not acquire new observations. Never replace an
-unavailable requested stream with a convenient replay URL and call that success.
-An unrelated example can be offered as a separately labelled transport exercise.
+its delivery interval does not acquire new observations. A convenient replay URL
+in place of an unavailable requested stream is a different source, not success.
+An unrelated example works only as a separately labelled transport exercise.
 
 ## Find the historical coverage that actually exists
 
-Inspect the requested service's advertised query, retention and continuation
-capabilities. Use its documented time/offset bounds and measurement timestamps to
+The requested service's advertised query, retention and continuation
+capabilities, its documented time/offset bounds and measurement timestamps
 establish which history can be retrieved. The oldest record in a short sample is
 not necessarily the oldest retained observation. A consumer's local memory buffer
 is also not the upstream historical archive.
 
-If the stream supplies no retrievable history, look for a corresponding NDP
-archive when it is relevant to the question. Check that instrument, variables,
-processing, units and reference frame are compatible. Keep the archive's identity
-and coverage separate from the stream's; disclose any joined source or conversion.
-Do not quietly substitute a different station, demonstration file or source.
+A stream with no retrievable history may have a corresponding NDP archive. It
+is compatible only when instrument, variables, processing, units and reference
+frame match. The archive's identity and coverage are separate from the stream's,
+and a joined source or conversion is part of the result. A different station,
+demonstration file or source is not the requested one.
 
-Report the actual outcome:
+What each outcome means:
 
 | Finding | Scientific consequence |
 | --- | --- |
-| Requested history is available and compatible | Retrieve it and perform the comparison. State the verified dates and gaps. |
-| Only a limited retention window is available | Analyze that window and state which requested periods it cannot cover. |
-| The inspected service supplies current data only, with no compatible archive found | Say historical data is unavailable through those checked sources. Explain what a new bounded capture can answer. |
-| Access, service failure or missing metadata prevents checking history | Say historical availability could not be verified, naming the actual obstacle. Do not claim the history does not exist. |
-| Only demonstration, synthetic or provenance-unverified values are available | Do not use them as evidence about the physical phenomenon. State which provenance or observation source is missing. |
+| Requested history is available and compatible | The comparison can be made over the verified dates and gaps. |
+| Only a limited retention window is available | That window can be analyzed; the requested periods outside it are not covered. |
+| The inspected service supplies current data only, with no compatible archive found | Historical data is unavailable through those checked sources; a new bounded capture answers only what current data can. |
+| Access, service failure or missing metadata prevents checking history | Historical availability is unverified because of the actual obstacle; that is not evidence the history does not exist. |
+| Only demonstration, synthetic or provenance-unverified values are available | They are not evidence about the physical phenomenon; the missing provenance or observation source is the finding. |
 
 ## Acquire, continue and analyze
 
-Load `services-and-streams.md` for the selected service procedure. Use returned
-identities, approved filters and bounded reads, and inspect the captured bytes.
-Keep exact API cursors, partition/offset positions and source revisions with the
-investigation. Reuse the service's own continuation contract and verify adjacent
-measurement identities for repeats or gaps. A replay's row cursor and a broker's
-retained offsets are not interchangeable.
+`services-and-streams.md` covers the service procedures. Returned identities,
+approved filters and bounded reads produce the captured bytes. Exact API cursors,
+partition/offset positions and source revisions belong with the investigation.
+The service's own continuation contract resumes it, and adjacent measurement
+identities show repeats or gaps. A replay's row cursor and a broker's retained
+offsets are not interchangeable.
 
-Handle continuation internally when the user asks for the next segment. Ordinary
-answers should describe the observations and available next action, not ask the
-user to copy an opaque cursor or rerun a request. Show such details only if the
-user requests diagnostics or a reproducible low-level example. If the completion
-position is missing or ambiguous, explain that uncertainty before resuming.
+Continuation is internal work. Answers describe the observations and the available
+next action; opaque cursors and rerun instructions are diagnostics or low-level
+reproduction detail. A missing or ambiguous completion position is an uncertainty
+in the resumed data.
 
-Compute from the actually acquired interval and inspected variables. Check sample
-counts, clocks, gaps, flags and uncertainty before aggregating or joining history.
-Use the existing scientific analysis and interactive chart capabilities for useful
-results. Present supported conclusions, provenance/processing, history coverage
-and material limitations. Stop only producers owned by this investigation.
+Results hold only for the actually acquired interval and inspected variables.
+Sample counts, clocks, gaps, flags and uncertainty decide whether aggregating or
+joining history is valid. The scientific analysis and interactive chart
+capabilities present results. Supported conclusions, provenance/processing,
+history coverage and material limitations are the substance of an answer.
+Producers this investigation did not start belong to someone else.
 
 Successful transport, a replay continuity check, loading a skill or producing a
-chart is not scientific task acceptance. Read the actual conversation and verify
-that its evidence answers the user's question before describing the run as a
-successful scientific demonstration.
+chart is not scientific task acceptance; only evidence that answers the
+question is.

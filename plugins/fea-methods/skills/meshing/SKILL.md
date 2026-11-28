@@ -7,23 +7,18 @@ keywords:
 - fea-methods
 ---
 
-Match mesh density to the quantity of interest, not the whole model
-uniformly: a local stress concentration (fillet, hole, contact patch) needs
+Mesh density matters at the quantity of interest, not uniformly over the
+model: a local stress concentration (fillet, hole, contact patch) needs
 refinement proportional to the gradient there, while a global stiffness
 result may not. A globally fine but locally under-resolved mesh can still
 under-predict a peak stress.
 
-Choose element type and order deliberately: linear vs. quadratic elements,
-tetrahedral vs. hexahedral, and reduced- vs. full-integration formulations
-each have known failure modes (shear locking, hourglassing) for specific
-loading types — state which was chosen and why for the specific analysis.
+Element type and order (linear vs. quadratic, tetrahedral vs. hexahedral,
+reduced- vs. full-integration) each have known failure modes (shear locking,
+hourglassing) for specific loading types, so the choice depends on the
+analysis.
 
-Run and report a mesh convergence study for any quantity the conclusion
-depends on: refine until the reported quantity changes by less than a stated
-tolerance, and report that tolerance and the mesh density it was achieved at.
-A single mesh density with no convergence check does not support a
-quantitative conclusion.
-
-Return the mesh (element type, density, local refinement) and the
-convergence study — the quantity tracked, the refinement levels, and the
-tolerance achieved — behind the reported result.
+A quantity the conclusion depends on is converged when refinement changes it
+by less than a stated tolerance, at a known mesh density. A single mesh
+density with no convergence check does not support a quantitative
+conclusion.

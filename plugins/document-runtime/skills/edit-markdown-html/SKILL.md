@@ -5,12 +5,12 @@ description: Use to create or revise Markdown (.md, .markdown) or static HTML (.
 
 # Edit Markdown and Static HTML
 
-1. Confirm the exact artifact version and read the entire source before changing a selected region.
-2. Preserve heading hierarchy, link targets, alt text, table headers, IDs used by review anchors, and frontmatter keys not owned by the request.
-3. Keep HTML static. Do not add scripts, inline event handlers, active forms, remote execution dependencies, or navigation tricks. If interaction is required, explicitly transition the artifact to Live Web and obtain its normal consent.
-4. Use semantic HTML before presentational containers. Keep print styles useful so PDF rendition remains legible.
-5. Validate Markdown structure or HTML parsing and inspect links/assets that can be checked locally.
-6. Save the canonical source and allow CLIO to mint a new artifact version.
-7. For a print preview of a new Markdown or HTML deliverable, register it with `create_artifact(..., pdf_preview=true)`: the PDF is bound to that version and kept in lineage, not listed as another deliverable. In a batch, each item's `pdf_preview` overrides the call's default.
+- A selected region belongs to an exact artifact version, and the whole source gives its context.
+- Heading hierarchy, link targets, alt text, table headers, IDs used by review anchors, and frontmatter keys outside the request are part of the document.
+- A static HTML artifact carries no scripts, inline event handlers, active forms, remote execution dependencies, or navigation tricks. Interaction is a Live Web artifact, which goes through its normal consent.
+- Semantic HTML carries structure that presentational containers do not. Print styles keep the PDF rendition legible.
+- Markdown structure and HTML parsing are checkable, as are links and assets that resolve locally.
+- A save of the canonical source becomes CLIO's new artifact version.
+- `create_artifact(..., pdf_preview=true)` gives a new Markdown or HTML deliverable a print preview: the PDF is bound to that version and kept in lineage, not listed as another deliverable. In a batch, each item's `pdf_preview` overrides the call's default.
 
 See [document-quality.md](references/document-quality.md) for completion checks.

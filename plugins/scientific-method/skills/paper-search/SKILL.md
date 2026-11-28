@@ -7,25 +7,22 @@ keywords:
 - scientific-method
 ---
 
-Define the question, the decision it informs, and the terms and synonyms a
-relevant paper might use — a single search term misses adjacent literatures
-that use different vocabulary for the same concept. Split a broad question
+A question has a decision it informs, and a relevant paper may use any of
+several terms and synonyms: a single search term misses adjacent literatures
+that use different vocabulary for the same concept. A broad question splits
 into independent lanes (mechanism, measurement method, competing approach,
 material system) that can be searched without duplicating each other.
 
-With the `literature` tools, search scholarly sources with `literature_search`
-and follow a work with `literature_lookup`; the `literature-search` skill covers
-their use. Use web search for grey literature, documentation and data portals.
+The `literature` tools search scholarly sources (`literature_search`) and
+follow a work (`literature_lookup`); the `literature-search` skill covers their
+use. Web search reaches grey literature, documentation and data portals.
 
-Fetch and read the actual source before citing it; a search-result snippet or
-title is not evidence of what a paper found. Record, per source: what was
-read (full text vs. abstract only), publication venue and date, and the
-specific claim it supports or contradicts.
+A search-result snippet or title is not evidence of what a paper found; only
+the fetched and read source is citable. Per source, what was read (full text
+vs. abstract only), publication venue and date, and the specific claim it
+supports or contradicts are what make it usable.
 
-Follow consequential references forward and backward — a cited method or a
-paper that cites the one just found often matters more than the next search
-result. Stop when additional searches stop changing the claim map, not on a
-fixed count.
-
-Return the fetched sources with what was actually read from each, the claims
-each supports, and hand the set to `literature-review` for synthesis.
+Consequential references lead forward and backward: a cited method or a paper
+that cites the one just found often matters more than the next search result.
+A search is done when additional searches stop changing the claim map, not at
+a fixed count. Synthesis of the set is `literature-review`.

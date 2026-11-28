@@ -10,64 +10,57 @@ keywords:
 
 This skill is the method. The program plugin the scientist works in (for
 example a Tosca or a Morphorm skill) supplies the input syntax, run commands
-and output files; load it alongside this one.
+and output files.
 
-## 1. State the problem before writing any input
+## The problem
 
 - **Objective**: minimize compliance, maximize stiffness per mass, minimize
   mass or volume under a stress constraint, or another stated response.
 - **Constraints**: volume or mass fraction, stress, displacement, frequency.
-  Say which response each constraint is evaluated on and where (a stress
+  Each constraint is evaluated on a response and somewhere (a stress
   constraint over a region, a displacement at a named point).
 - **Regions**: the design region, and the frozen (non-design) regions that
-  must keep material: load introduction, supports, interfaces, machined faces.
+  keep material: load introduction, supports, interfaces, machined faces.
 - **Restrictions applied inside the optimization**: symmetry, extrusion or
   rotation, minimum member size, overhang angle for additive builds, casting
   or milling directions.
 - **Load cases** and how they combine (weighted sum, worst case).
 
-Record each of these as a decision with its owner. A restriction stated only
-in prose does not constrain the optimizer: it must appear in the program's own
-input, and the generated configuration should be checked to confirm it did.
+Each of these is a decision with an owner. A restriction stated only in prose
+does not constrain the optimizer: it constrains only once it appears in the
+program's own input, which the generated configuration shows.
 
-## 2. Check the analysis model first
+## The analysis model underneath
 
-The optimizer repeats an ordinary finite-element analysis. Before any
-optimization run, solve the baseline model on its own (`finite-element-analysis`,
-`meshing`, `boundary-conditions`) and confirm it is valid: loads and supports
-represent the real part, the mesh resolves the regions the objective and
-constraints read, and the baseline responses are plausible. A failure of the
-baseline is not an optimizer failure.
+The optimizer repeats an ordinary finite-element analysis. The baseline model
+solved on its own (`finite-element-analysis`, `meshing`,
+`boundary-conditions`) shows whether loads and supports represent the real
+part, the mesh resolves the regions the objective and constraints read, and
+the baseline responses are plausible. A failure of the baseline is not an
+optimizer failure.
 
-## 3. Run and track convergence
+## Convergence
 
-Track the optimizer's own history: objective and each constraint per design
-cycle, the cycle count and the stop reason. Normalize each quantity to its
-start value or limit when plotting them together. Converged means the
+The optimizer's own history is the objective and each constraint per design
+cycle, the cycle count and the stop reason; plotted together, each quantity
+reads best normalized to its start value or limit. Converged means the
 optimizer met its own stop criterion under its stated problem, nothing more.
 
-## 4. Interpret the result as a proposal
+## The result is a proposal
 
 Three questions stay separate, whatever program produced the topology:
 
-1. **Did the optimizer converge?** Section 3 answers only this.
-2. **Can the geometry be made?** Check the extracted geometry against the
-   process constraints (`manufacturability`). A restriction applied after the
-   optimization, by hand or in a second step, changes the converged topology,
-   so the result needs re-verification.
-3. **Does the part perform?** Extract a smooth geometry at a stated density
-   threshold, remesh it cleanly, and re-run the structural check outside the
-   optimization loop. The optimizer's stresses come from a density-penalized
-   model and are not proof that a stress constraint holds on the real part.
+- **Did the optimizer converge?** The history answers only this.
+- **Can the geometry be made?** The extracted geometry meets the process
+  constraints (`manufacturability`) or not. A restriction applied after the
+  optimization, by hand or in a second step, changes the converged topology,
+  so the result needs re-verification.
+- **Does the part perform?** A smooth geometry extracted at a stated density
+  threshold, remeshed cleanly and re-run outside the optimization loop,
+  answers it. The optimizer's stresses come from a density-penalized model and
+  are not proof that a stress constraint holds on the real part.
 
-Watch the extraction: a threshold that leaves only frozen regions, or pieces
-with no material between them, means the threshold or the cycle is wrong.
-Report that as a finding instead of presenting a disconnected part.
-
-## Return
-
-The problem statement (objective, constraints, regions, restrictions, load
-cases), the converged result with its constraint satisfaction and stop reason,
-the manufacturability check, the re-verification status, and traceability to
-the approved formulation. Without executed solver evidence the result is
-labelled `GENERATED_NOT_EXECUTED`.
+A threshold that leaves only frozen regions, or pieces with no material
+between them, means the threshold or the cycle is wrong; that is a finding,
+not a disconnected part. A result without executed solver evidence is
+`GENERATED_NOT_EXECUTED`.

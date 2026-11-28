@@ -1,61 +1,51 @@
 ---
 name: pcb-pipeline
-description: The whole path from a board brief to a board house package with the KiCad connector in CLIO, which connector does each step, when to open the views and the workbench, how to ask for part-catalog keys, and how placement passes become a study.
+description: The whole path from a board brief to a board house package with the KiCad connector in CLIO, which connector and skill covers each stage, the views and the workbench, and how placement passes can be kept as a study.
 ---
 
 # From a brief to a board
 
-You design the board yourself through the KiCad connector's tools: you place, route and
-check. The person watches and steers through the views. Never hand placement or routing to
-the person, and never use a service whose own AI lays the board out.
+The KiCad connector's tools place, route and check a board; the person watches and steers
+through the views.
 
 ## KiCad itself
 
-The connector attaches to a running KiCad or starts one (headless where KiCad 11 allows,
-else on a virtual display). `kicad_session_status` says which, or what is missing. When
-KiCad is not found, follow the `install-kicad` skill: it looks for a copy elsewhere on the
-machine first; installing system software is the person's decision, so say what you will
-run first.
+The connector attaches to a running KiCad or starts one (headless where KiCad 11 allows, else
+on a virtual display). `kicad_session_status` says which, or what is missing. `install-kicad`
+covers finding a KiCad elsewhere on the machine and installing one.
 
-## The path, and who does each step
+## The stages, and what covers each
 
-1. **Brief and enclosure.** Read the brief. When an enclosure is designed elsewhere (Fusion),
-   take its board outline as a DXF with the mounting holes.
-2. **Parts.** Follow the `part-sourcing` skill: search by spec, what the catalogs' answers
-   mean, asking for catalog keys through a card when a search failed, and asking the person
-   when a core part is scarce.
-3. **Datasheets.** For each IC, fetch the datasheet (`lib_get_datasheet_url`) and ingest it
-   with the documents tools, so values come with a page. Run `datasheet-pin-check` before
-   layout.
-4. **Schematic and ERC.** Build the schematic, `run_erc` until it is clean or every finding is
-   explained.
-5. **Simulation.** Simulate power stages and filters on the spice connector, from
-   `export_spice_netlist`; this connector does not simulate. When the spice connector is not
-   on, offer it (`offer_plugin` with plugin `spice` and what you would simulate). When it finds
-   no simulator, its plugin's `install-simulator` skill looks for one on the machine, then asks
-   the person to use it, install one or skip simulation. A board with nothing to simulate (a
-   regulator used exactly as its datasheet's reference circuit, no filters) may skip it, and
-   your summary says so. Whenever simulation is skipped, the summary says what stays
-   unverified.
-6. **Outline and holes.** `pcb_import_outline_dxf` draws the enclosure's outline and holes;
-   `pcb_set_board_outline_shape` draws one from points; `pcb_add_mounting_holes` adds holes by
-   pattern.
-7. **Placement**, as a study (below), with the `pcb-placement` skill.
-8. **Routing**, with the `pcb-routing` skill; DRC until clean.
-9. **Release.** DFM checks and the manufacturing package. Look at the board first in the board
-   view (its `capture`, with `set_layers` and `focus` on the keepouts and edge connectors):
-   checks pass on boards with a keepout in the wrong place or a connector set back from the
-   edge. `export_3d_render` is a picture to show the person, not a review. Exporting the
-   release package is the person's step: say it is ready and what it holds. Send the STEP (`export_step`) back to the
-   enclosure for a fit check.
+- **Brief and enclosure.** An enclosure designed elsewhere (Fusion) gives its board outline as
+  a DXF with the mounting holes.
+- **Parts.** `part-sourcing`: search by spec, what the catalogs' answers mean, catalog keys
+  through a card, and scarce core parts.
+- **Datasheets.** `lib_get_datasheet_url` fetches an IC's datasheet; `datasheet-pin-check`
+  compares its pin table with the symbol and footprint, the one error ERC and DRC cannot see.
+- **Schematic and ERC.** `run_erc` checks the schematic's electrical rules. It does not see a
+  wire on the wrong pin or a label on the wrong net; the schematic view shows those.
+- **Simulation.** Power stages and filters simulate on the spice connector, from
+  `export_spice_netlist`; this connector does not simulate. `offer_plugin` with plugin `spice`
+  offers it when it is not on, and its `install-simulator` skill covers a machine with no
+  simulator. A regulator used exactly as its datasheet's reference circuit has little to
+  simulate; without simulation, a power stage or filter's behaviour is unverified.
+- **Outline and holes.** `pcb_import_outline_dxf` draws the enclosure's outline and holes;
+  `pcb_set_board_outline_shape` draws one from points; `pcb_add_mounting_holes` adds holes by
+  pattern.
+- **Placement**: `pcb-placement`, and the study below.
+- **Routing**: `pcb-routing`, with DRC (`run_drc`).
+- **Release.** DFM checks and the manufacturing package (`fabrication-output`). Checks pass on
+  boards with a keepout in the wrong place or a connector set back from the edge; the board
+  view shows those (`set_layers` and `focus` on the keepouts and edge connectors).
+  `export_3d_render` is a picture for the person, not a review. The STEP (`export_step`) goes
+  back to the enclosure for a fit check (`pcb-enclosure`).
 
 ## The views
 
-Each opens in a tab and follows every edit, whoever made it. They are also how you review your
-own work: each view has its own tools (`focus`, `select`, `capture`, `describe_region`; the
-board view also `set_layers` and `show`), and `look_at_view` shows you what one shows now. Judge
-placement, holes and routes in the board view and the wiring in the schematic view, not from a
-3D render:
+Each opens in a tab and follows every edit, whoever made it. Each view has its own tools
+(`focus`, `select`, `capture`, `describe_region`; the board view also `set_layers` and `show`),
+and `look_at_view` shows what one shows now. Placement, holes and routes are judged in the
+board view and the wiring in the schematic view; a 3D render hides them.
 
 | Tool | Shows | The person can |
 | --- | --- | --- |
@@ -70,22 +60,20 @@ What the person selects in a view reaches you as context with the kind, referenc
 layer and position, so "move this closer to J1" names the part without asking. A mark the
 person draws on a view arrives with the footprints, pads, tracks and nets under it.
 
-You can steer a view with its own tools: `focus` (a reference, a net or a point),
-`set_layers`, `select_row`, `select`, `capture` (a PNG of the view now) and
-`describe_region`. Use `focus` to show the person what you are talking about.
+A view's own tools steer it: `focus` (a reference, a net or a point), `set_layers`,
+`select_row`, `select`, `capture` (a PNG of the view now) and `describe_region`. `focus` also
+shows the person what you are talking about.
 
-**The workbench.** At the start of a design session, open the board, BOM and checks views
-together in one dashboard from `references/pcb-workbench.json`: replace `PROJECT_FOLDER` with
-the project folder and `PLACEMENT_METRICS` with the artifact of the placement metrics. Its
-three views share `/pcb/selection`: selecting a BOM row highlights its footprints on the
-board, selecting a violation focuses the board on it, and selecting a footprint selects its
-BOM row. The schematic opens in its own tab.
+**The workbench.** `references/pcb-workbench.json` is a dashboard of the board, BOM and checks
+views together, with `PROJECT_FOLDER` for the project folder and `PLACEMENT_METRICS` for the
+artifact of the placement metrics. Its three views share `/pcb/selection`: selecting a BOM row
+highlights its footprints on the board, selecting a violation focuses the board on it, and
+selecting a footprint selects its BOM row. The schematic opens in its own tab.
 
-## Placement passes are a study
+## Placement passes as a study
 
-Record each placement pass in the science log as an experiment with its measured values:
-unrouted connections and ratsnest length (`pcb_get_ratsnest`), DRC count and courtyard
-overlaps (`run_drc`), and after routing, completion, vias and track length. Compare passes
-with your own code from those values. Write one row per pass (`pass`, `unrouted`,
-`ratsnest_mm`, `drc`, `vias`, `track_mm`) to the placement metrics artifact the workbench
-chart reads. A pass you call better cites the capture you looked at.
+Placement passes compare well as experiments in the science log, each with its measured
+values: unrouted connections and ratsnest length (`pcb_get_ratsnest`), DRC count and courtyard
+overlaps (`run_drc`), and after routing, completion, vias and track length. The workbench chart
+reads one row per pass (`pass`, `unrouted`, `ratsnest_mm`, `drc`, `vias`, `track_mm`) from the
+placement metrics artifact. A capture of each pass shows what the numbers do not.

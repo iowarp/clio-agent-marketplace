@@ -16,32 +16,31 @@ the person has a limited amount of.
 - The free Open Plan gives a small allowance of quantum execution time per rolling
   period. Only execution time on the device counts, not the queue and not the
   transpile.
-- `usage_info` says the limit, the seconds consumed and the seconds left. Read it
-  before any hardware run and say the number to the person.
+- `usage_info` says the limit, the seconds consumed and the seconds left. The person
+  knows the seconds left before a hardware run spends any of them.
 - Every hardware run reads the time left first and refuses a job whose estimate
   exceeds it, with both numbers; nothing is submitted then. Every hardware result
   says the seconds it used and the seconds left.
 
-## Keep runs small
+## What a run costs
 
-- Shots around 1000 for a Sampler run. Do not raise them without a reason you can
-  state.
-- One job per batch of inputs: a list of parameter sets in one call.
-- Simulate first on `local_exact`, then on a `fake_<device>`, and run on hardware
-  only the circuit you have already checked.
-- Zero-noise extrapolation multiplies the shots; leave it off unless the person asks.
-- `least_busy_backend` picks a device; a queue can take minutes to hours. Watch a
-  long one from a background task and tell the person when it finishes, rather
-  than polling in the conversation.
+- Shots around 1000 suffice for a Sampler run; more shots spend more of the time.
+- A batch of inputs is one job: a list of parameter sets in one call.
+- `local_exact` and a `fake_<device>` spend no quantum time, so a circuit checked on
+  them is what hardware time is worth spending on.
+- Zero-noise extrapolation multiplies the shots, so it runs only when the person asks
+  for it.
+- `least_busy_backend` picks a device; a queue can take minutes to hours. A background
+  task can watch a long one and notify when it finishes; polling in the conversation
+  only spends turns.
 
 ## The key and the instance
 
 - A hardware call without a key answers `key_needed` with the values it needs
-  (`token`, `instance`). Ask with `offer_plugin` for the IBM Quantum connector,
-  with a one-sentence reason and those needs, so the person can enter them in the
-  card. If the card does not show the values, tell the person to open the IBM
-  Quantum connector in Extensions and enter the API key and the instance CRN there.
-  Never ask for the key in the conversation, and never write it anywhere.
-- If the person says Not now, go on with local backends and say so.
-- Never create an instance, pick a plan, or use an instance other than the one in
-  the connector.
+  (`token`, `instance`). `offer_plugin` for the IBM Quantum connector, with a
+  one-sentence reason and those needs, shows a card where the person enters them; the
+  IBM Quantum connector in Extensions also takes the API key and the instance CRN. The
+  key never passes through the conversation and is never written anywhere.
+- After Not now, the local backends still work.
+- The instance and plan are the person's: runs use only the instance in the connector,
+  and creating an instance or choosing a plan is theirs to do.

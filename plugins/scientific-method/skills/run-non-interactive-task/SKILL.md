@@ -14,53 +14,52 @@ paths, and no person available to answer during the run (a trial or pilot
 prompt, a frozen configuration with a deliverables list, a scheduled job).
 Interactive work is unchanged by this skill.
 
-## Work directly
+## What the packet defines
 
-- Do the work yourself. Consult a specialist only when the packet asks for one.
-- Skip planning and presentation bookkeeping the packet does not ask for.
-- Keep each step's visible text to one short sentence, and batch independent
-  tool calls into one step.
-- In the first step, read the packet's file list and, in the same step, load
-  the skills for its toolchain (the program's skill, the scheduler's skill).
+- The packet's required outputs are the deliverables. Specialists, planning and
+  presentation bookkeeping it does not ask for add steps and context without
+  adding to them.
+- Nobody reads progress narration during the run; independent tool calls in one
+  step finish sooner than the same calls one by one.
+- The packet's file list and its toolchain (the program's skill, the
+  scheduler's skill) are what the first step can take in together.
 
-## Read manuals once
+## Manuals
 
-Convert each PDF manual to text once in the work directory (for example with
-`pdftotext -layout`), then search it (`grep -n`) and print only the sections
-you need (`sed -n`). Do not page through the whole text, and confirm every
-keyword against the manual rather than memory.
+A PDF manual converted to text once in the work directory (for example with
+`pdftotext -layout`) can be searched (`grep -n`) and printed by section
+(`sed -n`); paging through the whole text fills the context. Keywords from
+memory are often wrong; the manual is the reference.
 
-## Verify with what is bundled
+## Verification
 
-Use the bundled checks of the loaded skills and save their output as the
-verification record. Write a new verification program only for a check they
-cannot do.
+The loaded skills' bundled checks, with their output saved, are the
+verification record; a new verification program is needed only for a check
+they cannot do.
 
-## Keep a facts log, write reports once
+## A facts log and the reports
 
-- Append one line per event to a short facts log in the work directory (for
-  example `work/notes.log`): a timestamp, the command, its exit code, a job id
-  or a key value.
-- Write each required report (for example a run summary) once, near the end,
-  from that log. Include every item the packet's provenance requirements list.
-  Reference long material (hash manifests, logs, generated files) by path
-  unless the requirements ask for it inline.
+- A short facts log in the work directory (for example `work/notes.log`), one
+  line per event (a timestamp, the command, its exit code, a job id or a key
+  value), is what reports are written from.
+- A required report (for example a run summary) written once near the end from
+  that log carries every item the packet's provenance requirements list. Long
+  material (hash manifests, logs, generated files) is referenced by path unless
+  the requirements ask for it inline.
 
-## Keep tool calls small
+## Tool-call size
 
 - Commands go to the shell as JSON strings: a line break inside a string is
-  `\n`, a tab `\t`, a double quote `\"` and a backslash `\\`. Never put a raw
-  line break inside a JSON string, including in heredocs.
+  `\n`, a tab `\t`, a double quote `\"` and a backslash `\\`. A raw line break
+  inside a JSON string, including in heredocs, breaks the call.
 - The shell tool limits the length of one command; its description states the
   limit in effect (CLIO's default is 16,000 characters, and sites can change
-  it), and native shells can reject shorter ones. Put programs in script
-  files rather than long inline commands. For a long file, write it in parts
-  (`part1.md`, `part2.md`, ...) in one parallel step and join them in the next
+  it), and native shells can reject shorter ones. Programs fit better in script
+  files than in long inline commands. A long file can be written in parts
+  (`part1.md`, `part2.md`, ...) in one parallel step and joined in the next
   (`cat part*.md > file`).
-- Never re-send a whole file to change a few lines: patch it (`sed -i`, a small
-  script) or append (`cat >>`). Never emit the same file content twice.
+- A patch (`sed -i`, a small script) or an append (`cat >>`) changes a few lines
+  without re-sending the whole file; the same file content sent twice is wasted
+  context.
 
-## Before stopping
-
-Check that every required output exists at its required path, then give the
-final answer once.
+A run is complete when every required output exists at its required path.

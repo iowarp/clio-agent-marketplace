@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "geospatial",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Geospatial methods for any source: resolve a place into one analysis region, get data from where it is served (ArcGIS REST, OGC WFS/WCS, STAC, remote rasters and lidar point clouds) bounded by that region with coverage checked against the data, and harmonize layers from different sources (CRS, units, time base, co-registration) into a recorded merge. Carries clio-kit's geoservices and geoprocess servers.",
   "author": {
     "name": "IoWarp Team"

@@ -7,23 +7,18 @@ keywords:
 - fea-methods
 ---
 
-State what each boundary condition represents physically — a fixed support,
-a symmetry plane, a bolted joint idealized as fully constrained — and whether
-that idealization is conservative, unconservative, or unknown relative to the
-real system. A "fixed" boundary condition is rarely physically exact; state
-what it approximates and in which direction the approximation biases the
-result.
+Each boundary condition represents something physical (a fixed support, a
+symmetry plane, a bolted joint idealized as fully constrained), and that
+idealization is conservative, unconservative, or of unknown bias relative to
+the real system. A "fixed" boundary condition is rarely physically exact; it
+approximates something and biases the result in one direction.
 
-Justify load application the same way: point loads representing a
-distributed pressure, a simplified load case standing in for a real duty
-cycle, or a load magnitude/direction taken from a separate analysis (e.g., a
-predicted service load) — state the source and its own uncertainty.
+Loads are idealizations the same way: point loads representing a distributed
+pressure, a simplified load case standing in for a real duty cycle, or a load
+magnitude/direction taken from a separate analysis (e.g., a predicted service
+load) with its own uncertainty.
 
-Check for boundary-condition artifacts specifically: an overly stiff support
-or a point load produces a local stress singularity that does not reflect
-real behavior and should not be reported as a governing stress without
-disclosing that it is a boundary-condition artifact, not a physical result.
-
-Return each boundary condition and load with what it physically represents,
-its known bias/approximation, and whether the reported result depends on a
-boundary-condition artifact.
+Boundary conditions produce artifacts: an overly stiff support or a point load
+produces a local stress singularity that does not reflect real behavior. A
+governing stress that sits on such an artifact is a boundary-condition
+artifact, not a physical result.

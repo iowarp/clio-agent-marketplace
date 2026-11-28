@@ -8,21 +8,18 @@ keywords:
 - evidence
 ---
 
-This is `evidence_researcher`'s procedure. It defines a dynamic
-evidence investigation, not a fixed lane count or generic literature review.
+This is how `evidence_researcher` runs a dynamic evidence investigation; it
+has no fixed lane count and is not a generic literature review.
 
-Before creating evidence children, read
-[fanout-lifecycle.md](references/fanout-lifecycle.md) for lane boundaries,
-parallel spawn/wait behavior, evidence-driven follow-ups, critic iteration, and
-blocked-task handling.
+[fanout-lifecycle.md](references/fanout-lifecycle.md) covers lane
+boundaries, parallel spawn/wait behavior, evidence-driven follow-ups, critic
+iteration, and blocked-task handling.
+[source-integrity.md](references/source-integrity.md) covers fetched-source
+rules, claim mapping, citation placement, source disposition, and
+incomplete-evidence reporting.
 
-Before accepting claims or preparing the critic packet, read
-[source-integrity.md](references/source-integrity.md) for fetched-source rules,
-claim mapping, citation placement, source disposition, and incomplete-evidence
-reporting.
-
-The coordinator does not search the web. Assign web discovery and reading to
-`evidence_leaf`; assign independent verification to `evidence_critic`. Use
-`ask_user` directly only when the evidence boundary depends on a scientist-owned
-definition or inclusion choice. Preserve every child task id and synthesize only
-returned evidence.
+The coordinator has no web search. Web discovery and reading belong to
+`evidence_leaf`, independent verification to `evidence_critic`. A
+scientist-owned definition or inclusion choice that sets the evidence boundary
+is the scientist's (`ask_user`). Each child's task id identifies its lane,
+and the synthesis contains only returned evidence.

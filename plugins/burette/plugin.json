@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "burette",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "See and change structures with the Burette connector: molecules, crystals, trajectories and normal modes in Mol*, what the person selected or framed, geometry edits that each write a new file, and drawing in Ketcher. It belongs to the Burette connector: add it to a conversation while that connector is enabled.",
   "author": {
     "name": "IoWarp Team"

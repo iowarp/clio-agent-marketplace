@@ -16,20 +16,22 @@ second row, two columns may share a name, a column named for one coordinate
 may hold another (height, or a longitude in [0, 360)), and a plain CSV reader
 may keep only the last of two same-named columns.
 
-1. **Profile it.** `station_catalog.py profile` reports each column by name
+- **Profile.** `station_catalog.py profile` reports each column by name
    and `#index`: how many values are numeric, their range, duplicate names,
    header-like rows, and which columns *could* be latitude or longitude.
-2. **Decide the columns** from the profile and the catalog's documentation:
+- **Which column is which** follows from the profile and the catalog's
+  documentation:
    latitude within [-90, 90]; longitude within [-180, 180] or [0, 360); height
    in metres, often hundreds to thousands; the id unique per station. When the
-   evidence leaves two candidates, compare a few known stations with their
-   published positions or ask the user.
-3. **Write a normalized copy** with `station_catalog.py write` (columns
-   `id,latitude,longitude[,height]`), to the workspace. It keeps only rows
+   evidence leaves two candidates, a few known stations' published positions
+   settle it, or the person can.
+- **Normalized copy.** `station_catalog.py write` writes one (columns
+   `id,latitude,longitude[,height]`) to the workspace. It keeps only rows
    with coordinates in range and reports every dropped row by reason, wrapped
-   longitudes and duplicate ids. Record which source columns you chose and why.
-4. **Filter by place** with the normalized copy, and use the raw file only as
-   the cited source. `station_catalog.py within` lists the stations within a
+   longitudes and duplicate ids. Which source columns were chosen, and why, is
+   the copy's provenance.
+- **Filtering by place** works on the normalized copy; the raw file is the
+   cited source. `station_catalog.py within` lists the stations within a
    great-circle radius of a center, nearest first, with input rows and invalid
    skips; `geo_filter_points_by_radius` does the same when the geo tools are
    available.

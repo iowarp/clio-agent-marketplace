@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "fdmnes",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "XANES spectra with the FDMNES connector, and getting FDMNES onto the machine when it is missing (a confined Spack build, with the person's consent). It belongs to the FDMNES connector: add it to a conversation while that connector is enabled.",
   "author": {
     "name": "IoWarp Team"

@@ -13,37 +13,37 @@ quantum part is small on purpose: today's devices are noisy, so the comparison
 that matters is the same model on exact simulation, on a noisy simulation of a
 device, and on the device.
 
-## 1. Build the model and its baseline
+## The model and its baseline
 
-- Write the model in PyTorch with Qiskit Machine Learning: a feature map
+- The model is PyTorch with Qiskit Machine Learning: a feature map
   (`zz_feature_map(n)`) then an ansatz (`real_amplitudes(n, reps=1)`), wrapped by
   `EstimatorQNN` with the input parameters and the weight parameters named, and
-  `TorchConnector` as the layer. Train on `StatevectorEstimator(default_precision=0.0)`:
+  `TorchConnector` as the layer, trained on `StatevectorEstimator(default_precision=0.0)`:
   `EstimatorQNN`'s default estimator samples at a precision of 1/64, so training values
   and gradients would carry shot noise and the exact evaluation would not match the
   trained model.
-- Always train a classical baseline on the same features beside it (a linear layer
-  where the quantum layer is), with the same data, epochs and optimizer. Report both.
-- Make the model's environment with CLIO's own uv, in the workspace:
+- A hybrid result means something only next to a classical baseline on the same
+  features (a linear layer where the quantum layer is), with the same data, epochs and
+  optimizer.
+- The model's environment comes from CLIO's own uv, in the workspace:
   `"$CLIO_UV" venv .venv --python 3.12`, then `"$CLIO_UV" pip install --python .venv
   torch torchvision --index-url https://download.pytorch.org/whl/cpu` and
-  `"$CLIO_UV" pip install --python .venv qiskit qiskit-machine-learning`. Keep datasets
-  in the workspace's cache folder so a rerun does not download them again.
+  `"$CLIO_UV" pip install --python .venv qiskit qiskit-machine-learning`. Datasets in
+  the workspace's cache folder are not downloaded again on a rerun.
 
-## 2. Train in the background and show it live
+## Training in the background, live
 
-The person watches both models learn while training runs, so the dashboard exists
-before the first epoch ends:
+A dashboard that exists before the first epoch ends lets the person watch both models
+learn while training runs:
 
-1. `open_stream("qml-training")` and keep its `view_uri`.
-2. Load `references/training-dashboard.json`, put the `view_uri` in its two charts and
-   the task in its scope line, and publish it with `create_a2ui_surface`. Its two
-   `trajectories` charts follow the stream: loss and training accuracy over `epoch`, one
-   line per `model`.
-3. Start the training as below.
+- `open_stream("qml-training")` returns the stream's `view_uri`.
+- `references/training-dashboard.json` takes the `view_uri` in its two charts and the
+  task in its scope line, and `create_a2ui_surface` publishes it. Its two
+  `trajectories` charts follow the stream: loss and training accuracy over `epoch`, one
+  line per `model`.
 
 `run_code`'s kernel is CLIO's own Python: it has the stream and task bindings, but not
-the packages you installed for the model. So the training script runs in the
+the packages installed for the model. So the training script runs in the
 `.venv` that has them, prints one JSON line per model per epoch, and a background
 `run_code(background=True, label=...)` starts it, writes each line to the stream and
 wakes the conversation at the end:
@@ -67,43 +67,41 @@ await task.notify("Training finished" if code == 0 else f"Training failed ({code
 The training script saves the trained weights and the test features to the workspace,
 for the evaluation below.
 
-Do not poll the task; the notification wakes you.
+The notification wakes the conversation; polling the task adds nothing.
 
-## 3. Evaluate on three backends, one job each
+## Evaluation on three backends, one job each
 
-- Compute the test inputs' features in `run_code` with the trained classical part,
-  and form one parameter set per input: the features in the order of the circuit's
-  input parameters, then the trained weights in the order of its weight parameters.
-  Check the order against `circuit.parameters` (sorted by name) in the script.
-- Write the circuit out as OpenQASM 3 in standard gates (transpile to
-  `["h", "p", "cx", "ry", "rz"]` before `qasm3.dumps`) so the server can read it.
-- Call `run_estimator` once on `local_exact` and once on a `fake_<device>`, each with
+- The test inputs' features come from the trained classical part in `run_code`, one
+  parameter set per input: the features in the order of the circuit's input
+  parameters, then the trained weights in the order of its weight parameters.
+  `circuit.parameters` (sorted by name) gives that order.
+- The server reads the circuit as OpenQASM 3 in standard gates (transpiled to
+  `["h", "p", "cx", "ry", "rz"]` before `qasm3.dumps`).
+- `run_estimator` runs once on `local_exact` and once on a `fake_<device>`, each with
   all the parameter sets in `parameter_values` and the model's observable (for a
-  two-qubit model, `"ZZ"`). With a key and the person's go-ahead, a third call on a
-  real device, after the `ibm-quantum-budget` checks.
+  two-qubit model, `"ZZ"`). A third call on a real device needs a key and the person's
+  go-ahead, within the `ibm-quantum-budget` limits.
 - `view_circuit` with the feature map and the ansatz as `blocks`; `view_layout` for
   the noisy job; `view_results` with the jobs and the true labels as `expected`.
 - `compare_jobs` with `expected` gives accuracy per job and the inputs whose class
-  flipped under noise. Use the threshold the model's output uses (an expectation
+  flipped under noise, at the threshold the model's output uses (an expectation
   value at or above 0 is class 1 unless the model maps it otherwise).
 
-## 4. Report honestly
+## What the comparison shows
 
-- Give the hybrid model's and the baseline's accuracy on each backend, and name the
-  job ids.
-- Say what the result does and does not show: a two-class task on a reduced dataset
-  is easy for both models, so equal accuracy is expected and is not evidence of a
-  quantum advantage. What the comparison shows is how much the device's noise moves
-  the expectation values and which inputs sit near the decision boundary.
-- When asked why one input flipped, answer from the selected parameter set in the
-  results view (its exact and noisy values and how close it is to the threshold) and
-  from the layout (the two-qubit gates and swaps the device added), not from general
-  text.
+- Accuracy per backend for the hybrid model and the baseline, each tied to its job id.
+- A two-class task on a reduced dataset is easy for both models, so equal accuracy is
+  expected and is not evidence of a quantum advantage. What the comparison shows is how
+  much the device's noise moves the expectation values and which inputs sit near the
+  decision boundary.
+- Why one input flipped is in the selected parameter set in the results view (its
+  exact and noisy values and how close it is to the threshold) and in the layout (the
+  two-qubit gates and swaps the device added), not in general text.
 
-## 5. Keep it as a study
+## As a study
 
-The comparison is a small study, recorded with the science log (`run-a-study`) so
-it can be read, compared and extended later:
+The comparison is a small study; in the science log (`run-a-study`) it can be read,
+compared and extended later:
 
 - A `question` entry: how the device's noise changes this classifier's predictions.
 - An `experiment` entry: the trained model, the test inputs and the backends.

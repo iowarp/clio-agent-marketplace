@@ -5,13 +5,13 @@ description: Install Blender (the 4.5 LTS release) for the teardown's Blender pa
 
 # Install Blender
 
-Use this when `find_blender.py` (in `teardown-in-blender`) prints `found: false`, or the
-person asks to install Blender. `SKILL_ROOT` is this skill's directory as `load_skill`
+This applies when `find_blender.py` (in `teardown-in-blender`) prints `found: false`, or
+the person asks to install Blender. `SKILL_ROOT` is this skill's directory as `load_skill`
 reports it.
 
-## 1. Plan and ask
+## The plan and the person's choice
 
-Installing software is the person's decision. First print the plan:
+Installing software is the person's decision. `--dry-run` prints the plan:
 
 ```bash
 "$CLIO_UV" run --no-project --python "$CLIO_PYTHON" python "SKILL_ROOT/scripts/install_blender.py" --dry-run
@@ -24,8 +24,8 @@ Installing software is the person's decision. First print the plan:
 It finds the newest point release of the 4.5 LTS series on download.blender.org or one
 of Blender's official mirrors, and prints the `version`, the `url`, the `sha256` from
 Blender's release checksums, the download `size_mb` and the `folder` it would install
-into. Then ask once with `ask_user` (`kind="choice"`), naming the version, size and
-folder, with the no-admin route first:
+into. The choice is the person's (`ask_user`, `kind="choice"`, naming the version, size
+and folder), with the no-admin route first:
 
 | Choice | What runs |
 |---|---|
@@ -33,9 +33,9 @@ folder, with the no-admin route first:
 | **System-wide** | Windows: `winget install --id BlenderFoundation.Blender -e --accept-source-agreements --accept-package-agreements` (Windows asks for approval, UAC). macOS: `brew install --cask blender`. Linux: `flatpak install --user flathub org.blender.Blender` or the distribution's package |
 | **No install, renders only** | The `bpy` module route in `teardown-in-blender` (no Blender app) |
 
-## 2. Install
+## Installing
 
-For the user-level route, run it without `--dry-run`:
+The user-level route is the same script without `--dry-run`:
 
 ```bash
 "$CLIO_UV" run --no-project --python "$CLIO_PYTHON" python "SKILL_ROOT/scripts/install_blender.py"
@@ -45,25 +45,25 @@ For the user-level route, run it without `--dry-run`:
 & $env:CLIO_UV run --no-project --python $env:CLIO_PYTHON python "SKILL_ROOT\scripts\install_blender.py"
 ```
 
-It downloads about 400 MB, so give the shell a long timeout. It writes to the folder in
-the plan: on Windows `%USERPROFILE%\AppData\Local\Programs\Blender`, on macOS
+It downloads about 400 MB, which outlasts a short shell timeout. It writes to the folder
+in the plan: on Windows `%USERPROFILE%\AppData\Local\Programs\Blender`, on macOS
 `~/Applications/Blender` (the app copied out of the disk image), elsewhere
-`~/.local/opt/blender`. When the sandbox blocks that folder, run it again with that
-folder in `access_paths`; CLIO asks the person. A checksum mismatch deletes the
-download and stops: say so, and never install it another way to get past it. The
-JSON it prints last names the `blender` executable; run `find_blender.py` again to
-confirm.
+`~/.local/opt/blender`. A sandbox that blocks that folder lets it through with the folder
+in `access_paths`; CLIO asks the person. A checksum mismatch deletes the download and
+stops, and the person needs to know; Blender is never installed another way to get past
+it. The JSON it prints last names the `blender` executable, and `find_blender.py` then
+finds it.
 
 `--series` picks another release series (for example a newer LTS) and `--root` another
 folder.
 
-For the system-wide route, run the command from the table. It needs administrator
-rights, so call the shell with `outside_sandbox: true` and an `access_reason`; CLIO
-shows the person the command, and the system asks them itself (UAC on Windows; on macOS
-Homebrew's own prompt). Never ask for a password in the conversation. If they decline,
-give them the exact command to run in their own terminal, or take the user-level route.
+The system-wide route's command from the table needs administrator rights: it runs
+through the shell with `outside_sandbox: true` and an `access_reason`; CLIO shows the
+person the command, and the system asks them itself (UAC on Windows; on macOS Homebrew's
+own prompt). A password never passes through the conversation. A person who declines can
+run the exact command in their own terminal, or take the user-level route.
 
-## 3. Remove it
+## Removing it
 
 The user-level install is one folder: delete the `Blender` folder named in the plan
 (or the `Blender <version>.app` inside it on macOS). Blender keeps its own settings in

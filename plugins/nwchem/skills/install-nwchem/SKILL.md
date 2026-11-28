@@ -9,28 +9,28 @@ keywords: [nwchem, dft, spack, conda, install, level:L2]
 NWChem is free (ECL-2.0). The ASE connector finds it through its **NWChem program** value
 or `nwchem` on PATH.
 
-## Look first
+## Where NWChem may already be
 
 `binary_missing` means only that the connector found no NWChem where it looks: its **NWChem
 program** value and `nwchem` on PATH. NWChem may be elsewhere: in a conda environment
 (`conda env list`), a Spack install (`spack find -p nwchem`), a cluster module (`module avail
-nwchem`), or `~/.local/opt/nwchem`. Before offering an install, look there yourself, and ask
-the person when you cannot tell. When you find one, ask with `ask_user` whether to use it
-(name its path). Once the person agrees, set **NWChem program** (`nwchem`) to it with
-`set_connector_value`, a module's program by its full path; the value belongs to this
-conversation, so tell them they can save it as their default in the ASE connector's settings.
+nwchem`), or `~/.local/opt/nwchem`, or the person may know where it is. Using one that is
+found is the person's decision (`ask_user`, naming its path). **NWChem program** (`nwchem`)
+is set with `set_connector_value`, a module's program by its full path; the value belongs to
+this conversation, and the person can save it as their default in the ASE connector's
+settings.
 
-## Ask first
+## The person's choice
 
-Ask once with `ask_user`: **install it now** (Spack builds it from source in tens of
-minutes with MPI and maths libraries; conda installs a prebuilt one in minutes), **I'll
-install it myself**, or **use a calculator that is ready** (`calculators` lists them; say
-what changes, for example xTB instead of DFT).
+Installing is the person's decision (`ask_user`): **install it now** (Spack builds it from
+source in tens of minutes with MPI and maths libraries; conda installs a prebuilt one in
+minutes), **I'll install it myself**, or **use a calculator that is ready** (`calculators`
+lists them; xTB instead of DFT, for example, changes what the result means).
 
-## Install once, for every conversation
+## One install for every conversation
 
-Install under `~/.local/opt` (never inside a workspace, which would install it again for
-each one) and put a launcher in `~/.local/bin`, which is on CLIO's PATH:
+An install under `~/.local/opt` serves every conversation (one inside a workspace would be
+repeated for each), and a launcher in `~/.local/bin` is on CLIO's PATH:
 
 - **conda (fastest):** with `conda`, or the standalone `micromamba` when conda is absent:
   `conda create -y -p "$HOME/.local/opt/nwchem" -c conda-forge nwchem`.
@@ -54,9 +54,8 @@ chmod +x "$HOME/.local/bin/nwchem"
 Running as root in a container, Open MPI also needs `OMPI_ALLOW_RUN_AS_ROOT=1` and
 `OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1` exported in the launcher.
 
-## Check
+## A working install
 
-Call `calculators`: NWChem is ready with no setting. A run of H2 at a small basis checks
-the basis library before the real calculation (an `exit 255` with a basis error in its
-output means the library path is wrong). For parallel runs the calculator setting `nprocs`
-adds `mpirun -np`.
+`calculators` shows NWChem ready with no setting. A run of H2 at a small basis exercises
+the basis library (an `exit 255` with a basis error in its output means the library path is
+wrong). For parallel runs the calculator setting `nprocs` adds `mpirun -np`.

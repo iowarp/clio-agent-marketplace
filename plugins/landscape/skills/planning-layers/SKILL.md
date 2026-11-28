@@ -15,44 +15,42 @@ and fish habitat, land capability or soil classes, stream and floodplain zones,
 impervious cover, parcels, plan boundaries. Each answers a narrow question; a
 good answer combines them without double counting.
 
-## Find and read the layers
+## Finding and reading the layers
 
 - An agency's catalog entries often each point to one layer of a map service.
-  Get the features from the service layer (`fetch_features`) when a file
-  download fails; it serves the same features.
-- Read each layer's fields and what its classes mean (from the layer's
-  metadata or the agency's documentation). A class code without a legend is a
+  The service layer (`fetch_features`) serves the same features when a file
+  download fails.
+- Each layer's fields and what its classes mean come from the layer's
+  metadata or the agency's documentation. A class code without a legend is a
   caveat, not a guess.
-- Note each layer's date or vintage. Habitat and land-cover maps are snapshots.
+- Each layer has a date or vintage. Habitat and land-cover maps are snapshots.
 
-## Answer "how much"
+## "How much"
 
-- **Covered area of one theme:** dissolve the theme's polygons
-  (`overlay_features` with `dissolve`) before reporting hectares. Several
-  habitat layers (for example one per species) overlap: report each theme's
-  area and the dissolved area of the union, never the sum as a total.
-- **Share of the region:** clip to the region's boundary polygon
-  (`clip_features`), and use the same boundary for the denominator. Say
-  whether open water is in or out of the denominator.
-- **By class:** dissolve `by` the class field and report the per-class
-  hectares.
+- **Covered area of one theme:** the theme's polygons dissolved
+  (`overlay_features` with `dissolve`) give its hectares. Several habitat
+  layers (for example one per species) overlap: each theme's area and the
+  dissolved area of the union are meaningful; their sum is not a total.
+- **Share of the region:** a clip to the region's boundary polygon
+  (`clip_features`), with the same boundary as the denominator. Whether open
+  water is in or out of the denominator changes the share.
+- **By class:** a dissolve `by` the class field gives per-class hectares.
 
-## Answer "how does it relate to the lake, river or roads"
+## "How does it relate to the lake, river or roads"
 
-- **Distance bands:** build bands around the feature (for example 0 to 100 m,
-  100 to 500 m, beyond) as polygons, intersect the theme with them
-  (`overlay_features` with `intersection`), and report the area per band.
-  Write the buffers with a short script in a projected CRS. State the band
-  edges.
-- **Adjacency:** count theme polygons that touch or lie within a stated
+- **Distance bands:** bands around the feature (for example 0 to 100 m,
+  100 to 500 m, beyond) as polygons, intersected with the theme
+  (`overlay_features` with `intersection`), give the area per band. Buffers
+  are a short script in a projected CRS, and the band edges define the result.
+- **Adjacency:** the count of theme polygons that touch or lie within a stated
   distance of the feature.
 - **Overlap of two themes** (habitat in a stream zone, habitat on steep
-  land-capability classes): intersect them and report the shared area and
-  each theme's share of it.
+  land-capability classes): their intersection gives the shared area and each
+  theme's share of it.
 
 ## Caveats to carry
 
 Different layers come from different surveys and dates, and their boundaries
-do not line up exactly. Slivers from boundary mismatch are not real overlap:
-drop intersections below a stated minimum area and say so. Regulatory
+do not line up exactly. Slivers from boundary mismatch are not real overlap;
+a stated minimum area separates them from real intersections. Regulatory
 boundaries define where rules apply, not the ecological extent of a habitat.

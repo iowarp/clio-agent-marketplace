@@ -8,40 +8,34 @@ keywords:
 - study-design
 ---
 
-## Choose the method
+## The method
 
-Start from what the question asks (a mechanism, a comparison, a prediction, a
-characterization) and choose a method that can produce evidence for that
-claim, not just a familiar one. State it as a falsifiable procedure: which
-result would support the hypothesis, and which would weaken or contradict it.
+What the question asks (a mechanism, a comparison, a prediction, a
+characterization) decides which methods can produce evidence for that claim;
+a familiar method may not. A method is a falsifiable procedure: some result
+would support the hypothesis, and some would weaken or contradict it.
 
-Name the method's assumptions and scope: the population, system, regime and
+A method has assumptions and a scope: the population, system, regime and
 conditions it applies to, and what it does not cover. A method borrowed from
 an adjacent field or a different system needs justification before its
 validity transfers.
 
-Keep the method separate from the instrument, program or protocol that
-executes a step of it, so the method survives a tool change.
+A method kept separate from the instrument, program or protocol that executes
+a step of it survives a tool change.
 
-## Design the study
+## The study design
 
-- **What it must distinguish.** State the hypothesis, the independent
-  variables changed, the dependent variables measured, and every variable
-  held constant or controlled. An uncontrolled variable that correlates with
+- **What it must distinguish.** The hypothesis, the independent variables
+  changed, the dependent variables measured, and every variable held constant
+  or controlled. An uncontrolled variable that correlates with
   the one of interest invalidates the comparison however the data is analysed
   afterwards.
-- **Size.** State the number of replicates needed to detect the effect of
-  interest given the expected scatter, not a convenient or traditional number.
-- **Acceptance criterion, fixed in advance.** For a comparison, define what
-  counts as a difference before collecting data; choosing it after seeing the
-  results does not test the hypothesis.
-- **Confounds.** Identify batch, location, operator, instrument and time
-  effects, and design to detect or exclude them: randomization, blocking,
-  replication across batches.
-
-## Return
-
-The method with its assumptions, scope and falsification criteria; the study
-design (hypothesis, variables and controls, sample size and rationale,
-acceptance criterion, confound controls); and the specialists or skills
-needed for each step.
+- **Size.** The number of replicates needed to detect the effect of interest
+  follows from the expected scatter, not from a convenient or traditional
+  number.
+- **Acceptance criterion, fixed in advance.** For a comparison, what counts as
+  a difference is defined before collecting data; a criterion chosen after
+  seeing the results does not test the hypothesis.
+- **Confounds.** Batch, location, operator, instrument and time effects are
+  detected or excluded by design: randomization, blocking, replication across
+  batches.

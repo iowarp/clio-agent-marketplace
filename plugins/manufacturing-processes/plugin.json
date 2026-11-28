@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "manufacturing-processes",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "How a design becomes a part: process families (additive and conventional), additive process parameters and their defects, build orientation, manufacturability checks, post-processing and surface finishing, and the manufacturing_expert subagent.",
   "author": {
     "name": "IoWarp Team"

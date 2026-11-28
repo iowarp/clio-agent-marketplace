@@ -4,18 +4,18 @@ The example contains six slides using fictional station summaries in arbitrary
 units. Its native tables and chart stay editable; speaker notes retain the source
 context and uncertainty. It is a design example, not a real experiment.
 
-1. Prepare the execution runtime and confirm JavaScript is ready.
-2. Load `create-reference-deck.mjs` through this skill's file argument and save it
-   in the returned JavaScript workspace, where `pptxgenjs` resolves.
-3. Execute it with the returned `javascript.script_argv`, passing a task-owned
-   output directory. It writes `reference-deck.pptx` and `reference-source.json`.
-4. Reopen the deck to check all six slides, tables, chart and notes. Call
-   `prepare_document` with `action="render"` on it. Inspect the six-slide contact
-   sheet, then choose individual slides for closer review when the overview shows
-   unclear text or possible layout problems.
-5. Revise the native builder, regenerate and repeat if needed. Publish the final
-   editable deck with its source-bound PDF preview.
+`create-reference-deck.mjs` loads through this skill's file argument. Once the
+execution runtime reports JavaScript ready, it runs from the returned JavaScript
+workspace, where `pptxgenjs` resolves. Executed with the returned
+`javascript.script_argv` and a task-owned output directory, it writes
+`reference-deck.pptx` and `reference-source.json` there.
 
-Use `references/pptxgenjs.md` for library mechanics and `references/slide-design.md`
-for narrative and composition. Choose the slide count and layouts from the real
-evidence and audience. Do not preserve fictional example findings in a user deck.
+Reopening the deck shows its six slides, tables, chart and notes. `prepare_document`
+with `action="render"` gives its six-slide contact sheet; individual slides show
+what the overview leaves unclear, such as small text or possible layout problems.
+Changes go into the native builder and appear after it runs again. The final
+editable deck publishes with its source-bound PDF preview.
+
+`references/pptxgenjs.md` covers library mechanics and `references/slide-design.md`
+narrative and composition. A real deck's slide count and layouts follow from its
+evidence and audience; the example's findings are fictional.

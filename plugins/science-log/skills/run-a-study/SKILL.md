@@ -12,117 +12,115 @@ keywords:
 # Run a study
 
 The log records what was learned; the workflow runs the work. The log never judges a
-claim: you choose the analysis, you decide what is enough, and you say why. The log is
-the study's record: the person reads the study in its Science log, follows each claim
-to the entries and calls behind it, and can export the measurements. Your final answer
-summarizes the Conclusion; a result that is only in your answer cannot be checked.
+claim: the analysis, what is enough, and why are the agent's, stated in the entries.
+The log is the study's record: the person reads the study in its Science log, follows
+each claim to the entries and calls behind it, and can export the measurements. A
+result that is only in a chat answer cannot be checked.
 
-## Frame it
+## The question and its hypotheses
 
-1. Write the question with `log_entry` (`type: question`): the statement and its
-   scope. If the person gave a limit on what the study may spend, put it on this root
-   question as `budget` (amount and unit); every Observation then states its `cost`.
-2. Write one Hypothesis per competing answer (`links: {question: <id>}`), each with
-   the `refuting_prediction` that would show it wrong. When a hypothesis states a law,
-   give it as `formula` too, written `<measured> = <expression>` in the names the
-   data use (the apparatus's inputs, a table's columns), with numbers, `+ - * / ^`,
-   parentheses, `pi` and `sqrt exp log abs min max`; a threshold is a `max` or `min`.
-   A formula in the data's own names can be drawn against every reading.
-3. Size the study from the claims it must support. A claim that one approach beats
-   another needs each approach tried under shared conditions (the same inputs, seeds
-   or settings), often enough that the difference stands out from the run-to-run
-   spread; a single trial supports neither. Estimate that spread first (a short pilot
-   or the first trials): a sample whose interval stays wider than the difference worth
-   reporting cannot decide between the hypotheses, so when nothing limits the study,
-   enlarge it rather than conclude. A claim about a law needs measurements across the
-   range it covers. Write the intended sample size on each Experiment; a sample too
-   large for one conversation is work to spread across children (step 5).
+- **Question** (`log_entry`, `type: question`): the statement and its scope. A limit
+  the person gave on what the study may spend lives on this root question as `budget`
+  (amount and unit), and every Observation then carries its `cost`.
+- **Hypothesis**, one per competing answer (`links: {question: <id>}`), each with the
+  `refuting_prediction` that would show it wrong. A hypothesis that states a law can
+  carry it as `formula`, written `<measured> = <expression>` in the names the data use
+  (the apparatus's inputs, a table's columns), with numbers, `+ - * / ^`, parentheses,
+  `pi` and `sqrt exp log abs min max`; a threshold is a `max` or `min`. A formula in
+  the data's own names can be drawn against every reading.
+- **Size.** The claims set it. A claim that one approach beats another needs each
+  approach tried under shared conditions (the same inputs, seeds or settings), often
+  enough that the difference stands out from the run-to-run spread; a single trial
+  supports neither. A short pilot or the first trials estimate that spread: a sample
+  whose interval stays wider than the difference worth reporting cannot decide between
+  the hypotheses, and when nothing limits the study a larger sample can. A claim about
+  a law needs measurements across the range it covers. The intended sample size belongs
+  on each Experiment; a sample too large for one conversation is work for children.
 
 ## Small or branched
 
-A small study, one experiment that fits in this conversation, needs no workflow: you
-write its entries yourself as you go (steps 1-3, then 5, 6, 8, 11 and 12, with no
-branches to read or merge). Record the values as `measurements`, so its view can
-chart them: for a small study one dashboard holding the chart that answers the
-question is the whole view (a few calls with `create-dashboard`). The record costs a
-few calls; what it gives the person is a result they can check, see and reuse. Branch a study (steps 4 onward) when it has separable parts: competing
-hypotheses that each need their own test, independent inputs, many trials.
+A small study, one experiment that fits in this conversation, needs no workflow: its
+entries (question, hypotheses, experiment, observations, evidence, conclusion and a
+chart) are written in the conversation, with no branches to read or merge. Values
+recorded as `measurements` can be charted: for a small study one dashboard holding the
+chart that answers the question is the whole view (a few calls with
+`create-dashboard`). The record costs a few calls; it gives the person a result they
+can check, see and reuse. A branched study suits separable parts: competing hypotheses
+that each need their own test, independent inputs, many trials.
 
-## Branch it
+## Branches
 
-4. Run the study as a workflow with `run_workflow`, started with `isolate: true` so
-   each step writes in its own folder: one step per hypothesis with target `self`,
-   a merge step after them, and `review` named in `editors`. An editor acts when a
-   step fails, or when it runs as a step: put a step targeting `review` after the
-   merge to read its result and, when the evidence cannot decide, add the steps
-   that would (a larger sample, a new condition) and a merge after them. Each step's
-   task names its hypothesis id and asks it to design, run and analyze the test. The
-   branch is where a result no hypothesis offered is first seen and pursued (steps 9
-   and 10); a branch told only to gather data and report it back has no results of
-   its own to change course from.
-5. In a branch, write the Experiment first (`links: {hypothesis: <id>}`): the method
-   and the sample size you intend. Form your own design before reading what other
-   branches found. Independent trials are separable work: spread them across
-   children (each a self-contained batch with its conditions and the Observations to
-   log), so each child's context holds only its own trials and yours holds their
-   results, and the batches run side by side.
+- **The workflow.** `run_workflow` with `isolate: true` gives each step its own folder:
+  one step per hypothesis with target `self`, a merge step after them, and `review`
+  named in `editors`. An editor acts when a step fails, or when it runs as a step: a
+  step targeting `review` after the merge reads its result and, when the evidence
+  cannot decide, adds the steps that would (a larger sample, a new condition) and a
+  merge after them. Each step's task names its hypothesis id and covers designing,
+  running and analyzing the test. The branch is where a result no hypothesis offered is
+  first seen and pursued; a branch told only to gather data and report it back has no
+  results of its own to change course from.
+- **Experiment** (`links: {hypothesis: <id>}`): the method and the intended sample
+  size, written before observations. A design formed before reading what other branches
+  found is independent of them. Independent trials are separable work: children each
+  take a self-contained batch with its conditions and the Observations to log, so each
+  child's context holds only its own trials, the parent's holds their results, and the
+  batches run side by side.
 
-## Record what happened
+## Observations and evidence
 
-6. Log every run as an Observation (`links: {experiment: <id>}`). In `from_calls`,
-   cite the recorded calls that produced it: every tool result carries its `call:`
-   reference. Put the values in `measurements` with their `conditions` (settings,
-   seed, strategy, node, repeat index). When a tool returned the value, name it with
-   `source: {call, field}` instead of typing it. If your own script writes a result
-   file, designate it as an artifact so its hash is on record.
-7. Before claiming anything, read the other branches with `query_log`. Say in your
-   Evidence when you relied on another branch's result.
-8. Analyze in your own code. `export_measurements` writes the measurements to a data
-   file with a manifest; run the analysis the experiment needs (a mean, a paired
-   comparison over shared conditions, an interval, a fitted model), record its seed
-   when it is random, and cite that analysis call as `analysis_call` in the Evidence
-   (`links: {observation: [...], supports | refutes: <hypothesis>}`). Give `strength`
-   honestly, and say so when the sample is too small to separate two hypotheses.
-   Record a hypothesis's fate with `set_status` (supported, refuted, superseded) and
-   the reason. A branch analyzes its own results before it ends, even when the merge
-   will compare all of them.
+- **Observation**, one per run (`links: {experiment: <id>}`). `from_calls` cites the
+  recorded calls that produced it: every tool result carries its `call:` reference.
+  Values go in `measurements` with their `conditions` (settings, seed, strategy, node,
+  repeat index). A value a tool returned is named with `source: {call, field}`, not
+  typed. A result file written by the agent's own script, designated as an artifact,
+  has its hash on record.
+- **Other branches.** `query_log` reads them; Evidence that relies on another branch's
+  result says so.
+- **Evidence** (`links: {observation: [...], supports | refutes: <hypothesis>}`).
+  `export_measurements` writes the measurements to a data file with a manifest; the
+  analysis the experiment needs (a mean, a paired comparison over shared conditions,
+  an interval, a fitted model) runs in the agent's own code, with its seed recorded
+  when it is random, and that call is the Evidence's `analysis_call`. `strength` is
+  honest, including when the sample is too small to separate two hypotheses.
+  `set_status` records a hypothesis's fate (supported, refuted, superseded) and the
+  reason. A branch's own results are analyzed in the branch, even when the merge will
+  compare all of them.
 
-## Change course
+## Changes of course
 
-9. When your results suggest an explanation no hypothesis offered (a pattern, an
-   outlier, a cause), that is a new hypothesis: write it, then `fork` with a note
-   naming it. The fork carries your conversation and pursues the new direction
-   beside you, and the merge waits on it.
-10. When the question itself should change (its premise is false, or each answer
-   holds only under conditions the question did not name), write the new Question
-   and a Reframe (`links: {old_question, new_question, evidence}`). In a workflow,
-   fork with a note naming the new question; otherwise carry on with it. The
-   Conclusion answers the question the study ended with.
+- **A new explanation.** A pattern, an outlier or a cause no hypothesis offered is a
+  new hypothesis; `fork` with a note naming it carries the conversation and pursues the
+  new direction beside the branch, and the merge waits on it.
+- **A new question.** When the question itself should change (its premise is false, or
+  each answer holds only under conditions the question did not name), a new Question
+  and a Reframe (`links: {old_question, new_question, evidence}`) record it. In a
+  workflow a fork with a note naming the new question pursues it. The Conclusion
+  answers the question the study ended with.
 
-## Close it
+## The conclusion
 
-11. The merge step reads every branch's entries and writes one Conclusion
-    (`links: {question: <root id>, merges: [...]}`): each claim cites the entries it
-    rests on, a quantitative claim cites its analysis call, `confidence` and
-    `caveats` are explicit, and `relation` says whether it answers the question,
-    refutes its premise or replaces it. Record a Conflict for each disagreement
-    you do not resolve, citing both sides: between branches, or between two results
-    (a measurement and a calculation, two methods) that should agree.
-12. Show the comparison as a chart from the measurements, not as prose alone.
+The merge step reads every branch's entries and writes one Conclusion
+(`links: {question: <root id>, merges: [...]}`): each claim cites the entries it rests
+on, a quantitative claim cites its analysis call, `confidence` and `caveats` are
+explicit, and `relation` says whether it answers the question, refutes its premise or
+replaces it. A Conflict records each unresolved disagreement, citing both sides:
+between branches, or between two results (a measurement and a calculation, two
+methods) that should agree. A comparison shows as a chart from the measurements, not
+as prose alone.
 
 ## Views
 
 A study's views are where the scientist watches it run and checks its conclusion.
 They are dashboards, built around the question: what would show whether a
-hypothesis holds, how the branches compare, where the study is now. Build each one
-as a dashboard with the `create-dashboard` skill (and review it with
-`review-visual-presentation`), publish it with `publish_dashboard_report`, and attach
-it with `log_entry` (`type: view`, `dashboard_id`: the report id it returned, a
-`title`, the `purpose` it serves, `links: {serves: <question or hypothesis>}`). A chat
-surface is for a quick look in the conversation, not a study view.
+hypothesis holds, how the branches compare, where the study is now. A view is a
+dashboard built with the `create-dashboard` skill (`review-visual-presentation`
+reviews it), published with `publish_dashboard_report`, and attached with `log_entry`
+(`type: view`, `dashboard_id`: the report id it returned, a `title`, the `purpose` it
+serves, `links: {serves: <question or hypothesis>}`). A chat surface is for a quick
+look in the conversation, not a study view.
 
 A chart or table in a view can read the study directly, and it shows new entries as
-they arrive without you rebuilding it:
+they arrive without being rebuilt:
 
 - `study://<study>/measurements`: every measured value with its conditions, branch
   and status; when a standing hypothesis gives a `formula` in the data's own names,
@@ -131,8 +129,7 @@ they arrive without you rebuilding it:
 - `study://<study>/records/<name>`: records a plugin's tools keep, including each
   record's producing branch.
 
-The study id is the root question's id. Revise a view by publishing its dashboard
-again with its `report_id` as the study changes course (the view shows the latest
-version), and add a view when it takes a new direction; withdraw one that no longer
-serves with `set_status` (`withdrawn`). A branch may attach drill-down views of its
-own.
+The study id is the root question's id. Publishing a view's dashboard again with its
+`report_id` revises it (the view shows the latest version); a new direction can have
+its own view; `set_status` (`withdrawn`) withdraws one that no longer serves. A branch
+may attach drill-down views of its own.

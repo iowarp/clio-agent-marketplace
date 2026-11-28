@@ -10,23 +10,22 @@ keywords: [avogadro, build, edit, crystal, surface, selection, level:L2]
 **Burette or Avogadro.** Burette is the light viewer in the conversation: look, play
 trajectories and modes, pick atoms, set a bond, angle or dihedral. Avogadro is the 3D
 builder: fragments and templates, element changes, adding and deleting atoms and bonds,
-optimizing while dragging, crystals (space groups, supercells, slabs). Use Avogadro when the
-change is more than an internal coordinate, and say why.
+optimizing while dragging, crystals (space groups, supercells, slabs). Avogadro suits a change
+that is more than an internal coordinate.
 
 ## Open
 
 `open_in_avogadro(path)` opens a workspace structure file in a tab (or an empty molecule to
-build from scratch). The first open starts Avogadro (seconds). If it says `not_installed` or
-`display_missing`, use `install-avogadro`.
+build from scratch). The first open starts Avogadro (seconds). `not_installed` and
+`display_missing` are what `install-avogadro` covers.
 
 ## The person works, then says so
 
 The person edits in the tab and selects the atoms they mean (Select menu, or the selection
-tool); nothing needs to be sent. When they say they are done, or ask about what they built,
-call `read_avogadro`: it reads the molecule open in Avogadro now, writes it as XYZ (and
+tool); nothing needs to be sent. `read_avogadro` reads the molecule open in Avogadro now, writes it as XYZ (and
 Avogadro's CJSON) in the workspace, and gives the selected atoms as 0-based indices in that
-file's order. Continue from that file (inspect it, optimize it); a hand-built structure is
-a starting point. (An Avogadro older than 2.1 cannot report its molecule: there the person
+file's order. That file is what later steps (inspecting, optimizing) start from; a hand-built
+structure is a starting point. (An Avogadro older than 2.1 cannot report its molecule: there the person
 chooses **Extensions > CLIO > Send to CLIO** first, and `read_avogadro` reads that.)
 
 Files the person saves from Avogadro's own Save dialog land in the workspace's
@@ -35,7 +34,7 @@ Files the person saves from Avogadro's own Save dialog land in the workspace's
 ## Look
 
 `avogadro_snapshot` gives a picture of Avogadro's 3D view when you need to see what the
-person built. Answer questions about the structure from the sent file (distances and angles
-computed with `inspect_structure`), not from the picture.
+person built. The sent file answers questions about the structure (distances and angles
+computed with `inspect_structure`); the picture is only a view of it.
 
-`close_avogadro` stops it; anything not sent or saved is lost, so say so first.
+`close_avogadro` stops it; anything not sent or saved is lost.

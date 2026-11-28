@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "pdf",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Read, review and produce PDF documents.",
   "author": {
     "name": "IoWarp Team"

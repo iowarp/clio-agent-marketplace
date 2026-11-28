@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "copernicus",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find, size, subset and download Copernicus Marine ocean products and Climate Data Store datasets (ERA5 and others) through copernicus-mcp, run as its maintainers ship it, keeping each file's provenance and data licence. It belongs to the Copernicus connector, which holds the accounts: add it to a conversation while that connector is enabled.",
   "author": {
     "name": "IoWarp Team"

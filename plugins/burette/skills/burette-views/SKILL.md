@@ -26,10 +26,9 @@ Files are opened by path; nothing is uploaded.
 ## What the person is looking at
 
 The viewer reports to you what the person selected, the region they framed, the frame of
-a trajectory, the playing mode and the focus. When they say "this", read it from the
-view's state (`get_view_state`; `describe_region` for a framed region) rather than
-guessing, and name the atoms by element and index. You can move the view yourself:
-`set_frame`, `play_mode`, `focus`.
+a trajectory, the playing mode and the focus. What the person means by "this" is in the
+view's state (`get_view_state`; `describe_region` for a framed region); atoms are
+identified by element and index. `set_frame`, `play_mode` and `focus` move the view.
 
 ## In a dashboard, linked to charts
 
@@ -51,14 +50,14 @@ animation path) and `focus`.
   structure's path, selecting on `/selection/path`, opens that structure.
 
 What the person picks on the chart reaches you as the view's state and the chart's
-selection; answer from those rows and from the structure file, not from the picture.
+selection; those rows and the structure file hold the answer, not the picture.
 
 ## Edits make new files
 
 Every geometry edit writes a new file and leaves the source unchanged; the result names
 the file and the value measured from it. Ring bonds cannot be set this way (the ring
-would break): say so and suggest a constrained optimization instead. A hand-edited
-geometry is a starting point: optimize it before computing properties.
+would break); a constrained optimization can change one. A hand-edited geometry is a
+starting point: properties computed before optimizing it describe a strained structure.
 
 Burette is for looking and quick internal-coordinate edits. Building a structure from
 fragments, changing elements or making surfaces and supercells is Avogadro's

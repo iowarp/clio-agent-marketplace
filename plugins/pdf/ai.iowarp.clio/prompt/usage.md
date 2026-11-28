@@ -3,6 +3,6 @@ id: pdf.usage
 section: capabilities
 when: {"tools": ["load_skill"]}
 ---
-PDFs: to read or check an existing PDF, load `work-with-pdfs`. Produce a PDF
-only when the user asks for a PDF deliverable, with `create-pdf-report`;
-otherwise reports are Markdown.
+PDFs: `work-with-pdfs` covers reading and checking an existing PDF;
+`create-pdf-report` covers making a PDF deliverable. CLIO's ordinary reports
+are Markdown; a PDF is the format when the person asks for one.

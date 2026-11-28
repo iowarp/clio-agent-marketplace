@@ -1,20 +1,20 @@
 ---
 name: inspect-office-package
-description: Use before and after editing .docx, .xlsx, .pptx, .odt, .ods or .odp files, to inventory and compare their packages so unknown parts, macros, comments and tracked changes survive.
+description: Inventories and compares .docx, .xlsx, .pptx, .odt, .ods or .odp packages around an edit, so unknown parts, macros, comments and tracked changes survive.
 ---
 
 # Inspect Office Package
 
-Use this before and after any agent edit, especially to files created outside CLIO.
+The comparison matters most for files created outside CLIO, whose parts a library may not own.
 
-1. Run `scripts/package_guard.py inventory INPUT --output before.json`.
-2. Identify the exact package parts the chosen edit method is expected to change. Review [part-ownership.md](references/part-ownership.md).
-3. If the library cannot round-trip present features—macros, signatures, ActiveX, embedded objects, custom XML, advanced chart/workbook/presentation features—use targeted ZIP/XML mutation or stop with a typed incompatibility.
-4. After editing, run:
+- `scripts/package_guard.py inventory INPUT --output before.json` records the package before an edit.
+- An edit method is expected to change specific package parts; [part-ownership.md](references/part-ownership.md) lists typical scopes.
+- Present features a library cannot round-trip—macros, signatures, ActiveX, embedded objects, custom XML, advanced chart/workbook/presentation features—survive a targeted ZIP/XML mutation; otherwise the edit is a typed incompatibility.
+- After an edit, the comparison is:
 
    `scripts/package_guard.py compare before.json OUTPUT --allow 'word/document.xml' --allow 'docProps/core.xml'`
 
-5. Every removed, added, or unexpectedly changed part is a failure. Expand the allowlist only when the requested edit and format semantics justify that exact part.
-6. Open/recalculate/render with LibreOffice when available and inspect the real result. Package parity is necessary but not sufficient.
+- A removed, added, or unexpectedly changed part outside the allowlist is drift the edit caused. An allowlist entry is justified by the requested edit and format semantics for that exact part.
+- LibreOffice, when available, opens, recalculates or renders the real result. Package parity is necessary but not sufficient.
 
-Never use unzip-and-rezip as a casual normalization step: package metadata, relationship integrity, and untouched compressed parts are part of compatibility.
+Unzip-and-rezip is not a neutral normalization: package metadata, relationship integrity, and untouched compressed parts are part of compatibility.

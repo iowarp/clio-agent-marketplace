@@ -7,24 +7,20 @@ keywords:
 - characterization
 ---
 
-State which roughness parameter is being reported — Ra (arithmetic mean),
-Rz (mean peak-to-valley), Sa (areal mean, from an areal rather than profile
-measurement) — and its evaluation/cutoff length. Ra and Sa are not the same
-quantity and are not directly convertible without additional assumptions;
-report the one actually measured.
+Roughness parameters differ: Ra (arithmetic mean), Rz (mean peak-to-valley),
+Sa (areal mean, from an areal rather than profile measurement), each with its
+evaluation/cutoff length. Ra and Sa are not the same quantity and are not
+directly convertible without additional assumptions; a value means the
+parameter actually measured.
 
-State the measurement method (contact stylus profilometry, `optical-profilometry`,
-areal optical scanning) and its own resolution and known limitations — a
-contact stylus can under-resolve steep AM as-built features a stylus tip
-cannot physically enter, while optical methods can be biased by highly
-reflective or steeply sloped as-built surfaces.
+Each measurement method (contact stylus profilometry, `optical-profilometry`,
+areal optical scanning) has its own resolution and known limitations: a
+contact stylus can under-resolve steep AM as-built features its tip cannot
+physically enter, while optical methods can be biased by highly reflective or
+steeply sloped as-built surfaces.
 
-For an AM surface specifically, state whether the measurement is on an
-as-built, machined, or finished surface (see `post-processing`), and note
-that as-built AM roughness is typically anisotropic (different on up-facing,
-down-facing, and vertical surfaces per `build-orientation`) — a single
-reported value should state which surface it came from.
-
-Return the roughness parameter and value, its evaluation length and
-measurement method, and the specific surface/orientation/finishing state it
-describes.
+On an AM part, an as-built, machined, or finished surface (see
+`post-processing`) gives different values, and as-built AM roughness is
+typically anisotropic (different on up-facing, down-facing, and vertical
+surfaces per `build-orientation`): a single value describes the one surface
+it came from.

@@ -8,14 +8,13 @@ keywords:
 - provenance
 ---
 
-The dossier is the study log: use this skill whenever the research state
-materially changes, and keep that state as log entries (`log_entry`,
-`set_status`, `link`, `query_log`), not as a file of prose. Load `run-a-study`
-for how entries and their links work.
+The dossier is the study log: the research state lives as log entries
+(`log_entry`, `set_status`, `link`, `query_log`), not as a file of prose.
+`run-a-study` covers how entries and their links work.
 
-Say in each entry what kind of knowledge it holds: scientist-supplied fact,
-external evidence, expert inference, proposed default, accepted decision,
-unresolved question, or unverified artifact claim.
+Each entry holds one kind of knowledge: scientist-supplied fact, external
+evidence, expert inference, proposed default, accepted decision, unresolved
+question, or unverified artifact claim.
 
 - **A consequential decision** is a Question (the decision to make, with its
   units and alternatives) answered by a Conclusion whose claims cite the evidence,
@@ -30,7 +29,7 @@ unresolved question, or unverified artifact claim.
   or checked the artifact; each later check is another Observation, and the
   Evidence interpreting it says which status the artifact has reached.
 
-When a deliverable becomes useful outside chat, call the runtime-provided
-`create_artifact` with complete content, an appropriate workspace-relative name,
-and exact inputs in `used`. Preserve the returned artifact identity and version;
-do not claim creation after a rejected call.
+A deliverable useful outside chat is a `create_artifact` call (runtime-provided)
+with complete content, a workspace-relative name, and exact inputs in `used`.
+The returned artifact identity and version name it; a rejected call created
+nothing.

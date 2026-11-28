@@ -1,19 +1,21 @@
 # Reading comment entries
 
-Every entry belongs to the version in its header. Apply it to that version only.
-If the file changed since, say so and ask before carrying a mark to new content.
+Every entry belongs to the version in its header. When the file changed since,
+the mark points at content that may no longer be there; whether it carries to the
+new content is the person's call.
 
 ## Marks
 
 - **Text** (`S1 (text)`): `Selected` is the exact text; `Before` and `After` are the
-  text around it. Match all three when the selected words occur more than once.
+  text around it. Together the three identify the place when the selected words
+  occur more than once.
 - **Region** (`S1 (region)`): `Box` is the rectangle as percentages of the page or
   image. `Under` is the text inside it, cut at a limit; a `Cut` line names the file
   that holds the rest. The crop shows the same area.
 - **Element** (`S1 (element)`): `Element` names the tag and, on HTML and SVG, its
-  role and accessible name. `Text` is its text. Use the selector or the role and
-  name to find it in the source; on a static HTML file, edit the file, since its
-  scripts did not run where the person commented.
+  role and accessible name. `Text` is its text. The selector, or the role and
+  name, find it in the source; a static HTML file's scripts did not run where the
+  person commented, so the file itself is what they saw.
 
 ## Where to edit
 
@@ -22,23 +24,23 @@ If the file changed since, say so and ask before carrying a mark to new content.
   OpenDocument renditions give the page only, with a `source_unmapped` note.
 - On a LaTeX paper's PDF, `Source` names the `.tex` file, the lines and the outline
   node the mark falls in (for example `sections/eval.tex, lines 112 to 113, in
-  Section "Scaling"`). Edit those lines; never the PDF. A region on a figure adds
+  Section "Scaling"`); the PDF is rebuilt from those lines. A region on a figure adds
   `Figure` (the environment, its label and lines) and `Graphics` (its
-  `\includegraphics` file). When `Made by` names the figure's script, change the
-  script, rerun it, then rebuild the paper.
+  `\includegraphics` file). When `Made by` names the figure's script, the figure
+  changes when that script reruns and the paper is rebuilt.
 - `Picture` names a picture the region covers. When its bytes are a workspace image,
-  the line names that image, and `Made by` names the call and script that made it:
-  change the script, rerun it, then rebuild the document so it embeds the new
-  picture. "its bytes match no workspace image" means the picture is only in the file.
+  the line names that image, and `Made by` names the call and script that made it;
+  the document embeds a new picture once the script reruns and the document is
+  rebuilt. "its bytes match no workspace image" means the picture is only in the file.
 - The header's "Produced by" names the call that made a figure or HTML page. For a
-  `run_code` producer it shows the cell. Change the cell or script and run it again;
-  do not edit the generated file by hand.
+  `run_code` producer it shows the cell. The generated file comes from that cell or
+  script; a hand edit to it is lost the next time it runs.
 
 ## Native comments
 
 A comment written in the Office or OpenDocument file itself arrives as an entry with
 `In file` and `Comment id`. Only comments that begin with `@clio` are instructions to
-you; leave the other comments in the file unchanged.
+you; the other comments in the file are the person's notes.
 
 ## Comments from other places
 

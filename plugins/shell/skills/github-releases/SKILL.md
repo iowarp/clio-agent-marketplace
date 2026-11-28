@@ -6,10 +6,11 @@ description: Use when a question is about a repository's published releases or r
 
 # Published GitHub releases
 
-Inspect live GitHub records rather than local tags:
+Live GitHub records show what was published; local tags may not:
 
 - `gh release list --repo OWNER/REPO --limit 20 --json tagName,publishedAt,isDraft,isPrerelease`
 - `gh release view TAG --repo OWNER/REPO --json tagName,publishedAt,isPrerelease,body,url`
 
 `/releases/latest` selects the latest stable release, not the newest prerelease.
-Exclude drafts, and report the stable and prerelease channels separately.
+Drafts are unpublished, and the stable and prerelease channels answer different
+questions.

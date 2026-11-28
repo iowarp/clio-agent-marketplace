@@ -1,4 +1,4 @@
-# Producing EarthScope station-selection surfaces
+# EarthScope station-selection surfaces
 
 This catalog covers exactly one workflow: showing a bounded set of ranked GNSS
 stations on a map, letting the human pick which ones to analyse, and
@@ -6,27 +6,26 @@ delivering that choice back as a structured `earthscope.stations.selected`
 event. `StationMap` and `StationPicker` alias the renderer's existing
 `clio.map.v1` and `ChoicePicker` kernels (see `catalog.clio.json`); `Text`,
 `Column`, `Row`, and `Button` are the unmodified Basic components. Every
-property shape is defined in `catalog.json` — this page is about the
-recipe, not the field-by-field reference.
+property shape is defined in `catalog.json` — this page is about how the
+pieces fit, not the field-by-field reference.
 
-## The station-selection recipe
+## The station-selection surface
 
-1. **`StationMap`** (id `stationsMap`) renders the ranked, tool-returned
+- **`StationMap`** (id `stationsMap`) renders the ranked, tool-returned
    points. Its `points` array is a plain literal list — the A2UI wire format
    for `clio.map.v1` does not support a data-model binding for `points` — so
-   inline the exact points you just observed from the radius filter
-   (`station_catalog.py within` or `geo_filter_points_by_radius`)
-   directly on the component. Also mirror the same points into the data model
-   at `/stations` so later revisions (and the picker's options) have one
-   place to read them back from without re-deriving them.
-2. **`StationPicker`** (id `stationsPicker`) is fixed to
+   the points observed from the radius filter (`station_catalog.py within` or
+   `geo_filter_points_by_radius`) sit inline on the component. The same points
+   mirrored into the data model at `/stations` give later revisions (and the
+   picker's options) one place to read them back from without re-deriving them.
+- **`StationPicker`** (id `stationsPicker`) is fixed to
    `variant: "multipleSelection"` by this catalog (see `catalog.clio.json`'s
    `presets`) — the catalog's own schema declares `variant` a `const`, so the
    validator refuses any other value. Its `options` are the same ranked
    points as short `{label, value}` pairs (`value` is the exact station id).
-   Bind `value` to `/selectedStationIds` — `{"path": "/selectedStationIds"}`
-   — so the human's picks land in the data model as they are made.
-3. A **`Button`** (id `confirmButton`) carries a `required` check on the same
+   With `value` bound to `/selectedStationIds` — `{"path": "/selectedStationIds"}`
+   — the human's picks land in the data model as they are made.
+- A **`Button`** (id `confirmButton`) carries a `required` check on the same
    path, so the client refuses to submit with nothing selected:
    ```json
    {
@@ -38,8 +37,8 @@ recipe, not the field-by-field reference.
      "message": "Select at least one station before continuing."
    }
    ```
-   Its `action` is a plain agent event — never `approval.respond` or a
-   `run.*` action, which route elsewhere:
+   Its `action` is a plain agent event; `approval.respond` and `run.*` actions
+   route elsewhere:
    ```json
    {
      "event": {
@@ -51,21 +50,20 @@ recipe, not the field-by-field reference.
      }
    }
    ```
-   `searchId` is an opaque string you choose when you create the surface (it
-   only needs to be stable for this surface's lifetime); `stationIds` must
-   resolve to at least one id (`context_schema` requires `minItems: 1`) — the
-   check above is what keeps that true before the button is even pressable.
+   `searchId` is an opaque string chosen when the surface is created (it only
+   needs to be stable for this surface's lifetime); `stationIds` resolves to at
+   least one id (`context_schema` requires `minItems: 1`) — the check above is
+   what keeps that true before the button is even pressable.
 
 ## Ids come only from observed evidence
 
 Every id in `/stations`, every `StationMap` point `id`, and every
-`StationPicker` option `value` MUST be a station id returned by a tool
+`StationPicker` option `value` is a station id returned by a tool
 (`station_catalog.py within`, `geo_filter_points_by_radius` or the station
-catalog search) in this turn.
-Never invent, guess, or carry over a station id from a different region or a
-prior unrelated search. `searchId` may be any stable opaque string you mint,
-but `stationIds` in the delivered event must be a subset of the ids you just
-rendered.
+catalog search) in this turn. An invented, guessed or carried-over id (from a
+different region or a prior unrelated search) points at a station the data does
+not support. `searchId` may be any stable opaque string, and `stationIds` in the
+delivered event is a subset of the ids rendered.
 
 ## One complete example surface
 
@@ -186,18 +184,16 @@ delivered `earthscope.stations.selected` event context is:
 ## After creating the surface
 
 The surface is the question. Once it is `rendered=true` and `state=ready`,
-the human's `earthscope.stations.selected` event reaches you either as a new
-turn (if you end this turn) or as the answer to a paused question (if you
-pause with `ask_user(..., surface_id="earthscope-stations")`) — both are
-correct. That event arrives with its meaning already attached (`catalog.clio.json`'s
-`narration`, stating that the user picked these stations and wants their
-time series staged, profiled, and carried into whatever they originally
-asked), so you don't need to infer from the bare event name and context that
-this is a request to act rather than a passive report. Pause with `ask_user` when the user asked you to ask or check with
-them, or when you have more to do in this same turn once you know their
-choice (staging, then plotting) — the selection resumes exactly where you
-paused. End the turn with the surface ready when presenting the candidates
-is the natural end of what was asked. Either way, never search for or stage
-a station series before that structured selection arrives, and every
-rendered or staged station id must come from the tool-returned ranked
-points, never invented.
+the human's `earthscope.stations.selected` event arrives either as a new
+turn (when the turn ends) or as the answer to a paused question (when paused
+with `ask_user(..., surface_id="earthscope-stations")`) — both work. That event
+arrives with its meaning already attached (`catalog.clio.json`'s `narration`,
+stating that the person picked these stations and wants their time series
+staged, profiled, and carried into whatever they originally asked), so the bare
+event name and context do not need interpreting as a request to act rather than
+a passive report. A pause suits a request to ask or check with the person, or
+more work in the same turn once the choice is known (staging, then plotting) —
+the selection resumes exactly where it paused. Ending the turn with the surface
+ready suits the case where presenting the candidates is the natural end of what
+was asked. A station series searched for or staged before the structured
+selection arrives may be one the person does not pick.

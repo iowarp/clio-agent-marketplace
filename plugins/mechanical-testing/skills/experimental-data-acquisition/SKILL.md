@@ -7,20 +7,16 @@ keywords:
 - mechanical-testing
 ---
 
-State the sampling rate relative to the fastest signal feature being
-captured — a sampling rate too low relative to a fatigue test's cyclic
-frequency or a dynamic event will alias or miss peak values; state the
-margin used (e.g., a stated multiple of the highest frequency of interest).
+A sampling rate is adequate relative to the fastest signal feature being
+captured: one too low relative to a fatigue test's cyclic frequency or a
+dynamic event aliases or misses peak values, so the margin (e.g., a multiple
+of the highest frequency of interest) is part of the setup.
 
-Report any filtering applied (analog or digital, cutoff frequency, filter
-order) — a filter that removes noise can also attenuate a real signal
-feature if its cutoff is too close to the frequency of interest, and this
-should be checked, not assumed safe.
+Filtering (analog or digital, cutoff frequency, filter order) that removes
+noise can also attenuate a real signal feature if its cutoff is too close to
+the frequency of interest; it is safe only when checked.
 
-Confirm each channel's calibration (load, strain, displacement, temperature)
-is current and traceable, and record units and any scaling applied in the
-acquisition software — a unit or scaling error at acquisition silently
-propagates through every downstream analysis.
-
-Return the sampling rate, filtering, and per-channel calibration status, and
-confirm they are adequate for the signal the test is meant to capture.
+Each channel's calibration (load, strain, displacement, temperature) is
+current and traceable or it is not, and the units and any scaling applied in
+the acquisition software travel with the data: a unit or scaling error at
+acquisition silently propagates through every downstream analysis.

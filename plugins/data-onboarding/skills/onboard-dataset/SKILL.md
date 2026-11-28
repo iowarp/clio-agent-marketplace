@@ -11,73 +11,73 @@ keywords:
 
 # Onboard a dataset
 
-Learn enough about the supplied data to answer the user's question accurately,
-explain the limits, and leave useful evidence for later work. Adapt the analysis
-to the files and environment. A fixed loader, table schema, output format or
-full-dataset conversion is not a prerequisite for useful analysis.
+Onboarding means learning enough about the supplied data to answer the person's
+question accurately, knowing the limits, and leaving useful evidence for later
+work. A fixed loader, table schema, output format or full-dataset conversion is
+not a prerequisite for useful analysis.
 
-## Keep the source as delivered and adapt the analysis
+## The source as delivered
 
-- By default, write everything you derive to the workspace so the source stays
-  as delivered: notes, code, cleaned copies, views and reports. Fixing source
+- Notes, code, cleaned copies, views and reports derived from the data live in
+  the workspace by default, so the source stays as delivered. Fixing source
   files, editing a manifest or rewriting metadata is a separate data-editing task
-  that the user asks for; exploration and analysis don't imply it. If the user
-  wants outputs somewhere else, follow them; CLIO's approval and sandbox settings
-  decide what is permitted, and a denial is reported, not pre-empted.
-- Select queries, libraries and representations from the observed structure.
-  Inspect helper assumptions; adapt or replace a helper that does not fit.
-  Missing columns, nested values and inconsistent descriptions are findings to
-  work with, not reasons to demand a cleaned export.
+  that the person asks for; exploration and analysis don't imply it. Outputs can
+  go wherever the person wants them; CLIO's approval and sandbox settings decide
+  what is permitted, and a denial is the answer to report.
+- Queries, libraries and representations fit the observed structure best. Helper
+  assumptions may not hold for a given dataset. Missing columns, nested values
+  and inconsistent descriptions are findings to work with, not reasons to demand
+  a cleaned export.
 - CLIO supplies `CLIO_AGENT_WORKSPACE_STATE_DIR`; a useful default for per-dataset
-  records is `<workspace_state>/datasets/<key>/`. If it is unavailable, use the
-  active workspace or ask where outputs should go. Source inspection can continue
-  without creating an experiment card.
-- Preserve the distinction between observed values and analytical decisions.
-  Record source references, mappings, exclusions and affected counts. Derived
-  representations do not change what the original data says.
-- Write scripts and run them with `shell_bash` (`uv run`), and deliver anything
-  the user should receive with `create_artifact`, listing its inputs in `used`.
+  records is `<workspace_state>/datasets/<key>/`. Without it, the active
+  workspace or a place the person names works. Source inspection does not need
+  an experiment card.
+- Observed values and analytical decisions are different things. Source
+  references, mappings, exclusions and affected counts are what make decisions
+  traceable. Derived representations do not change what the original data says.
+- Scripts run with `shell_bash` (`uv run`), and `create_artifact` delivers files
+  to the person, with its inputs listed in `used`.
 
-## Work from the question
+## What the question depends on
 
-1. **Establish the scope.** Locate the source and inspect actual files, access,
-   formats and sizes. Read relevant manifests, documentation and column catalogs
-   when available, and compare their claims with the data. Report the format
-   and version the source declares. When a loaded source skill states a contract
-   (a format and version range), follow it, including its refusal of
-   out-of-contract versions; without one, investigate the structure.
-2. **Reuse evidence critically.** An existing card, notebook or report can help.
-   Check the source identity and the files, assumptions and results the current
-   answer depends on. A matching manifest does not establish unchanged data.
-   Reinspect changed or uncertain parts; do not blindly trust a cached card or
-   rerun every old conversion by default.
-3. **Inspect relevant data.** Start with schemas and bounded samples, then check
-   full counts or distributions when the answer needs them. Discover actual keys,
-   values, types, units, flags, missingness and coverage. Limit sample findings to
-   the sample. Do not expand a wide table just to match an example shape.
-4. **Resolve computational obstacles.** Adjust column selection, joins, parsing,
-   batching and output layout using observed evidence. A missing helper or an
-   unsupported example schema calls for another justified approach. Leave the
-   source as delivered and explain material adaptations.
-5. **Handle uncertain meaning.** Ask about treatment definitions, units, time
-   zones, ambiguous identifiers or competing interpretations when they affect
-   the result. Keep unknown values unknown and continue independent work. Do not
-   force a numeric dose or physical unit from a label.
-6. **Compute and check.** Use direct queries or task-specific code as appropriate.
-   Check join cardinality, retained and excluded counts, missingness, units and
-   selected calculations against the source. Materialize only useful outputs.
-   When reusable code is valuable, record dependencies, invocation, decisions
-   and relevant input fingerprints. Repeat expensive work when verification,
-   a change or the user requires it, not as an unconditional ritual.
-7. **Explain the result.** State the inspected scope, supported answer, evidence,
-   limits and questions. Link saved artifacts. An incomplete modality limits
-   that claim; it does not invalidate unrelated evidence or require source repair.
+- **Scope.** The source's actual files, access, formats and sizes, and its
+  manifests, documentation and column catalogs, whose claims may differ from the
+  data. The source declares a format and version. A loaded source skill that
+  states a contract (a format and version range) defines what it supports,
+  including its refusal of out-of-contract versions; without one, the structure
+  itself is the guide.
+- **Earlier evidence.** An existing card, notebook or report can help when its
+  source identity, files, assumptions and results still match what the current
+  answer depends on. A matching manifest does not establish unchanged data. A
+  cached card can be stale, and rerunning every old conversion is rarely needed.
+- **The data itself.** Schemas and bounded samples are cheap; full counts or
+  distributions cost more and matter when the answer needs them. Keys, values,
+  types, units, flags, missingness and coverage come from the data. Sample
+  findings describe the sample. Expanding a wide table to match an example shape
+  adds nothing.
+- **Computational obstacles.** Column selection, joins, parsing, batching and
+  output layout can all change with the evidence. A missing helper or an
+  unsupported example schema means another justified approach. Material
+  adaptations are part of the explanation.
+- **Uncertain meaning.** Treatment definitions, units, time zones, ambiguous
+  identifiers and competing interpretations are questions for the person when
+  they affect the result. Unknown values stay unknown; independent work does not
+  wait on them. A label does not establish a numeric dose or physical unit.
+- **Computation and checks.** Direct queries or task-specific code both work.
+  Join cardinality, retained and excluded counts, missingness, units and selected
+  calculations checked against the source are the evidence. Only useful outputs
+  need materializing. Reusable code is reproducible with its dependencies,
+  invocation, decisions and relevant input fingerprints. Expensive work is worth
+  repeating for verification, a change or the person's request, not as a ritual.
+- **The result.** It consists of the inspected scope, supported answer, evidence,
+  limits, questions and links to saved artifacts. An incomplete modality limits
+  that claim; it does not invalidate unrelated evidence or require source repair.
 
 ## Optional helpers and records
 
 `load_skill` reports this skill's directory as `SKILL_ROOT`. These are examples,
-not a mandatory sequence. They read source inputs and write any reports to a
-separate output location:
+not a sequence. They read source inputs and write any reports to a separate
+output location:
 
 ```text
 uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/inventory.py" BUNDLE_ROOT --out OUTPUT_DIR/inventory.json
@@ -87,46 +87,45 @@ uv run --no-project --with "pyarrow>=15" python "SKILL_ROOT/scripts/flag_check.p
 uv run --no-project python "SKILL_ROOT/scripts/card.py" status|init|record|verify BUNDLE_ROOT
 ```
 
-Use `uv` with the project's environment or the example's declared dependencies.
-The optional card helper uses `CLIO_AGENT_WORKSPACE_STATE_DIR`, or an explicit
-absolute `--store` for standalone use. Its manifest hash identifies a record;
-its loader/view checks verify the files it records. They are not a universal
-readiness test, scientific validation or a complete source fingerprint.
-Keep legacy cards intact unless a separate migration is requested.
+`uv` runs them with the project's environment or the example's declared
+dependencies. The optional card helper uses `CLIO_AGENT_WORKSPACE_STATE_DIR`, or
+an explicit absolute `--store` for standalone use. Its manifest hash identifies a
+record; its loader/view checks verify the files it records. They are not a
+universal readiness test, scientific validation or a complete source fingerprint.
+Legacy cards stay intact unless a separate migration is requested.
 
 A Markdown card, notebook, task-specific script or another record can document
 this work. `loader.py`, Parquet views, `prepared` status and a domain skill's
-example schemas are optional choices. Do not fabricate them to satisfy a
-checklist. Save user deliverables through `create_artifact` with their actual
-input references so the result remains available with provenance.
+example schemas are optional choices; fabricated ones only satisfy a checklist.
+Deliverables saved through `create_artifact` with their actual input references
+remain available with provenance.
 
-## Checks to select when relevant
+## Checks that can matter
 
-- **Missingness and suspicious values.** Inspect nulls, empty strings, nested
-  values and possible sentinels such as extreme floats or repeated codes. Compare
-  metadata and surrounding observations before interpreting them. Flag uncertain
-  encodings; do not automatically null every unusual value.
-- **Duplicate or empty columns.** Compare content, types, coverage and definitions
-  before selecting a candidate. Similar names or nearby wavelengths may represent
-  distinct measurements. Retain unresolved alternatives with clear labels.
-- **Flags and signal.** Check quality flags against the measurements they describe.
-  A universal flag, missing flag or empty issue table does not establish that the
-  measurements should all be accepted or discarded.
-- **Keys and joins.** Establish identity and cardinality from the actual tables.
-  Count unmatched and multiplied rows. Normalize only evidence-backed mappings,
-  preserving original identifiers and ambiguous cases.
-- **Units and plausibility.** Inspect scales, calibration, protocols and
-  cross-sensor differences. Suspicious magnitudes call for investigation, not an
-  invented conversion. State which comparisons are supported.
-- **Timing and design.** Inspect repeated observations, gaps, partial rounds,
-  group sizes and confounding. Choose aggregation and models for the actual
-  design; do not silently treat repeated measurements of one unit as independent units.
+- **Missingness and suspicious values.** Nulls, empty strings, nested values and
+  possible sentinels such as extreme floats or repeated codes. Metadata and
+  surrounding observations distinguish them. An uncertain encoding is a finding;
+  nulling every unusual value loses information.
+- **Duplicate or empty columns.** Content, types, coverage and definitions tell
+  candidates apart. Similar names or nearby wavelengths may represent distinct
+  measurements, so unresolved alternatives keep clear labels.
+- **Flags and signal.** Quality flags mean something only against the
+  measurements they describe. A universal flag, missing flag or empty issue table
+  does not establish that the measurements should all be accepted or discarded.
+- **Keys and joins.** Identity and cardinality come from the actual tables.
+  Unmatched and multiplied rows show join problems. Evidence-backed mappings can
+  be normalized; original identifiers and ambiguous cases remain.
+- **Units and plausibility.** Scales, calibration, protocols and cross-sensor
+  differences. Suspicious magnitudes call for investigation, not an invented
+  conversion. Some comparisons are supported and others are not.
+- **Timing and design.** Repeated observations, gaps, partial rounds, group sizes
+  and confounding. Aggregation and models depend on the actual design; repeated
+  measurements of one unit are not independent units.
 
 The card helper offers example finding topics such as `sentinel-values`,
-`key-format-mismatch`, `declared-vs-actual` and `unit-scale-suspect`. Use them when
-helpful, and describe findings outside that vocabulary as well. Do not discard a
-new finding because an example taxonomy omitted it.
+`key-format-mismatch`, `declared-vs-actual` and `unit-scale-suspect`. Findings
+outside that vocabulary are still findings; the example taxonomy is not complete.
 
-Keep dataset-specific facts and decisions in workspace records. General lessons
-may be proposed separately. Analysing data does not authorize changing installed
+Dataset-specific facts and decisions belong in workspace records. General lessons
+can be proposed separately. Analysing data does not authorize changing installed
 shared skills or the original dataset.

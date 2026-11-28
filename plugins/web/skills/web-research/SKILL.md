@@ -8,59 +8,63 @@ keywords:
 ---
 
 `web_search` finds candidate pages; `web_fetch` reads one. A search result is a
-lead, not evidence: read the page before you rely on anything in it.
+lead, not evidence: what a page says is in the page, not the snippet.
 
-## Write the query
+## Writing the query
 
-- Name the thing precisely, with the terms an authoritative page would use
-  (the standard's number, the library's name, the instrument, the agency).
-- Put constraints in the filters, not in the query text: `after`/`before` for
-  dates (YYYY-MM-DD), `include_domains`/`exclude_domains` for sites, and `kind`
-  (`research`, `news`, `pdf`) for the kind of page.
-- One idea per query. When results drift, rephrase with vocabulary taken from
-  the best result so far, or search for the counter-claim.
-- For papers, prefer `literature_search` when the `literature` tools are
-  available; use `web_search` for documentation, data portals, agency pages,
-  software and grey literature.
+- Precise names, with the terms an authoritative page would use (the
+  standard's number, the library's name, the instrument, the agency), find
+  better results.
+- The filters carry constraints more reliably than query text: `after`/`before`
+  for dates (YYYY-MM-DD), `include_domains`/`exclude_domains` for sites, and
+  `kind` (`research`, `news`, `pdf`) for the kind of page.
+- A query with one idea returns focused results. Vocabulary taken from the best
+  result so far, or a search for the counter-claim, helps when results drift.
+- For papers, `literature_search` (when the `literature` tools are available)
+  searches scholarly sources; `web_search` covers documentation, data portals,
+  agency pages, software and grey literature.
 
-## Read the results
+## Reading the results
 
 Each result has a title, URL, date when known and a short snippet. The
 `payload_file` holds everything the search source returned, including longer
-excerpts; read it with the file tools before running a near-identical search.
+excerpts, readable with the file tools; a near-identical search usually returns
+the same thing.
 
 `notes` explain how the answer was produced:
 
 - another source answered because the first was resting or used up;
 - `filters_applied_by_clio`: the source could not apply a filter, so CLIO removed
-  results outside it. Results without a date stay in, so check dates yourself
-  when they matter;
+  results outside it. Results without a date stay in, so their dates are
+  unchecked;
 - a source failed or needs the person's attention.
 
-These are facts about the search, not about the topic. Mention them only when
-they limit what you could find.
+These are facts about the search, not about the topic; they matter to the
+person when they limit what could be found.
 
 A failed search says why in `error.advice`. A source that did not answer twice in
 a row (`search_source_temporarily_down`) has a temporary problem; it does not mean
-nothing matches. Call `web_search` again with the same query: the call waits
+nothing matches. Calling `web_search` again with the same query waits
 `retry_after_s` and asks that source again, and if it fails again CLIO moves the
-search to `next_source`. Read pages you already found while you wait, if useful.
+search to `next_source`. Pages already found stay readable meanwhile.
 
-## Read a page
+## Reading a page
 
 `web_fetch` returns the page as Markdown in `content`, with the final `url`
-after redirects and a `title`. Cite the final URL.
+after redirects and a `title`. The final URL is the one that resolves for a
+reader.
 
 When a read fails:
 
-- try the same document at another address: the publisher's landing page, the
-  arXiv `/abs/` or `/html/` page instead of a PDF, a mirror, or the DOI resolver;
-- a PDF is saved locally (`pdf_path`); read it with `view_pdf` when you can;
+- the same document is often at another address: the publisher's landing page,
+  the arXiv `/abs/` or `/html/` page instead of a PDF, a mirror, or the DOI
+  resolver;
+- a PDF is saved locally (`pdf_path`), which `view_pdf` can read;
 - `reader` shows when a hosted service read the page for CLIO, which may serve a
-  cached copy; prefer a fresh read when currency matters.
+  cached copy; a fresh read matters when currency does.
 
-## Quote what the page says
+## What the page says
 
-Copy the exact words from `content` when a claim depends on them, with the
-units, populations, dates and qualifications attached. Keep what the source
-states separate from what you infer from it.
+A claim that depends on exact words is checkable when quoted from `content`,
+with the units, populations, dates and qualifications attached. What the source
+states and what is inferred from it are different kinds of evidence.

@@ -7,24 +7,18 @@ keywords:
 - materials
 ---
 
-Classify the property's source before using it: measured (with method and
-specimen state), datasheet minimum/typical (a statistical bound, not a
-measured value for the specific lot), or model-predicted (with the model's own
-assumptions). These are not interchangeable, and a design decision should
-state which one it relies on.
+A property has a source class: measured (with method and specimen state),
+datasheet minimum/typical (a statistical bound, not a measured value for the
+specific lot), or model-predicted (with the model's own assumptions). These
+are not interchangeable, and a design decision rests on one of them.
 
-State the condition the property was obtained under: temperature, strain
+A property holds under the condition it was obtained at: temperature, strain
 rate, environment, orientation (for anisotropic material), and specimen
-geometry/size. A property reported without its condition is incomplete —
-yield strength, fatigue limit, and fracture toughness are all
-condition-sensitive.
+geometry/size. Yield strength, fatigue limit, and fracture toughness are all
+condition-sensitive, so a property without its condition is incomplete.
 
-Distinguish a property that is intrinsic to the material composition/phase
-state from one that is extrinsic (geometry- or process-dependent, like
-fracture toughness in thin sections, or fatigue strength in the presence of
-surface roughness or porosity) — extrinsic properties do not transfer between
-parts with different geometry or processing history.
-
-Return the property value with its source class, measurement/model
-conditions, and the specific part or design condition it is (or is not)
-valid for.
+Some properties are intrinsic to the material composition/phase state;
+others are extrinsic (geometry- or process-dependent, like fracture toughness
+in thin sections, or fatigue strength in the presence of surface roughness or
+porosity). Extrinsic properties do not transfer between parts with different
+geometry or processing history.

@@ -8,9 +8,9 @@ keywords:
 - process-parameters
 ---
 
-## Record the full set
+## The full set
 
-Record every parameter that controls the process family:
+The parameters that control each process family:
 
 - **Powder bed fusion (laser or electron beam)**: beam power, scan speed,
   hatch spacing, layer thickness, spot size, scan strategy (stripes, islands,
@@ -23,23 +23,23 @@ Record every parameter that controls the process family:
 
 A derived metric such as volumetric energy density discards information: the
 same value can come from different power and speed combinations with
-different melt-pool behaviour. Report it only alongside the parameters.
+different melt-pool behaviour, so it means little without the parameters.
 
 ## Qualification and provenance
 
-- State which parameters were validated for this material, machine and powder
-  lot, and which were assumed from a similar system. A set tuned on one
+- Parameters are either validated for this material, machine and powder lot, or
+  assumed from a similar system. A set tuned on one
   machine, lot or alloy does not transfer without requalification:
   absorptivity, thermal conductivity and melting range differ by material.
-- Distinguish nominal (programmed) values from verified (measured or logged)
+- Nominal (programmed) values differ from verified (measured or logged)
   ones. Actual power, layer thickness and oxygen level drift from the
   programme; a defect investigation checks which values the build used.
 
 ## Laser powder bed fusion: regime and defects
 
-Name the melt-pool regime the parameter set produces (conduction, keyhole,
-lack-of-fusion prone) and the defect mechanism it implies, from melt-pool
-physics rather than a correlation alone:
+A parameter set produces a melt-pool regime (conduction, keyhole,
+lack-of-fusion prone), and the regime implies a defect mechanism through
+melt-pool physics, not a correlation alone:
 
 - keyhole mode produces keyhole porosity from vapour-cavity collapse;
 - insufficient energy input or overlap produces irregular lack-of-fusion
@@ -50,11 +50,5 @@ physics rather than a correlation alone:
 
 Scan strategy sets residual stress and the direction of columnar grain growth
 relative to the build axis; `build-orientation` covers the resulting
-anisotropy. Confirm the predicted defect population against measurement
-(`xct`, `fractography`) rather than reporting it as observed.
-
-## Return
-
-The full parameter set with nominal-versus-verified status and qualification,
-the melt-pool regime and defect mechanism it implies, and the microstructure
-and anisotropy consequence.
+anisotropy. A predicted defect population is a prediction until measurement
+(`xct`, `fractography`) confirms it.

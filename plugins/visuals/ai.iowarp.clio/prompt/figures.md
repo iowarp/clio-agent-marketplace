@@ -3,8 +3,8 @@ id: visuals.figures
 section: capabilities
 when: {"tools": ["create_a2ui_surface"], "session": "root"}
 ---
-When you generate a visual artifact (PNG, JPEG or SVG), register the saved file
-and show it with the active catalog's Image component, keeping the file
-downloadable. Give a new figure its own image view and reuse that view for
-revisions. Show each figure once, and refer to it in prose instead of repeating
-it as a Markdown image.
+A generated visual artifact (PNG, JPEG or SVG) appears in the answer once it is
+registered and shown with the active catalog's Image component, and the file
+stays downloadable. A new figure on its own image view leaves earlier views in
+place; reusing that view replaces it, which suits revisions. A figure shown in
+A2UI needs no Markdown image copy in prose.

@@ -9,8 +9,7 @@ participants and ordered messages; an ER model has entities and cardinalities;
 a lifecycle has states and transitions; commit history has ancestry; a grammar
 has accepted token sequences; a hierarchy has containment. Choose the notation
 that preserves that meaning. A diagram is optional: prose, a table or a list
-can answer better. Do not turn every subject into a flowchart or reproduce a
-fixed dashboard layout.
+can answer better.
 
 ## One authority for the component
 
@@ -34,26 +33,27 @@ there is no requirement to render every family. No additional syntax reference
 from this skill is needed. Mermaid remains the source language and component
 name; the bundled rendering library is an implementation detail.
 
-When the user asks for diagrams, render them with the declared A2UI surface
-tools, including diagrams embedded in a short chat explanation. A `mermaid`
-fenced block displays source code; it does not create the visual. Return source
-instead when the user asks for Mermaid code or a Markdown export. If rendering
-is unavailable, explain the limitation rather than claiming the source was
-rendered. For a composed saved report, `create-dashboard` covers publication and revision.
+The declared A2UI surface tools render diagrams, including diagrams embedded in
+a short chat explanation. A `mermaid` fenced block displays source code; it does
+not create the visual. Mermaid source is what a request for Mermaid code or a
+Markdown export asks for. Without rendering there is only source, not a rendered
+diagram. For a composed saved report, `create-dashboard` covers publication and revision.
 The catalog is the authority for source/artifact inputs, controls, themes,
-navigation and limitations. Do not invent component properties from library APIs.
+navigation and limitations; component properties come from it, not from
+library APIs.
 
 ## Author from evidence
 
-Identify the facts that must survive: entities and attributes, edge direction,
-branch conditions, message order, optionality, multiplicity, dates or ownership.
-Keep a small checklist against the supplied material. Mark uncertainty and
-synthetic examples; do not invent stages, measurements, filenames or chronology.
-Choose stable IDs separately from display labels. Preserve source text so a
-later revision can change the diagram rather than rebuilding from a screenshot.
+The facts that must survive are the entities and attributes, edge direction,
+branch conditions, message order, optionality, multiplicity, dates or
+ownership; a small checklist against the supplied material catches what a
+draft drops. Uncertainty and synthetic examples are marked as such; stages,
+measurements, filenames and chronology come from the material.
+Stable IDs are separate from display labels. Preserved source text lets a
+later revision change the diagram rather than rebuild it from a screenshot.
 Source statements need actual newlines. The component entry includes a complete
-JSON payload showing one level of newline encoding; serialize that document
-once rather than leaving literal backslash-n separators in the source value.
+JSON payload showing one level of newline encoding; serialized once, the
+document leaves no literal backslash-n separators in the source value.
 
 Give each diagram the space its relationships need. Full width, equal columns,
 uneven columns and a vertical report are all options. Separate independent
@@ -63,31 +63,32 @@ selection matter; diagrams and custom HTML/SVG are available for explanations
 that benefit from them.
 
 Folder links are intentional actions, not inferred from filenames or node
-names. Inspect the actual workspace before adding the catalog's explicit
-`workspace-folder:` targets. A conceptual tree does not imply real files exist.
+names. The catalog's explicit `workspace-folder:` targets point at real folders
+in the workspace; a conceptual tree does not imply real files exist.
 
 ## Review the authored result
 
-Use `review-visual-presentation` for a substantial diagram/report. Inspect the
-actual captured image of the published artifact at the docked width, and an
-expanded view when needed. Check every relevant view, not just the first tab.
-Review headings, labels, legends and arrows as well as the diagram bounds.
-Source visibility or a successful render does not establish readability.
+`review-visual-presentation` covers rendered review. The captured image of the
+published artifact at the docked width, an expanded view when needed, and
+every relevant view (not just the first tab) show headings, labels, legends and
+arrows as well as the diagram bounds. Source visibility or a successful render
+does not establish readability.
 
-Compare the rendered relationships with the evidence checklist. Fix missing
+Compared with the evidence checklist, the rendered relationships show missing
 conditions, reversed arrows, omitted siblings, undefined grammar productions,
-clipped text or unreadable scaling; then capture and inspect the correction.
-Do not simplify away a difficult relationship just to make syntax pass. State
-any remaining defect and distinguish an unavailable capture from a parser error.
+clipped text or unreadable scaling; a fresh capture shows whether a fix took. A
+difficult relationship simplified away to make syntax pass is lost from the
+diagram. An unavailable capture and a parser error are different failures.
 A renderer gallery tests the renderer; acceptance requires the model's own
 authored artifact and its actual captured pixels.
 
-Walk through each normal and exceptional path from its start to its outcome.
-Check that alternatives occur at the decision they represent: a failed or
-cancelled path must not first perform actions reserved for success. Confirm
-each arrow against the source; a module dependency, a call and a data transfer
-are different relationships. Label the chosen meaning rather than implying a
-call or ownership relationship from proximity or module names.
-Read the smallest labels in the captured viewing size. When they are too small,
-reduce label density, split the subject or adjust the view and inspect fresh
-pixels. Do not declare a captured diagram readable just because all nodes fit.
+Each normal and exceptional path runs from its start to its outcome, and
+alternatives occur at the decision they represent: a failed or cancelled path
+that first performs actions reserved for success is wrong. A module
+dependency, a call and a data transfer are different relationships; a label
+says which one an arrow means, where proximity or module names would imply a
+call or ownership relationship.
+The smallest labels at the captured viewing size decide readability; lower
+label density, a split subject or an adjusted view fix labels that are too
+small, and fresh pixels show the result. All nodes fitting does not make a
+captured diagram readable.

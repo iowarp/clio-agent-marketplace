@@ -2,8 +2,8 @@
 name: after-case-build
 event: tool_result
 tool: shell_bash
-title: Look at the case around the board, and adjust it
-description: After the enclosure script runs, tell the agent to look at the case with the board inside in CLIO's 3D view - the openings, standoffs and clearances the fit report measures - and to adjust the script's parameters and run it again.
+title: The case is worth a look around the board
+description: After the enclosure script runs, suggest looking at the case with the board inside in CLIO's 3D view.
 active: true
 ---
-{% if not tool.is_error and "enclosure.py" in (tool.args.command|default("")) %}The fit report measures the case; it does not show it. Look at the case with the board inside in CLIO's 3D view (`clio.mesh-viewport.v1` on `enclosure.glb`, the base and lid at `nodeOpacity` 0.3 so the board shows through): turn the `camera` to each connector opening (`cutout_*`), the standoffs and the tallest part, aiming at the part centres the capture reports (`parts`, in the view's Y-up frame, not the envelope's), and look with `capture_a2ui_surface` (or `look_at_view`); the exploded and sectioned scenes (`--explode`, `--section`) show what the assembled one hides. Change what is wrong in the parameters at the top of `enclosure.py` and run it again, then look again.{% endif %}
+{% if not tool.is_error and "enclosure.py" in (tool.args.command|default("")) %}The fit report measures the case but does not show it; `enclosure.glb` in a `clio.mesh-viewport.v1` (base and lid at `nodeOpacity` about 0.3) shows the openings, standoffs and tallest parts with the board inside. The capture reports each part's centre (`parts`) in the view's Y-up frame for aiming the `camera`, and `--explode` and `--section` show what the assembled case hides.{% endif %}

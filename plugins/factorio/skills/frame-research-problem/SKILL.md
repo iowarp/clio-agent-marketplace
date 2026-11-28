@@ -8,16 +8,17 @@ keywords:
 - framing
 ---
 
-Begin with the scientist's language and identify the system, phenomenon,
-conditions, scales, motivation, proposed mechanism, attainable evidence, and
-minimum useful outcome. When ambiguity remains, offer a small set of genuinely
-different formulations rather than cosmetic rewrites.
+A research problem starts in the scientist's language: the system,
+phenomenon, conditions, scales, motivation, proposed mechanism, attainable
+evidence, and minimum useful outcome. Where ambiguity remains, a small set of
+genuinely different formulations is more useful than cosmetic rewrites.
 
-For each candidate, state what result would answer it, what would weaken or
-falsify it, which methods discriminate among rivals, and what remains outside
-scope. Preserve the selected formulation and rejected alternatives with reasons
-in the study log. Ask only high-information questions whose answers change the
-study. Treat novelty as an evidence question, not an assumption.
+Each candidate has a result that would answer it, a result that would weaken
+or falsify it, methods that discriminate among rivals, and what remains
+outside scope. The selected formulation and the rejected alternatives, with
+reasons, belong in the study log. High-information questions are the ones
+whose answers change the study. Novelty is an evidence question, not an
+assumption.
 
-Use `experimental-design` to turn the chosen formulation into a method and a
-study, and `research-gap-analysis` before any claim that prior work is absent.
+`experimental-design` turns the chosen formulation into a method and a study,
+and `research-gap-analysis` bounds any claim that prior work is absent.

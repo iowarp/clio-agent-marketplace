@@ -17,12 +17,12 @@ The average number of molecules adsorbed is the uptake, usually in mol/kg of fra
   better than they predict absolute uptakes.
 - **Framework charges:** polar gases (CO2, H2O) interact with framework charges. Without
   charges these interactions are missing; with them, the result depends on how the charges
-  were assigned. Say which.
+  were assigned.
 - **The cell:** replicated so every width is at least twice the interaction cutoff.
 - **Sampling:** enough initialization cycles to reach equilibrium and enough production
-  cycles for a small error bar. Report the block-average error bar; a run whose error bar
-  is a large fraction of the uptake needs more cycles.
-- **Water:** strongly framework-dependent and slow to converge; treat single runs as
+  cycles for a small error bar. The block-average error bar shows it; a run whose error
+  bar is a large fraction of the uptake needs more cycles.
+- **Water:** strongly framework-dependent and slow to converge; single runs are
   indicative.
 
 ## Questions and quantities
@@ -30,12 +30,6 @@ The average number of molecules adsorbed is the uptake, usually in mol/kg of fra
 - **Uptake at one condition:** one run per framework.
 - **Isotherm:** a series of pressures at one temperature.
 - **Working capacity** for swing processes: uptake at the adsorption condition minus at
-  the desorption condition. Both runs must succeed for every framework compared; a
-  framework missing one is excluded, not ranked on partial data.
+  the desorption condition. It takes both runs for every framework compared; a framework
+  missing one has no working capacity, so it cannot be ranked on partial data.
 - **Selectivity** needs mixtures, which single-component runs do not give.
-
-## Report
-
-Uptake (mol/kg) with its error bar, the conditions (K, Pa), the adsorbate, the force
-field and charges used, the cycles, and the caveats above. For a ranking, the metric and
-which frameworks were excluded and why.

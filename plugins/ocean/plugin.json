@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "ocean",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Oceanography: CTD casts, Argo and gliders, TEOS-10 and water masses, sections and T-S diagrams, transports and overturning, tides, eddies, SWOT, particles, marine heatwaves, blooms, mixed-layer budgets, cruise plans and regional model checks, through clio-kit's ocean server, with a provenance record for every result. It belongs to the Ocean analysis connector, which holds the optional NASA Earthdata Login for SWOT downloads: add it to a conversation while that connector is enabled. Gridded products come from the Copernicus connector when it is enabled, or from public servers that need no account.",
   "author": {
     "name": "IoWarp Team"

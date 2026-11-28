@@ -6,66 +6,66 @@ description: Use for HDF5 files (.h5, .hdf5, netCDF-4, NeXus, NWB, .h5ad) - cont
 
 # HDF5
 
-This skill routes HDF5 questions to the reference guide that answers them.
-Load the guides you need with `load_skill`, for example
+This skill maps HDF5 questions to the reference guide that answers them.
+`load_skill` loads a guide, for example
 `load_skill("hdf5", file="references/chunking.md")`, or several at once with
 `files=[...]`.
 
-## How to work
+## What matters with HDF5 files
 
-- **Inspect before advising.** When a file is available, look at it first;
-  never invent file facts. Report the paths, shapes, dtypes, chunking and
-  attributes you actually saw.
-- **Use the HDF5 tools if you have them**, or h5py through code execution:
-  open with `h5py.File(path, "r")` to inspect, list with `list(f)` and
-  `f.attrs`, and sample values with slices such as `dset[:10]`. Never read a
-  whole large dataset to look at it. With the tools, see "With the hdf5 tools"
-  below.
-- **Start with the convention.** For an unfamiliar file, identify the
-  community convention it follows before walking it:
-  `references/conventions.md`. It tells you where the primary data is.
-- **Check versions before version-specific advice.** The guides describe
-  HDF5 2.2 and h5py 3.16. Many behaviors and defaults changed in HDF5 2.0;
-  in h5py, check `h5py.version.hdf5_version` and `h5py.version.version`.
-- **Advice is not measurement.** Present tuning advice as recommendations
-  unless you measured it.
+- **The file is the evidence.** An available file shows its real paths, shapes,
+  dtypes, chunking and attributes; advice without looking at it rests on
+  invented file facts.
+- **HDF5 tools or h5py.** Without the tools, h5py through code execution does
+  the same: `h5py.File(path, "r")` opens read-only, `list(f)` and `f.attrs` list
+  contents, and slices such as `dset[:10]` sample values. Reading a whole large
+  dataset just to look at it costs memory and time. The tools are described in
+  "With the hdf5 tools" below.
+- **Conventions locate the data.** The community convention an unfamiliar file
+  follows tells where its primary data is: `references/conventions.md`.
+- **Versions matter.** The guides describe HDF5 2.2 and h5py 3.16. Many
+  behaviors and defaults changed in HDF5 2.0; in h5py,
+  `h5py.version.hdf5_version` and `h5py.version.version` report what is
+  installed.
+- **Advice is not measurement.** Tuning advice is a recommendation unless it
+  was measured.
 
 ## With the hdf5 tools
 
 The `hdf5` MCP server keeps one file open at a time.
 
-1. **Pick the file.** Use the path the user gave. Without one,
-   `list_available_hdf5_files` lists registered candidates; when there are
-   several, ask which one rather than choosing silently.
-2. **Open and walk it.** `open_file` (mode `r` to inspect), then `list_keys`
-   and `visit` for the hierarchy and `get_by_path` for one object.
-3. **Describe objects** with `get_shape`, `get_dtype`, `get_size`,
-   `get_chunks`, `list_attributes` and `read_attribute`;
-   `analyze_dataset_structure` gives a bounded overview.
-4. **Sample values** with `read_partial_dataset`: `start` and `count` are
-   comma-separated per dimension (`"0,0"`, `"10,10"`), and at most a thousand
-   values come back, with truncation stated. `read_full_dataset` and
-   `export_dataset` read the whole dataset into memory; keep them for small
-   ones.
-5. **I/O questions only:** `identify_io_bottlenecks` reports static layout
-   findings and `optimize_access_pattern` gives recommendations, not a
-   benchmark. Present neither as measured performance.
-6. **Always call `close_file`** when the inspection is finished, including
-   after a failed call.
+- **Which file.** A path the person gave identifies it. Without one,
+  `list_available_hdf5_files` lists registered candidates; when there are
+  several, which one is meant is the person's call, and choosing silently can
+  open the wrong file.
+- **Opening and walking.** `open_file` (mode `r` to inspect), then `list_keys`
+  and `visit` for the hierarchy and `get_by_path` for one object.
+- **Describing objects.** `get_shape`, `get_dtype`, `get_size`, `get_chunks`,
+  `list_attributes` and `read_attribute`; `analyze_dataset_structure` gives a
+  bounded overview.
+- **Sampling values.** `read_partial_dataset`: `start` and `count` are
+  comma-separated per dimension (`"0,0"`, `"10,10"`), and at most a thousand
+  values come back, with truncation stated. `read_full_dataset` and
+  `export_dataset` read the whole dataset into memory, which suits small ones.
+- **I/O questions.** `identify_io_bottlenecks` reports static layout findings
+  and `optimize_access_pattern` gives recommendations, not a benchmark; neither
+  is measured performance.
+- **Closing.** `close_file` releases the file the server holds open,
+  including after a failed call.
 
-Report the exact paths, dataset names, shapes, dtypes, chunks and attributes
-the tools returned; never invent file facts. When a tool fails, name the
-failed operation, quote the useful part of its error, say what evidence is
-now missing, and give a concrete recovery step (another tool, h5py in a
-script, or a question for the user).
+The tools return the exact paths, dataset names, shapes, dtypes, chunks and
+attributes; anything else is invented file facts. A failed tool call is
+useful to the person when the answer names the failed operation, quotes the
+useful part of its error, says what evidence is now missing, and offers a
+concrete recovery step (another tool, h5py in a script, or a question for the
+person).
 
-For ingest into clio-core, IOWarp or the CTE/CAE, or "will clio-core make my
-reads faster", load `references/clio_core_ingest.md` and apply its decision
-rule: bundling into clio-core is not a single-client read speedup, its cost is
-per object (consolidate many small datasets before any ingest), and it is for
-cross-node sharing and tiering. Quote the guide's figures as measurements of
-its build, not of the user's system.
-
+`references/clio_core_ingest.md` covers ingest into clio-core, IOWarp or the
+CTE/CAE, and "will clio-core make my reads faster". Its findings: bundling into
+clio-core is not a single-client read speedup, its cost is per object (many
+small datasets are best consolidated before any ingest), and it is for
+cross-node sharing and tiering. The guide's figures are measurements of its
+build, not of the person's system.
 ## Which guide
 
 **What is in a file**
@@ -87,7 +87,7 @@ its build, not of the user's system.
 | `references/io.md` | General I/O tuning: buffers, caches, access patterns |
 | `references/file_space.md` | File size, free space, page allocation, repacking |
 
-**Remote and cloud.** Choose by how the data is reached:
+**Remote and cloud.** The guide depends on how the data is reached:
 reading an existing file directly from S3 or HTTP is ROS3; going through a
 service layer is HSDS; changing how a file is *written* so remote reads are
 fast is the cloud-optimized guide.
@@ -126,4 +126,4 @@ subfiling splits that file across subfiles.
 
 Questions often span guides: a slow remote read may need `ros3_vfd.md` and
 `chunking.md`; compression choices depend on `chunking.md` and
-`filters.md`. Load each guide whose topic the question touches.
+`filters.md`. Each guide whose topic the question touches is relevant.

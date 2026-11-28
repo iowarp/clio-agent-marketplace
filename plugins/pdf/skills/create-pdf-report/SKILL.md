@@ -1,7 +1,7 @@
 ---
 name: create-pdf-report
 title: Create a PDF Report
-description: Create a polished PDF report when the scientist explicitly requests a PDF deliverable. Ordinary reports remain Markdown unless another format is requested.
+description: Create a polished PDF report as a PDF deliverable, built with ReportLab and checked page by page. CLIO's ordinary reports are Markdown.
 keywords:
 - level:L0
 - report
@@ -10,47 +10,40 @@ keywords:
 
 # Create a PDF Report
 
-Load this skill only when the scientist asks for a PDF report or another PDF
-deliverable. A request for a report without a requested file format should
-produce Markdown, not a PDF.
+This skill builds a PDF deliverable. CLIO's ordinary reports are Markdown; a PDF
+is the format when the person asks for one.
 
 ## Build from grounded content
 
-Establish the report's claims, data, citations, and intended audience before
-laying out pages. Preserve units, uncertainty, provenance, and distinctions
-between supplied facts, observed results, and inference. Do not add decorative
-specificity that the evidence does not support.
+Page layout depends on the report's claims, data, citations, and intended
+audience. Units, uncertainty, provenance, and the distinctions between supplied
+facts, observed results, and inference are part of that content. Specificity the
+evidence does not support is decoration, not content.
 
-Generate the PDF directly with ReportLab. Prefer flowable layout for reports
-whose text or page count may change; use fixed coordinates only for short,
-deliberately composed layouts. Keep the builder and temporary assets outside
-the final output directory, and preserve source assets.
+ReportLab generates the PDF directly. Flowable layout absorbs changes in text and
+page count; fixed coordinates suit short, deliberately composed layouts. A
+builder and temporary assets kept outside the final output directory stay out of
+the deliverable, and source assets stay unchanged.
 
-If the report benefits from illustrations, use supplied figures first. Create
-new images only when the scientist requests them or they materially improve
-the deliverable, and label generated images honestly.
+Supplied figures are evidence. A generated image is not, and its label says it
+was generated.
 
 ## Verify the artifact
 
-After each meaningful layout change:
+Each meaningful layout change can introduce new defects. The checks:
 
-1. Reopen the PDF with `pypdf` and verify page count, expected content, and
-   document metadata.
-2. Render every page to PNG with Poppler.
-3. Inspect every rendered page with `view_image` for clipping, overlap,
-   unreadable text, poor spacing, broken glyphs, misplaced figures, and weak
-   page transitions.
-4. Correct defects and repeat the checks. Content extraction alone is not
-   evidence of visual correctness.
+- `pypdf` reopens the PDF and shows page count, expected content, and document
+  metadata.
+- Poppler renders every page to PNG.
+- `view_image` on the rendered pages shows clipping, overlap, unreadable text,
+  poor spacing, broken glyphs, misplaced figures, and weak page transitions.
+  Content extraction alone is not evidence of visual correctness.
 
-If `view_image` did not show you a page, because it failed or reported that
-the image was not shown to the model, name the pages that were not visually
-checked. Never claim that visual verification passed for them.
+A page `view_image` did not show the model, because it failed or reported that
+the image was not shown, has not been visually checked.
 
-Use `uv` for Python execution and dependency management. Typical dependencies
-are `reportlab`, `pypdf`, and Pillow; use only the packages the report needs.
-Write the PDF where the person asked for it, under the name they gave. When they
-named no place, use the workspace's own output convention, or else `output/pdf/`.
-Keep intermediate renders in the session's scratch folder, not the workspace.
-
-Deliver the final PDF only after both logical and visual verification pass.
+`uv` runs Python and manages dependencies. Typical dependencies are `reportlab`,
+`pypdf`, and Pillow.
+The PDF goes where the person asked for it, under the name they gave, or else
+where the workspace's own output convention puts outputs. Intermediate renders
+belong in the session's scratch folder, not the workspace.

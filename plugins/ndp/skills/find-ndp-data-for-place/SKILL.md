@@ -1,7 +1,7 @@
 ---
 name: find-ndp-data-for-place
 title: Find NDP Data for a Place and Topic
-description: Use when a question names a place and a topic (snowpack at a ski area, fire and vegetation around a lake, land motion in a basin) and the data may come from several NDP organizations. Turns the place and topic into catalog searches, finds national and statewide layers by theme, checks each candidate's coverage from its record or its own service, treats zero results as a reason to rephrase, and runs one branch per organization.
+description: Use when a question names a place and a topic (snowpack at a ski area, fire and vegetation around a lake, land motion in a basin) and the data may come from several NDP organizations. Covers turning the place and topic into catalog searches, national and statewide layers found by theme, each candidate's coverage from its record or its own service, why zero results call for rephrasing, and work split by organization.
 keywords:
 - level:L2
 - ndp
@@ -11,41 +11,40 @@ keywords:
 # Find NDP data for a place and topic
 
 The NDP catalog has no working search by place or time, and organizations
-describe location, time and format differently. Find data the way a scientist
-would: search for the names and the themes, then check each candidate's
-coverage directly.
+describe location, time and format differently. Data is found the way a
+scientist would find it: by the names and the themes, with each candidate's
+coverage checked directly.
 
-## 1. Expand the place and the topic
+## The place and the topic as search terms
 
-- **Place:** run `resolve-region`. Keep its bounds for every check and its name
-  list for searching: the place, the containing county, forest, watershed and
+- **Place:** `resolve-region` gives bounds for coverage checks and a name list
+  for searching: the place, the containing county, forest, watershed and
   state, the main features, the managing agencies.
-- **Topic:** list the variables and their synonyms the way catalogs word them
-  (snowpack, snow depth, snow water equivalent; canopy, fuels, land cover,
-  vegetation type; fire perimeters, burn severity, fire history; subsidence,
-  uplift, GNSS position). Add the measurement that would answer the question
-  (lidar, DEM, station series, imagery).
+- **Topic:** catalogs word variables in many ways (snowpack, snow depth, snow
+  water equivalent; canopy, fuels, land cover, vegetation type; fire perimeters,
+  burn severity, fire history; subsidence, uplift, GNSS position). The
+  measurement that would answer the question (lidar, DEM, station series,
+  imagery) is a search term too.
 
-## 2. Search, several ways
+## Ways to search
 
-`connected_data_search_ndp` combines words with AND, so search short:
+`connected_data_search_ndp` combines words with AND, so short queries match more.
+Queries that find different things:
 
-1. Each place name alone, and each with one topic word.
-2. Each topic word or measurement alone, with no place: national and
-   statewide layers cover the region without naming it.
-3. Per organization: list publishers with `connected_data_ndp_organizations`,
-   pick the ones whose holdings fit the topic, and search each with
-   `organization` set and a theme word.
+- A place name alone, or with one topic word.
+- A topic word or measurement with no place: national and statewide layers
+  cover the region without naming it.
+- An organization: `connected_data_ndp_organizations` lists publishers, and a
+  search with `organization` set and a theme word lists one publisher's holdings.
 
-**Zero results is a reason to rephrase, not a finding.** Drop a word, use a
-synonym, try the larger unit (county, state), try the theme without the place,
-or the organization without the theme. Conclude that NDP lacks something only
-after these variants, and list the queries you tried.
+**Zero results is a reason to rephrase, not a finding.** Dropping a word, a
+synonym, the larger unit (county, state), the theme without the place, or the
+organization without the theme each reach different records. A claim that NDP
+lacks something rests on the variants tried, so the queries and their result
+counts are the evidence for it. A table of candidates (title, organization,
+catalog id, what it measures, resources and their kinds) keeps them comparable.
 
-Record every query with its result count. Keep candidates in one table: title,
-organization, catalog id, what it measures, resources and their kinds.
-
-## 3. Check each candidate's coverage
+## Each candidate's coverage
 
 Each search result carries `coverage`: the record's own `location` (a `bbox`
 from whichever field it uses, with `span_degrees`) and `time` (start and end,
@@ -53,46 +52,44 @@ or only an issue date), with the source field named. Records that state
 neither have `null`. Time can also appear only in the title or notes.
 
 - A **world-wide or nation-wide box** (a large `span_degrees`) says nothing
-  about the region. Treat it like a missing extent.
-- **No usable extent:** ask the source. For a service resource (Esri REST,
-  ArcGIS Feature Service, WFS, WCS, STAC), use the `get-geospatial-data` skill:
-  `describe_geo_service` with the region's `bbox`, then a count query when it
-  stays undetermined. For a multi-tile raster dataset, use
-  `connected_data_ndp_tiles_covering`.
+  about the region; it is as uninformative as a missing extent.
+- **No usable extent:** the source itself can answer. For a service resource
+  (Esri REST, ArcGIS Feature Service, WFS, WCS, STAC), the `get-geospatial-data`
+  skill's `describe_geo_service` with the region's `bbox`, then a count query
+  when it stays undetermined, gives the extent. For a multi-tile raster dataset,
+  `connected_data_ndp_tiles_covering` does.
 - **A blank `format` is missing metadata, not an unusable file.** Many records
   leave it empty for tiled rasters and point clouds; the search result then gives
   each resource's `name_suffix` (`.img`, `.tif`, `.laz`) and tallies the suffixes.
-  Identify the file from that, and confirm with `describe_geo_service` on one
-  resource, which reads raster and point-cloud headers. Set a candidate aside
-  for its format only after a read has failed, and say which read.
-- Classify each candidate as **overlaps**, **does not overlap** or **could not
-  be determined (why)**, for both space and time. Keep all three groups in the
-  answer.
+  The suffix identifies the file, and `describe_geo_service` on one resource
+  reads raster and point-cloud headers. Only a failed read shows a format is
+  unusable.
+- Each candidate **overlaps**, **does not overlap** or **could not be
+  determined (why)**, for both space and time. All three groups are part of
+  the answer.
 
-## 4. One branch per organization
+## Several organizations
 
-When candidates come from several organizations, each organization is its own
-branch of independent work. When you can start agents (`spawn_agents_parallel`),
+When candidates come from several organizations, each organization is an
+independent branch of work. When agents can be started (`spawn_agents_parallel`),
 the branches can run at the same time as children started in one call: an
-`explore` child for a branch that only searches and reads, a copy of yourself
-(leave out `agent`) for one that connects or fetches. Without children, run the
-branches' searches and reads together in the same step rather than finishing one
-organization before starting the next. Each branch:
+`explore` child for a branch that only searches and reads, a copy of the agent
+(leave out `agent`) for one that connects or fetches. Without children, the
+branches' searches and reads can still go together in the same step. A branch:
 
-- acquires through the right path: `connected_data_connect` with only the
+- acquires through the matching path: `connected_data_connect` with only the
   covering resources (or tiles) for files; the `get-geospatial-data` tools for
   services; the organization's own plugin when one is installed;
-- returns a table with its source, region, period, what was fetched, and
+- produces a table with its source, region, period, what was fetched, and
   caveats (completeness, units, failed links and the alternative used).
 
-Then merge with `harmonize-layers`. Its coverage report says what overlaps,
+`harmonize-layers` merges branches; its coverage report says what overlaps,
 what does not, and what could not be determined.
 
 ## When links fail
 
 A hub download that returns an HTTP error, or a resource whose `format` is
-blank, is a local access problem, not missing data. Try the record's other
-resources: the REST service behind a hub link, the VRT behind a folder of tiles,
-the point-cloud source behind a viewer link. Report the failure and the path
-that worked. A permission refusal from CLIO is a decision to report or ask
-about, not proof that the data is closed.
+blank, is a local access problem, not missing data. A record's other resources
+often work: the REST service behind a hub link, the VRT behind a folder of
+tiles, the point-cloud source behind a viewer link. A permission refusal from
+CLIO is a decision for the person, not proof that the data is closed.

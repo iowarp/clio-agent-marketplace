@@ -10,24 +10,24 @@ gRASPA runs only on a GPU: NVIDIA (built with the NVIDIA HPC SDK) or AMD (built 
 ROCm/HIP). The gRASPA connector never downloads or builds it. Without it here,
 `prepare_graspa` still writes complete run folders and `read_graspa` reads them back.
 
-## Look first
+## Where gRASPA may already be
 
 `binary_missing` means only that the connector found no gRASPA where it looks: its **gRASPA
 program** value and `nvc_main.x`, `hip_main.x`, `graspa` or `sycl.out` on PATH. On a machine
 with a GPU, gRASPA may be elsewhere: a Spack install (`spack find -p graspa`), a module
-(`module avail graspa`), or a build folder. Look there yourself, and ask the person when you
-cannot tell. When you find one, ask with `ask_user` whether to use it (name its path). Once
-the person agrees, set **gRASPA program** (`graspa`) to it with `set_connector_value` and use
-`run_graspa`; the value belongs to this conversation, so tell them they can save it as their
-default in the gRASPA connector's settings.
+(`module avail graspa`), or a build folder. Using one found there is the person's choice
+(`ask_user`, naming its path). **gRASPA program** (`graspa`) set with `set_connector_value`
+lets `run_graspa` use it; the value belongs to this conversation, and the gRASPA
+connector's settings hold a saved default.
 
-## Ask where it runs
+## Where it runs
 
-Ask once with `ask_user`:
+Where gRASPA runs is the person's decision (`ask_user`):
 
 - **a cluster GPU node**: build gRASPA there and submit the prepared folders (below);
-- **this machine** (only if it has a GPU: check `nvidia-smi` or `rocm-smi`);
-- **prepare the folders only**: the person runs them; say what stays unverified.
+- **this machine** (only if it has a GPU: `nvidia-smi` or `rocm-smi` shows it);
+- **prepare the folders only**: the person runs them, and the results stay unverified
+  until they do.
 
 ## Build with Spack, in one folder
 
@@ -41,10 +41,10 @@ $SPACK install graspa +rocm amdgpu_target=gfx90a    # AMD: set the GPU architect
 $SPACK location -i graspa                           # bin/nvc_main.x or bin/hip_main.x
 ```
 
-On a cluster, prefer the site's modules for the compilers (`module load nvhpc` or
-`rocm`) and tell Spack about them (`spack external find`), and build on a compute node
-if login nodes forbid long builds. The NVIDIA HPC SDK is a large download (several GB):
-say so before starting.
+On a cluster, the site's modules provide the compilers (`module load nvhpc` or `rocm`),
+and `spack external find` tells Spack about them; sites that forbid long builds on login
+nodes need the build on a compute node. The NVIDIA HPC SDK is a large download (several
+GB).
 
 ## Running prepared folders on a GPU node
 
@@ -55,6 +55,6 @@ saved as `graspa_stdout.txt`, in that folder:
 cd <run folder> && <path>/nvc_main.x > graspa_stdout.txt
 ```
 
-Submit them as Slurm jobs (one per folder, or an array) with a GPU requested, copy the
-folders back if they ran on another file system, then `read_graspa` each one. Where
-gRASPA was built on this machine, set **gRASPA program** as in "Look first".
+They run as Slurm jobs (one per folder, or an array) with a GPU requested; folders that
+ran on another file system need copying back before `read_graspa` reads each one. Where
+gRASPA was built on this machine, **gRASPA program** points at it as above.

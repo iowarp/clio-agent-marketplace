@@ -7,23 +7,19 @@ keywords:
 - materials
 ---
 
-State the schedule precisely: solution/homogenization temperature and time,
-cooling rate/method (quench, air cool, furnace cool), and aging temperature(s)
-and time(s) for multi-step schedules. A named heat treatment ("solutionized
-and aged") without these parameters does not specify a reproducible state.
+A schedule is its parameters: solution/homogenization temperature and time,
+cooling rate/method (quench, air cool, furnace cool), and aging
+temperature(s) and time(s) for multi-step schedules. A named heat treatment
+("solutionized and aged") without these parameters does not specify a
+reproducible state.
 
-Connect the schedule to its mechanism: solutionizing dissolves prior
-precipitates and homogenizes composition, cooling rate sets the supersaturation
-retained, and aging controls precipitate nucleation and growth (under-aged,
-peak-aged, over-aged) — state which regime the schedule targets and why.
+Each stage has a mechanism: solutionizing dissolves prior precipitates and
+homogenizes composition, cooling rate sets the supersaturation retained, and
+aging controls precipitate nucleation and growth (under-aged, peak-aged,
+over-aged); a schedule targets one of those regimes.
 
-For an as-built additively manufactured starting microstructure specifically,
-recognize that heat treatment must address AM-specific features a wrought
-starting point does not have: relieving residual stress from the build,
-homogenizing solidification segregation, and controlling any AM-specific
-phases before the standard aging response applies as it would for wrought
+An as-built additively manufactured starting microstructure has AM-specific
+features a wrought starting point does not: residual stress from the build,
+solidification segregation, and AM-specific phases. Heat treatment addresses
+these before the standard aging response applies as it would for wrought
 material.
-
-Return the schedule and its parameters, the mechanism and target
-precipitate/phase state, and the microstructural or property change it is
-expected (or measured) to produce.

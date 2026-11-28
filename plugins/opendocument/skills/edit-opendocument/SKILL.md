@@ -5,13 +5,13 @@ description: Use to create or revise ODT, ODS or ODP files natively, or apply Op
 
 # Edit OpenDocument Files
 
-1. Use `$inspect-office-package` for every existing ODT/ODS/ODP. Preserve the uncompressed first `mimetype` entry and `META-INF/manifest.xml`.
-2. Resolve the anchor against `content.xml` plus the relevant text, table/cell, draw/page, or annotation identity.
-3. Use `odfpy` for supported creation and edits. For a localized edit in a complex file, patch the narrow XML subtree and preserve all other ZIP members.
-4. Keep automatic and named style references stable. Preserve formulas, namespaces, RDF metadata, signatures, macros, embedded objects, tracked changes, annotations, and media unless the request owns them.
-5. Recalculate ODS and render all formats with headless LibreOffice when available. Inspect the affected pages/slides/sheets.
-6. Compare package parts with a narrow allowlist. Block rather than normalize unsupported features away.
-7. Save ODF as canonical. An exported OOXML or PDF is a derived compatibility rendition, not a replacement unless the user asks for conversion.
-8. Register the ODF file with `create_artifact`. It gets a version-bound PDF preview for Clio's viewer automatically, kept in lineage rather than as another deliverable (`pdf_preview=false` omits it). Do not register or list that PDF separately unless a PDF deliverable was asked for; check `pdf_previews` for a missing converter, which leaves the source registered.
+- `$inspect-office-package` inventories an existing ODT/ODS/ODP and compares it after an edit. The uncompressed first `mimetype` entry and `META-INF/manifest.xml` make the file a valid package.
+- An anchor resolves against `content.xml` plus the relevant text, table/cell, draw/page, or annotation identity.
+- `odfpy` handles supported creation and edits. A localized edit in a complex file can patch the narrow XML subtree and leave all other ZIP members as they were.
+- Automatic and named style references stay stable only when untouched. Formulas, namespaces, RDF metadata, signatures, macros, embedded objects, tracked changes, annotations, and media are part of the file.
+- Headless LibreOffice, when available, recalculates ODS and renders all formats, showing the affected pages/slides/sheets.
+- A package comparison with a narrow allowlist shows drift. Normalizing unsupported features away removes them; an edit that would do so is blocked by that incompatibility.
+- ODF is canonical. An exported OOXML or PDF is a derived compatibility rendition, not a replacement unless the person asked for conversion.
+- `create_artifact` registers the ODF file. It gets a version-bound PDF preview for Clio's viewer automatically, kept in lineage rather than as another deliverable (`pdf_preview=false` omits it). Registering or listing that PDF separately makes it another deliverable. `pdf_previews` reports a missing converter, which leaves the source registered.
 
-Read [opendocument-package.md](references/opendocument-package.md) for ODF-specific rules.
+[opendocument-package.md](references/opendocument-package.md) covers ODF-specific package facts.

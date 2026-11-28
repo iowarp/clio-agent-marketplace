@@ -73,15 +73,15 @@ def test_the_skill_names_the_current_tool_contract() -> None:
     assert named.isdisjoint({f"hdf5_{name}" for name in RETIRED_IN_PROCESS_TOOLS})
 
 
-def test_the_skill_requires_bounded_evidence_and_descriptive_failures() -> None:
+def test_the_skill_describes_bounded_evidence_and_descriptive_failures() -> None:
     section = " ".join(_tools_section().split())
-    assert "Always call `close_file`" in section
+    assert "`close_file` releases the file" in section
     assert "including after a failed call" in section
-    assert "never invent file facts" in section
-    assert "name the failed operation" in section
-    assert "give a concrete recovery step" in section
+    assert "invented file facts" in section
+    assert "names the failed operation" in section
+    assert "concrete recovery step" in section
     assert "recommendations, not a benchmark" in section
-    assert "rather than choosing silently" in section
+    assert "choosing silently can open the wrong file" in section
     assert "references/clio_core_ingest.md" in section
 
 

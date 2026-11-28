@@ -8,16 +8,15 @@ keywords:
 - post-processing
 ---
 
-## Track the chain
+## The chain
 
-Enumerate the steps applied, in order: stress relief, hot isostatic pressing
+Post-processing is a sequence of steps, in order: stress relief, hot isostatic pressing
 (HIP), solution and ageing heat treatment, support removal, machining, surface
 finishing, peening. Each step changes the part's state; a property, defect or
-characterization result is valid only for the state it was measured in. Label
-every reported value with that state: as-built, stress-relieved, HIPed,
-heat-treated, machined, finished.
+characterization result is valid only for the state it was measured in:
+as-built, stress-relieved, HIPed, heat-treated, machined, finished.
 
-Do not assume a step was performed, or a state reached, without evidence.
+A step was performed, or a state reached, only when evidence shows it.
 
 ## What each step does and does not fix
 
@@ -29,12 +28,12 @@ Do not assume a step was performed, or a state reached, without evidence.
   mechanism are in `heat-treatment`.
 - One step's benefit does not imply another's.
 
-## Choosing a surface-finishing process
+## Surface-finishing processes
 
-State the starting surface (as-built, as-machined) and the requirement
-(roughness value, fatigue performance, appearance) before choosing a process;
-material removal differs by orders of magnitude between light polishing and
-abrasive flow machining. Name the process and its mechanism:
+The starting surface (as-built, as-machined) and the requirement (roughness
+value, fatigue performance, appearance) decide the process; material removal
+differs by orders of magnitude between light polishing and abrasive flow
+machining. Processes differ in mechanism:
 
 - machining and grinding remove material to a controlled geometry;
 - abrasive, chemical and electrochemical polishing reduce peak roughness
@@ -42,15 +41,7 @@ abrasive flow machining. Name the process and its mechanism:
 - shot and laser peening introduce compressive residual stress at the surface,
   mainly for fatigue, not for roughness.
 
-Do not conflate a roughness-reduction process with a residual-stress process;
-a requirement may need both, deliberately. For internal or hard-to-reach
-surfaces (channels, lattices), state whether the process can physically reach
-them: one validated on external surfaces does not automatically reach
-internal ones.
-
-## Return
-
-The chain applied in order, what each step changed and left untouched, the
-resulting part state, which state each measurement describes, and for
-finishing whether it was verified to reach every surface the requirement
-covers.
+A roughness-reduction process is not a residual-stress process; a requirement
+may need both. Internal or hard-to-reach surfaces (channels, lattices) are a
+question of whether the process physically reaches them: one validated on
+external surfaces does not automatically reach internal ones.

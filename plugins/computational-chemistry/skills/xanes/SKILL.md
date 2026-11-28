@@ -23,21 +23,22 @@ absorber's empty states and the arrangement of its neighbours.
 
 ## Simulating a spectrum
 
-- **The absorber** is an element (all its sites, averaged) or chosen sites. Ask which,
-  when a structure has several inequivalent sites of interest.
+- **The absorber** is an element (all its sites, averaged) or chosen sites; a structure
+  with several inequivalent sites of interest gives a different spectrum for each.
 - **Method:** multiple scattering with a muffin-tin potential is fast and the usual first
   pass; a full-potential finite-difference calculation is slower and better for
   low-symmetry sites and pre-edges.
-- **Cluster radius:** check convergence: run at increasing radii until the features stop
-  changing. A small radius gives a smooth, featureless spectrum.
-- **Self-consistent potential:** improves edge position and pre-edge; check it converged.
+- **Cluster radius:** converged when increasing the radius stops changing the features.
+  A small radius gives a smooth, featureless spectrum.
+- **Self-consistent potential:** improves edge position and pre-edge when it converged.
 - **Energy range:** wide enough below and above the edge to normalize (at least 10 eV
   below and 20 eV above E0).
 
 ## Comparing with a measurement
 
 Normalize both (pre-edge line subtracted, divided by the edge step). A calculation's
-absolute energy scale is not predictive: align E0 before comparing shapes, and report the
-shift applied. Compare feature positions relative to E0 and relative intensities; quote
-a similarity measure (R-factor, correlation) over a stated range. Agreement in shape
+absolute energy scale is not predictive: shapes compare after aligning E0, and the shift
+applied is part of the comparison. Feature positions relative to E0 and relative
+intensities are what compare; a similarity measure (R-factor, correlation) holds over its
+energy range. Agreement in shape
 supports a structural model; it does not prove it.

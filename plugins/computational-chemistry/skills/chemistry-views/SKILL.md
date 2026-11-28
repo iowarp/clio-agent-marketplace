@@ -24,11 +24,11 @@ A view here is interactive: a chart or table in the conversation drawn from the 
 A2UI catalog (`present-interactive-analysis`), or a dashboard with the structure view
 beside its charts (`create-dashboard`, and `burette-views` "In a dashboard" for the
 link). Its "linked by" column only works in such a view: a rendered image (a matplotlib
-PNG) cannot carry the person's pick back or follow new results, so it is for when they
-ask for a figure file.
+PNG) cannot carry the person's pick back or follow new results, so it suits a requested
+figure file.
 
-Label axes with quantity and unit. Put the method in the legend. Build each chart from a
-file (CSV) the calculation wrote, so the chart and the numbers in the reply agree. A view
+A chart reads with quantity and unit on its axes and the method in its legend. A chart
+built from a file (CSV) the calculation wrote agrees with the numbers in the reply. A view
 that fills in while calculations run (a diagram per species) binds that file at
-`@latest` (`create-dashboard`), and each finished result adds its row to the file; say
-that it updates, and report the final numbers from the results, not from the view.
+`@latest` (`create-dashboard`), and each finished result adds its row to the file; the
+final numbers come from the results, not from the view.

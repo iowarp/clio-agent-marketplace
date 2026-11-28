@@ -25,29 +25,23 @@ server does, so you can do it by hand or tell the user what is missing.
 "KiCad was not found" means only that the server found no `kicad-cli` where it looks:
 `KICAD_CLI_PATH`, PATH and KiCad's standard install folders (the Windows and macOS ones in the
 table below). A portable or unzipped KiCad on another drive, or a Flatpak KiCad, is not among
-them. Before offering an install, look for `kicad-cli` (`kicad-cli.exe` on
-Windows) yourself:
+them. Where else a `kicad-cli` (`kicad-cli.exe` on Windows) turns up:
 on Windows, a few folder levels deep on each drive (`Get-ChildItem <drive>:\ -Recurse -Depth 4
 -Filter kicad-cli.exe -ErrorAction SilentlyContinue`); on macOS, `mdfind "kMDItemFSName ==
 'KiCad.app'"`; on Linux, `flatpak list --app --columns=application | grep org.kicad.KiCad`
 (a Flatpak KiCad needs the wrappers from the Linux per-user row below) and
-`find /opt ~ -maxdepth 5 -name kicad-cli`. When
-you cannot tell, ask the person whether they have KiCad somewhere.
+`find /opt ~ -maxdepth 5 -name kicad-cli`. The person may know of a copy none of these find.
 
-When you find one, run it with `version`, then ask with `ask_user` whether to use that copy
-(name its path and version) or install another. Once the person agrees, set the KiCad
-connector's **Where KiCad is** (`kicad_cli`) to its full path with `set_connector_value`; from
-your next step the server uses only that install. The value belongs to this conversation, so
-tell them they can save it as their default in the KiCad connector's settings. Install (below)
-only when there is no copy or the person wants a new one.
+`kicad-cli version` tells a found copy's version. The KiCad connector's **Where KiCad is**
+(`kicad_cli`), set to its full path with `set_connector_value`, makes the server use only that
+install from the next step. The value belongs to this conversation; the person can save it as
+their default in the KiCad connector's settings.
 
 ## 1. Install
 
-Installing software is the person's decision: ask once (`ask_user`), naming the command.
-Offer the **per-user** install for their system (the first row for it below): it needs no
-administrator rights and raises no UAC or password prompt. Offer a machine-wide install only
-when the person asks for one. Then run it yourself; the sandbox and the operating system each
-ask the person before anything changes:
+The **per-user** install for each system (the first row for it below) needs no administrator
+rights and raises no UAC or password prompt; a machine-wide install does. The sandbox and the
+operating system each ask the person before an install changes anything:
 
 - **A folder the sandbox blocks** (a user-space install, Homebrew's own folders): retry with
   `access_paths`; CLIO raises the folder card.
@@ -59,31 +53,29 @@ ask the person before anything changes:
   command that needs `sudo` as `osascript -e 'do shell script "<command>" with administrator
   privileges'` (macOS shows its password dialog); on a **Linux desktop**, run it as
   `pkexec <command>` (the system's authentication dialog). As root in a container no prompt
-  is needed. Never ask for a password in the conversation and never pipe one to `sudo`.
-- If the person declines, give them the exact command to run in their own terminal.
+  is needed. These dialogs take the password from the person directly, so it never passes
+  through the conversation or a pipe to `sudo`.
+- A person who declines can still run the exact command in their own terminal.
 
 | System | Command | Notes |
 | --- | --- | --- |
 | Windows, per user | `winget install --id KiCad.KiCad -e --scope user --accept-source-agreements --accept-package-agreements` | No UAC prompt. `kicad-cli.exe` is in `%LOCALAPPDATA%\Programs\KiCad\<version>\bin\` |
-| Windows, machine-wide (only when asked) | `winget install --id KiCad.KiCad -e --scope machine --accept-source-agreements --accept-package-agreements` | Windows asks for approval (UAC). `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
+| Windows, machine-wide | `winget install --id KiCad.KiCad -e --scope machine --accept-source-agreements --accept-package-agreements` | Windows asks for approval (UAC). `kicad-cli.exe` is in `C:\Program Files\KiCad\<version>\bin\` |
 | macOS, per user | `brew install --cask kicad --appdir=~/Applications` | No password. Without Homebrew, open the disk image from kicad.org and drag KiCad into `~/Applications`. `kicad-cli` is in `~/Applications/KiCad/KiCad.app/Contents/MacOS/` |
-| macOS, machine-wide (only when asked) | `brew install --cask kicad` | Into `/Applications`; macOS may ask for the password |
-| Linux, per user (Flatpak) | `flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo && flatpak install --user -y flathub org.kicad.KiCad` | No root. `kicad-cli` is inside the sandbox at `/app/bin/kicad-cli`, so write two `#!/bin/sh` wrappers in `~/.local/bin/` (`chmod +x`): `kicad-cli` with `exec flatpak run --command=/app/bin/kicad-cli org.kicad.KiCad "$@"` and `pcbnew` with `exec flatpak run --command=/app/bin/pcbnew org.kicad.KiCad "$@"`, then set `kicad_cli` to `~/.local/bin/kicad-cli` (full path). The Flatpak reads and writes the home folder, `/media` and `/run/media` only; for a board elsewhere, `flatpak override --user --filesystem=<folder> org.kicad.KiCad`. Where `flatpak` is missing, say so and offer the system package. conda-forge has no KiCad package |
-| Ubuntu, Debian, system (only when asked, or no per-user route) | `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt update && sudo apt install --no-install-recommends kicad kicad-symbols kicad-footprints kicad-templates` | `kicad-packages3d` adds the 3D models (several GB); install it only when 3D views or STEP exports need component bodies |
+| macOS, machine-wide | `brew install --cask kicad` | Into `/Applications`; macOS may ask for the password |
+| Linux, per user (Flatpak) | `flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo && flatpak install --user -y flathub org.kicad.KiCad` | No root. `kicad-cli` is inside the sandbox at `/app/bin/kicad-cli`, so write two `#!/bin/sh` wrappers in `~/.local/bin/` (`chmod +x`): `kicad-cli` with `exec flatpak run --command=/app/bin/kicad-cli org.kicad.KiCad "$@"` and `pcbnew` with `exec flatpak run --command=/app/bin/pcbnew org.kicad.KiCad "$@"`, then set `kicad_cli` to `~/.local/bin/kicad-cli` (full path). The Flatpak reads and writes the home folder, `/media` and `/run/media` only; for a board elsewhere, `flatpak override --user --filesystem=<folder> org.kicad.KiCad`. Without `flatpak`, the system package is the route. conda-forge has no KiCad package |
+| Ubuntu, Debian, system | `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt update && sudo apt install --no-install-recommends kicad kicad-symbols kicad-footprints kicad-templates` | `kicad-packages3d` adds the 3D models (several GB); 3D views and STEP exports need it for component bodies |
 | Ubuntu, nightly (KiCad 11 preview, for `api-server`) | `sudo add-apt-repository ppa:kicad/kicad-dev-nightly && sudo apt install kicad-nightly` | System-wide; installs beside KiCad 10 as `kicad-cli-nightly`, `pcbnew-nightly` |
-| Fedora, system (only when asked) | `sudo dnf install kicad` | |
-| Arch, system (only when asked) | `sudo pacman -S kicad kicad-library` | |
+| Fedora, system | `sudo dnf install kicad` | |
+| Arch, system | `sudo pacman -S kicad kicad-library` | |
 
 **Disk space for the 3D models.** The 3D model package is several gigabytes once unpacked,
-more than the rest of KiCad together. Before installing it, read its size
-(`apt-cache show kicad-packages3d`, field `Installed-Size`, in kB; on macOS and Windows the
-models come with the installer) and the free space where it goes (`df -h` on the install
-folder on Linux and macOS, `Get-PSDrive` for its drive on Windows), and tell the person both.
-When the space is short, offer
-the choice: skip the models (the 3D view and STEP export then show the board, tracks and
-pads without component bodies), or let the person free space. Never free space yourself by
-deleting folders you did not create, and never CLIO's own folders: a running connector's
-environment lives there.
+more than the rest of KiCad together. Its size is in `apt-cache show kicad-packages3d` (field
+`Installed-Size`, in kB; on macOS and Windows the models come with the installer), and the free
+space where it goes in `df -h` on the install folder (Linux and macOS) or `Get-PSDrive` for its
+drive (Windows). Without the models, the 3D view and STEP export show the board, tracks and
+pads without component bodies. Folders you did not create are the person's, and CLIO's own
+folders hold the running connectors' environments.
 
 If `add-apt-repository` fails (for example `No module named 'apt_pkg'` when the system Python
 was replaced), add the PPA by hand: put
@@ -96,8 +88,8 @@ On Ubuntu, the `ngspice` package conflicts with KiCad's own `libngspice-kicad`. 
 simulation, install ngspice through conda instead (the spice plugin's `install-simulator`).
 
 If the server does not find the new install (always so for the Linux Flatpak route, whose
-`kicad-cli` is only reachable through the wrapper), set `kicad_cli` as in step 0, with the path read from the install itself
-(for example `winget list --id KiCad.KiCad`, then the folder above); never guess one.
+`kicad-cli` is only reachable through the wrapper), `kicad_cli` (step 0) takes the path read
+from the install itself (for example `winget list --id KiCad.KiCad`, then the folder above).
 
 ## 2. Run KiCad with no screen
 
@@ -162,7 +154,7 @@ in `<KICAD_CONFIG_HOME>/<major>.<minor>/` (for example `10.0/`):
 - **No display and no Xvfb**: install Xvfb, or KiCad 11's `api-server`.
 - **Root in a sandbox**: `apt` writes `/usr`, `/etc` and `/var/lib/dpkg` and replaces files its
   own download account owns, which a sandboxed command cannot do even with the folders granted
-  (`privilege_denied`). Run the install outside the sandbox with the person's allow (step 1).
+  (`privilege_denied`). It runs outside the sandbox with the person's allow (step 1).
 
 ## 5. Check it
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "cad",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Parametric CAD with CadQuery: model a part (a wing section, a duct, a body, a bracket) as a script, run it on CLIO's own uv and Python with a CadQuery release that has wheels for that Python, and export STEP and a checked, watertight STL, for example as geometry for a simulation.",
   "author": {
     "name": "IoWarp Team"

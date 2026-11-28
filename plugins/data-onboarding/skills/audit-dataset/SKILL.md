@@ -9,35 +9,38 @@ keywords:
 - delegation
 ---
 
-You are already running this skill in the delegated child. Complete the assigned
-inspection directly; do not recursively delegate it.
+This skill runs inside the delegated child, which does the assigned inspection
+itself.
 
-The assignment must identify the source bundle and should identify the question
-or audit scope. If the source is unreadable, report the actual access problem.
-Write notes, code and outputs to the workspace so the source stays as
-delivered, by default in the Agent workspace state at
+The assignment names the source bundle and usually the question or audit scope.
+An unreadable source is an access problem, and that problem is itself a finding.
+Notes, code and outputs live in the workspace so the source stays as delivered;
+the default place is the Agent workspace state at
 `<workspace_state>/datasets/<key>/` (resolved from
-`CLIO_AGENT_WORKSPACE_STATE_DIR`), or wherever the parent's assignment says.
+`CLIO_AGENT_WORKSPACE_STATE_DIR`), unless the parent's assignment names another.
 
-1. Load `onboard-dataset` and inspect the files needed for the assignment. Load
-   the domain or source skills the parent names for scientific and format
-   checks, and follow a source skill's version contract when it states one.
-   Scripts, cards and schemas are optional aids. Adapt or replace them when
-   their assumptions do not fit.
-2. Keep uncertain treatment meanings, units, calibration and identity mappings
-   explicit. Return these questions to the parent rather than guessing or
-   editing the source. Continue checks that do not depend on their answers.
-3. Check calculations and outputs against source observations, counts and join
-   behavior. Process completion or a passing example schema alone does not
-   establish scientific validity. Do not convert a whole dataset merely to fill
-   a required set of tables. The parent owns final presentation.
-4. Return a concise account of inspected scope, evidence, findings, limitations,
-   questions, paths of any notes/code/outputs, and checks with their results.
-   For reusable code, include its invocation and dependencies. If no loader or
-   views were needed, say so. Identify any specific unfinished work.
+`onboard-dataset` covers inspecting the files. Domain or source skills the parent
+names cover scientific and format checks, and a source skill that states a
+version contract defines which versions it supports. Scripts, cards and schemas
+are optional aids whose assumptions may not fit a given dataset.
+
+Treatment meanings, units, calibration and identity mappings that remain
+uncertain are questions for the parent; a guess or a source edit hides them.
+Checks that do not depend on their answers are unaffected by them.
+
+Calculations and outputs are trustworthy to the extent they match source
+observations, counts and join behavior. Process completion or a passing example
+schema alone does not establish scientific validity. Converting a whole dataset
+just to fill a required set of tables adds no evidence. The parent owns final
+presentation.
+
+What the parent can use from the child: the inspected scope, evidence, findings,
+limitations, questions, paths of any notes/code/outputs, and checks with their
+results; for reusable code, its invocation and dependencies; whether a loader or
+views were needed; and any specific unfinished work.
 
 The parent checks the evidence supporting its answer: inspecting a sample,
 repeating a calculation, comparing counts or rerunning selected code when
-warranted. A mandatory second execution of the entire pipeline is not required.
-A partial result must be labelled accurately. Continue until the assigned scope
-is satisfied or a concrete access or interpretation dependency remains.
+warranted. A second execution of the entire pipeline is not required. A partial
+result is useful when it is labelled as partial. The assigned scope is done when
+it is satisfied or a concrete access or interpretation dependency remains.

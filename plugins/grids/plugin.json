@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "grids",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Hand edits to 2-D model grids (bathymetry, land masks, topography, land use) through clio-kit's grids MCP server: an editor view where the person selects cells and chooses an edit, each edit a tool call, and an edit log located by longitude and latitude with grid hashes that replays onto a regenerated grid.",
   "author": {
     "name": "IoWarp Team"

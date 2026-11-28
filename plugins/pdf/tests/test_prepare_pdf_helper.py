@@ -55,8 +55,9 @@ def test_skill_requires_pixels_for_engineering_drawing_geometry() -> None:
 
     body = (_SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
     assert "always layout-dependent" in body
-    assert "call `view_image` before answering" in body
-    assert "Do not infer drawing units" in body
+    assert "the page pixels from" in body
+    assert "until `view_image` has" in body
+    assert "Drawing units are not given by" in body
 
 
 def test_helper_records_real_outputs_from_both_stages(helper: ModuleType, tmp_path: Path) -> None:

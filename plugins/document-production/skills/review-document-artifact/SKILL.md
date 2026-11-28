@@ -18,28 +18,29 @@ receive one readable block per send:
   apply: Box, Element, Selected, Before, After, Under, Source, Picture, Made by,
   Note and Comment.
 
-1. Read every entry and look at the overview and crops before editing. The
-   comment is the instruction; the other lines say where it points.
-2. Edit what the header and the Source, Picture and Made by lines name. A PDF is
-   a rendition unless it is itself the source. Do not reverse-engineer a PDF or
-   an image when the source or the script exists.
-3. Load the format skill with `load_skill`: `edit-markdown-html`,
-   `author-latex-pdf`, `edit-ooxml-word`, `edit-ooxml-spreadsheet`,
-   `edit-ooxml-presentation` or `edit-opendocument`.
-4. Make the smallest change that satisfies each comment. Preserve unrelated
-   content, styles, formulas, media, accessibility metadata, native comments and
-   package parts you do not understand.
-5. Validate the output in its native format and, when available, its rendition.
-   When a script made the figure, rerun it and look at the new image.
-6. Save the same file. CLIO records the saved file as the artifact's next
-   version and links it from each comment.
-7. Answer by label: what you changed for S1, S2, and so on, and why. CLIO stores
-   your final answer as the reply on every comment of the send, so say plainly
-   which marks you could not apply.
+The comment is the instruction; the other lines say where it points, and the
+overview and crops show what was marked.
+
+- The header and the Source, Picture and Made by lines name what to edit. A PDF
+  is a rendition unless it is itself the source; a PDF or image reverse-engineered
+  when the source or the script exists diverges from them.
+- The format skills, loaded with `load_skill`, are `edit-markdown-html`,
+  `author-latex-pdf`, `edit-ooxml-word`, `edit-ooxml-spreadsheet`,
+  `edit-ooxml-presentation` and `edit-opendocument`.
+- Unrelated content, styles, formulas, media, accessibility metadata, native
+  comments and package parts the edit does not understand are part of the file.
+- The native format and, when available, its rendition show whether the output is
+  right. A figure made by a script changes when the script reruns, and the new
+  image shows the result.
+- A save to the same file becomes the artifact's next version, which CLIO links
+  from each comment.
+- CLIO stores the final answer as the reply on every comment of the send, so the
+  person reads there what changed for S1, S2, and so on, and which marks could not
+  be applied.
 
 A `Note:` line is a typed reason that part of a mark could not be resolved, such
-as `quote_not_found` or `source_unmapped`. Act on what the entry does establish,
-and say what the note left open instead of guessing.
+as `quote_not_found` or `source_unmapped`. The rest of the entry still holds; the
+note marks what it left open.
 
-Read [anchor-semantics.md](references/anchor-semantics.md) for what each line
-means and for comments on figures, pages, HTML and native comments.
+[anchor-semantics.md](references/anchor-semantics.md) covers what each line
+means and comments on figures, pages, HTML and native comments.

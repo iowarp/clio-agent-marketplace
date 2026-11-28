@@ -12,34 +12,35 @@ keywords:
 
 # Convert scientific data
 
-A conversion is done only when the output's row count, missing values, dtypes
+A conversion is verified when the output's row count, missing values, dtypes
 and per-column checksums match the source, and every lossy, transformed or
 skipped field is reported with its reason. A file that merely exists is not a
 conversion.
 
-## Before converting
+## What a conversion depends on
 
-1. **Inspect the source** with its format skill (`hdf5`, `adios2`) and bounded
-   reads: paths or variable names, dtypes, shapes, steps, attributes (units,
-   `_FillValue`, `missing_value`, `scale_factor`, `add_offset`, `calendar`).
-2. **Decide what a row is.** Parquet is a table. One-dimensional datasets of
-   equal length, a compound (record) dataset, ADIOS2 global values per step, or
-   one-dimensional global arrays per step fit. A gridded field (time x lat x
-   lon) does not fit without a decision: flatten it with explicit coordinate
-   columns, keep each row as a fixed-size list, or keep a gridded format
-   (netCDF, Zarr). Ask the user when the consumer's needs are not stated.
-3. **Name the consumer** when you know it (pandas, Spark, DuckDB, an older
-   reader): it decides the uint64, float16 and timestamp choices below.
+- **The source**, as its format skill (`hdf5`, `adios2`) and bounded reads
+  show it: paths or variable names, dtypes, shapes, steps, attributes (units,
+  `_FillValue`, `missing_value`, `scale_factor`, `add_offset`, `calendar`).
+- **What a row is.** Parquet is a table. One-dimensional datasets of
+  equal length, a compound (record) dataset, ADIOS2 global values per step, or
+  one-dimensional global arrays per step fit. A gridded field (time x lat x
+  lon) does not fit without a decision: flatten it with explicit coordinate
+  columns, keep each row as a fixed-size list, or keep a gridded format
+  (netCDF, Zarr). Which one is right depends on the consumer's needs, which the
+  person usually knows.
+- **The consumer** (pandas, Spark, DuckDB, an older reader): it decides the
+  uint64, float16 and timestamp choices below.
 
 ## The dtype map
 
 | Source | Parquet / Arrow | Default |
 |---|---|---|
 | bool, int8-64, uint8-32, float32/64 | same | copied |
-| uint64 | uint64 (INT64 with an unsigned annotation) | copied; report it: readers that ignore the annotation show values above 2^63-1 as negative |
+| uint64 | uint64 (INT64 with an unsigned annotation) | copied; readers that ignore the annotation show values above 2^63-1 as negative |
 | float16 | float32 | widened (exact); Parquet's own float16 type is too new for many readers |
-| long double / float128 | none | skipped; ask whether float64 rounding is acceptable |
-| complex | struct of `real`, `imag` | refused unless asked (`--complex split`); ask whether the consumer wants that, magnitude/phase, or nothing |
+| long double / float128 | none | skipped; float64 rounding loses precision |
+| complex | struct of `real`, `imag` | refused unless requested (`--complex split`); a consumer may want that, magnitude/phase, or nothing |
 | fixed-length or variable-length strings | string | decoded with the declared encoding (ASCII or UTF-8); bytes that do not decode stop the conversion |
 | enum | dictionary of the declared labels | mapped; a value outside the mapping stops the conversion |
 | compound | one column per member (top level), struct (nested) | mapped |
@@ -56,17 +57,17 @@ Attributes travel with each column as field metadata (as JSON), and the
 source path, its SHA-256, the options and every decision go into the file's
 key-value metadata under `clio.conversion`.
 
-## Skip, or ask
+## Skipped fields and meaning-changing choices
 
-- **Skip and report** a field that has no meaning outside the source
-  (references, opaque blobs) or that the user excluded.
-- **Ask** when the choice changes what the numbers mean or who can read them:
+- **Skippable fields** have no meaning outside the source (references, opaque
+  blobs) or were excluded by the person; the report lists them.
+- **Meaning-changing choices** alter what the numbers mean or who can read them:
   complex representation, decoding time with a non-standard calendar, turning
   fill values into nulls, unpacking, rounding long doubles, uint64 for a reader
-  that cannot take it, values compressed by a lossy ADIOS2 operator. Continue
-  with the fields that do not depend on the answer.
-- **Never** fix a failed check by changing the comparison. A mismatch is a
-  finding to report.
+  that cannot take it, values compressed by a lossy ADIOS2 operator. They are the
+  person's decisions; fields that do not depend on them convert regardless.
+- **A failed check** stays failed: changing the comparison hides a real mismatch,
+  and the mismatch is a finding.
 
 ## The bundled script
 
@@ -95,7 +96,7 @@ It writes in row batches, then reads the file back and checks:
   comes from the converted values, and the report says so.
 
 Exit status 0 means written and verified (skipped fields listed), 1 means a
-check failed (the file is left for inspection; do not deliver it as good),
+check failed (the file is left for inspection; it is not a good output),
 2 means nothing was written: a usage error, a field that cannot be converted
 as asked, or the output already exists. The printed summary and the JSON
 report (`--report`) list every column's action, checks and notes.
@@ -103,14 +104,14 @@ report (`--report`) list every column's action, checks and notes.
 Limits: one output table per run; selected HDF5 datasets must share their
 first-axis length; netCDF-4 coordinate variables are converted as ordinary
 datasets, not joined; ADIOS2 local arrays and multi-dimensional variables are
-refused (select and reshape them in your own script); ADIOS2 arrays are read
-twice (once to count rows). When the script does not fit, write your own in
-the workspace that follows the same map and checks, and report the same way.
+refused (a custom script can select and reshape them); ADIOS2 arrays are read
+twice (once to count rows). A workspace script that follows the same map and
+checks, and reports the same way, is an equivalent conversion.
 
-## Deliver
+## Outputs
 
-Write outputs to the workspace, never next to the source unless the user
-asks. Report the source and output paths, rows, every column's action and
-check, every skipped or lossy field with its reason, and the open questions.
-Deliver that summary with `create_artifact` (`used` listing the source and
-the Parquet file), keeping the JSON report beside the output.
+Outputs live in the workspace by default, not next to the source. A complete
+conversion summary gives the source and output paths, rows, every column's
+action and check, every skipped or lossy field with its reason, and the open
+questions. `create_artifact` delivers it (`used` listing the source and the
+Parquet file), with the JSON report beside the output.

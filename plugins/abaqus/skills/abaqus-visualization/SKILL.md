@@ -23,8 +23,8 @@ that stay side by side:
 | `fea_glb.py` | `uv run` with numpy | a flattened `.inp` mesh, a Tosca STL, or another `.glb` to project from |
 | `render_view.py` | `uv run` with numpy and matplotlib | a `.glb`, to draw a report figure |
 
-Run the two plain-Python tools through uv's shared cached environment, never
-a `.venv` inside the installed skill or plugin directory:
+The two plain-Python tools run through uv's shared cached environment rather
+than a `.venv` inside the installed skill or plugin directory:
 
 ```text
 uv run --no-project --with "numpy>=1.24" python "SKILL_ROOT/scripts/fea_glb.py" ARGS
@@ -39,8 +39,8 @@ ODB; bring back only the `.glb`.
 
 All three share one format, `clio.fea-mesh.v1`: a glTF binary with the mesh,
 node and cell fields, and optional frames (increments, design cycles). Every
-command prints the file's metadata, including each field's `min`/`max`; keep
-that output, because it is the only source for numbers you put next to a view.
+command prints the file's metadata, including each field's `min`/`max`; that
+output is the only source for the numbers next to a view.
 `fea_glb.py info FILE.glb` prints it again later.
 
 ## Choose the export
@@ -73,34 +73,34 @@ clio-workspace catalog (its catalog skill has the property reference):
   `clio.slider.v1` sliders (they take a `step` and a typed value; the Basic
   `Slider` only moves in whole numbers), keeps only the cells in range.
 - `frame`, bound to a `clio.slider.v1` with `step: 1`, steps through frames.
-- Views that share a `syncGroup` orbit together and share one color scale.
-  Use one group whenever two views are compared.
+- Views that share a `syncGroup` orbit together and share one color scale,
+  which is what makes two compared views read on one scale.
 
-For topology optimization results, use `visualize-topology-optimization`
-instead; it builds on this skill with ready-made views.
+`visualize-topology-optimization` builds on this skill with ready-made views
+for topology optimization results.
 
-A completed mesh or result belongs in the transcript, with no pending question.
-Use `ask_user(..., surface_id=...)` only for a real user decision or answer;
-plots, images, and mesh views may enrich that question. Inspection controls
-alone never require an answer or a pause.
+A completed mesh or result is transcript content, not a pending question.
+`ask_user(..., surface_id=...)` is for a real user decision or answer; plots,
+images, and mesh views may enrich that question. Inspection controls alone
+ask nothing of the person.
 
 ## Report figures
 
 The viewport's own "Save image" button gives the scientist a PNG of what they
-see. For a figure you cite, render it yourself from the same file:
+see. A figure to cite renders from the same file:
 
 ```text
 uv run --no-project --with "numpy>=1.24" --with "matplotlib>=3.8" python "SKILL_ROOT/scripts/render_view.py" job.glb -o figure.png --field S_MISES --range MIN:MAX --camera '<camera JSON from the event>' --title "TITLE"
 ```
 
-When the surface binds `camera` to a path and a button sends it, use that
-camera exactly, with the same field, frame, threshold, and color range the
-view showed (pass the shared range with `--range` so figures of compared
-states use one scale). Without a camera, `--preset iso|front|side|top`.
+When the surface binds `camera` to a path and a button sends it, that camera,
+with the same field, frame, threshold, and color range the view showed,
+reproduces the view (`--range` with the shared range keeps figures of
+compared states on one scale). Without a camera, `--preset iso|front|side|top`.
 
-## Say what the view is
+## What the view is
 
-Name the field, unit, frame, and averaging in words: stresses are
+A view is read by its field, unit, frame, and averaging: stresses are
 element-nodal values averaged at nodes (Abaqus/CAE's "Avg: 100%"), so peaks
 at notches read lower than integration-point values. Projected fields on a
 smoothed STL are nearest-node copies from the FE mesh, not a new solve. A view

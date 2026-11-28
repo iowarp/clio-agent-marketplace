@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "landscape",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Landscape methods for any region: terrain and hydrology from lidar (bare-earth and surface models, canopy height, slope, flow direction and accumulation, stream networks, elevation and snow-depth change by differencing) with a bundled flow-routing script, and planning layers (habitat, land capability, stream zones, regulatory boundaries) combined into honest area answers. Uses the geospatial plugin's access and processing tools.",
   "author": {
     "name": "IoWarp Team"

@@ -7,24 +7,21 @@ keywords:
 - fatigue
 ---
 
-Use this skill when a specific defect (pore, inclusion, lack-of-fusion
-region) is known to control or is suspected to control fatigue initiation —
-common for additively manufactured parts (see `xct`) — rather than assuming an idealized defect-free material.
+This skill covers parts where a specific defect (pore, inclusion,
+lack-of-fusion region) is known or suspected to control fatigue initiation,
+common for additively manufactured parts (see `xct`), as opposed to an
+idealized defect-free material.
 
-Connect the defect's measured size (typically an equivalent area or
-√area metric) and its exact location to the local stress state at that
-specific location from `stress-strain-analysis`, not a nominal or
-section-average stress — fatigue life from a defect-driven model is
-governed by the combination of defect size and the local stress it actually
-sits in, and a surface-breaking defect is generally more damaging than an
-internal one of the same size at the same nominal stress.
+Fatigue life from a defect-driven model is governed by the combination of the
+defect's measured size (typically an equivalent area or √area metric), its
+exact location, and the local stress state at that specific location from
+`stress-strain-analysis`; a nominal or section-average stress misses it. A
+surface-breaking defect is generally more damaging than an internal one of
+the same size at the same nominal stress.
 
-State the life model used (a √area-based approach such as Murakami's, or a
+Life models include a √area-based approach such as Murakami's, or a
 fracture-mechanics treatment of the defect as an initial crack via
-`fracture-mechanics`) and its calibration material/condition — a model
-calibrated on one alloy's defect population does not transfer to another
-without validation.
-
-Return the defect size/location used, the local stress state at that
-location, the life model and its calibration, and the predicted life with
-its sensitivity to the assumed defect size.
+`fracture-mechanics`, each with its calibration material and condition. A
+model calibrated on one alloy's defect population does not transfer to
+another without validation. The predicted life is sensitive to the assumed
+defect size.

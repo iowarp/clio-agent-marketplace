@@ -1,49 +1,48 @@
 ---
 name: pcb-placement
-description: Place a KiCad board's footprints with KiCad MCP Pro, from mechanical constraints to decoupling, and judge each placement pass by measured numbers and a look at the board.
+description: Place a KiCad board's footprints with KiCad MCP Pro, from mechanical constraints to decoupling, and judge a placement pass by measured numbers and a look at the board.
 ---
 
 # PCB placement
 
-Use this skill to place or re-place the footprints of a KiCad board. Every move is a tool
-call committed by the live KiCad (`pcb_move_footprint`, `pcb_set_footprint_layer`,
-`pcb_set_footprint_locked`); never edit the board file by hand.
+Moves go through the live KiCad, which holds the open board (`pcb_move_footprint`,
+`pcb_set_footprint_layer`, `pcb_set_footprint_locked`); an edit to the board file underneath
+it is not what KiCad has open.
 
-## Order
+## What constrains a placement
 
-1. **Fix what the enclosure fixes.** Draw the outline first (`pcb_import_outline_dxf` from
-   the enclosure's DXF, or `pcb_set_board_outline_shape`), then the mounting holes, then the
-   connectors, switches, LEDs and anything that must line up with an opening. Lock each
-   (`pcb_set_footprint_locked`) so later passes cannot move it. Add keepouts
-   (`pcb_set_keepout_zone`) under antennas and around holes. An antenna keepout covers the
-   antenna area the module's footprint marks (the part of its courtyard beyond the body), on
-   every copper layer, at the module's position as placed: take its corners from the
-   footprint, not from the body outline.
-2. **Group by function from the schematic.** Read the hierarchy and the nets
-   (`sch_get_*`, `pcb_get_ratsnest`): the power stage, the MCU and its crystal, each
-   interface. Keep each group together and near the connector it serves.
-3. **ICs, then their decoupling.** Place each IC, then its decoupling capacitors as close to
-   the supply pins as its datasheet asks, on the same side, with the shortest loop to ground.
-   Crystals sit next to their pins with no signals under them.
-4. **Then the rest**: pull-ups, LEDs, test points.
+- **The enclosure.** The outline (`pcb_import_outline_dxf` from the enclosure's DXF, or
+  `pcb_set_board_outline_shape`), the mounting holes, and the connectors, switches and LEDs
+  that line up with an opening are fixed by the case. A locked footprint
+  (`pcb_set_footprint_locked`) stays where it is through later passes until it is unlocked.
+- **Keepouts** (`pcb_set_keepout_zone`) under antennas and around holes. An antenna keepout
+  covers the antenna area the module's footprint marks (the part of its courtyard beyond the
+  body), on every copper layer, at the module's position as placed: its corners come from the
+  footprint, not from the body outline.
+- **Function.** The hierarchy and the nets (`sch_get_*`, `pcb_get_ratsnest`) group the parts:
+  the power stage, the MCU and its crystal, each interface. A group kept together near the
+  connector it serves keeps its nets short.
+- **Decoupling.** A decoupling capacitor works as well as its loop is short: as close to the
+  supply pins as the IC's datasheet asks, on the same side, with the shortest loop to ground.
+  Crystals sit next to their pins with no signals under them.
+- **The rest** (pull-ups, LEDs, test points) has the most freedom.
 
-`pcb_auto_place_by_schematic` and `pcb_auto_place_force_directed` give a first spread; use
-them only as a seed, never as the answer.
+`pcb_auto_place_by_schematic` and `pcb_auto_place_force_directed` give a first spread that
+knows none of the above.
 
-## Judge a pass by numbers and by eye
+## Judging a pass
 
-After each pass, measure and record:
+The numbers of a pass:
 
 - unconnected connections and total ratsnest length (`pcb_get_ratsnest`);
 - DRC violations, and courtyard overlaps among them (`run_drc`);
 - after routing: completion, vias and track length.
 
-Then look: the board view's `capture` (its app tool), or `pcb_visual_qa`. A pass is better only when the
-numbers and the picture agree; say which capture you looked at. Do not call a pass better
-because one number moved.
+The picture: the board view's `capture` (its app tool), or `pcb_visual_qa`. One number moving
+can hide a worse board; a pass is better when the numbers and the picture agree.
 
 ## Moving one part
 
-`pcb_move_footprint(reference, x_mm, y_mm, rotation_deg)` keeps the angle unless you give
-one. A footprint that is locked does not move; unlock it first if the person agrees.
-`pcb_set_footprint_layer(reference, "B_Cu")` moves it to the back.
+`pcb_move_footprint(reference, x_mm, y_mm, rotation_deg)` keeps the angle unless given one. A
+locked footprint does not move. `pcb_set_footprint_layer(reference, "B_Cu")` moves it to the
+back.

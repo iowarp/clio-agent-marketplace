@@ -38,7 +38,7 @@ degrees; Z is up.
 | `subsystem` | Groups parts for the chips, steps and colours. |
 | `material` | `steel`, `aluminium`, `cast-iron`, `brass`, `copper`, `gold`, `chrome`, `plastic`, `rubber`, `glass`, `pcb`, `ceramic`, `wood` or `painted`. |
 | `color` | Optional hex colour over the material's own. |
-| `accent` | Paint this part in the accent colour. Use it for one part or one small group. |
+| `accent` | Paint this part in the accent colour; it means something only on one part or one small group. |
 | `cutaway` | This part is cut in half by the section view (housings, covers, cases). When no part is marked, the section cuts everything. |
 | `position`, `rotation` | Where the part sits: a translation and XYZ Euler angles applied to all its shapes. |
 | `shape` / `shapes` | One shape, or a list. Each shape can have its own `position` and `rotation` inside the part. |
@@ -87,7 +87,7 @@ At most 500 copies per part.
 - `direction` defaults to straight away from the assembly's centre.
 - `distance` defaults to 0.35 of the assembly's diagonal.
 - `order` is the stage, from 0. At explode 0 to 1 the stages come away one after
-  another, so give the outer parts 0, what they hold 1, and so on. A fastener takes the
+  another: the outer parts are 0, what they hold 1, and so on. A fastener takes the
   same order as the part it holds, and a slightly longer distance.
 
 ### Motion
@@ -102,8 +102,8 @@ Every motion is a function of the one `input`, so it needs a top-level `input`.
 
 `pivot` defaults to the part's `position`. `rotate` and `slide` can also take a
 `table [[input, value], ...]` instead of the formula. Tables wrap when the input is
-periodic. When gears mesh, set the driven gear's `offset` to half a tooth pitch in
-degrees (180 / teeth) if the teeth clash at input 0.
+periodic. Meshing gears whose teeth clash at input 0 need the driven gear's `offset` at
+half a tooth pitch in degrees (180 / teeth).
 
 ## Steps
 
@@ -113,8 +113,8 @@ degrees (180 / teeth) if the teeth clash at input 0.
 ```
 
 `focus` names parts, subsystems or a repeated part's base id; everything else fades.
-`explode`, `input`, `view` and `section` set the scene for the beat. Start assembled,
-open up the part doing the work, end fully exploded.
+`explode`, `input`, `view` and `section` set the scene for the beat. A story that starts
+assembled, opens up the part doing the work and ends fully exploded reads best.
 
 ## A small complete example
 

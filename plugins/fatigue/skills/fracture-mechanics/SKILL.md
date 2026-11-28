@@ -7,24 +7,19 @@ keywords:
 - fatigue
 ---
 
-Confirm linear-elastic fracture mechanics applies before using it: it
-requires small-scale yielding at the crack tip relative to specimen/part
-dimensions — for a ductile material with a large plastic zone relative to
-the section, an elastic-plastic fracture mechanics approach is needed
-instead, and applying LEFM anyway is non-conservative or meaningless.
+Linear-elastic fracture mechanics requires small-scale yielding at the crack
+tip relative to specimen/part dimensions. For a ductile material with a large
+plastic zone relative to the section, an elastic-plastic fracture mechanics
+approach is needed instead, and LEFM there is non-conservative or
+meaningless.
 
-State the crack/defect geometry and its stress-intensity solution source
-(a handbook solution, a calibrated finite-element result) — the geometry
-factor Y in K = Y·σ·√(πa) depends on defect shape, location (surface,
-corner, embedded), and component geometry, and using the wrong geometry
-factor is a common source of error.
+The stress-intensity solution has a source (a handbook solution, a calibrated
+finite-element result): the geometry factor Y in K = Y·σ·√(πa) depends on
+defect shape, location (surface, corner, embedded), and component geometry,
+and the wrong geometry factor is a common source of error.
 
-For fatigue crack growth specifically, state the growth law used (Paris law
-or another) and its calibrated constants' source and applicability range —
-near-threshold and near-critical growth rates deviate from the mid-range
-Paris regime, and applying mid-range constants outside that regime
-misestimates growth rate.
-
-Return the defect geometry and stress-intensity solution, the material
-toughness/growth-law constants and their source, and the resulting
-critical crack size or remaining-life estimate with its validity range.
+Fatigue crack growth follows a growth law (Paris law or another) whose
+calibrated constants have a source and an applicability range. Near-threshold
+and near-critical growth rates deviate from the mid-range Paris regime, and
+mid-range constants outside that regime misestimate growth rate. A critical
+crack size or remaining-life estimate holds within that validity range.

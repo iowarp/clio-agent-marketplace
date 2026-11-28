@@ -7,25 +7,24 @@ keywords:
 - characterization
 ---
 
-Use this skill once individual characterization results (`xct`,
+This skill applies once individual characterization results (`xct`,
 `fractography`, `microstructure`) are
 available and the question is what they say together about a part's defect
 state or a failure's root cause. It synthesizes; it does not replace running
 the individual techniques.
 
-Cross-check findings across techniques where they should agree: a pore
+Findings cross-check across techniques where they should agree: a pore
 identified as the fatigue-initiation site by fractography should be
 findable, in size and location, in the XCT pore-population data for that
-specimen — agreement strengthens the finding, and disagreement (e.g., a
+specimen. Agreement strengthens the finding, and disagreement (e.g., a
 fractography-identified initiator not present in the XCT data) is itself a
-finding worth reporting, not a discrepancy to quietly resolve.
+finding, not a discrepancy to quietly resolve.
 
-State the defect population's relationship to the manufacturing/processing
-record (`additive-manufacturing`, `am-process-parameters`): whether the
-defect type and severity are consistent with the known process parameters,
-or are an anomaly to report as such.
+The defect population relates to the manufacturing/processing record
+(`additive-manufacturing`, `am-process-parameters`): the defect type and
+severity are either consistent with the known process parameters or an
+anomaly in their own right.
 
-Return the synthesized defect finding: the population characteristics,
-cross-technique agreement or disagreement, and its consistency with the
-process record — handed to `defect-driven-fatigue` when the question is
-fatigue life.
+The synthesized finding (population characteristics, cross-technique
+agreement or disagreement, consistency with the process record) is what
+`defect-driven-fatigue` takes when the question is fatigue life.

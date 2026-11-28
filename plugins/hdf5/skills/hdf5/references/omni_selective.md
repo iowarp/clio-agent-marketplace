@@ -106,11 +106,11 @@ dataset_filter:
     - "*_raw"
 ```
 
-## Workflow: From Figure/Paper to OMNI File
+## From a Figure or Paper to an OMNI File
 
-When a user has a figure or paper and wants to know which datasets to include:
+A figure or paper determines which datasets an OMNI file needs to include.
 
-### Step 1: Inspect the HDF5 file structure
+### The HDF5 file structure
 
 ```python
 import h5py
@@ -127,18 +127,18 @@ list_datasets("/path/to/file.h5")
 
 Or with CLI: `h5ls -r /path/to/file.h5`
 
-### Step 2: Identify required datasets
+### Datasets a figure needs
 
-From the figure/paper, determine:
+A figure or paper shows:
 - **What variables are plotted** (e.g., temperature, radiance, pressure)
 - **What coordinate/geolocation data is needed** (lat, lon, time, altitude)
 - **What ancillary data is needed** (quality flags, land/sea masks)
 
-Ignore: raw counts, calibration coefficients, engineering data, redundant backup datasets.
+Raw counts, calibration coefficients, engineering data and redundant backup datasets are usually not needed.
 
-### Step 3: Write the OMNI YAML with tight include patterns
+### Tight include patterns
 
-Prefer **explicit include patterns** over broad includes + excludes. List exactly what you need:
+**Explicit include patterns** select more precisely than broad includes + excludes:
 
 ```yaml
 transfers:
@@ -152,9 +152,9 @@ transfers:
         - "/ASTER/Geolocation/Longitude"
 ```
 
-### Step 4: Validate dataset paths
+### Dataset paths
 
-The include patterns must match the actual dataset paths in the file (with leading `/`). Verify with:
+The include patterns must match the actual dataset paths in the file (with leading `/`), which `h5ls` shows:
 
 ```bash
 h5ls -r file.h5 | grep -i "temperature\|latitude\|longitude"
@@ -162,7 +162,7 @@ h5ls -r file.h5 | grep -i "temperature\|latitude\|longitude"
 
 ## Multiple Files for One Analysis
 
-Use multiple transfers for multi-file analyses:
+Multi-file analyses use multiple transfers:
 
 ```yaml
 transfers:

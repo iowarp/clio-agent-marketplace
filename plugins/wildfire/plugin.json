@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "wildfire",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Wildfire science methods for any region and source: fire perimeters and fire history (dissolving reburns, choosing a perimeter of record, burned area and recurrence), and fire risk, hazard and fuels layers (what each index means, units and vintage, comparing indices, zonal summaries over a region or zones). Uses the geospatial plugin's access and processing tools.",
   "author": {
     "name": "IoWarp Team"

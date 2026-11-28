@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "pubchem",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find compounds in PubChem by name through clio-kit's pubchem server: candidates for the person when a name is ambiguous, and 3D structures for a calculation.",
   "author": {
     "name": "IoWarp Team"
