@@ -49,6 +49,10 @@
 - `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
   views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
   relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.106): relay 2.0.0a58. `install` takes the package itself, `install(site=..., package={name, parameters})`
+  or `packages`, with `install_settings` and the install job's `attributes`, instead of run's whole JobSpec, so a
+  `spec={"name": ...}` no longer validates as an empty command job. The setup step names that call, and `run`'s refusal
+  for a spec with no entry point says `set package: {name: ...} or executable`.
 - `clio-relay` (1.6.105): relay 2.0.0a57. Site scripts print JARVIS and site data with `printf '%s\n'`, never
   `echo`, so a dash `/bin/sh` no longer rewrites the backslashes in a contract's regexes and `packages` and
   `install` read the site's `jarvis repo list +json` document intact. A document that does not parse is refused with

@@ -391,8 +391,9 @@ as one review, so one yes covers a pipeline.
 ## Install ahead of a run
 
 When the person wants a package's software on a site before running it ("install
-gray_scott on ares, don't run anything yet"), call `install` with the site and
-the same `spec` a run would take, `package: {name, parameters}`. It is
+gray_scott on ares, don't run anything yet"), call
+`install(site=..., package={name, parameters})`, the same `package` a run
+takes. It is
 `run`'s install step on its own, and nothing launches:
 
 - A site that is not set up gets its JARVIS root first, after the person says
@@ -417,7 +418,7 @@ the same `spec` a run would take, `package: {name, parameters}`. It is
 
 Like `run` it is a task: follow it with the task, or with `describe(job=...)`,
 and cancel it with `install(cancel=...)`. To install several packages, such
-as everything a plan runs, make one `install` call whose `spec` lists them all
+as everything a plan runs, make one `install` call that lists them all
 in `packages`, the same steps the later `run` or `serve` takes. The person
 then gets one review of the packages, one set of JARVIS questions and one
 build, instead of one of each per package. A later `run` of the same
