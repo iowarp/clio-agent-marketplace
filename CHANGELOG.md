@@ -49,6 +49,10 @@
 - `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
   views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
   relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.107): relay 2.0.0a60 on jarvis-cd dae7f4d. An install job's wall time comes from the build times
+  JARVIS measured at the site, or the partition's limit when part of the build was never timed there; a longer build
+  takes another `install`, which builds only the rest, and the approval says so. The approval names the provider Spack
+  picked on each virtual edge (for example fftw 2.1.5 for fftw-api). The JARVIS path no longer writes `relay.exitcode`.
 - `clio-relay` (1.6.106): relay 2.0.0a58. `install` takes the package itself, `install(site=..., package={name, parameters})`
   or `packages`, with `install_settings` and the install job's `attributes`, instead of run's whole JobSpec, so a
   `spec={"name": ...}` no longer validates as an empty command job. The setup step names that call, and `run`'s refusal

@@ -410,8 +410,13 @@ takes. It is
 - When something is missing, the person gets the same asks a run's install
   gets: approve the install and answer any question JARVIS has (below),
   including where it builds. JARVIS then builds it where the site chose and
-  checks again, and the operation completes. In a compute job, the approval
-  names the job's wall time. On the login node, JARVIS's own install runs
+  checks again, and the operation completes. The approval names the
+  provider Spack picked for each virtual dependency, such as fftw 2.1.5 for
+  fftw-api; pass it on as written. In a compute job, the approval names the
+  job's wall time: the build times JARVIS measured at the site, or the
+  partition's limit when part of the build was never timed there. A build
+  longer than one job needs another `install`, which builds only the rest,
+  and the approval says so. On the login node, JARVIS's own install runs
   there under the limits JARVIS sets, as a background task with progress and
   no time limit: a long build is expected, so keep following it and do not
   cancel it yourself. Only the person stops it, with `install(cancel=...)`.
