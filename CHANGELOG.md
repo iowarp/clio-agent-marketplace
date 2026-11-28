@@ -49,6 +49,9 @@
 - `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
   views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
   relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.110): relay 2.0.0a64 on jarvis-cd 25a19fb. An install check and a run plan no longer touch the
+  job's records: the check runs in a scratch directory that is removed, and the plan writes no states line, no
+  `submit.*` and no lock, so a restart reads the job's recorded end. `files_read` and `files` no longer offer `has`.
 - `clio-relay` (1.6.109): relay 2.0.0a63 on jarvis-cd 25a19fb. Refusals name a site by its title, as describe does: "... does not
   exist on Ares", and "Ares (ssh <profile>)" in sentences about the ssh connection itself, not by the ssh profile or site id.
   Adapter refusals no longer carry an unread `site` field.
