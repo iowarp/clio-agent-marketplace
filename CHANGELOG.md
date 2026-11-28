@@ -49,6 +49,9 @@
 - `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
   views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
   relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.109): relay 2.0.0a63 on jarvis-cd 25a19fb. Refusals name a site by its title, as describe does: "... does not
+  exist on Ares", and "Ares (ssh <profile>)" in sentences about the ssh connection itself, not by the ssh profile or site id.
+  Adapter refusals no longer carry an unread `site` field.
 - `clio-relay` (1.6.108): relay 2.0.0a62 on jarvis-cd 25a19fb. A JARVIS root at other pins is reported as it is,
   "JARVIS is on <site> at jarvis-cd X with clio-jarvis Y; relay updates it to ...", in describe, the refusal and the ask
   ("Update JARVIS on <site>?"), not as "not set up". Pipeline steps are named by their package. A failed install job
