@@ -526,7 +526,10 @@ asks again.
 
 An install, the queue and the run itself can take hours. When `run` or
 `serve` returns a task, CLIO wakes the conversation when the task ends or
-needs the person, so a turn can end there. Waiting is event driven, so polling
+needs the person, so a turn can end there. On a long run you can also ask for
+progress wakes: `observe_tasks` on the task with `notify=true` and
+`progress_every_s` wakes you with its status line when it changes, at most once
+per that many seconds. Waiting is event driven, so polling
 of any form only adds noise and cost: `describe` in a loop, repeated `exec` or
 `cat` reads of a result file or log, scheduler queries such as `sacct` or
 `squeue`, or a `run_code` script that loops over any of these with sleeps. A
