@@ -46,6 +46,7 @@
 
 ### Changed
 
+- `clio-relay` (1.6.116): relay 2.0.0a69. A run's measured pace keeps its value whole, so a step under a millisecond reads as 0.00071 s rather than a rounded 0.0010 s, and its projected end is said to the second.
 - `clio-relay` (1.6.115): relay 2.0.0a68. A run's pace is measured within one series (a package's steps in one unit), so an output it publishes as step 1 of 1 no longer mixes with its timesteps; the pace names its unit and total.
 - `clio-relay` (1.6.114): relay 2.0.0a67. A step rate under a minute is said in seconds (0.021 s per timestep), and use-relay says a long run can ask for progress wakes.
 - `clio-relay` (1.6.113): relay 2.0.0a66 on jarvis-cd c225e3f. A job's cpus_per_task now reaches the scheduler as set, and JARVIS's install check is fixed.
