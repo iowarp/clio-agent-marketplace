@@ -46,6 +46,7 @@
 
 ### Changed
 
+- `clio-relay` (1.6.117): `use-relay` sizes a run from pilots instead of a safety coefficient. Pilots run production's own problem at sizes the queue can start now, spanning one node, across the network and near the target; warm-up steps are left out and the cost per step is read from block means. Projections come from the measured scaling (Karp-Flatt and Amdahl with two sizes, the Universal Scalability Law with more), are trusted only a few times past the largest pilot, and are offered as ranges. The margin comes from rate spread, model spread and run-to-run variation, aimed at a high percentile, and the person confirms the scale and time.
 - `clio-relay` (1.6.116): relay 2.0.0a69. A run's measured pace keeps its value whole, so a step under a millisecond reads as 0.00071 s rather than a rounded 0.0010 s, and its projected end is said to the second.
 - `clio-relay` (1.6.115): relay 2.0.0a68. A run's pace is measured within one series (a package's steps in one unit), so an output it publishes as step 1 of 1 no longer mixes with its timesteps; the pace names its unit and total.
 - `clio-relay` (1.6.114): relay 2.0.0a67. A step rate under a minute is said in seconds (0.021 s per timestep), and use-relay says a long run can ask for progress wakes.

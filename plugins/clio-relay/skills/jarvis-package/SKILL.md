@@ -117,8 +117,8 @@ makes the repository stand alone.
   should relate to them, the fewest ranks whose share fits in memory and the
   most that still do useful work, each as a rule over the problem's units,
   not a number; `nodes` follows from ranks and the partition's physical cores
-  per node. Say there how a pilot at two sizes, chosen from those bounds and
-  the queue's limits, shows where adding nodes stops paying. Write no node or
+  per node. Say there how pilots at sizes chosen from those bounds and the
+  queue's idle nodes show where adding nodes stops paying. Write no node or
   rank count as a default or an example: the case's numbers live in its
   input, and the machine's in `describe`.
 - The menu's `install_method`, `install_query` and `install_repos` say how

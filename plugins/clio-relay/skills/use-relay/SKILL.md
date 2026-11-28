@@ -239,93 +239,114 @@ or offer is derived from the facts below.
 - When the person's budget or allocation is known (node-hours left, a
   reservation, a cap they gave), it bounds the range too.
 - A pilot is a sample of the application, not a rehearsal of the production
-  run: it measures how the code uses compute, so what it finds carries to
-  layouts it did not run. Measure the cost of a unit of work (a step over
-  each rank's share of the problem, or whatever the work grows with), how
-  that cost changes across ranks and nodes, the startup and the output
-  writes. The code or its documentation can say how its work should scale; a
-  real run gives the constants and shows what that reading missed. Pilot at
-  two or more sizes inside the queue's limits, far enough apart to show the
-  scaling and toward the range you would offer, each long enough that the
-  cost per step has settled past startup.
+  run: a short run of production's own problem that measures how the code
+  uses compute, so what it finds carries to layouts it did not run. A run's
+  wall time is its startup, its steps at that layout's cost per step, and its
+  output writes; measure each, timing the steps that write output apart from
+  the rest. The code or its documentation can say how its work should scale;
+  a real run gives the constants and shows what that reading missed. Run
+  production's problem, not a smaller stand-in, so each rank's share at a
+  pilot's size is what production's would be at that size.
+- Choose the pilots' sizes from what the queue can start now (`idle` in
+  `describe`), so sizing does not wait behind the run it sizes. Span the
+  regimes the production layout crosses: within one node, across the
+  network between nodes, and as near the layout you expect to offer as the
+  idle nodes allow, since a pilot near the target tells more than any model
+  stretched from far below it. Repeating a pilot shows how much the same run
+  varies on this machine.
 - A timing measures the code only when nothing else shares its resources:
   schedulers such as Slurm give a job's free cores and memory bandwidth to
   other jobs unless it keeps its nodes. Run a pilot, and any run you will
-  size from, with `resources.exclusive_node_use: true`. Before relying on a
-  pilot's timings, check they are believable: settled rather than drifting,
-  ordered across sizes the way the code should scale, in line with earlier
-  runs of the same setup. A timing that fails this is not a measurement:
-  find why and measure again.
+  size from, with `resources.exclusive_node_use: true`. The first steps carry
+  warm-up (caches filling, memory allocated, load balancing settling) and are
+  not the steady cost: leave them out, read the cost per step as the mean
+  over blocks of steps rather than from single steps, and run long enough
+  that those block means agree closely. Use wall-clock time, not CPU time.
+  Before relying on a pilot's timings, check they are believable: settled
+  rather than drifting, ordered across sizes the way the code should scale,
+  in line with earlier runs of the same setup. A timing that fails this is
+  not a measurement: find why and measure again.
 - Then offer the person a choice of node counts spanning the sensible range
   for this problem on this machine, each with its projected time to result
-  and the node-hours it costs, and say how far you trust each projection.
-  Let the person pick; the
-  time request for the chosen one follows the next section.
+  as a range and the node-hours it costs, and say how far you trust each
+  projection and what limits that trust. Let the person pick the scale; the
+  time request for the chosen one follows the next section, and the person
+  confirms it in the spend approval.
 
 ## Ask for enough time
 
-Size a job's time request from what was measured, then pad it generously.
-The request is (startup overhead + measured run time) x a safety coefficient,
-and every term in it comes from a measurement:
+Size a job's time request from what was measured, as a projected range whose
+width says how far the measurement can be trusted, not as a guess times a
+factor:
 
 - When nothing has measured this application on this build and site, run a
   short pilot first (a few steps or iterations, in a short job), and size
   production from what the pilot measured. An estimate of the run time (from
   the application's documentation, a similar case, or your own reckoning)
-  never becomes the time asked for, however much it is padded: a guess times
-  two is still a guess. If the person cannot wait for a pilot, say the
-  request is unmeasured and let them choose.
-- Projected wall time = measured startup overhead (activating the package's
-  environment and any service started beside it becoming ready) + steps x
-  seconds per step + output writes, all from a pilot or an earlier run of the
-  same build. Take the overhead from the run record's `phase_timings`:
-  `before_first_step_seconds` plus each service package's `ready_seconds`.
-  Only a record without phase timings falls back to the gap from the job's
-  start to its first step; never guess the overhead.
-- Project any candidate layout from those measurements: production's work
-  shared over that layout's ranks, at the measured cost per unit and the
-  measured scaling, plus startup and output. A plain ratio of one pilot's
-  seconds per step is not a projection: fixed per-step work and communication
-  keep a smaller run from getting proportionally faster and a larger one from
-  staying on the line, which the measured scaling captures. Trust a
-  projection closely inside the range the pilots covered, less the further it
-  extrapolates, and less again for a change no pilot exercised (another
+  never becomes the time asked for: a guess with a margin is still a guess.
+  If the person cannot wait for a pilot, say the request is unmeasured and
+  let them choose.
+- Take the startup overhead (activating the package's environment and any
+  service started beside it becoming ready) from the run record's
+  `phase_timings`: `before_first_step_seconds` plus each service package's
+  `ready_seconds`. Only a record without phase timings falls back to the gap
+  from the job's start to its first step; never guess the overhead.
+- Project a candidate layout from how the measured cost per step changed
+  between the pilots' sizes. A plain ratio of one pilot's cost per step is
+  not a projection: serial work and communication keep a larger run from
+  getting proportionally faster. With two sizes, the serial fraction that
+  reconciles them (the Karp-Flatt metric) gives an Amdahl's-law projection,
+  which is optimistic: it cannot show a run getting slower as nodes are
+  added. With three or more sizes, the Universal Scalability Law also fits
+  the cost of contention and coherence and can show that slowdown, though
+  few points constrain it loosely. A serial fraction that rises with size
+  means overhead grows faster than either model assumes, so a projection
+  from it runs short. Weak-scaling models such as Gustafson's describe a
+  problem that grows with the nodes, not a fixed one spread over more.
+- Trust a projection closely inside the range the pilots covered. Past a few
+  times the largest pilot (two to four times, in the scaling literature) it
+  is no longer a measurement. Trust it less again for a change no pilot
+  exercised (the first step from one node across the network, another
   decomposition shape, a share per rank that no longer fits memory as it
-  did); when the chosen layout rests on a long extrapolation and the run is
-  costly, a pilot point nearer it is worth its short job.
-- Request the measured projection times a safety coefficient, rounded up.
-  Size the coefficient from how far the measurement can be trusted: larger
-  when it rests on one short pilot, when steps varied, when production
-  runs longer than anything measured, or when its layout is projected far
-  from the measured ones, and smaller when several runs of the
-  same setup agree; always generous, and say which coefficient you chose and
-  why. The coefficient covers the spread of a measured run; it does not stand
-  in for a measurement.
-  Overallocate rather than cut it close: a job killed at its limit loses its
-  unfinished work, and schedulers such as Slurm charge the time a job used,
-  not the time it asked for, so a job that ends cleanly before its limit
-  costs nothing for the rest. A longer request can wait a little longer in
-  the queue.
+  did) or a phase the pilots did not reach (adaptive refinement, load
+  imbalance that grows as the run goes on). When the chosen layout rests on
+  a long extrapolation and the run is costly, a pilot nearer it is worth its
+  short job.
+- Build the margin from those uncertainties, not from a fixed factor: the
+  spread of the measured cost per step, the gap between the optimistic and
+  pessimistic models at the chosen layout (which dominates once a
+  projection extrapolates), how much repeated runs of the same job vary on
+  this machine (a shared network or filesystem moves them both ways), and
+  the output writes. Aim the request at a high percentile of the run's
+  likely time, around the 90th to 95th, so the margin is wide when the
+  projection is loose and narrow when pilots near the layout agree. The cost
+  is lopsided: a job killed at its limit loses its unfinished work, while
+  schedulers such as Slurm charge the time a job used, not the time it asked
+  for, so a job that ends cleanly before its limit costs nothing for the
+  rest; a longer request can wait a little longer in the queue. A run that
+  writes restarts and continues in a following job loses less to its limit,
+  so its request can sit closer to the projection.
 - An application's own time limit (a stop timer in its input, after which it
   writes a restart and exits cleanly) is sized from the time request, not
   apart from it: set it just under the request, leaving room for that last
-  write (the time a restart write took in the pilot or an earlier run, padded
-  like the rest of the request).
+  write (the time a restart write took in the pilot or an earlier run, with
+  its own margin).
   Never set it below the projected run time. The time request is the
   person's budget, and a second, shorter limit stops a run that was on
   track. Leave the application's default when nothing needs the clean stop.
-- Say so in the spend approval: the projected time, the coefficient, the
-  padded request, and that unused time is not charged when the job ends
-  cleanly.
-- If the padded request exceeds the partition's time limit (in
-  `partitions`), say so and propose options for the person to pick: more
-  nodes, projected from the measured scaling, as far as the site and the
-  budget allow; another partition with a longer limit; a run that writes a
-  restart and continues in a following job, when the code can. A shorter or
-  coarser run changes what the run answers; offer it only said that way. Do
-  not trim the coefficient to fit the limit.
+- Say so in the spend approval: the projected time as a range, how far you
+  trust it and what most limits that trust, the request, and that unused
+  time is not charged when the job ends cleanly. The person confirms the
+  scale and the time there.
+- If the request exceeds the partition's time limit (in `partitions`), say
+  so and propose options for the person to pick: more nodes, projected from
+  the measured scaling, as far as the site and the budget allow; another
+  partition with a longer limit; a run that writes a restart and continues
+  in a following job, when the code can. A shorter or coarser run changes
+  what the run answers; offer it only said that way. Do not narrow the
+  margin to fit the limit.
 
-A package's contract can say how to project its own run; the padding and the
+A package's contract can say how to project its own run; the margin and the
 approval above still apply.
 
 ## Packages are applications, cases are inputs
