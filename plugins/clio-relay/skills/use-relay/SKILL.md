@@ -8,10 +8,10 @@ description: Use this skill to run jobs, commands, file transfers or services on
 
 Relay reaches the compute sites the person has set up, such as a cluster over
 SSH, a Globus Compute endpoint or a Tapis tenant. Its five verbs are
-`describe`, `run`, `exec`, `files` and `serve`. Beside them, `packages` stages
-and removes the JARVIS packages `run` takes, `install` installs a package's
-software on a site ahead of any run, and `shutdown` stops relay's long-lived
-processes when the host closes.
+`describe`, `run`, `exec`, `files` and `serve`. Beside them, `packages` adds
+a JARVIS repository the person wrote to a site's JARVIS root, `install`
+installs a package's software on a site ahead of any run, and `shutdown` stops
+relay's long-lived processes when the host closes.
 
 ## Relay is the way to a site
 
@@ -37,14 +37,15 @@ Four tools only read: `describe`, `exec_read`, `files_read` and
 `packages_read`. They change nothing and never ask the person, so use them
 freely, in planning too, and keep `exec`, `files` and `packages` for changes.
 
-- `describe` lists sites, describes one (`site`), observes a job or a
-  service (`job`; for a service it gives the endpoint and whether it is
-  ready) and lists the staged packages (`packages=true`).
-- `packages_read` lists the packages relay has staged, with their versions,
-  SHA-256s and where each came from, and relay's package sources. Under
-  `available` it lists every package those sources hold, staged or not, each
-  with a summary; `match` keeps those whose name or summary holds every word
-  (`match="lammps"`). `packages` has no list: it only stages and removes.
+- `describe` lists sites, describes one (`site`: its routes, whether its
+  JARVIS root is set up, and the packages the root holds) and observes a job
+  or a service (`job`; for a service it gives the endpoint and whether it is
+  ready).
+- `packages_read(site=...)` lists the packages the site's JARVIS root holds,
+  as the site lists them now: each one's version, review digest, summary,
+  parameters, repository directory, files and git source. `match` keeps those
+  whose name, title or summary holds every word (`match="lammps"`).
+  `packages` has no list: it only adds a repository.
 - `exec_read` runs one read-only command, given as an argument list with no
   shell: listings and file reads (`ls`, `cat`, `head`, `tail`, `grep`,
   `stat`, `du`, `df`), the scheduler (`squeue`, `sinfo`, `sacct`,
@@ -149,7 +150,7 @@ guarded site. Anything else, answers included, goes through `exec` with
   is `complete` or `finished`) or relay's notice when the operation changes.
   Never wait by reading: no `run_code` scripts, `cat` or `exec` reads of a
   result file, and no `sacct`. See "Long runs and failed runs".
-  To serve one package beside a run, such as pvserver beside xcompact3d, give
+  To serve one package beside a run, such as pvserver beside gray_scott, give
   both in one `serve` pipeline, with each step's `host_slice` parameter placing
   it on its own nodes of the job (a `start:end` range of node indices): give
   the service the nodes it needs and the solver the nodes its layout was sized
@@ -159,8 +160,8 @@ guarded site. Anything else, answers included, goes through `exec` with
   the way data moves: a service starts before the solver that feeds it. When
   you describe or draw a pipeline, take the direction from the job card's
   `couplings` (each `from` feeds its `to`) and the components' order there,
-  which is producer first, never from the packages' order: xcompact3d feeds
-  pvserver, so draw xcompact3d --> pvserver. Relay fills the couplings from
+  which is producer first, never from the packages' order: gray_scott feeds
+  pvserver, so draw gray_scott --> pvserver. Relay fills the couplings from
   the packages' contracts; give a job's `couplings` yourself only when a
   contract cannot say, such as two solvers where one reads the other's output.
 - Leave a service package's `linger` at the package's default (pvserver keeps
@@ -347,72 +348,55 @@ application's own input: a LAMMPS script, a namelist, a settings file, an
 input bundle. The case the person asks for (an obstacle in a channel, a
 protein in water, a wing at an angle) is that input, which you write for them
 now; it is not a package. Before writing anything, call
-`packages_read(match="<application>")` and read `available`. When a source
-holds a package for the application, read its `contract.yaml` in that
-source (its parameters say which input it takes), then stage it and run it
-with the case as its input. Write a package with the `jarvis-package` skill only when no source
-holds one for the application, and then a generic one that takes the
-application's input, never one built around this case. Relay never installs,
-stages, lists or runs jarvis-cd's own `builtin.*` packages: they are written
-for a person to drive and hardcode a case or a site's setup, so a site relay
-set up has none. clio-jarvis is relay's own source of packages. Read a builtin
-package in jarvis-cd's repository (`builtin/` in grc-iit/jarvis-cd) only as a
-reference for how an application installs and launches, and take every site
-fact (MPI, launcher, nodes, paths) from the
-resource graph and JARVIS, as the `jarvis-package` skill says. When the person wants the case again
-later, offer to save how you wrote it as a skill of their own.
+`packages_read(site=..., match="<application>")`. When the site's root holds
+a package for the application, read its `contract.yaml` (its parameters say
+which input it takes; `files_read` reads it under the package's `repo_dir`),
+then run it with the case as its input. Write a package with the
+`jarvis-package` skill only when the root holds none for the application, and
+then a generic one that takes the application's input, never one built
+around this case. A site relay set up has no jarvis-cd `builtin.*` packages:
+they are written for a person to drive and hardcode a case or a site's setup,
+so relay removes that repository. Its packages come from clio-jarvis and the
+person's own repositories. Read a builtin package in jarvis-cd's repository
+(`builtin/` in grc-iit/jarvis-cd) only as a reference for how an application
+installs and launches, and take every site fact (MPI, launcher, nodes, paths)
+from the resource graph and JARVIS, as the `jarvis-package` skill says. When
+the person wants the case again later, offer to save how you wrote it as a
+skill of their own.
 
-## Stage a package before it runs
+## A site's packages
 
-`run` takes a JARVIS package by name, `package: {name, parameters}`, and runs
-only a package relay has staged. `describe(site=...)` lists the staged ones
-under `packages`; `packages_read` lists them too, with where each came from.
-When the package you need is not there, stage it with the `packages`
-tool. Do not look for relay's files or build an archive by hand.
+`run` takes a JARVIS package by name, `package: {name, parameters}`, named
+`<repository>.<package>`, and runs only a package the site's JARVIS root
+holds. Relay sets that root up once per site, with jarvis-cd and clio-jarvis
+at the commits its release pins. Setting up is `install`'s first step: a
+`run`, `serve` or `install` on a site that is not set up refuses and names
+that step, and `describe(site=...)` says beforehand whether the site is set
+up. Do not place JARVIS or clio-jarvis on a site any other way.
 
-Stage from one of two sources:
+A package the person wrote reaches the site with `files`: copy its
+repository, laid out `<name>/<name>/<package>/pkg.py`, into the person's
+space on the site, then register it with
+`packages(op="add", site=..., path="<that directory on the site>")`. It runs
+`jarvis repo add` in the site's root (`force: true` replaces a repository of
+that name) and lists the site's packages again. Never push a person's package
+to a git repository to get it onto a site, and never build an archive by hand.
 
-- **Relay's package sources.** `packages(op="stage",
-  package="clio_jarvis.xcompact3d")` with nothing else stages it from the
-  package repositories installed beside relay. This plugin ships clio-jarvis
-  at its pin, so its packages need no download, no account and no sign-in.
-  The result's `sources` lists the directories relay looked in.
-- **A directory on the relay host.** `packages(op="stage", package="...",
-  dir="/abs/path")` stages a package from the person's workspace, such as one
-  just written with the `jarvis-package` skill. `dir` is the JARVIS repository
-  or the folder that holds it. The archive reaches the site as a job input,
-  through the site's own file transfer (scp on an ssh site). Never push a
-  person's package to a git repository to get it onto a site.
-
-Give `version` only when the package has no `contract.yaml` version and no
-git tag. Staging
-runs nothing and touches no site: on a guarded site the person still reviews
-the archive, by its SHA-256, before its first run there. A job's packages that
-are not reviewed yet come as one review, so one yes covers a pipeline.
-
-`packages(op="remove", package="...")` takes a package out of relay's
-catalog, every version of it unless `version` or `sha256` narrows it. Use it
-when the person resets a demo or wants an older archive gone; staging the
-same files again gives the same SHA-256, so an earlier review still holds.
-When several archives of one name are staged, `run` refuses and lists them:
-ask the person which one and pin its `version` or `sha256`.
-
-After a plugin update the package sources may build a new archive of a name.
-A run, stage or list by name then stages it, and the older archive shows
-`superseded_by`. Run the name, not the old `sha256`, unless the person asks for
-that archive; a guarded site reviews the new one before it runs.
+Adding runs nothing. Each package's review identity is its digest, computed
+on the site from the package as it sits in the root; on a guarded site the
+person reviews that digest before its first run there, and an edit is a new
+digest that is reviewed again. A job's packages that are not reviewed yet come
+as one review, so one yes covers a pipeline.
 
 ## Install ahead of a run
 
 When the person wants a package's software on a site before running it ("install
-xcompact3d on ares, don't run anything yet"), call `install` with the site and
-the same `spec` a run would take, `package: {name, parameters}`, with the
-package staged first. It is `run`'s install step on its own, and nothing
-launches:
+gray_scott on ares, don't run anything yet"), call `install` with the site and
+the same `spec` a run would take, `package: {name, parameters}`. It is
+`run`'s install step on its own, and nothing launches:
 
-- A site without JARVIS gets relay's jarvis-cd first, after the person says
+- A site that is not set up gets its JARVIS root first, after the person says
   yes. `install` does this itself; do not look for another way to place JARVIS.
-  On a guarded site the package review says so, and its yes covers jarvis-cd.
 - JARVIS checks what the site has where the site chose (below): on the login
   node under JARVIS's limits, or inside a short job on the compute nodes, and
   the task waits while that job queues and runs. Later installs and runs of

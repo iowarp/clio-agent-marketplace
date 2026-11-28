@@ -1,3 +1,0 @@
-# Package files go to sites byte for byte: their archive's SHA-256 is what a
-# person reviews, so no checkout may change line endings.
-* -text

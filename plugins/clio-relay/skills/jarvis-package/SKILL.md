@@ -1,81 +1,87 @@
 ---
 name: jarvis-package
 title: Writing a JARVIS package for relay
-description: Use this skill to write a new JARVIS package that relay can stage, install and run on the person's compute sites, for an application relay's package sources hold no package for (check packages_read's available first). The package is generic and takes the application's own input; the person's case is that input, not a package. It says where the bundled examples are, how the package folder is laid out, what its contract must hold and how to check it before staging.
+description: Use this skill to write a new JARVIS package that relay can install and run on the person's compute sites, for an application the site's JARVIS root holds no package for (check packages_read first). The package is generic and takes the application's own input; the person's case is that input, not a package. It says where the clio-jarvis examples are, how the repository is laid out, what its contract must hold, how to check it and how it reaches a site.
 ---
 
 # Writing a JARVIS package for relay
 
-First make sure one is needed: `packages_read(match="<application>")` lists
-under `available` every package relay's sources hold. When one is there for
-the application, use it and write the person's case as its input instead
-(see `use-relay`). When none is, write one package for the application, not
-for the case: it takes the application's own input (a script, a namelist, a
+First make sure one is needed: `packages_read(site=..., match="<application>")`
+lists the packages the site's JARVIS root holds. When one is there for the
+application, use it and write the person's case as its input instead (see
+`use-relay`). When none is, write one package for the application, not for
+the case: it takes the application's own input (a script, a namelist, a
 settings file, or several files as one input bundle) as a parameter, and the
 case reaches it as that input. A package built around one case (an obstacle
 flow, one protein) cannot run the next case and is the wrong shape.
 
-Relay runs a program on a site as a JARVIS package with a contract: `pkg.py`
-(the JARVIS class), `contract.yaml` (what relay reads before it runs anything),
-and the providers `progress.py` and `artifacts.py`. This plugin ships
-clio-jarvis, whose packages are the models to copy, so writing a package needs
-no other plugin, connector or download. The separate Jarvis connector drives a
-JARVIS-CD of its own and is not needed to write, stage or run a package
-through relay; do not offer it for this.
+Relay runs a program on a site as a plain JARVIS package with a contract:
+`pkg.py` (the JARVIS class), `contract.yaml` (what relay reads before it runs
+anything), and the providers `progress.py` and `artifacts.py`. clio-jarvis's
+packages are the models to copy. The separate Jarvis connector drives a
+JARVIS-CD of its own and is not needed to write, add or run a package through
+relay; do not offer it for this.
 
-## Find the bundled clio-jarvis
+## Read clio-jarvis
 
-`packages_read` lists relay's package sources under `sources`. The folder
-`<source>/clio-jarvis` is clio-jarvis at the pin this plugin bundles:
+clio-jarvis is in every site root relay set up, at the commit relay pins:
+`packages_read` gives each `clio_jarvis.*` package's `repo_dir`, and
+`files(op="read")` reads it there. It is also public at
+`https://github.com/iowarp/clio-jarvis`. Its repository directory holds:
 
-- `clio_jarvis/clio_jarvis/_contract/`: the shared code every package uses
-  (`base.py` with `ClioApplication` and `ClioService`, `spec.py` with
-  `load_contract`, `runtime.py` with the provider adapters).
-- `clio_jarvis/clio_jarvis/<package>/`: the shipped packages. Read the one
-  nearest to the new program before writing: `gray_scott` (a short MPI
-  solver with a growing BP5 output), `xcompact3d` (an input file, a geometry
-  and a long case), `wrf` (a case fetched on the site, one netCDF file per
-  step, a Spack builtin recipe), `warpx` (a native inputs file, one AMReX
-  plotfile per interval, a fixed Spack recipe), `lammps` (a native input
-  script, one particle frame per dump interval), `gromacs` (GROMACS's own
-  case files, the gmx stages before the watched run, one frame per output
-  interval) and `pvserver` (a service).
+- `clio_jarvis/_contract/`: the shared helpers the packages import
+  (`spec.py` with `load_contract`, `runtime.py` with the provider adapters,
+  `files.py`, `flushwrap.py`, `fetch.py`). They are ordinary repository code,
+  loaded the way JARVIS loads any repository.
+- `clio_jarvis/<package>/`: the packages. Read the one nearest to the new
+  program before writing: `gray_scott` (a short MPI solver with a growing BP5
+  output), `wrf` (a case fetched on the site, one netCDF file per step, a
+  Spack builtin recipe), `warpx` (a native inputs file, one AMReX plotfile
+  per interval, a Spack recipe subclassed to fix one fault), `lammps` (a
+  native input script, one particle frame per dump interval), `gromacs`
+  (GROMACS's own case files, the gmx stages before the watched run, one frame
+  per output interval) and `pvserver` (a service).
+- `clio_jarvis/_spack/`: clio-jarvis's Spack recipes, only for what upstream
+  Spack lacks or builds wrongly.
 - `schemas/package-contract.v1.json`: the contract's schema. Check a part
   you are unsure of here rather than guessing.
-- `spack/`: clio-jarvis's own Spack recipes, for software Spack's builtin
-  repository lacks or builds wrongly.
 
-Read these files where they are; do not fetch clio-jarvis from GitHub.
-
-## Lay the package out
+## Lay the repository out
 
 Write it in the person's workspace as a JARVIS repository of its own, named
-for the work (`md_pkgs`, say), beside its `schemas/`:
+for the work (`md_pkgs`, say). The outer directory and the package directory
+inside it carry the same name:
 
 ```
-<workspace>/<repo>/            the folder you give packages(op="stage", dir=...)
-  schemas/                     a copy of the bundled schemas/
-  spack/                       only when the package brings its own recipes
-  pyproject.toml               only when pkg.py needs Python packages on the site
-  <repo>/                      the JARVIS repository
-    <repo>/
-      __init__.py
-      _contract/               a copy of the bundled _contract/, unchanged
-      <package>/
-        pkg.py  contract.yaml  progress.py  artifacts.py  [selftest.py]
+<repo>/                        the directory you copy to the site and add
+  schemas/                     a copy of clio-jarvis's schemas/
+  <repo>/
+    __init__.py
+    __main__.py                a copy of clio-jarvis's, for validate
+    _contract/                 a copy of clio-jarvis's _contract/, unchanged
+    _spack/                    only when a package brings its own recipes
+    <package>/
+      pkg.py  contract.yaml  progress.py  artifacts.py  [selftest.py]
 ```
 
-`_contract` finds `schemas/` three levels up, so keep this shape and do not
-edit `_contract`. In the copied `progress.py`, `artifacts.py` and `pkg.py`,
-change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
-`run` is `<repo>.<package>`.
+`_contract` finds `schemas/` two levels above itself, so keep this shape and
+do not edit `_contract`. In the copied `pkg.py`, `progress.py` and
+`artifacts.py`, change the imports from `clio_jarvis.` to `<repo>.`. The
+package's name for `run` is `<repo>.<package>`. Nothing in the repository
+imports, subclasses or calls a jarvis-cd `builtin` package or clio-jarvis:
+a site relay set up has no `builtin` repository, and the copy of `_contract`
+makes the repository stand alone.
 
 ## Write pkg.py and contract.yaml
 
-- `pkg.py` subclasses `ClioApplication` (or `ClioService` for a service) and
-  returns its parameters from `_configure_menu` as one literal list of literal
-  dicts, each with `name`, `msg` and `type`. Keep `nprocs`, `ppn`,
-  `cores_per_node`, `walltime` and `queue` as the shipped packages have them.
+- `pkg.py` subclasses JARVIS's own `jarvis_cd.core.pkg.Application` (or
+  `Service` for a service) and returns its parameters from `_configure_menu`
+  as one literal list of literal dicts, each with `name`, `msg` and `type`.
+  JARVIS lists that menu without importing the package, so keep it literal.
+  Keep `nprocs`, `ppn`, `cores_per_node`, `walltime` and `queue` as the
+  clio-jarvis packages have them, and write `start`, `stop` and `clean`. An
+  optional `check_config(self, config)` raises on a configuration the
+  program would reject, before any job starts.
 - Take the application's input as a parameter naming a file (`script`, say,
   or `input` for a bundle unpacked into the run directory). A run sets it to
   the name of a job input, and relay puts that file in place (see `use-relay`).
@@ -101,9 +107,10 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   layout section). A control that lives inside the application's input file
   stays in that input. Leave threads per rank alone: JARVIS sets them from
   each rank's share of the allocation.
-- The contract needs every part: `install`, `parameters`, `resources`,
-  `sizing`, `outputs`, `progress`, `provenance` and `selftest`, plus
-  `service` for a service. A missing part refuses the package and names it.
+- The contract needs every part: `parameters`, `resources`, `sizing`,
+  `outputs`, `progress`, `provenance` and `selftest`, plus `service` for a
+  service. A missing part refuses the package and names it. `title` is
+  optional. The install is not a contract part: it lives in the menu (below).
 - Write `sizing` so an agent can size a run against a partition: `ranks`
   names the problem's own parallel units (k-points, pools, images, domains,
   the process grid) and how the rank count and each decomposition control
@@ -114,30 +121,32 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   the queue's limits, shows where adding nodes stops paying. Write no node or
   rank count as a default or an example: the case's numbers live in its
   input, and the machine's in `describe`.
-- `install` names a `method` and its `query`. `method: spack`, the method for
-  every application, takes a Spack spec. Depend on the `mpi` virtual and never pin an MPI,
-  so the site's MPI is reused. Use Spack's builtin recipe when it has one, as
-  `wrf` does, so software the site already built is found. When that recipe
-  fails for the variants you need, subclass it in the repository's `spack/`,
-  fix only the fault, as clio-jarvis's `warpx` recipe does, and list `spack`
-  under `install.repos`. A Spack recipe is not a JARVIS package, so this does
-  not break the builtin rule below.
-- `method: pip`, `conda` or `container` is only for software with no MPI and
-  nothing compiled against the site, such as a Python-only analysis tool: pip
-  takes requirements, conda takes package specs (with `channels`), a container
-  takes an image. List other methods that also fit under `install.alternatives`;
-  JARVIS then asks the person which one the site uses, and never picks for
-  them. The contract refuses an MPI (or an MPI decomposition) installed with
-  pip or conda: an MPI code is a Spack package, whatever else it offers.
+- The menu's `install_method`, `install_query` and `install_repos` say how
+  JARVIS installs the software. `spack`, the method for every application,
+  takes a Spack spec as `install_query`. Depend on the `mpi` virtual and never
+  pin an MPI, so the site's MPI is reused. Follow the application's own
+  defaults and variants. Use upstream Spack's recipe when it has one, as `wrf`
+  does, so software the site already built is found. When that recipe fails
+  for the variants you need, subclass it in the repository's `_spack/`, fix
+  only the fault, as clio-jarvis's `warpx` recipe does, and list it in
+  `install_repos` (relative to the package directory, `["../_spack"]`). Never
+  write a recipe that only patches the application for relay's tooling. A
+  Spack recipe is not a JARVIS package, so this does not break the builtin
+  rule above.
+- `pip`, `conda` or `container` is only for software with no MPI and nothing
+  compiled against the site, such as a Python-only analysis tool. The
+  contract refuses an MPI (or an MPI decomposition) installed with pip or
+  conda: an MPI code is a Spack package, whatever else it offers.
 - Take every site fact from JARVIS and the resource graph, never from
-  `pkg.py`: launch the program with `self._clio_mpi(...)` (JARVIS's MPI exec,
-  with the job's hostfile, `nprocs`, the ranks per node `clio_ppn` decides and
-  the Spack environment), and write under `shared_dir` and `private_dir`. No
+  `pkg.py`: launch the program with JARVIS's own `Exec(command,
+  MpiExecInfo(nprocs=..., ppn=..., hostfile=self.hostfile, env=self.mod_env,
+  ...)).run()`, as `gray_scott` does, and write under `shared_dir` and
+  `private_dir`. JARVIS launches on the package's own hosts inside the job,
+  and refuses a layout that does not fit them rather than changing it. No
   `mpirun` line, module, launcher flag, node name or site path in the package.
   jarvis-cd's own `builtin` packages hardcode these; read one in jarvis-cd's
   repository (`builtin/` in grc-iit/jarvis-cd) only as a reference for how an
-  application installs and launches. Relay never installs, registers or runs
-  them, so a package never depends on a `builtin.*` step.
+  application installs and launches.
 - A value is a literal, `{param: name}` or two-operand arithmetic, `div`,
   `mul`, `add` or `ceil_div`, whose operands are numbers, parameter names or
   more arithmetic: frames that include the first are
@@ -154,16 +163,23 @@ change the imports from `clio_jarvis.` to `<repo>.`. The package's name for
   anyone watching learns early that a run will not finish in time. Pick the
   line the program prints for each unit of its work, so the pace measures
   that work.
-- Give the package a `version` and raise it with every change: the archive's
-  SHA-256 changes, and the person reviews the new one.
+- Give the package a `version` and raise it with every change. The review
+  identity is the digest of the package directory and the repository's `_*`
+  files as they sit on the site, so any edit is reviewed again.
 
-## Check it, then stage it
+## Check it, then add it
 
-Check the package statically on this machine: load it with
-`<repo>._contract.spec.load_contract(<package dir>)`, which raises naming the
-part at fault, and print its `describe()`. Do not run the program, the
-package's self-test or unit tests here; the program belongs on the site. Then
-stage it with `packages(op="stage", package="<repo>.<package>",
-dir="<workspace>/<repo>")` and go on as `use-relay` says: install, then run.
-The site checks the configuration again before any job starts and returns
-its issues typed, so fix what it names and stage again.
+Check the package statically on this machine with
+`python -m <repo> validate <package>` from the outer `<repo>/` directory,
+which refuses naming the part at fault, and `python -m <repo> describe
+<package>` to print what relay reads. Do not run the program, the package's
+self-test or unit tests here; the program belongs on the site.
+
+Then put it on the site: copy the outer `<repo>/` directory with `files` into
+the person's space there, and call `packages(op="add", site=...,
+path="<that directory on the site>")`. JARVIS registers it in the site's root
+and relay lists the site's packages again; `force: true` replaces an earlier
+copy of that repository. Go on as `use-relay` says: install, then run. The
+site checks the configuration again before any job starts and returns its
+issues typed, so fix what it names, copy the change with `files` and run
+again.

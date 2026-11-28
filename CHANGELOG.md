@@ -49,6 +49,13 @@
 - `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
   views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
   relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.104): relay 2.0.0a56, on jarvis-cd 0c0fe08 (relay_ready) and clio-jarvis f38ecb74. Each site gets one
+  JARVIS root of relay's, set up by `install` in three steps (jarvis-cd as a uv tool, `jarvis repo rm builtin`,
+  `jarvis repo add` clio-jarvis), and `run` takes the packages that root holds; `describe` says whether a site is
+  set up. The plugin no longer bundles clio-jarvis: `packages/` and `CLIO_RELAY_PACKAGE_SOURCES` are gone. A
+  person's own package reaches a site with `files` and joins its root with `packages(op="add", path)`, reviewed by
+  its digest on the site. The use-relay and jarvis-package skills describe that flow and plain JARVIS packages
+  (`Application` or `Service`, the install in the menu, a copied `_contract`) in place of staging.
 - `clio-relay` (1.6.103): relay 2.0.0a52, on jarvis-cd 1.9.25. Relay's held ssh connection dials through the proxy its
   environment names (HTTPS_PROXY, ALL_PROXY or HTTP_PROXY, NO_PROXY honoured), so it works inside a sandbox that lets
   programs out only through its proxy, and a failed open says how relay dialed. A site that takes the key and then asks

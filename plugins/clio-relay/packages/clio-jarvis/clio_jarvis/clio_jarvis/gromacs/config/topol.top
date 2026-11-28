@@ -1,8 +1,0 @@
-; SPC/E water, OPLS-AA, filled in by gmx solvate (it appends the SOL count).
-#include "oplsaa.ff/forcefield.itp"
-#include "oplsaa.ff/spce.itp"
-
-[ system ]
-SPC/E water
-
-[ molecules ]
