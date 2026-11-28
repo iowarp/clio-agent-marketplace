@@ -49,6 +49,7 @@
 - `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
   views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
   relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.111): relay 2.0.0a65 on jarvis-cd f4967c1. In a multi-package pipeline every install's environment now goes onto the pipeline's with path lists prepended, so a site copy such as pvserver no longer replaces a Spack package's PYTHONPATH, LD_LIBRARY_PATH or CMAKE_PREFIX_PATH.
 - `clio-relay` (1.6.110): relay 2.0.0a64 on jarvis-cd 25a19fb. An install check and a run plan no longer touch the
   job's records: the check runs in a scratch directory that is removed, and the plan writes no states line, no
   `submit.*` and no lock, so a restart reads the job's recorded end. `files_read` and `files` no longer offer `has`.
