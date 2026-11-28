@@ -46,6 +46,7 @@
 
 ### Changed
 
+- `clio-relay` (1.6.113): relay 2.0.0a66 on jarvis-cd c225e3f. A job's cpus_per_task now reaches the scheduler as set, and JARVIS's install check is fixed.
 - `kicad` (1.1.1): skills and tool-result notes give knowledge, not a workflow. pcb-pipeline, pcb-placement, pcb-routing, part-sourcing and datasheet-pin-check describe what each step and tool shows instead of ordering them; the after-sync, after-erc, after-drc, after-autoroute and after-case-build notes are light suggestions (look at the routes, the board, the schematic) with no required prior steps or science-log entry. The fork-copied skills pinned in `fork-skills.json` are unchanged.
 - `spack` (1.0.5): the spack skill states what the site has, what `spack_site_query`, `jarvis spack prepare` and `jarvis ppl install` do and what their statuses, exit codes and issues mean, without Rules, "What not to do" or ask/stop orders.
 - `clio-relay` (1.6.112): use-relay and jarvis-package state how relay, JARVIS and their asks behave instead of never/do-not rules and fixed steps; the site_fact_uncertain four-step procedure is now what settles one. The layout-sizing and time-request sections are unchanged.
