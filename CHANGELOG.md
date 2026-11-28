@@ -49,6 +49,10 @@
 - `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
   views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
   relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.108): relay 2.0.0a62 on jarvis-cd 25a19fb. A JARVIS root at other pins is reported as it is,
+  "JARVIS is on <site> at jarvis-cd X with clio-jarvis Y; relay updates it to ...", in describe, the refusal and the ask
+  ("Update JARVIS on <site>?"), not as "not set up". Pipeline steps are named by their package. A failed install job
+  ends `failed` with its exit code and JARVIS's records in `result`, and the message names the package Spack was building.
 - `clio-relay` (1.6.107): relay 2.0.0a60 on jarvis-cd dae7f4d. An install job's wall time comes from the build times
   JARVIS measured at the site, or the partition's limit when part of the build was never timed there; a longer build
   takes another `install`, which builds only the rest, and the approval says so. The approval names the provider Spack

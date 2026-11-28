@@ -372,7 +372,8 @@ holds. Relay sets that root up once per site, with jarvis-cd and clio-jarvis
 at the commits its release pins. Setting up is `install`'s first step: a
 `run`, `serve` or `install` on a site that is not set up refuses and names
 that step, and `describe(site=...)` says beforehand whether the site is set
-up. Do not place JARVIS or clio-jarvis on a site any other way.
+up. A root at other pins is not set up either; the refusal and the ask say
+which pins it holds and which relay brings it to (`Update JARVIS on <site>?`). Do not place JARVIS or clio-jarvis on a site any other way.
 
 A package the person wrote reaches the site with `files`: copy its
 repository, laid out `<name>/<name>/<package>/pkg.py`, into the person's
@@ -596,9 +597,11 @@ them again), record it
 with `rg net set` once they confirm, and call the same `run` again. Every
 later job on the site uses it.
 
-When an install job fails, the run fails `submit_failed` with
-`refusal.data.needs: "jarvis ppl install"`. Its message ends with the last part
-of the install log, and `refusal.data.install_log` is the whole log on the site:
+When an install job fails, the operation ends `failed` as a failed run job
+does, with the job's `exit_code`. Its message is JARVIS's line for each failure,
+naming the package Spack was building, and `result` holds JARVIS's records in
+`failures` and `issues`, the job id in `install_job`, and in `install_log` the
+whole log on the site:
 read it with `files_read(op="read")`. Find the cause, fix it in the place that owns
 it (a package parameter, the person's answer to a JARVIS question, the site's
 JARVIS Spack through `spack prepare`), and call the same `run` again. Ask the
