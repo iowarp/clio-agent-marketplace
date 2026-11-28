@@ -49,6 +49,10 @@
 - `paraview` (1.0.12): carries develop's description and keywords (interactive 3D
   views: rotate, slice, contour and measure volumes, meshes and 3D fields) onto
   relay-rework's 1.0.11, so an agent asked to show a 3D field sees it as a fit.
+- `clio-relay` (1.6.105): relay 2.0.0a57. Site scripts print JARVIS and site data with `printf '%s\n'`, never
+  `echo`, so a dash `/bin/sh` no longer rewrites the backslashes in a contract's regexes and `packages` and
+  `install` read the site's `jarvis repo list +json` document intact. A document that does not parse is refused with
+  the parse error and where it occurred, not as a site to set up again.
 - `clio-relay` (1.6.104): relay 2.0.0a56, on jarvis-cd 0c0fe08 (relay_ready) and clio-jarvis f38ecb74. Each site gets one
   JARVIS root of relay's, set up by `install` in three steps (jarvis-cd as a uv tool, `jarvis repo rm builtin`,
   `jarvis repo add` clio-jarvis), and `run` takes the packages that root holds; `describe` says whether a site is
